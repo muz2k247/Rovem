@@ -1,0 +1,39 @@
+Inputs (proposals),,,,,,,
+Constant,Value,Reason,,,,,
+g (m/s²),9.8,Textbook value,,,,,
+"Maximum brake force F_b,max (N)",1500,"Below the grip limit of mid and heavy builds, so mass visibly lengthens stopping; light builds hit the grip limit instead",,,,,
+Brake build-up time T_b (s),0.5,Physics Model Specification,,,,,
+Rover length (m),2,Sets the Mission 3 stopping window,,,,,
+Throttle build-up time T_t (s),1,Physics Model Specification,,,,,
+Part,Slot,Mass (kg),"F_d,max (N)",Rolling factor k_r,Grip factor k_g,Top speed v_max (m/s),Available at start
+Light chassis,Chassis,120,,,,,No (15 Knowledge)
+Standard chassis,Chassis,160,,,,,Yes
+Heavy chassis,Chassis,220,,,,,No (15 Knowledge)
+Smooth wheels,Wheels,16,,0.6,0.8,,No (15 Knowledge)
+All-terrain wheels,Wheels,24,,1,1,,Yes
+Spiked wheels,Wheels,32,,1.6,1.4,,No (15 Knowledge)
+Small motor,Motor,15,700,,,18,No (15 Knowledge)
+Medium motor,Motor,25,1000,,,16,Yes
+Large motor,Motor,40,1400,,,14,No (15 Knowledge)
+Surface,Rolling friction μ_r,Grip μ_g,,,,,
+Asphalt,0.02,0.8,,,,,
+Sand,0.12,0.5,,,,,
+Ice,0.01,0.1,,,,,
+Mission parameter,Value,Reason,,,,,
+M1: asphalt route length (m),100,"With the sand shortcut, makes the faster route depend on the build",,,,,
+M1: sand shortcut length (m),85,Shorter but slower to accelerate on; favours strong motors and grippy wheels,,,,,
+M1: time limit (s),9,"Starting build passes on either route if driven cleanly (0.5–0.85 s spare); heavy, weak-motor builds fail",,,,,
+M2: ice launch strip length (m),25,Long enough for grip differences to show in time,,,,,
+M2: time limit to cross the ice (s),8,All-terrain passes with 0.36 s spare; smooth wheels fail (too little grip),,,,,
+M2: coasting target into the sand (m),17.5,All-terrain passes with 1.3 m spare; spiked wheels fail (too much rolling friction),,,,,
+M3: approach speed (m/s),15,"Fast enough that braking distance is clearly longer than the zone. Above the Large motor's 14 m/s top speed, so a tow line holds this speed on asphalt until the first brake input after the brake line",,,,,
+M3: zone length (m),6,"With a 2 m rover, leaves a 4 m window: about 0.27 s of timing at 15 m/s",,,,,
+"M3: brake line, distance before zone end (m)",23,Braking allowed only after this line. The starting build needs 18.8 m; 4 of the 9 heavy builds need more than 23 m and pass with Brake boost or lighter parts,,,,,
+Power-up,Mission,Variable,Multiplier,What it teaches,,,
+Motor boost,1,"F_d,max",1.2,"More force, more acceleration (F = ma)",,,
+Lighter load,1,m,0.9,"Less mass, more acceleration from the same force",,,
+Grip tyres,2,k_g,1.3,Grip limits the force tyres can pass on ice,,,
+Smooth bearings,2,k_r,0.7,"Less rolling friction, longer coasting distance",,,
+Brake boost,3,"F_b,max",1.2,"More brake force stops a heavy rover sooner, unless grip is the limit",,,
+Grip tyres,3,k_g,1.3,"When grip is the limit, more grip shortens stopping",,,
+One power-up is active at a time; taking another replaces it. It lasts for the rest of the attempt.,,,,,,,

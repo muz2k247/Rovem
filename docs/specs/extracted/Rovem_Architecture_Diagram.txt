@@ -1,0 +1,201 @@
+Rovem — Architecture Diagram
+
+
+
+
+  Rovem — Architecture Diagram
+    Oct 12, 2026       · ​@k._muz
+
+  Companion to the Software Requirements Specification, Draft 0.5.
+
+  Rovem runs in the desktop browser from files sent by the Rovem web server, and one
+  physics model drives both the Build screen preview and the run. A signed-in student's
+  progress is also saved to a cloud database; a guest's stays on the device.
+
+
+
+
+                                                                                      Page 1 of 6
+Rovem — Architecture Diagram
+
+
+
+
+  architecture · 11 blocks, 1 future
+
+
+
+
+                                       Page 2 of 6
+Rovem — Architecture Diagram
+
+
+
+
+  How to read it
+  Each box is one part of the game. A line between two boxes means they pass information
+  to each other; an arrowhead shows the direction, and arrowheads at both ends mean both
+  sides send information. The blue box is the physics. The orange boxes hold stored
+  information: the game's content, the progress copy on the device and the cloud database.
+  The dashed box is planned for later and is not in the first version. The three large panels
+  show where each box runs: on the Rovem web server, on the student's own computer, or
+  at Supabase.
+
+  Read the browser panel from the top. The student uses the screens. The screens pass the
+  student's actions to the game flow, which decides what comes next: questions,
+  prediction, the run, then results. To run an attempt, the game loop moves the physics
+  model forward in small fixed time steps and draws the result. The same physics model
+  also fills in the Build screen's preview before a run, so the numbers the student sees there
+  match what happens when they drive.
+
+  The device always keeps a local copy of progress, and a guest uses only that copy. A
+  student who signs in also uses Account and sync, which sends progress over the internet
+  to the cloud database and brings it back on another device. The Supabase panel holds the
+  database, the sign-in service and the delete-account function. That function runs in the
+  cloud because it needs a secret key that must never reach the browser. The web server
+  only sends the game files; later it will also run the AI helper's proxy.
+
+
+  What each block does
+
+    Block                      What it does                         SRS requirements
+
+    Web server                 Sends the built game files to the    SRS 2.2, NFR-1, NFR-3
+    (Nginx)                    browser over HTTPS from a Linux
+                               server in the cloud. No game logic
+                               runs on it
+
+    Screens                    The pages the student sees: sign-    FR-1, FR-2, FR-14 to FR-16, FR-22,
+                               in or guest play, mission select,    FR-27, FR-32 to FR-34, FR-41
+                               build rover with part effects,
+                               question and prediction dialogs,
+                               driving view showing speed and
+                               direction, results with
+                               explanation, concepts cleared
+
+
+
+                                                                                                    Page 3 of 6
+Rovem — Architecture Diagram
+
+
+
+
+    Block                      What it does                           SRS requirements
+
+    Game loop and              Advances the simulation in fixed       FR-6, FR-29, NFR-2
+    rendering                  time steps that do not depend on
+                               frame rate, reads steer, throttle
+                               and brake, and draws the 3D
+                               scene
+
+    Game flow and              Sets the order of an attempt           FR-5, FR-12, FR-20, FR-21, FR-26,
+    rules                      (build, required questions,            FR-30, FR-35 to FR-40, FR-44
+                               predict, drive, results), applies
+                               mission rules, tracks cleared
+                               questions, awards Knowledge and
+                               applies an unlock only when the
+                               balance covers its cost
+
+    Physics model              Calculates driving state, net          FR-3, FR-8 to FR-11, FR-28, FR-29,
+                               force, acceleration, speed and         NFR-4
+                               distance from textbook formulas
+                               with g = 9.8 m/s², as defined in the
+                               Physics Model Specification. Also
+                               supplies the Build screen preview.
+                               Checked against hand-calculated
+                               values
+
+    Content data               Components, surfaces, terrain,         FR-19, NFR-5
+                               missions, questions with
+                               explanations and variants, power-
+                               ups and Knowledge values, held
+                               as data so more can be added
+                               without rebuilding the game. A
+                               seeding step copies the costs,
+                               rewards and order into the
+                               database tables, and an
+                               automated test checks that the
+                               two agree
+
+
+
+
+                                                                                                      Page 4 of 6
+Rovem — Architecture Diagram
+
+
+
+
+    Block                      What it does                          SRS requirements
+
+    Local copy of              Keeps the number of answers per       FR-24, FR-25, NFR-7
+    progress                   question, clearing times, unlocks
+                               and completed missions in the
+                               browser's local storage, in the
+                               same shape as the database
+                               tables. Guests use only this copy.
+                               A completed mission is the safe
+                               point the game resumes from
+
+    Account and sync           Signs a student up, in and out and    FR-25, FR-41, FR-43, NFR-7, NFR-8
+                               resets passwords. Copies a
+                               guest's progress into a new
+                               account, or asks which copy to
+                               keep if the account already has
+                               progress. Merges two devices by
+                               keeping the higher attempt count
+                               and the earlier clearing time.
+                               Sends answers and completions
+                               made offline when the
+                               connection returns
+
+    Cloud database             Seven PostgreSQL tables on            FR-24, FR-25, FR-35, FR-42, FR-44
+                               Supabase: three of game content,
+                               one for the player and three of
+                               progress. Each student can read
+                               and change only their own rows.
+                               One database function records
+                               an unlock only if the balance
+                               covers the cost and, for a mission,
+                               the previous mission is
+                               completed. No Knowledge total is
+                               saved; the balance is worked out
+                               from the saved answers and
+                               unlocks
+
+    Sign-in service            Holds email-and-password              FR-41
+                               accounts, sign-in and password
+                               reset. Its account ID is the
+                               student's ID in the database
+
+
+
+
+                                                                                                   Page 5 of 6
+Rovem — Architecture Diagram
+
+
+
+
+    Block                      What it does                         SRS requirements
+
+    Delete-account             Deletes a student's sign-in          FR-41
+    function                   account together with all of their
+                               progress. Runs on a server
+                               because it needs Supabase's
+                               secret service key
+
+    AI helper proxy            Rephrases explanations and           SRS Section 6
+    (future)                   answers follow-up questions
+                               using the run's data. Runs on the
+                               web server behind Nginx so the
+                               API key never reaches the
+                               browser; pre-written
+                               explanations stay as the fallback
+
+
+
+
+                                                                                       Page 6 of 6
+

@@ -1,0 +1,13 @@
+Knowledge earned and spent,,,,,
+Earned by,Count,Points each,Points available,Reason,
+Required questions (3 per mission),9,10,90,Core learning; the main income,
+Power-up questions (2 per mission),6,5,30,Optional; the power-up itself is the main reward,
+Unlock questions (2 per mission concept),6,5,30,Optional; a second route to Knowledge so no student gets stuck,
+Total Knowledge available,,,150,,
+Unlocks,Count,Cost in points,Total points,Reason,Cost in cleared required questions
+Mission 2 and Mission 3,2,20,40,"Equals 2 of the previous mission's 3 required questions, so one miss never blocks progress",2
+Unlock a part (6 locked parts),6,15,90,"Same price for every part: parts are trade-offs, not upgrades",1.5
+Total Knowledge needed to unlock everything,,,130,,
+Spare Knowledge,,,20,,
+Share of all Knowledge needed to unlock everything,,,0.866666666666667,,
+"Knowledge is earned the first time a question is cleared. Values are flat (no first-attempt bonus), so a wrong first answer costs nothing but time.",,,,,

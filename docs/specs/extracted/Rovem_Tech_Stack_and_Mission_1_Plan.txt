@@ -1,0 +1,188 @@
+Rovem — Tech Stack and Mission 1 Plan (provisional)
+
+
+
+
+  Rovem — Tech Stack and Mission 1 Plan
+  (provisional)
+    Oct 12, 2026         · ​@k._muz
+
+  Companion to the Software Requirements Specification, Draft 0.5. Use Git and GitHub,
+  React for the screens, three.js for the 3D scene, a hand-written TypeScript physics
+  module, and Supabase for accounts and saving. The built game is a set of static files
+  served by Nginx on a Linux server, so no Node backend is needed.
+
+
+  Stack
+
+     Layer                      Choice                    Why                           Compared with the
+                                                                                        suggested stack
+
+     Version                    Git and GitHub            A check runs the physics      Same
+     control                                              tests on every push
+
+     Language                   TypeScript with Vite      Types catch unit mix-ups      Added
+     and build                                            in the physics; Vite builds
+                                                          the static site
+
+     Screens                    React                     Build, question, results      Same
+                                                          and concepts screens are
+                                                          forms and tables
+
+     3D scene                   three.js, used directly   It only draws the rover       Same library, moved
+                                                          and terrain, so frame rate    to the browser side
+                                                          cannot change results
+                                                          (FR-29). It runs in the
+                                                          browser, not on a
+                                                          backend
+
+
+
+
+                                                                                                        Page 1 of 4
+Rovem — Tech Stack and Mission 1 Plan (provisional)
+
+
+
+
+     Layer                      Choice                    Why                         Compared with the
+                                                                                      suggested stack
+
+     Physics                    Own TypeScript            The SRS requires            Agrees with
+                                module, no physics        textbook formulas, a        keeping it simple
+                                engine                    fixed time step and tests
+                                                          against hand calculations
+                                                          (FR-10, FR-29, NFR-4), as
+                                                          set out in the Physics
+                                                          Model Specification. The
+                                                          Build preview calls the
+                                                          same module (FR-3)
+
+     Accounts                   Supabase: PostgreSQL,     Already decided in the      Not covered
+     and saving                 sign-in, row-level        Data Model
+                                security
+
+     Account                    One Supabase Edge         Server-side TypeScript      Replaces the Node
+     deletion                   Function                  on Deno that can hold the   backend
+                                                          secret key (FR-41). The
+                                                          only application code
+                                                          that runs on a server in
+                                                          the MVP
+
+     Hosting                    Nginx on a Linux server   Serves the built game       Same
+                                in the cloud              files over HTTPS. Later,
+                                                          the same server can run
+                                                          the AI helper's server-
+                                                          side proxy behind Nginx.
+                                                          The cost is upkeep:
+                                                          system updates, the
+                                                          HTTPS certificate and the
+                                                          firewall
+
+     Tests                      Vitest                    Physics cases at 10⁻⁹       Added
+                                                          relative error (NFR-4);
+                                                          Knowledge, unlock and
+                                                          merge rules (FR-35, FR-
+                                                          43, FR-44)
+
+
+
+
+                                                                                                      Page 2 of 4
+Rovem — Tech Stack and Mission 1 Plan (provisional)
+
+
+
+
+  Hard-coded movement and gravity
+  The advice to keep the physics simple and do the calculations yourself is adopted: no
+  physics engine, hand-written formulas, and the numbers on the Build screen worked out
+  by the same code.
+
+  Scripted movement is not adopted. The student drives with throttle, brake and steering,
+  and Mission 3 depends on when they brake, so the path cannot be fixed beforehand. The
+  rover is simulated live, in fixed steps.
+
+  One correction to the gravity point. Acceleration does depend on gravity once there is
+  friction. Rolling friction and the grip limit both scale with weight, so both change with g:
+
+     a = (min(F_d,max , μ_g × k_g × m × g) − μ_r × k_r × m × g) ÷ m
+       = min(F_d,max ÷ m , μ_g × k_g × g) − μ_r × k_r × g
+
+
+  Acceleration is independent of g only when there is no rolling friction and the driving
+  force stays below the grip limit; with no grip at all, a wheeled rover could not move. A
+  heavy rover on Mercury and on Pluto has the same mass but a different weight, so friction
+  and grip differ, which makes it a good future experiment. Planets are future work (SRS
+  Section 6), not part of the MVP.
+
+
+  Mission 1 plan
+  The prototype is milestones 1 to 8, played as a guest. Accounts (FR-41 to FR-44) follow it.
+  Milestone 2 implements the Physics Model Specification.
+
+
+     #          Milestone                             Done when
+
+     1          Repository and checks                 A TypeScript and Vite project is on GitHub, and one
+                                                      test runs on every push
+
+     2          Physics core                          The Physics Model Specification is implemented
+                                                      and tests T1 to T10 pass, including all 135 Simulation
+                                                      sheet values to 0.001 s or 0.001 m. Starting build:
+                                                      100 m in 8.500 s and 85 m in 8.150 s
+
+     3          Build screen                          Part choice and the Part effects table come from
+                                                      the physics module. The starting build shows 209
+                                                      kg, 4.59 and 3.61 m/s² acceleration, and 7.37 and
+                                                      6.08 m/s² braking on asphalt and sand
+
+
+
+
+                                                                                                               Page 3 of 4
+Rovem — Tech Stack and Mission 1 Plan (provisional)
+
+
+
+
+     #          Milestone                             Done when
+
+     4          Driving scene                         A flat three.js scene with keyboard steer, throttle
+                                                      and brake that rise and fall gradually, and a speed
+                                                      and direction display. A stopped rover does not
+                                                      turn, brake beats throttle (FR-6, FR-27), and the
+                                                      same input record gives identical results at 30 and
+                                                      144 frames per second
+
+     5          Mission 1 rules                       Two routes, the 9 s limit, the target, pass and fail,
+                                                      and Motor boost and Lighter load side by side on
+                                                      each route, with the timer paused during their
+                                                      questions
+
+     6          Questions and results                 Three required questions, the time-band run
+                                                      prediction, measured results, and an explanation
+                                                      using distance, time, speed, acceleration and F =
+                                                      ma
+
+     7          Local saving                          Guest progress saved in local storage in the same
+                                                      shape as the database tables
+
+     8          Deployment                            Nginx on a Linux server serves the built game over
+                                                      HTTPS, and it opens in a current desktop browser
+
+
+
+
+  Sources
+         Supabase Edge Functions: server-side TypeScript on a Deno-compatible runtime, with
+         secrets held as project secrets
+         Rovem Software Requirements Specification, Draft 0.4, with the Draft 0.5 changes;
+         Data Model; Physics Model Specification
+         Rovem Component Values Proposal sheet, for part values and simulation settings
+
+
+
+
+                                                                                                              Page 4 of 4
+

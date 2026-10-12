@@ -1,0 +1,31 @@
+Which builds pass each mission (simulation results against mission limits),,,,,,,,,,
+Chassis,Wheels,Motor,M1: best time (s),M1 passes,M2: ice time (s),M2: coast (m),M2 passes,M3: stopping distance (m),M3 passes,All three
+Light chassis,Smooth wheels,Small motor,8.017,Pass,8.392,25.704,Fail,19.842,Pass,Fail
+Light chassis,Smooth wheels,Medium motor,8.058,Pass,8.375,25.743,Fail,19.993,Pass,Fail
+Light chassis,Smooth wheels,Large motor,8.542,Pass,8.358,25.732,Fail,20.217,Pass,Fail
+Light chassis,All-terrain wheels,Small motor,8.142,Pass,7.65,18.762,Pass,16.919,Pass,Pass
+Light chassis,All-terrain wheels,Medium motor,7.967,Pass,7.617,18.752,Pass,17.102,Pass,Pass
+Light chassis,All-terrain wheels,Large motor,8.35,Pass,7.6,18.77,Pass,17.376,Pass,Pass
+Light chassis,Spiked wheels,Small motor,8.408,Pass,6.6,16.183,Fail,15.563,Pass,Fail
+Light chassis,Spiked wheels,Medium motor,8.1,Pass,6.55,16.168,Fail,16.26,Pass,Fail
+Light chassis,Spiked wheels,Large motor,8.067,Pass,6.517,16.154,Fail,17.299,Pass,Fail
+Standard chassis,Smooth wheels,Small motor,8.358,Pass,8.417,25.709,Fail,20.441,Pass,Fail
+Standard chassis,Smooth wheels,Medium motor,8.267,Pass,8.392,25.743,Fail,20.591,Pass,Fail
+Standard chassis,Smooth wheels,Large motor,8.6,Pass,8.367,25.709,Fail,20.814,Pass,Fail
+Standard chassis,All-terrain wheels,Small motor,8.783,Pass,7.683,18.775,Pass,18.057,Pass,Pass
+Standard chassis,All-terrain wheels,Medium motor,8.15,Pass,7.642,18.77,Pass,18.767,Pass,Pass
+Standard chassis,All-terrain wheels,Large motor,8.433,Pass,7.617,18.777,Pass,19.829,Pass,Pass
+Standard chassis,Spiked wheels,Small motor,9.033,Fail,6.642,16.173,Fail,18.331,Pass,Fail
+Standard chassis,Spiked wheels,Medium motor,8.633,Pass,6.583,16.182,Fail,19.015,Pass,Fail
+Standard chassis,Spiked wheels,Large motor,8.408,Pass,6.542,16.169,Fail,20.036,Pass,Fail
+Heavy chassis,Smooth wheels,Small motor,9.442,Fail,8.45,25.692,Fail,22.012,Pass,Fail
+Heavy chassis,Smooth wheels,Medium motor,8.458,Pass,8.417,25.74,Fail,22.733,Pass,Fail
+Heavy chassis,Smooth wheels,Large motor,8.7,Pass,8.383,25.701,Fail,23.811,Fail,Fail
+Heavy chassis,All-terrain wheels,Small motor,9.675,Fail,7.725,18.752,Pass,22.29,Pass,Fail
+Heavy chassis,All-terrain wheels,Medium motor,9.042,Fail,7.675,18.775,Pass,22.988,Pass,Fail
+Heavy chassis,All-terrain wheels,Large motor,8.558,Pass,7.642,18.786,Pass,24.033,Fail,Fail
+Heavy chassis,Spiked wheels,Small motor,10.008,Fail,6.708,16.178,Fail,22.391,Pass,Fail
+Heavy chassis,Spiked wheels,Medium motor,9.217,Fail,6.625,16.161,Fail,23.058,Fail,Fail
+Heavy chassis,Spiked wheels,Large motor,9.167,Fail,6.575,16.172,Fail,24.053,Fail,Fail
+Builds passing,,,,20,,,9,,23,6
+"Starting build (Standard, All-terrain, Medium) passes all three",,,,Pass,,,,,,

@@ -1,0 +1,1047 @@
+Rovem — Software Requirements Specification
+
+
+
+
+  Rovem — Software Requirements
+  Specification
+    Oct 12, 2026        · ​@k._muz
+
+  Version: Draft 0.5, superseding Draft 0.4. Title: Rovem.
+
+
+
+  Revision history
+
+     Version            Changes
+
+     Draft 0.2          Initial requirements, missions and design diagrams.
+
+     Draft 0.3          Adds the game flow, Knowledge and progression,
+                        power-up and unlock questions, the run prediction,
+                        and fully defined speeding-up, top-speed, coasting
+                        and braking behaviour. Sets mission start and pass
+                        rules, mission limits, Knowledge values, power-ups
+                        and the saving method, redesigns Mission 2 around
+                        the two kinds of friction, updates both diagrams,
+                        and settles the open items. Existing requirement
+                        IDs are unchanged; new requirements are
+                        numbered from FR-26.
+
+     Draft 0.4          Adds optional player accounts with progress saved
+                        to a cloud database, a local copy, and guest play.
+                        The Knowledge balance is calculated rather than
+                        stored, and every unlock is checked so that
+                        Knowledge never goes below zero. Clarifies how a
+                        wrongly answered question repeats. Revises FR-21,
+                        FR-23, FR-24, FR-25, FR-35, NFR-7 and NFR-8, and
+                        adds FR-41 to FR-44. Updates both diagrams. The
+                        database is described in the companion Data
+                        Model document.
+
+
+
+
+                                                                              Page 1 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     Version            Changes
+
+     Draft 0.5          In Mission 3 a tow line holds the set speed on
+                        asphalt. Corrects the heavy-build statement for
+                        the brake line. Widens FR-31 to acceleration and F
+                        = ma. Defines the run predictions for Missions 1
+                        and 2. States the power-up pickup positions and
+                        the grip limit on Motor boost. Adds the Physics
+                        Model Specification, decides hosting, and replaces
+                        the use case diagram. Revises FR-30, FR-31 and FR-
+                        32.
+
+
+
+
+  1. Introduction
+
+  1.1 Purpose
+  This document defines the requirements for the first version (MVP) of Rovem, a browser-
+  based 3D game that teaches Grade 9 Kinematics and Dynamics through building and
+  driving a rover.
+
+  Terms used in this document: MVP is the minimum viable product, meaning the first
+  playable version. FR is a functional requirement, something the game must do. NFR is a
+  non-functional requirement, a quality the game must have, such as performance. TBD
+  means to be decided. Knowledge is the in-game currency, counted in points and earned
+  by clearing questions: one cleared required question earns 10 points. A guest is a student
+  who plays without an account. An account is an optional sign-in with an email address and
+  a password.
+
+
+  1.2 Scope
+  Students build a rover from a few components, predict how it will behave, drive it through
+  missions, and see the physics explained. The MVP has one terrain, three missions, one
+  rover model built from parts, scenario questions, and Knowledge to unlock parts and
+  missions. Students can play as guests or save their progress to an account. Everything
+  else is listed in Section 6 as future work.
+
+  The physics is defined in full in the companion Physics Model Specification. Proposed
+  component and surface values are in the Component Values sheet. The database is
+  described in the companion Data Model document.
+
+
+
+
+                                                                                        Page 2 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  1.3 Learning objectives (MVP)
+  By the end, a student should be able to:
+
+       Relate distance, time, speed and acceleration.
+       Explain how mass and driving force affect acceleration (F = ma).
+       Explain how friction affects motion and stopping.
+       Explain why a body moves at constant speed when the forces on it balance (Newton's
+       first law).
+       Combine these ideas to solve a practical problem.
+
+  These objectives were checked against the Grade 9 Kinematics and Dynamics chapters
+  by a Grade 9 physics teacher.
+
+
+  1.4 Learning loop
+  Predict → Experiment → Observe → Explain → Retry
+
+
+  2. Overall Description
+
+  2.1 Users
+  Primary users are Grade 9 students. Secondary users are teachers and evaluators who
+  review the concept.
+
+
+  2.2 Constraints
+       The game runs in a desktop web browser and needs no installation.
+       The game is built by a single developer, so the scope must stay small.
+       The physics must follow textbook formulas, not the default behaviour of the game
+       engine.
+       The physics uses g = 9.8 m/s², as the textbooks do. Numerical questions use g = 10 m/s²
+       so answers are whole numbers, as in classroom practice.
+       The interface language is English.
+
+
+  2.3 Assumptions
+       Students have already met Newton's laws and friction in class, and the game reinforces
+       and applies them.
+
+
+
+
+                                                                                          Page 3 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+       The terrain is flat, gravity is constant, and there is no air resistance in the MVP.
+
+
+  3. Functional Requirements
+
+  3.1 Game flow
+
+     ID            Requirement
+
+     FR-26         Each attempt follows the same order: build the
+                   rover, answer the mission's required questions not
+                   yet cleared, predict the run, drive, then view the
+                   results and the explanation.
+
+     FR-5          The student can change the build and retry any
+                   mission as many times as they like.
+
+
+
+  3.2 Rover customization
+
+     ID          Requirement
+
+     FR-1        The student selects one part for each slot: chassis,
+                 wheels and motor. The MVP has one rover model.
+
+     FR-2        Before a run, the game shows how the chosen
+                 parts affect the rover's mass, weight, rolling
+                 friction, grip limit, driving force, top speed,
+                 maximum acceleration and maximum braking
+                 deceleration on each surface of the mission.
+
+     FR-3        The values shown under FR-2 are calculated by the
+                 same physics model that drives the simulation.
+
+     FR-4        Each mission sets the rover's starting speed. The
+                 student does not change it.
+
+
+
+
+                                                                                              Page 4 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  3.3 Controls
+
+     ID            Requirement
+
+     FR-6          The student can steer left and right, apply throttle
+                   and apply brake. There is no reverse. Throttle and
+                   brake levels rise steadily from zero to full while the
+                   key is held and fall steadily back to zero when it is
+                   released. The maximum brake force is fixed for
+                   each rover model. Surface friction is a separate,
+                   external effect and is not part of the brake. If
+                   throttle and brake are held together, the brake
+                   applies and the throttle is released.
+
+     FR-7          Controls use a small number of simple inputs so
+                   they can later be adapted to touch screens.
+
+     FR-27         Steering changes the rover's direction, not its
+                   speed. A stopped rover does not turn. The driving
+                   screen shows speed in m/s and the direction of
+                   travel as an arrow.
+
+
+
+  3.4 Physics model
+
+     ID            Requirement
+
+     FR-8          Acceleration is net force divided by mass (a = Fnet
+                   / m), where net force is the driving force minus
+                   rolling friction and any braking force. Braking and
+                   friction only slow the rover; they cannot push it
+                   backward. A stopped rover stays stopped unless
+                   the driving force is greater than rolling friction.
+
+     FR-9          Rolling friction depends on the surface, the chosen
+                   wheels and the rover's weight (F = μR). Grip, set by
+                   the surface and the wheels, limits the driving and
+                   braking force the tyres can pass to the ground.
+                   Asking for more makes the wheels slip, and the
+                   screen shows it.
+
+
+
+
+                                                                            Page 5 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     ID            Requirement
+
+     FR-10         Speed and distance are calculated with the
+                   equations of motion over short, fixed time steps in
+                   which force is constant, so results match the
+                   textbook relations exactly.
+
+     FR-11         Every implemented variable has the same effect
+                   every time. No part changes performance purely to
+                   make the game more entertaining.
+
+     FR-28         Each motor has a top speed. At top speed the
+                   motor only balances friction, so net force is zero
+                   and the rover moves at constant speed (Newton's
+                   first law).
+
+     FR-29         The physics uses g = 9.8 m/s², a fixed time step that
+                   does not depend on the frame rate, and no random
+                   values.
+
+
+  At every moment the rover is in one driving state. The state decides which forces act and
+  therefore the acceleration:
+
+
+
+
+                                                                                       Page 6 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     State                  When                                     Acceleration
+
+     Stopped                Speed is zero and the driving force      Zero
+                            cannot overcome friction, or the
+                            brake is held at zero speed
+
+     Driving                Throttle applied, below top speed        (Driving force − friction) / m
+
+     At top                 Throttle held at the motor's top         Zero: forces balance, speed is
+     speed                  speed                                    constant
+
+     Cruising               Mission 3 only, while the tow line       Zero: the tow balances friction, so
+                            holds the rover, before the first        speed stays at the set speed
+                            brake input after the brake line
+
+     Coasting               No throttle and no brake while           −(friction) / m, slowing down
+                            moving, including after the Mission 2
+                            power cut
+
+     Braking                Brake applied while moving               −(brake force + friction) / m, until
+                                                                     stopped
+
+
+  Formulas, control timings, the time step and the automated tests are defined in the
+  Physics Model Specification.
+
+
+  3.5 Missions
+  Each mission defines an objective, a physics concept, a meaningful player decision, an
+  observable result and feedback. Each mission puts one decision in front of the student, so
+  only a few variables matter at once (NFR-6).
+
+
+     Mission                 Objective             Concept            Decision that         Passed when
+                                                                      matters
+
+     1. Motion               From rest, reach      Distance, time,    Route, and            Target reached
+     Trial                   the target within     speed,             motor force           within 9 s
+                             the time limit by a   acceleration       against mass
+                             longer route on                          and top speed
+                             fast ground or a
+                             shortcut across
+                             slow ground.
+
+
+
+
+                                                                                                            Page 7 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     Mission                 Objective                  Concept                Decision that       Passed when
+                                                                               matters
+
+     2. Surface              From rest, launch          Friction: grip         Wheels: grip        Ice crossed
+     Test                    across an ice              and rolling            against rolling     within 8 s, and
+                             strip within the           friction               friction. Mass      the rover coasts
+                             time limit. At the                                and motor do        at least 17.5 m
+                             end of the ice the                                not change the      into the sand
+                             power cuts, and                                   result
+                             the rover must
+                             coast far enough
+                             into the sand.
+
+     3. Stopping             The rover is               Force, friction        Mass, brakes        Rover stopped
+     Challenge               towed at a set             and speed              and grip, and       fully inside the
+                             speed on asphalt           combined               when to brake       zone
+                             and must stop
+                             with all of it
+                             inside the target
+                             zone. Braking is
+                             allowed only
+                             after the brake
+                             line, and the first
+                             brake input there
+                             releases the tow.
+
+
+  Mission parameters. These values come from simulating all 27 part combinations. They are
+  the starting points for playtesting.
+
+
+     Parameter                                Value                      Reason
+
+     Mission 1 routes                         100 m asphalt; 85 m        The faster route depends on the build (17
+                                              sand                       of 27 builds are faster on the shortcut)
+
+     Mission 1 time limit                     9s                         The starting build passes on either route if
+                                                                         driven cleanly, with 0.5–0.85 s to spare.
+                                                                         Heavy builds with a small motor fail, which
+                                                                         shows F = ma
+
+     Mission 2 ice strip                      25 m                       Long enough for grip differences to show
+                                                                         in the time
+
+
+
+
+                                                                                                                 Page 8 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     Parameter                                Value                   Reason
+
+     Mission 2 ice time                       8s                      All-terrain wheels pass with 0.36 s to
+     limit                                                            spare; smooth wheels have too little grip
+                                                                      and fail
+
+     Mission 2 coasting                       17.5 m into the sand    All-terrain wheels pass with 1.3 m to spare;
+     target                                                           spiked wheels have too much rolling
+                                                                      friction and fail
+
+     Mission 3 approach                       15 m/s, held by a tow   Stopping distance (about 16–24 m) is
+     speed                                    line                    much longer than the zone, so the student
+                                                                      must plan where to brake. It is above the
+                                                                      Large motor's 14 m/s top speed, so the
+                                                                      tow, not the motor, holds it
+
+     Mission 3 surface                        Asphalt                 The Mission 3 stopping distances are
+                                                                      calculated on asphalt
+
+     Mission 3 zone length                    6m                      With a 2 m rover, the stopping window is 4
+                                                                      m, about 0.27 s of timing at 15 m/s: hard to
+                                                                      hit by luck, fair with a prediction
+
+     Mission 3 brake line                     23 m before the zone    The starting build needs 18.8 m to stop. 4
+                                              end                     of the 9 heavy builds need more than 23
+                                                                      m; they pass with Brake boost or lighter
+                                                                      parts
+
+     Distance markers                         Every 5 m               Lets the student turn a calculated
+                                                                      distance into a place on the track
+
+
+
+     ID            Requirement
+
+     FR-12         The MVP contains these three missions, played on
+                   one terrain that has several surface types.
+
+     FR-13         Collectible items may be added for engagement,
+                   but they never replace the physics objective.
+
+
+
+
+                                                                                                              Page 9 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     ID            Requirement
+
+     FR-30         In Mission 3 a tow line pulls the rover at its set
+                   speed. The first brake input after the brake line
+                   releases the tow and starts braking; braking before
+                   the brake line has no effect. After the release,
+                   letting go of the brake lets the rover coast. The
+                   throttle stays locked.
+
+     FR-31         Mission 1's explanation uses distance, time, speed,
+                   acceleration and F = ma, and calls the slower tiles
+                   "slow ground". Friction and grip are first explained
+                   in Mission 2.
+
+     FR-39         In Mission 2 the throttle drops to zero at the
+                   power-cut line at the end of the ice and stays
+                   locked for the rest of the attempt.
+
+
+
+  3.6 Feedback and results
+
+     ID           Requirement
+
+     FR-14        After each run, the game shows the measured
+                  results: distance, time, average speed, top speed
+                  reached, average acceleration, and stopping
+                  distance and time where relevant.
+
+     FR-15        The game explains why the outcome occurred,
+                  using pre-written explanations filled in with the
+                  run's own values, and shows the formula used,
+                  rather than only reporting success or failure.
+
+     FR-16        The game shows the student's predictions next to
+                  the actual result.
+
+
+
+
+                                                                          Page 10 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  3.7 Scenario questions
+
+     ID            Requirement
+
+     FR-17         Each mission has three required scenario-based
+                   multiple-choice questions. They are shown before
+                   a run, as predictions, and never while the rover is
+                   moving.
+
+     FR-18         Questions test reasoning (for example "will it stop
+                   sooner or later on ice?"), not definition recall.
+
+     FR-19         Each question has a pre-written correct answer
+                   and a pre-written explanation. Numerical
+                   questions state "take g = 10 m/s²" so answers are
+                   whole numbers.
+
+     FR-20         A correctly answered question is marked "cleared"
+                   and not shown again.
+
+     FR-21         A wrongly answered question shows its
+                   explanation, which cannot be closed for 2 seconds,
+                   and is marked "to review". It reappears later as its
+                   variant: the same concept with a different scenario
+                   or numbers. If the variant is also answered wrongly,
+                   the original and the variant alternate until the
+                   question is cleared.
+
+     FR-22         A "Concepts cleared" screen lists cleared
+                   questions with their explanations.
+
+     FR-23         The game records how many times each question
+                   has been answered, so it knows whether the
+                   question was answered correctly on the first
+                   attempt.
+
+
+
+
+                                                                          Page 11 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     ID            Requirement
+
+     FR-32         Before every attempt, the student also predicts
+                   the outcome of their own run: in Mission 1, the time
+                   to reach the target (under 8 s, 8 s to 9 s, or over 9
+                   s); in Mission 2, whether the rover crosses the ice
+                   within 8 s and whether it coasts at least 17.5 m into
+                   the sand; in Mission 3, whether it stops short of,
+                   inside or past the zone. This prediction earns no
+                   Knowledge. Stopping distance for the chosen build
+                   is shown in the results, so the student can use it on
+                   the next attempt.
+
+     FR-33         Optional power-up questions appear at pickups on
+                   the course. The simulation pauses while one is
+                   shown. A correct answer gives a power-up for the
+                   current attempt; a wrong answer has no penalty.
+
+     FR-34         Optional unlock questions are available on the
+                   build screen and earn Knowledge for
+                   customization. Two unlock questions become
+                   available for each mission concept once that
+                   mission's required questions have been answered.
+
+
+
+  3.8 Knowledge and progression
+
+     ID            Requirement
+
+     FR-35         Knowledge is earned the first time a question is
+                   cleared. Required, power-up and unlock questions
+                   all earn Knowledge points, at the values below.
+                   There is no bonus for a first-attempt answer, so a
+                   wrong first answer costs nothing but time. The
+                   Knowledge balance is the points earned from
+                   cleared questions minus the cost of everything
+                   unlocked. No balance number is saved. The game
+                   saves only which questions are cleared and what is
+                   unlocked, and works out the balance from those
+                   whenever it is needed, so the balance always
+                   matches the progress.
+
+
+
+
+                                                                           Page 12 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     ID            Requirement
+
+     FR-36         Knowledge unlocks rover parts and the next
+                   mission. A mission also requires the previous
+                   mission to be completed.
+
+     FR-37         At the start, one part per slot is available (standard
+                   chassis, all-terrain wheels, medium motor), and
+                   these parts can complete every mission. Unlocked
+                   parts are trade-offs, not strict upgrades.
+
+     FR-38         A power-up temporarily changes one variable the
+                   physics already uses, for the current attempt. Its
+                   effect is shown on screen as the old and new
+                   values. The power-ups offered in each mission are
+                   listed below.
+
+     FR-40         One power-up is active at a time; taking another
+                   replaces it. The mission timer pauses while a
+                   power-up question is shown.
+
+
+  Knowledge values. Costs are given in points and, beside them, in cleared questions, which
+  is how a student experiences them.
+
+
+     Earned by                                Points   Points      Reason
+                                              each     available
+
+     Required question (9                     10       90          Core learning, so the main income
+     in total)
+
+     Power-up question (6                     5        30          Optional; the power-up itself is the
+     in total)                                                     main reward
+
+     Unlock question (6 in                    5        30          Optional; a second way to earn, so no
+     total)                                                        student is stuck
+
+
+
+
+                                                                                                    Page 13 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     Unlocks                          Cost in        In cleared questions        Reason
+                                      points
+
+     Mission 2,                       20 each        2 required questions        Mission 1's three required
+     Mission 3                                                                   questions earn 30 points
+                                                                                 before the first drive, so
+                                                                                 Mission 2 is already
+                                                                                 affordable. One wrong answer
+                                                                                 never blocks progress
+
+     Each locked part                 15 each        1½ required questions, or   Same price for every part,
+     (6 in total)                                    3 optional ones             because parts are trade-offs,
+                                                                                 not upgrades
+
+
+  Unlocking everything costs 130 of the 150 points available: for example, all 9 required
+  questions plus 8 of the 12 optional ones. A student who clears Mission 1's three required
+  questions can open Mission 2 and still has 10 points left.
+
+  Power-ups. Each one changes a single variable, so the student sees one cause and one
+  effect.
+
+
+     Mission          Power-up                  Change               What the student sees
+
+     1                Motor boost               Driving force        More force gives more acceleration (F =
+                                                +20%                 ma). On slow ground the wheels can slip,
+                                                                     so part of the extra force is lost
+
+     1                Lighter load              Mass −10%            Less mass gives more acceleration from
+                                                                     the same force
+
+     2                Grip tyres                Wheel grip +30%      Grip limits how hard the rover can
+                                                                     accelerate on ice
+
+     2                Smooth                    Rolling friction     Less rolling friction lets the rover coast
+                      bearings                  −30%                 further
+
+     3                Brake boost               Brake force +20%     More brake force stops a heavy rover
+                                                                     sooner, unless grip is the limit
+
+     3                Grip tyres                Wheel grip +30%      When grip is the limit, more grip shortens
+                                                                     the stop
+
+
+
+
+                                                                                                             Page 14 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  Pickups sit where the change matters: Motor boost and Lighter load side by side near the
+  start of each Mission 1 route, so the student chooses force or mass on either route; Grip
+  tyres at the start and Smooth bearings at the end of the Mission 2 ice strip; and Brake
+  boost and Grip tyres on two lanes before the Mission 3 brake line. With the right power-
+  up, a build that would otherwise fail can pass: 5 of the 7 failing builds in Mission 1, all 18 in
+  Mission 2, and all 4 in Mission 3, with Brake boost.
+
+
+  3.9 Progress saving and accounts
+
+     ID            Requirement
+
+     FR-24         The game saves, after each answer, the number of
+                   times the question has been answered and, when
+                   it is cleared, the time it was cleared. It saves each
+                   unlock after the unlock, and a mission's completion
+                   when the mission is cleared. A completed mission
+                   is a safe point: the game resumes from it in the
+                   next session. A question's status (cleared, to
+                   review or unanswered), whether it was right the
+                   first time, and the Knowledge balance are not
+                   saved. The game works them out from this data
+                   each time they are needed.
+
+     FR-25         A signed-in student's progress is saved to their
+                   account in a cloud database, with a copy in the
+                   browser's local storage. A guest's progress is kept
+                   in local storage only. Answers and mission
+                   completions made without a connection are sent
+                   to the account when the connection returns.
+
+     FR-41         A student can play as a guest, or sign up and sign in
+                   with an email address and a password. A signed-in
+                   student can sign out, reset their password, and
+                   delete their account together with all of its
+                   progress. A new account starts with Mission 1 and
+                   the three starting parts unlocked.
+
+     FR-42         A student can read only their own progress. A
+                   student can add or update only their own answers
+                   and mission completions. Unlocks are recorded
+                   only through the check in FR-44.
+
+
+
+
+                                                                                             Page 15 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     ID            Requirement
+
+     FR-43         At first sign-in, a guest's progress is copied into the
+                   account if the account has none. If the account
+                   already has progress, the student chooses which
+                   of the two to keep, so Knowledge is never counted
+                   twice. When two copies of the same account differ,
+                   for example after playing on two devices, the
+                   higher attempt count and the earlier clearing time
+                   are kept for each question.
+
+     FR-44         An unlock is recorded only if the Knowledge
+                   balance covers its cost and, for a mission, the
+                   previous mission is completed. The Knowledge
+                   balance therefore never goes below zero. A signed-
+                   in student needs a connection to unlock; a guest
+                   unlocks on the device under the same rule.
+
+
+
+
+  4. Non-Functional Requirements
+
+     ID             Requirement
+
+     NFR-1          Platform: runs in current desktop browsers. Mobile
+                    browser support is a later phase.
+
+     NFR-2          Performance: playable at 30 frames per second or
+                    more on a laptop with integrated graphics
+                    (proposed target). Physics results do not depend
+                    on frame rate.
+
+     NFR-3          Load time: low-poly models and compressed
+                    assets keep the first download small (proposed
+                    limit: 10 MB) so the game loads on slow
+                    connections.
+
+     NFR-4          Physics accuracy: automated tests compare
+                    simulation output with hand-calculated values,
+                    with a relative error below 10⁻⁹. The test cases are
+                    listed in the Physics Model Specification.
+
+
+
+
+                                                                             Page 16 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     ID             Requirement
+
+     NFR-5          Extensibility: components, surfaces, terrains,
+                    missions, questions and power-ups are stored as
+                    data, so new ones can be added without rebuilding
+                    the game.
+
+     NFR-6          Clarity: only a few adjustable variables are shown
+                    at once, and complexity increases gradually across
+                    missions.
+
+     NFR-7          Offline fallback: once loaded, the MVP works
+                    without an internet connection, because all
+                    explanations are pre-written. Signing in, saving to
+                    the account and unlocking while signed in need a
+                    connection; other progress is kept on the device
+                    and sent to the account later (FR-25, FR-44).
+
+     NFR-8          Privacy: the MVP collects only what accounts
+                    need, which is an email address and the student's
+                    progress. Guests provide no personal data. Any
+                    playtest analytics are anonymous and used only
+                    with the school's consent. Accounts for real
+                    students are used only with the school's consent.
+
+
+
+
+  5. Validation
+       Physics: automated tests per NFR-4.
+       Balance: all 27 part combinations are simulated against the mission limits (Component
+       Values sheet). The starting build passes all three missions (FR-37), and every mission
+       has builds that fail for a reason the explanation can name. Values are then tuned in
+       playtesting.
+       Progress data: automated tests check the Knowledge calculation (FR-35), the unlock
+       rule (FR-44) and the merge rules (FR-43) against hand-worked cases.
+       Learning (optional): a short pre/post question set (4–5 questions) and a small trial with
+       a few students, recording first-attempt correctness per concept. First-attempt data
+       alone is weak evidence, since students may learn from the run itself.
+
+
+
+
+                                                                                          Page 17 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  6. Future Work (out of MVP scope)
+       Three default rovers, and rovers designed by students using mass, weight and speed.
+       Brakes become a fourth part slot, so brake force comes from a part.
+       Student-made levels and challenges: terrain, planet and objectives, each with a visible
+       cost or effect, so students see how environments change motion.
+       Modifiers: in-game events (for example cannons, aliens or space weather) that each
+       change one variable, such as mass, force, friction or velocity. Each shows its effect on
+       screen.
+       Momentum and impulse, which are in the Grade 9 Dynamics chapter, introduced
+       through modifiers that change velocity by a force acting over a short time.
+       Weight vs. mass through different gravity, only if it stays simple for Grade 9.
+       More components, terrains and missions.
+       AI helper that rephrases explanations and answers follow-ups using the run's data. It
+       needs a server-side proxy so the API key is not exposed in the browser, and pre-
+       written explanations stay as fallback.
+       Mobile browser version with touch controls.
+       Sharing of student-made levels.
+
+
+  7. Open Items
+
+     Item                                           Status
+
+     Syllabus check                                 Done: checked by a Grade 9 physics teacher.
+                                                    Textbooks use g = 9.8 m/s²
+
+     Component and surface values, motor top        Set in the Component Values sheet;
+     speeds                                         confirmed in playtesting
+
+     Control timings and physics time step          Set in the Physics Model Specification: 1/120
+                                                    s step, throttle build-up 1.0 s, brake build-up
+                                                    0.5 s; confirmed in playtesting
+
+     Mission limits, zone and brake line            Set (3.5); confirmed in playtesting
+
+     Knowledge values, unlock costs and power-      Set (3.8); confirmed in playtesting
+     ups
+
+
+
+
+                                                                                               Page 18 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     Item                                        Status
+
+     Question content: 9 required, 6 power-up    To be written
+     and 6 unlock questions, each with one
+     variant
+
+     Tech stack and hosting                      Database: PostgreSQL on Supabase.
+                                                 Hosting: Nginx on a Linux server. The rest of
+                                                 the stack is provisional: see the Tech Stack
+                                                 document
+
+     Saving method                               Decided: cloud account with a local copy and
+                                                 guest play (FR-24, FR-25, FR-41)
+
+     Account email handling and school consent   To be confirmed with the supervisor before
+                                                 any student pilot
+
+
+
+
+  8. Design Diagrams
+  UML (Unified Modeling Language) is a standard set of diagrams for showing how software
+  is designed before it is built. The two diagrams below answer two questions: what can a
+  student do in the game (use case diagram), and what things does the game contain and
+  how are they connected (class diagram).
+
+
+
+
+                                                                                          Page 19 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  8.1 Use case diagram
+
+
+
+
+  use case diagram · 1 actor, 14 use cases
+
+  The student has thirteen interactions with the game. The four account actions are
+  optional: a guest plays without an account and never needs them (FR-41). Answering any
+  question and unlocking a part or mission always save progress (FR-24). Viewing results
+  saves progress only when the mission has just been completed, which makes it a safe
+  point. A signed-in student's progress is saved to their account (FR-25); a guest's stays on
+  the device.
+
+
+
+                                                                                        Page 20 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  How to read it: the stick figure is the student and the large box is the game. Each oval is
+  one thing the student can do, and a line from the student to an oval means the student
+  can do it. The shaded group holds the optional account actions. A dashed arrow marked
+  «include» means the action it starts from always triggers the action it points to: answering
+  a question always saves progress. A dashed arrow marked «extend» means the action it
+  starts from is added to the action it points to only when its condition holds: progress is
+  saved after viewing results only if the mission was completed.
+
+
+
+
+                                                                                         Page 21 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  8.2 Class diagram
+
+
+
+
+  class diagram · 12 classes
+
+  Shaded classes are stored as data (NFR-5). Classes outlined in blue are saved for each
+  student (FR-24). The maximum brake force is a fixed attribute of the rover model (FR-6).
+  Top speed comes from the motor (FR-28), and each surface has separate rolling-friction
+
+
+
+                                                                                      Page 22 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+  and grip values (FR-9). The Knowledge balance, a question's status and whether it was
+  right the first time are not saved. They are worked out from the saved data whenever they
+  are needed (FR-35).
+
+  How to read it: each box is one kind of thing in the game. The name is at the top. Below it
+  are the pieces of information it holds, or, when followed by brackets such as totalMass(), a
+  calculation it can perform. An arrow joins two boxes, and its label tells you how to read it,
+  for example "Run uses Rover" or "Mission asks Question". A dashed arrow means one box
+  relies on the other to work something out: "Run is calculated by PhysicsModel".
+
+
+     Class                             In plain words
+
+     Rover                             The vehicle the student builds and drives.
+
+     Component                         One part (chassis, wheels or motor) that changes
+                                       the rover's mass, friction, grip, driving force or top
+                                       speed. Some cost Knowledge to unlock.
+
+     Terrain                           The ground the missions are played on.
+
+     Surface                           One type of ground on the terrain, with its own
+                                       rolling friction and grip.
+
+     Mission                           One challenge, with its goal, physics concept,
+                                       starting speed, control rules, pass rule and unlock
+                                       cost.
+
+     MissionProgress                   Whether a student has unlocked a mission and
+                                       whether they have completed it. A completed
+                                       mission is the safe point.
+
+     Run                               One attempt at a mission: the student's
+                                       predictions, any power-ups used, and the
+                                       measured result.
+
+     PhysicsModel                      The part that decides the driving state and
+                                       calculates force, acceleration, speed and distance
+                                       from the formulas.
+
+     PowerUp                           A temporary change to one physics variable (for
+                                       example driving force × 1.2), offered by a mission
+                                       and earned with a correct answer.
+
+
+
+
+                                                                                                Page 23 of 24
+Rovem — Software Requirements Specification
+
+
+
+
+     Class                             In plain words
+
+     Question                          One scenario question (required, power-up or
+                                       unlock) with its answer, explanation, variants and
+                                       Knowledge reward.
+
+     QuestionProgress                  How many times the student has answered a
+                                       question and when they cleared it. Whether it is
+                                       cleared, to review or unanswered, and whether it
+                                       was right first time, are worked out from those two
+                                       facts.
+
+     Player                            The student's account: the sign-in email and the
+                                       parts they have unlocked. There is no saved
+                                       Knowledge total; the balance is worked out from
+                                       their progress when needed.
+
+
+
+
+                                                                                             Page 24 of 24
+

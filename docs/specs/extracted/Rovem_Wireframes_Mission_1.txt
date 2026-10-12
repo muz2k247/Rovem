@@ -1,0 +1,440 @@
+Art direction reference
+Images supplied for mood. Reference only: the game ships original low-poly assets, and none of these nine has a verified licence.
+
+LANDING BACKDROP · OPTIONS FOR SCREEN 1
+
+
+
+
+A · Moon with Earth as a crescent. Used on screen 1A.                                                  B · Milky Way night sky. Used on screen 1B.
+
+
+TERRAIN LOOK
+
+
+
+
+1 · Grey dust, low hills, black sky with Earth.                      2 · Red rock and cracked ground, hazy sky, jagged peaks.            3 · Rocky red-brown ground, bright star, scattered stones.
+
+
+ROVER LOOK
+
+
+
+
+1 · Six wheels, camera mast, solar wing.           2 · Orange body, big treaded wheels, light bar.     3 · Front view, mesh wheels, exposed chassis.     4 · Small body, flat solar deck, six wheels.
+
+
+
+What the look must do for the game                                                                     Proposed terrain theme
+Show the three slots on the model: chassis, wheels, motor.                                             A Mars-analog proving ground on Earth: red ground and sky, with a paved test track. Gravity
+Make the three wheel types look different (smooth, all-terrain, spiked), because wheels are a          stays 9.8 m/s² (SRS 2.2). The Moon and alien looks fit later levels, where a planet's gravity
+physics part.                                                                                          would be a modifier (SRS Section 6).
+Make the surfaces readable from the driving view: dark paved strip, pale sand, pale blue ice.
+ROVEM                                                                                                                             Desktop browser · English
+
+
+
+
+   Build a rover.
+   Predict. Drive. Learn.
+   Grade 9 Kinematics and Dynamics, one rover at a time.
+
+
+   Email
+
+
+
+
+   Password
+
+
+
+
+                Sign in                          Create account
+
+
+   Forgot password?
+
+                                      or
+
+
+
+                               Play as guest
+
+
+   Guests save progress on this device only. An account saves progress to
+   the cloud, so it follows the student to another device.
+
+
+    FR-25 · FR-41
+
+
+
+                                                                            Backdrop option A: Moon and Earth (reference image)
+ROVEM                                                                                                                        Desktop browser · English
+
+
+
+
+   Build a rover.
+   Predict. Drive. Learn.
+   Grade 9 Kinematics and Dynamics, one rover at a time.
+
+
+   Email
+
+
+
+
+   Password
+
+
+
+
+                Sign in                          Create account
+
+
+   Forgot password?
+
+                                      or
+
+
+
+                               Play as guest
+
+
+   Guests save progress on this device only. An account saves progress to
+   the cloud, so it follows the student to another device.
+
+
+    FR-25 · FR-41
+
+
+
+                                                                            Backdrop option B: Milky Way (reference image)
+ROVEM    Mission select                                                                                                                                    Knowledge 0           Guest
+
+
+
+
+ Choose a mission One terrain, three missions. Finish one to open the next.                                                                                        FR-12 · FR-36
+
+
+
+
+     MISSION 1                                                      MISSION 2 · LOCKED                                   MISSION 3 · LOCKED
+
+
+     Motion Trial                                                   Surface Test                                         Stopping Challenge
+
+
+
+                  route preview (placeholder)                                          locked preview                                      locked preview
+
+
+
+
+     Concept: distance, time, speed, acceleration                   Concept: friction: grip and rolling friction         Concept: force, friction and speed combined
+
+     From rest, reach the target within 9 s: take the               Cross the ice strip in time, then coast far enough   Towed at a set speed on asphalt, brake after the line
+     longer route on fast ground, or a shortcut across              into the sand.                                       and stop with the whole rover inside the target zone.
+     slow ground.
+
+
+
+                                                                    Needs Mission 1 completed and 20 Knowledge.          Needs Mission 2 completed and 20 Knowledge.
+
+
+      Available                                 Start                             Unlock · 20 Knowledge                               Unlock · 20 Knowledge
+
+
+
+
+ Knowledge is earned by clearing questions, and spent on missions and rover parts.                                                        Concepts cleared             Account
+ROVEM         Mission 1 · Motion Trial · Build                                                                                                                              Knowledge 0           Guest
+
+
+
+
+Your rover                                       Choose one part per slot                                          FR-1 · FR-36 · FR-37       Part effects                                  FR-2 · FR-3
+
+
+                                                 CHASSIS
+                                                                                                                                                                              Asphalt             Sand
+
+                                                  Light                      Standard                          Heavy                            Mass                           209 kg           209 kg
+                                                  120 kg                     160 kg                            220 kg
+                                                                                                                                                Weight                        2048 N           2048 N
+                                                           Unlock · 15                                                  Unlock · 15
+                                                                             Selected · starting part
+                                                                                                                                                Rolling friction                 41 N            246 N
+   3D rover preview (placeholder)
+                                                 WHEELS                                                                                         Grip limit                    1639 N           1024 N
+
+                                                  Smooth                     All-terrain                       Spiked                           Driving force                 1000 N           1000 N
+                                                  16 kg                      24 kg                             32 kg
+                                                  grip ×0.8 · rolling ×0.6   grip ×1 · rolling ×1              grip ×1.4 · rolling ×1.6         Top speed                      16 m/s           16 m/s
+
+                                                           Unlock · 15                                                  Unlock · 15             Max acceleration           4.59 m/s²         3.61 m/s²
+                                                                             Selected · starting part
+Chassis: Standard
+                                                                                                                                                Max braking                7.37 m/s²         6.08 m/s²
+Wheels: All-terrain                              MOTOR
+Motor: Medium                                                                                                                                 Values update when a part changes. They come from the
+                                                  Small                      Medium                            Large                          same physics model that drives the run. Surfaces shown are
+                                                  15 kg · 700 N              25 kg · 1000 N                    40 kg · 1400 N                 the ones in this mission.
+Mission 1 routes: asphalt 100 m, sand             top speed 18 m/s           top speed 16 m/s                  top speed 14 m/s
+shortcut 85 m
+                                                           Unlock · 15                                                  Unlock · 15
+Time limit 9 s · starts from rest (0 m/s)                                    Selected · starting part
+
+ FR-4
+
+
+
+
+                                                                                                                                                              Continue to questions
+                                                                                                    Opens after Mission 1's
+                                                   Answer an unlock question · +5 Knowledge         required questions are            FR-34
+                                                                                                    answered.                                         3 required questions to answer before the run
+ROVEM    Mission 1 · Motion Trial · Questions                                                                                                                                 Knowledge 0      Guest
+
+
+
+
+                                        REQUIRED QUESTION 1 OF 3 · PREDICTION                                                            FR-17 · FR-18 · FR-19
+
+
+                                        Rover A and Rover B have the same driving force. Rover A has twice
+                                        the mass of Rover B. Ignoring friction, which statement is correct?
+
+                                          A     Rover A accelerates twice as fast as Rover B.
+
+
+                                          B     Rover B accelerates twice as fast as Rover A.
+
+
+                                          C     They accelerate equally, because the force is equal.
+
+
+                                          D     Rover B accelerates four times as fast as Rover A.
+
+
+
+                                        Clear it to earn 10 Knowledge. Sample question for layout; the real questions are still to be written.
+
+
+
+
+                                                                                                                                                       Wrong answer: the explanation shows, Close stays
+                                                                                                                                                 locked for 2 s (FR-21), and the question returns later
+ Reset wireframe
+                                                                                                                                                                                         as a variant.
+ROVEM       Mission 1 · Motion Trial · Predict                                                                                                                        Knowledge 30       Guest
+
+
+
+
+Your build
+                                                 Predict your run                                                                                                              FR-26 · FR-32
+
+
+
+                                                 From rest, reach the target within 9 s. Choose your route while you drive: the longer way on fast ground, or the shortcut
+                                                 across slow ground.
+
+      rover preview (placeholder)
+                                                    TWO ROUTES, DRAWN TO SCALE
+
+
+                                                    START           Longer route · 100 m · fast ground                                                       TARGET
+
+
+                                                    START           Shortcut · 85 m · slow ground                                               TARGET
+
+Chassis: Standard
+                                                    Each route starts with two pickups side by side, Motor boost and Lighter load. Only one can be active.
+Wheels: All-terrain
+Motor: Medium
+Mass: 209 kg                                         How long will your rover take to reach the target?
+
+               Back to build                                Under 8 s
+
+
+                                                            8 s to 9 s
+
+
+                                                            More than 9 s, so it misses the limit
+
+
+
+                                                 This prediction earns no Knowledge. The results screen shows it next to what
+                                                                                                                                                                             Start run
+                                                 happened.
+TIME                                                                      Motor boost active                    SPEED
+                                                                    Driving force 1000 N → 1200 N
+3.2 s                                                                       FR-38 · FR-40                       9.4 m/s
+limit 9 s
+
+
+                                                                                                                                               FR-27
+                                                                      sample values for layout
+
+
+
+
+                                                           3D view: terrain per the art direction board
+
+
+
+
+                                                                                rover
+                                                                          seen from behind
+
+Throttle                                      60%
+
+Brake                                             0%
+
+Levels rise while a key is held and fall when
+released. Steer left and right. Key choice is a                             Target in 57 m
+proposal.
+                                                       |   |    |     |     |      |      |     |   |   |   |
+FR-6 · FR-7                                                                 markers every 5 m                           Wheels slipping: off   FR-9
+TIME
+
+2.1 s
+paused
+
+
+
+
+         PICKUP · MOTOR BOOST · OPTIONAL                      Timer paused                                            FR-33 · FR-38 · FR-40
+
+
+         The driving force on a rover goes up by 20% and its mass stays the
+         same. Ignoring friction, what happens to its acceleration?
+
+           A      It goes up by 20%.
+
+
+           B      It goes down by 20%.
+
+
+           C      It stays the same, because the mass is unchanged.
+
+
+           D      It doubles.
+
+
+
+         If correct: Motor boost for this attempt. Driving force 1000 N            If wrong: no penalty. The explanation shows, then the run
+         → 1200 N. +5 Knowledge the first time.                                    continues.
+
+         Sample question for layout; the real questions are still to be written.
+ROVEM     Mission 1 · Motion Trial · Results                                                                                                                                     Knowledge 30            Guest
+
+
+
+
+    Mission complete: target reached in 8.50 s                                                                                                                       FR-14 · FR-15 · FR-16 · FR-24
+    Limit 9 s. Progress saved: a completed mission is the safe point.
+
+
+
+   Measured results
+                                                                                      Why it happened
+   Distance                                                                 100 m
+                                                                                      You covered 100 m in 8.50 s, inside the 9 s limit. Average speed is the distance divided by
+   Time                                                                     8.50 s    the time.
+
+   Average speed                                                        11.76 m/s
+                                                                                         average speed = distance ÷ time
+   Top speed reached                                            [from the run] m/s       = 100 m ÷ 8.50 s
+                                                                                         = 11.76 m/s
+   Average acceleration                                        [from the run] m/s²
+
+                                                                                      The shortcut is only 85 m, but it crosses slow ground, where the rover's speed rises more
+   Your prediction and what happened                                                  slowly. A shorter route is not always the quicker one.
+
+   Predicted time                                                        8 s to 9 s
+                                                                                      Acceleration is net force divided by mass (a = F ÷ m). With 209 kg, your rover's speed rose
+
+   Actual time                                                              8.50 s    by up to 4.59 m/s every second on fast ground. A heavier rover, or a smaller motor,
+                                                                                      accelerates less and takes longer.
+ Sample run for layout: starting build, longer route.
+
+
+
+
+                                                                                      Pre-written explanation filled in with this run's values. Mission 1 uses distance, time, speed, acceleration and F =
+                                                                                      ma; friction waits for Mission 2.
+
+
+
+
+    Unlock Mission 2 · 20 Knowledge            30 Knowledge now, 10 left after.                                                Retry mission               Change build              Concepts cleared
+ROVEM      Concepts cleared                                                                                                                                Knowledge 20           Guest
+
+
+
+
+By mission
+                              Mission 1 · Motion Trial                                                                                                      FR-20 · FR-21 · FR-22
+
+
+ Mission 1 · 2 cleared
+                                 Required question 1 · force, mass and acceleration                                                                               Cleared · +10
+
+ Mission 2 · locked              Acceleration is net force divided by mass (a = F / m). With the same force, half the mass gives twice the acceleration.
+
+
+
+ Mission 3 · locked
+                                 Required question 2 · [title to be written]                                                                                      Cleared · +10
+
+                                 [Explanation to be written with the question.]
+
+
+
+
+                                 Required question 3 · [title to be written]                                                                                         To review
+
+                                 Answered wrongly. It comes back as a variant: the same concept with a different scenario or numbers.
+
+
+
+
+        Back to missions
+                              Only cleared questions list their explanations. Questions not yet answered stay hidden. Sample state for layout.
+ROVEM   Mission 1 · Motion Trial · Build                                                                                                                Knowledge 30   Guest
+
+
+
+
+                                     UNLOCK QUESTION · MISSION 1 CONCEPT · OPTIONAL                                                     FR-34 · FR-35
+
+
+                                     A 300 kg rover has a net force of 1200 N. A new motor raises the net
+                                     force to 1800 N. The mass does not change. By how much does the
+                                     acceleration increase?
+
+                                       A      By 2 m/s²
+
+
+                                       B      By 6 m/s²
+
+
+                                       C      By 1.5 m/s²
+
+
+                                       D      It stays the same, because the mass is unchanged.
+
+
+
+                                     Worth 5 Knowledge the first time it is cleared. Wrong answers cost nothing; the question comes
+                                                                                                                                      Back to build
+                                     back as a variant.
+
+                                     Sample question for layout; the real questions are still to be written.
+

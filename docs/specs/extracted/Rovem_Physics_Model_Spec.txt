@@ -1,0 +1,292 @@
+Rovem — Physics Model Specification
+
+
+
+
+  Rovem — Physics Model Specification
+    Oct 12, 2026        · ​@k._muz
+
+  Companion to the Software Requirements Specification, Draft 0.5. It defines the formulas,
+  time step, control timings, measurement rules and automated tests. One model drives
+  both the Build screen preview and the run (FR-3). A reference implementation of this
+  specification reproduces all 135 values in the Simulation sheet of the Component Values
+  sheet exactly, to the sheet's 3 decimal places.
+
+
+  Constants and units
+  All quantities are SI: metres, seconds, kilograms, newtons. Calculations use double-
+  precision numbers and no random values (FR-29).
+
+
+     Constant                         Value     Source
+
+     Gravity g                        9.8       SRS 2.2 and FR-29. Question text uses 10 m/s²
+                                      m/s²      (FR-19)
+
+     Time step Δt                     1/120 s   Component Values sheet, Simulation
+
+     Throttle build-up T_t            1.0 s     Component Values sheet, Inputs
+
+     Brake build-up T_b               0.5 s     Component Values sheet, Inputs
+
+     Maximum brake force              1500 N    Component Values sheet, Inputs (FR-6: fixed per
+     F_b,max                                    rover model)
+
+     Rover length                     2m        Component Values sheet, Inputs
+
+
+  Part, surface, mission and power-up values come only from the Component Values sheet
+  (NFR-5).
+
+
+  Build quantities
+  Each build is one chassis, one set of wheels and one motor (FR-1). The surface supplies
+  μ_r (rolling friction) and μ_g (grip); the wheels supply the factors k_r and k_g (FR-9).
+
+
+
+
+                                                                                                Page 1 of 6
+Rovem — Physics Model Specification
+
+
+
+
+     mass                             m       = m_chassis + m_wheels + m_motor
+     weight                           R       = m × g
+     rolling friction                 F_r     = μ_r × k_r × R
+     grip limit                       F_lim   = μ_g × k_g × R
+     max acceleration                 a_max   = (min(F_d,max , F_lim) − F_r) ÷ m
+     max braking                      b_max   = (min(F_b,max , F_lim) + F_r) ÷ m
+     top speed                        v_max   = the motor's top speed
+
+
+  The Build screen shows these values for each surface in the mission (FR-2) and computes
+  them with this same code (FR-3).
+
+
+  Controls
+  Throttle level u_t and brake level u_b run from 0 to 1 (FR-6).
+
+       Held: the level rises by Δt ÷ T each step, up to 1. Throttle takes 1.0 s from 0 to 1, brake
+       0.5 s.
+       Released: the level falls at the same rate, down to 0. The sheet's simulations hold the
+       controls throughout, so no mission value depends on the release rate. It is a starting
+       value for playtesting.
+       Both held: the brake applies and the throttle counts as released (FR-6).
+       Level used in a step: the level at the end of that step. From rest, the throttle level in
+       step n is min(1, (n + 1) × Δt ÷ T_t).
+       Locks: in Mission 2 the throttle drops to 0 at the power-cut line and stays locked (FR-
+       39). In Mission 3 the throttle is locked for the whole attempt (FR-30).
+       Steering changes the direction of travel, never the speed, and a stopped rover does
+       not turn (FR-27). Distances are measured along the path driven. Turn rate: TBD, set in
+       playtesting; it does not change any speed, distance or time in this specification.
+
+
+  Driving states and acceleration
+  In each step the rover is in exactly one state (SRS 3.4). Driving force is F_d = min(u_t ×
+  F_d,max, F_lim) and braking force is F_b = min(u_b × F_b,max, F_lim). The wheels slip, and
+  the screen shows it, whenever u_t × F_d,max or u_b × F_b,max exceeds F_lim (FR-9).
+
+
+
+
+                                                                                                Page 2 of 6
+Rovem — Physics Model Specification
+
+
+
+
+     State                   When                                Acceleration a
+
+     Stopped                 v = 0 and either F_d ≤ F_r or the   0
+                             brake is held
+
+     Driving                 Throttle applied, v below v_max     (F_d − F_r) ÷ m
+
+     At top                  v = v_max and F_d ≥ F_r             0: the motor only balances friction (FR-
+     speed                                                       28)
+
+     Cruising                Mission 3, before the tow is        0: the tow line balances friction and
+                             released                            holds the set speed
+
+     Coasting                No throttle and no brake while      −F_r ÷ m
+                             moving
+
+     Braking                 Brake applied while moving          −(F_b + F_r) ÷ m, until v = 0
+
+
+  Braking and friction never push the rover backward: speed stops at 0 (FR-8).
+
+
+  The fixed time step, in order
+  The simulation advances in steps of Δt = 1/120 s, independent of the frame rate (FR-29).
+  Within a step every force is constant, so speed and distance follow the equations of
+  motion exactly (FR-10). Each step does the following, in this order:
+
+   1. Read the controls and update u_t and u_b (Controls).
+   2. Work out F_d, F_b and F_r from the current mass and surface.
+   3. Choose the state and its acceleration a (Driving states). If v = v_max and a > 0, set a =
+      0.
+   4. Move for one step with that constant a:
+             Speed: v' = v + aΔt. Distance: d = vΔt + ½aΔt².
+             If v' would pass v_max, the rover reaches v_max at t₁ = (v_max − v) ÷ a and holds it
+             for the rest of the step: d = vt₁ + ½at₁² + v_max(Δt − t₁).
+             If v' would fall below 0, the rover stops at t₁ = −v ÷ a and stays stopped: d = vt₁ +
+             ½at₁².
+   5. Add d to the distance along the path and advance the clock by Δt.
+   6. Check the mission's lines and limits (Mission measurement).
+
+
+
+
+                                                                                                         Page 3 of 6
+Rovem — Physics Model Specification
+
+
+
+
+  While a power-up question is shown, no steps run and the mission timer stops (FR-33, FR-
+  40).
+
+
+  Mission measurement and pass rules
+  Position x is the front of the rover, measured along the path from the start line. A line is
+  reached at the end of the first step in which x reaches it, so times are multiples of Δt.
+
+
+     Mission                    Start                     Measured                   Passed when
+
+     1. Motion Trial            From rest. Routes: 100    Time to the target line    Time ≤ 9 s
+                                m on asphalt, or an 85
+                                m shortcut on sand
+
+     2. Surface                 From rest on a 25 m       Ice time: time to the      Ice time ≤ 8 s and
+     Test                       ice strip, then sand      power-cut line at the      coasting distance ≥
+                                                          end of the ice. Coasting   17.5 m
+                                                          distance: from x at the
+                                                          end of that step until
+                                                          the rover stops
+
+     3. Stopping                On asphalt, towed at      The first brake input      The whole rover is
+     Challenge                  15 m/s. The brake line    after the brake line       inside the zone when
+                                is 23 m before the        releases the tow and       stopped: zone start +
+                                zone end; the zone is 6   starts the brake build-    2 m ≤ x ≤ zone end
+                                m long                    up. Stopping distance
+                                                          runs from x at that
+                                                          input. Brake inputs
+                                                          before the line have no
+                                                          effect
+
+
+  In Mission 3, releasing the brake after the tow is released lets the rover coast (FR-30). The
+  tow speed of 15 m/s is above the Large motor's 14 m/s top speed, which is why the tow and
+  not the motor holds the set speed.
+
+
+  Power-ups
+  A power-up multiplies one variable from the step after its question closes, for the rest of
+  the attempt (FR-38). Only one is active; taking another replaces it (FR-40).
+
+
+
+
+                                                                                                           Page 4 of 6
+Rovem — Physics Model Specification
+
+
+
+
+     Power-up                  Mission     Variable           Multiplier   Pickup position
+
+     Motor boost               1           F_d,max            × 1.2        Near the start of each route,
+                                                                           beside Lighter load
+
+     Lighter load              1           m (so R, F_r and   × 0.9        Near the start of each route,
+                                           F_lim scale too)                beside Motor boost
+
+     Grip tyres                2           k_g                × 1.3        Start of the ice strip
+
+     Smooth                    2           k_r                × 0.7        End of the ice strip
+     bearings
+
+     Brake boost               3           F_b,max            × 1.2        One of two lanes before the
+                                                                           brake line
+
+     Grip tyres                3           k_g                × 1.3        The other lane before the
+                                                                           brake line
+
+
+  Motor boost raises F_d,max, but the driving force can never exceed F_lim. On sand it is
+  capped by grip in 16 of the 27 builds, so part of the extra force is lost to wheel slip.
+
+  Checked against all 27 builds with this model:
+
+       Mission 1: Taken at the start of the route, a power-up lets 5 of the 7 failing builds pass.
+       Mission 2: Grip tyres let all 18 failing builds pass, and Smooth bearings let the 9 spiked-
+       wheel builds pass.
+       Mission 3: Brake boost lets all 4 failing builds pass. Grip tyres let none of them pass,
+       because all 4 are limited by brake force, not grip.
+
+
+  Automated tests
+  Tests T1 to T9 compare the code with hand calculations at a relative error below 10⁻⁹ (NFR-
+  4). T1 to T6 use the starting build: Standard chassis, All-terrain wheels, Medium motor.
+
+
+     Test                                Setup                         Expected
+
+     T1 Build quantities                 Starting build                m = 209 kg, R = 2048.2 N.
+                                                                       Asphalt: F_r = 40.964 N, F_lim =
+                                                                       1638.56 N. Sand: 245.784 N,
+                                                                       1024.1 N. Ice: 20.482 N, 204.82 N
+
+
+
+
+                                                                                                       Page 5 of 6
+Rovem — Physics Model Specification
+
+
+
+
+     Test                             Setup                               Expected
+
+     T2 Max acceleration              Starting build                      Asphalt 4.588688995 m/s², sand
+                                                                          3.608688995 m/s², ice 0.882 m/s²
+                                                                          (grip-limited)
+
+     T3 Max braking                   Starting build                      Asphalt 7.373033493 m/s², sand
+                                                                          6.076 m/s², ice 1.078 m/s²
+
+     T4 Moving off                    Rest on asphalt, throttle held      Stopped in steps 0 to 3; moves
+                                                                          first in step 4, where F_d =
+                                                                          41.667 N exceeds F_r = 40.964 N
+                                                                          (FR-8)
+
+     T5 Exact steps                   From rest at a = 4.588688995        v = 4.588688995 m/s and x =
+                                      m/s² for 120 steps                  2.294344498 m, equal to at and
+                                                                          ½at²
+
+     T6 Coasting                      Sand, from 5 m/s, no controls       Stops after 10.629251701 m (v² ÷
+                                                                          2a, with a = 1.176 m/s²)
+
+     T7 Top speed                     At 16 m/s, throttle held            Speed stays 16 m/s; a = 0 (FR-
+                                                                          28)
+
+     T8 Brake beats                   Both held while moving              Brake level rises, throttle level
+     throttle                                                             falls (FR-6)
+
+     T9 Frame-rate                    Same input record at 30 and 144     Identical position, speed and
+     independence                     frames per second                   time after every step (FR-29)
+
+     T10 Sheet regression             All 27 builds, all three missions   All 135 Simulation sheet values,
+                                                                          to 0.001 s or 0.001 m. Starting
+                                                                          build: 8.500 s, 8.150 s, 7.642 s,
+                                                                          18.770 m, 18.767 m
+
+
+
+
+                                                                                                           Page 6 of 6
+
