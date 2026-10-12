@@ -10,7 +10,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 
 | # | Milestone | Status | Needs |
 |---|---|---|---|
-| M1 | Repository and checks | ⬜ | — |
+| M1 | Repository and checks | 🟨 | — |
 | M2 | Physics core and content data | ⬜ | M1 |
 | M3 | Build screen | ⬜ | M2 |
 | M4 | Driving scene | ⬜ | M2 |

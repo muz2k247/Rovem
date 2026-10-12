@@ -120,14 +120,14 @@ Create a folder only when a milestone needs it.
 
 ## Commands
 
-Not yet created: they are added in M1. Update this list whenever a script changes.
+Update this list whenever a script changes. `balance` is added in M2.
 
 ```
 npm run dev         # local dev server
 npm run test        # unit tests (Vitest)
 npm run typecheck   # tsc --noEmit
-npm run balance     # simulate all 27 builds against the mission limits
-npm run build       # production build into dist/
+npm run build       # typecheck, then production build into dist/
+npm run balance     # (M2, not yet created) simulate all 27 builds against the mission limits
 ```
 
 ## Claude Code helpers (`.claude/`)

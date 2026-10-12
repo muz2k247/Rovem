@@ -42,15 +42,15 @@ Original low-poly models built in code: a Mars-like proving ground with a paved 
 
 ## Getting started
 
-Requires Node.js (LTS) and npm. The project scaffold is created in milestone M1. Until then this repository holds only documentation.
+Requires Node.js 24 (LTS, see `.nvmrc`) and npm.
 
 ```bash
 npm install
 npm run dev        # local dev server
 npm run test       # unit tests
 npm run typecheck  # type check
-npm run balance    # simulate all 27 builds against the mission limits
-npm run build      # production build into dist/
+npm run build      # type check, then production build into dist/
+npm run balance    # added in M2: simulate all 27 builds against the mission limits
 ```
 
 Accounts (milestone M12) need a `.env` file; copy `.env.example`. Only the Supabase URL and public anon key go in it. The service-role key never goes in the browser build.
@@ -71,7 +71,7 @@ tests/       shared test fixtures
 scripts/     balance report
 ```
 
-`src/`, `tests/` and `scripts/` are created as the milestones need them.
+`src/ui/` and `src/render/` exist (M1). The other folders are created as the milestones need them.
 
 ## Documentation
 
