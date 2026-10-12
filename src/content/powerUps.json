@@ -1,0 +1,8 @@
+[
+  { "id": "motor-boost", "missionId": 1, "name": "Motor boost", "variable": "driveForceMaxN", "multiplier": 1.2 },
+  { "id": "lighter-load", "missionId": 1, "name": "Lighter load", "variable": "massKg", "multiplier": 0.9 },
+  { "id": "grip-tyres-2", "missionId": 2, "name": "Grip tyres", "variable": "gripFactor", "multiplier": 1.3 },
+  { "id": "smooth-bearings", "missionId": 2, "name": "Smooth bearings", "variable": "rollingFactor", "multiplier": 0.7 },
+  { "id": "brake-boost", "missionId": 3, "name": "Brake boost", "variable": "brakeForceMaxN", "multiplier": 1.2 },
+  { "id": "grip-tyres-3", "missionId": 3, "name": "Grip tyres", "variable": "gripFactor", "multiplier": 1.3 }
+]

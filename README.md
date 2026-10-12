@@ -50,7 +50,7 @@ npm run dev        # local dev server
 npm run test       # unit tests
 npm run typecheck  # type check
 npm run build      # type check, then production build into dist/
-npm run balance    # added in M2: simulate all 27 builds against the mission limits
+npm run balance    # simulate all 27 builds against the mission limits (needs Node 24)
 ```
 
 Accounts (milestone M12) need a `.env` file; copy `.env.example`. Only the Supabase URL and public anon key go in it. The service-role key never goes in the browser build.
@@ -67,11 +67,11 @@ src/
   render/    three.js scene
   ui/        React screens and dialogs
   save/      progress storage
-tests/       shared test fixtures
+tests/       shared test fixtures and the sheet regression test (T10)
 scripts/     balance report
 ```
 
-`src/ui/` and `src/render/` exist (M1). The other folders are created as the milestones need them.
+`src/ui/` and `src/render/` exist (M1); `src/physics/`, `src/content/` and `src/game/` (M2). The other folders are created as the milestones need them.
 
 ## Documentation
 

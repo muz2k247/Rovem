@@ -1,0 +1,5 @@
+[
+  { "id": "asphalt", "name": "Asphalt", "rollingFriction": 0.02, "grip": 0.8 },
+  { "id": "sand", "name": "Sand", "rollingFriction": 0.12, "grip": 0.5 },
+  { "id": "ice", "name": "Ice", "rollingFriction": 0.01, "grip": 0.1 }
+]

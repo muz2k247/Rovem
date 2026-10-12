@@ -1,0 +1,5 @@
+{
+  "mission1": { "asphaltRouteLengthM": 100, "sandRouteLengthM": 85, "timeLimitS": 9 },
+  "mission2": { "iceLengthM": 25, "iceTimeLimitS": 8, "coastTargetM": 17.5 },
+  "mission3": { "approachSpeedMps": 15, "zoneLengthM": 6, "brakeLineBeforeZoneEndM": 23 }
+}

@@ -11,7 +11,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 | # | Milestone | Status | Needs |
 |---|---|---|---|
 | M1 | Repository and checks | ✅ | — |
-| M2 | Physics core and content data | ⬜ | M1 |
+| M2 | Physics core and content data | ✅ | M1 |
 | M3 | Build screen | ⬜ | M2 |
 | M4 | Driving scene | ⬜ | M2 |
 | M5 | Mission 1 rules and power-ups | ⬜ | M4 |
@@ -165,7 +165,9 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 
 Conflicts and gaps between sources. Never resolve one silently: add it here and ask k._muz.
 
-None open.
+| # | Issue | Raised |
+|---|---|---|
+| OI-9 | **Mission 3 "pass" in the balance report.** The Physics Model Specification says pass = whole rover inside the zone when stopped (19–23 m past the brake line). The Pass check sheet marks builds that stop in under 19 m as passing, so it must mean "can pass": the earliest stop is at most 23 m, and the player brakes later to land inside. `balance.ts` uses that reading and reproduces 23 of 27. Real attempts (M11) are judged by `classifyStop`. Please confirm, and say if the spec text should be changed. | 2026-10-13 |
 
 Spec edits E4–E7 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 
@@ -176,3 +178,4 @@ Record a short clip or screenshot at the end of each milestone, for M14.
 | Milestone | Capture | Date |
 |---|---|---|
 | M1 | [Spinning-cube placeholder screen](captures/m1-placeholder.png) | 2026-10-13 |
+| M2 | `npm run balance` output (27-build table and counts), saved as `docs/captures/m2-balance.txt` | 2026-10-13 |

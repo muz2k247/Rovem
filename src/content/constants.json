@@ -1,0 +1,9 @@
+{
+  "gravityMps2": 9.8,
+  "stepsPerSecond": 120,
+  "throttleBuildUpS": 1.0,
+  "brakeBuildUpS": 0.5,
+  "maxBrakeForceN": 1500,
+  "roverLengthM": 2,
+  "turnRateDegPerS": 60
+}

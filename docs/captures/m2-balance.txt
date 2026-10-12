@@ -1,0 +1,41 @@
+
+> rovem@0.0.0 balance
+> node scripts/balance.ts
+
+Build                                                  M1 asph M1 sand M1      M2 ice M2 coast M2     M3 stop M3
+Light chassis + Smooth wheels + Small motor              8.050   8.017 Pass     8.392   25.704 FAIL    19.842 Pass
+Light chassis + Smooth wheels + Medium motor             8.058   8.175 Pass     8.375   25.743 FAIL    19.993 Pass
+Light chassis + Smooth wheels + Large motor              8.675   8.542 Pass     8.358   25.732 FAIL    20.217 Pass
+Light chassis + All-terrain wheels + Small motor         8.208   8.142 Pass     7.650   18.762 Pass    16.919 Pass
+Light chassis + All-terrain wheels + Medium motor        8.150   7.967 Pass     7.617   18.752 Pass    17.102 Pass
+Light chassis + All-terrain wheels + Large motor         8.575   8.350 Pass     7.600   18.770 Pass    17.376 Pass
+Light chassis + Spiked wheels + Small motor              8.408   9.342 Pass     6.600   16.183 FAIL    15.563 Pass
+Light chassis + Spiked wheels + Medium motor             8.267   8.100 Pass     6.550   16.168 FAIL    16.260 Pass
+Light chassis + Spiked wheels + Large motor              8.650   8.067 Pass     6.517   16.154 FAIL    17.299 Pass
+Standard chassis + Smooth wheels + Small motor           8.600   8.358 Pass     8.417   25.709 FAIL    20.441 Pass
+Standard chassis + Smooth wheels + Medium motor          8.400   8.267 Pass     8.392   25.743 FAIL    20.591 Pass
+Standard chassis + Smooth wheels + Large motor           8.758   8.600 Pass     8.367   25.709 FAIL    20.814 Pass
+Standard chassis + All-terrain wheels + Small motor      8.783   9.233 Pass     7.683   18.775 Pass    18.057 Pass
+Standard chassis + All-terrain wheels + Medium motor     8.500   8.150 Pass     7.642   18.770 Pass    18.767 Pass
+Standard chassis + All-terrain wheels + Large motor      8.800   8.433 Pass     7.617   18.777 Pass    19.829 Pass
+Standard chassis + Spiked wheels + Small motor           9.033  11.425 FAIL     6.642   16.173 FAIL    18.331 Pass
+Standard chassis + Spiked wheels + Medium motor          8.633   8.950 Pass     6.583   16.182 FAIL    19.015 Pass
+Standard chassis + Spiked wheels + Large motor           8.875   8.408 Pass     6.542   16.169 FAIL    20.036 Pass
+Heavy chassis + Smooth wheels + Small motor              9.442   9.667 FAIL     8.450   25.692 FAIL    22.012 Pass
+Heavy chassis + Smooth wheels + Medium motor             8.908   8.458 Pass     8.417   25.740 FAIL    22.733 Pass
+Heavy chassis + Smooth wheels + Large motor              9.050   8.700 Pass     8.383   25.701 FAIL    23.811 FAIL
+Heavy chassis + All-terrain wheels + Small motor         9.675  11.267 FAIL     7.725   18.752 Pass    22.290 Pass
+Heavy chassis + All-terrain wheels + Medium motor        9.042   9.117 FAIL     7.675   18.775 Pass    22.988 Pass
+Heavy chassis + All-terrain wheels + Large motor         9.125   8.558 Pass     7.642   18.786 Pass    24.033 FAIL
+Heavy chassis + Spiked wheels + Small motor             10.008  16.017 FAIL     6.708   16.178 FAIL    22.391 Pass
+Heavy chassis + Spiked wheels + Medium motor             9.217  10.700 FAIL     6.625   16.161 FAIL    23.058 FAIL
+Heavy chassis + Spiked wheels + Large motor              9.225   9.167 FAIL     6.575   16.172 FAIL    24.053 FAIL
+
+Mission 1 passes:   20 of 27   (sheet: 20)
+Mission 2 passes:   9 of 27   (sheet: 9)
+Mission 3 passes:   23 of 27   (sheet: 23)
+Faster on shortcut: 17 of 27   (sheet: 17)
+
+Mission 1: a power-up rescues 5 of 7 failing builds   (spec: 5 of 7)
+Mission 2: Grip tyres rescue 18 of 18; Smooth bearings rescue 9   (spec: 18 of 18; 9)
+Mission 3: Brake boost rescues 4 of 4; Grip tyres rescue 0   (spec: 4 of 4; 0)

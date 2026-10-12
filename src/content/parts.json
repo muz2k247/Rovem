@@ -1,0 +1,11 @@
+[
+  { "id": "chassis-light", "slot": "chassis", "name": "Light chassis", "massKg": 120, "startsUnlocked": false, "unlockCost": 15 },
+  { "id": "chassis-standard", "slot": "chassis", "name": "Standard chassis", "massKg": 160, "startsUnlocked": true, "unlockCost": 0 },
+  { "id": "chassis-heavy", "slot": "chassis", "name": "Heavy chassis", "massKg": 220, "startsUnlocked": false, "unlockCost": 15 },
+  { "id": "wheels-smooth", "slot": "wheels", "name": "Smooth wheels", "massKg": 16, "rollingFactor": 0.6, "gripFactor": 0.8, "startsUnlocked": false, "unlockCost": 15 },
+  { "id": "wheels-all-terrain", "slot": "wheels", "name": "All-terrain wheels", "massKg": 24, "rollingFactor": 1, "gripFactor": 1, "startsUnlocked": true, "unlockCost": 0 },
+  { "id": "wheels-spiked", "slot": "wheels", "name": "Spiked wheels", "massKg": 32, "rollingFactor": 1.6, "gripFactor": 1.4, "startsUnlocked": false, "unlockCost": 15 },
+  { "id": "motor-small", "slot": "motor", "name": "Small motor", "massKg": 15, "driveForceMaxN": 700, "topSpeedMps": 18, "startsUnlocked": false, "unlockCost": 15 },
+  { "id": "motor-medium", "slot": "motor", "name": "Medium motor", "massKg": 25, "driveForceMaxN": 1000, "topSpeedMps": 16, "startsUnlocked": true, "unlockCost": 0 },
+  { "id": "motor-large", "slot": "motor", "name": "Large motor", "massKg": 40, "driveForceMaxN": 1400, "topSpeedMps": 14, "startsUnlocked": false, "unlockCost": 15 }
+]

@@ -1,0 +1,272 @@
+[
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 8.05,
+    "mission1SandS": 8.017,
+    "mission2IceS": 8.392,
+    "mission2CoastM": 25.704,
+    "mission3StopM": 19.842
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.058,
+    "mission1SandS": 8.175,
+    "mission2IceS": 8.375,
+    "mission2CoastM": 25.743,
+    "mission3StopM": 19.993
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 8.675,
+    "mission1SandS": 8.542,
+    "mission2IceS": 8.358,
+    "mission2CoastM": 25.732,
+    "mission3StopM": 20.217
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 8.208,
+    "mission1SandS": 8.142,
+    "mission2IceS": 7.65,
+    "mission2CoastM": 18.762,
+    "mission3StopM": 16.919
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.15,
+    "mission1SandS": 7.967,
+    "mission2IceS": 7.617,
+    "mission2CoastM": 18.752,
+    "mission3StopM": 17.102
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 8.575,
+    "mission1SandS": 8.35,
+    "mission2IceS": 7.6,
+    "mission2CoastM": 18.77,
+    "mission3StopM": 17.376
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 8.408,
+    "mission1SandS": 9.342,
+    "mission2IceS": 6.6,
+    "mission2CoastM": 16.183,
+    "mission3StopM": 15.563
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.267,
+    "mission1SandS": 8.1,
+    "mission2IceS": 6.55,
+    "mission2CoastM": 16.168,
+    "mission3StopM": 16.26
+  },
+  {
+    "chassisId": "chassis-light",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 8.65,
+    "mission1SandS": 8.067,
+    "mission2IceS": 6.517,
+    "mission2CoastM": 16.154,
+    "mission3StopM": 17.299
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 8.6,
+    "mission1SandS": 8.358,
+    "mission2IceS": 8.417,
+    "mission2CoastM": 25.709,
+    "mission3StopM": 20.441
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.4,
+    "mission1SandS": 8.267,
+    "mission2IceS": 8.392,
+    "mission2CoastM": 25.743,
+    "mission3StopM": 20.591
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 8.758,
+    "mission1SandS": 8.6,
+    "mission2IceS": 8.367,
+    "mission2CoastM": 25.709,
+    "mission3StopM": 20.814
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 8.783,
+    "mission1SandS": 9.233,
+    "mission2IceS": 7.683,
+    "mission2CoastM": 18.775,
+    "mission3StopM": 18.057
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.5,
+    "mission1SandS": 8.15,
+    "mission2IceS": 7.642,
+    "mission2CoastM": 18.77,
+    "mission3StopM": 18.767
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 8.8,
+    "mission1SandS": 8.433,
+    "mission2IceS": 7.617,
+    "mission2CoastM": 18.777,
+    "mission3StopM": 19.829
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 9.033,
+    "mission1SandS": 11.425,
+    "mission2IceS": 6.642,
+    "mission2CoastM": 16.173,
+    "mission3StopM": 18.331
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.633,
+    "mission1SandS": 8.95,
+    "mission2IceS": 6.583,
+    "mission2CoastM": 16.182,
+    "mission3StopM": 19.015
+  },
+  {
+    "chassisId": "chassis-standard",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 8.875,
+    "mission1SandS": 8.408,
+    "mission2IceS": 6.542,
+    "mission2CoastM": 16.169,
+    "mission3StopM": 20.036
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 9.442,
+    "mission1SandS": 9.667,
+    "mission2IceS": 8.45,
+    "mission2CoastM": 25.692,
+    "mission3StopM": 22.012
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 8.908,
+    "mission1SandS": 8.458,
+    "mission2IceS": 8.417,
+    "mission2CoastM": 25.74,
+    "mission3StopM": 22.733
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-smooth",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 9.05,
+    "mission1SandS": 8.7,
+    "mission2IceS": 8.383,
+    "mission2CoastM": 25.701,
+    "mission3StopM": 23.811
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 9.675,
+    "mission1SandS": 11.267,
+    "mission2IceS": 7.725,
+    "mission2CoastM": 18.752,
+    "mission3StopM": 22.29
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 9.042,
+    "mission1SandS": 9.117,
+    "mission2IceS": 7.675,
+    "mission2CoastM": 18.775,
+    "mission3StopM": 22.988
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-all-terrain",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 9.125,
+    "mission1SandS": 8.558,
+    "mission2IceS": 7.642,
+    "mission2CoastM": 18.786,
+    "mission3StopM": 24.033
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-small",
+    "mission1AsphaltS": 10.008,
+    "mission1SandS": 16.017,
+    "mission2IceS": 6.708,
+    "mission2CoastM": 16.178,
+    "mission3StopM": 22.391
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-medium",
+    "mission1AsphaltS": 9.217,
+    "mission1SandS": 10.7,
+    "mission2IceS": 6.625,
+    "mission2CoastM": 16.161,
+    "mission3StopM": 23.058
+  },
+  {
+    "chassisId": "chassis-heavy",
+    "wheelsId": "wheels-spiked",
+    "motorId": "motor-large",
+    "mission1AsphaltS": 9.225,
+    "mission1SandS": 9.167,
+    "mission2IceS": 6.575,
+    "mission2CoastM": 16.172,
+    "mission3StopM": 24.053
+  }
+]
