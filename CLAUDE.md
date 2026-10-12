@@ -95,11 +95,15 @@ save/                                 local copy of progress; Supabase sync (lat
 
 ```
 .claude/              Claude Code config: settings.json, agents/, skills/
+.github/workflows/    CI: typecheck and test on every push
+.nvmrc                Node major version (24)
+package.json, package-lock.json, tsconfig.json, vite.config.ts, index.html
 docs/
   ROADMAP.md          milestones, status, open issues
   DECISIONS.md        dated log of decisions confirmed by k._muz
   PENDING_SPEC_EDITS.md  exact text changes waiting to be made in the PDFs/sheet
   ASSETS.md           licence record for every outside asset
+  captures/           demo screenshots and clips, one per milestone
   specs/              source documents; extracted/ holds plain-text copies
 src/
   physics/            build quantities, controls, states, step(); tests beside each file

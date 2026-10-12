@@ -10,7 +10,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 
 | # | Milestone | Status | Needs |
 |---|---|---|---|
-| M1 | Repository and checks | 🟨 | — |
+| M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ⬜ | M1 |
 | M3 | Build screen | ⬜ | M2 |
 | M4 | Driving scene | ⬜ | M2 |
@@ -175,3 +175,4 @@ Record a short clip or screenshot at the end of each milestone, for M14.
 
 | Milestone | Capture | Date |
 |---|---|---|
+| M1 | [Spinning-cube placeholder screen](captures/m1-placeholder.png) | 2026-10-13 |
