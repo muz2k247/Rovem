@@ -17,12 +17,13 @@ Check:
 - Step order 1–6 as in the spec. The control level used in a step is the level at the end of that step.
 - Step splitting when v reaches v_max or 0 inside a step. Speed never goes negative.
 - State selection for Stopped, Driving, At top speed, Cruising, Coasting and Braking. If v = v_max and a > 0, a = 0.
+- State is chosen from levels (u_b > 0 → Braking, else u_t > 0 → Driving); Mission 2 power cut sets u_t = 0 instantly.
 - Brake beats throttle. Mission locks (Mission 2 power cut, Mission 3 throttle lock, braking before the Mission 3 line has no effect).
 - Lines are reached at the end of the step, so times are multiples of 1/120 s.
 - Power-ups multiply only their one variable, from the step after the question closes. Lighter load scales m, so R, F_r and F_lim scale too.
 - No `Math.random`, `Date.now`, `performance.now` or frame time inside `src/physics/`. No imports from React, three.js or other app layers.
 - No game value hard-coded in logic; all come from `src/content/`.
-- Tests T1–T10 exist, use relative error below 1e-9 (T10: 0.001 s or 0.001 m), and pass. Run `npm run test` and `npm run balance` if those scripts exist.
+- Tests T1–T10 exist, use relative error below 1e-9 (T10: 0.0005), and pass. Run `npm run test` and `npm run balance` if those scripts exist.
 
 Hand-check at least two results yourself (for example T2 and T6) with the formulas, showing your working.
 

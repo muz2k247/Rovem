@@ -35,6 +35,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Vite + React + TypeScript (strict) + three.js + Vitest. Folder layout from `CLAUDE.md`.
 - Scripts: `dev`, `build`, `test`, `typecheck`.
 - GitHub Actions workflow that runs `typecheck` and `test` on every push.
+- Remote: private repository https://github.com/muz2k247/Rovem.git, already created and linked as `origin` (DECISIONS OI-4). No `gh repo create` needed; push to `origin main`.
 - One placeholder screen showing a three.js canvas; one passing test.
 - Use current stable versions of each package and commit `package-lock.json`. Add a `.nvmrc` with the Node LTS major version.
 
@@ -47,6 +48,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Mission measurement for all three missions on a straight path, with no screen (Physics Spec, "Mission measurement and pass rules"). The playable versions of Missions 2 and 3 come in M10 and M11.
 - `tests/fixtures/simulation.json`: the 135 values from `docs/specs/extracted/component_values_simulation.csv`.
 - `npm run balance`: simulate all 27 builds on all three missions with full throttle (and, in Mission 3, full brake from the line) and print a pass/fail table.
+- State choice per DECISIONS OI-1; instant power cut per OI-2; T10 tolerance per OI-3.
+- Test: at v = v_max, release throttle: a = (F_d − F_r)/m < 0 while u_t falls; reaches −F_r/m when u_t = 0; no step has a > 0 at v_max.
 
 **Done when:** T1–T10 pass. Starting build: 100 m in 8.500 s, 85 m in 8.150 s, ice 7.642 s, coast 18.770 m, stop 18.767 m. The balance report matches the Pass check sheet: 20 of 27 pass Mission 1, 9 pass Mission 2, 23 pass Mission 3, and 17 are faster on the shortcut.
 
@@ -74,6 +77,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Two routes: 100 m asphalt and 85 m sand ("slow ground"); start from rest; target line; pass when time ≤ 9 s.
 - Motor boost (F_d,max × 1.2) and Lighter load (m × 0.9) side by side near the start of each route. One active at a time. Simulation and timer pause while a pickup question is shown. Effect shown as old → new value.
 - Pickup questions use the wireframe sample questions, marked as placeholders, until Q1 is done.
+- Run end (target or fail after 9 s) and route surfaces from the start line per DECISIONS OI-6.
 
 **Done when:** the starting build passes on both routes when driven cleanly; a test confirms each power-up changes only its own variable; a test confirms Motor boost is capped by grip on sand.
 
@@ -84,6 +88,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Run prediction: under 8 s / 8 s to 9 s / more than 9 s, with the band edges in `CLAUDE.md`. Earns no Knowledge.
 - Results: distance, time, average speed, top speed reached, average acceleration; prediction beside actual; pre-written explanation filled with the run's values, showing the formula. Mission 1 uses distance, time, speed, acceleration and F = ma, and says "slow ground".
 - Retry and Change build.
+- Average acceleration per DECISIONS OI-7.
 
 **Done when:** a full attempt plays end to end; explanation numbers match the run; a test covers each prediction band edge (exactly 8 s and 9 s); Q1 questions from k._muz replace every Mission 1 placeholder.
 
@@ -132,6 +137,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Pass when the whole rover (2 m) is inside the zone when stopped.
 - Brake boost and Grip tyres on two lanes before the brake line.
 - Results show stopping distance.
+- Prediction bands and when a brake input counts per DECISIONS OI-8.
 
 **Done when:** balance matches the Pass check sheet (23 of 27 pass); Brake boost lets all 4 failing builds pass; Grip tyres let none of them pass.
 
@@ -159,9 +165,9 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 
 Conflicts and gaps between sources. Never resolve one silently: add it here and ask k._muz.
 
-None open. Nothing blocks M1.
+None open.
 
-No spec edits are waiting (`docs/PENDING_SPEC_EDITS.md` is empty).
+Spec edits E4–E7 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ## Demo captures
 

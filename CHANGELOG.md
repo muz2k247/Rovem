@@ -6,6 +6,10 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs
+- `docs/ROADMAP.md`: Open issues OI-1 to OI-8 logged after a full read of the specs, and the result of a reference check (the Physics Model Specification reproduces all 135 Simulation sheet values).
+- Resolved open issues OI-1 to OI-8; added pending spec edits E4–E7.
+
 ## [0.0.0] — 2026-10-12
 
 ### Docs

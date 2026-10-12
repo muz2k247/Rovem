@@ -54,7 +54,7 @@ Rules:
 - Build quantities: m = sum of part masses; R = mg; F_r = μ_r·k_r·R; F_lim = μ_g·k_g·R; a_max = (min(F_d,max, F_lim) − F_r)/m; b_max = (min(F_b,max, F_lim) + F_r)/m; v_max from the motor.
 - Controls: throttle level u_t and brake level u_b run from 0 to 1. While a key is held, the level rises by Δt/T each step; on release it falls at the same rate. Each step uses the level at the **end** of that step. Holding both: the brake applies and the throttle counts as released.
 - F_d = min(u_t·F_d,max, F_lim) and F_b = min(u_b·F_b,max, F_lim). The wheels slip, and the screen shows it, when the requested force exceeds F_lim.
-- Driving states: Stopped, Driving, At top speed, Cruising (Mission 3 only), Coasting, Braking. One per step.
+- Driving states: Stopped, Driving, At top speed, Cruising (Mission 3 only), Coasting, Braking. One per step. Chosen from control levels, not keys (DECISIONS OI-1).
 - Step order: (1) update control levels, (2) forces, (3) state and a (if v = v_max and a > 0, set a = 0), (4) move with constant a, splitting the step if v reaches v_max or 0 inside it, (5) add distance and advance the clock, (6) check mission lines.
 - Braking and friction never push the rover backward. Speed stops at 0.
 - Steering changes direction, never speed. A stopped rover does not turn. Distance is measured along the path driven.
@@ -164,7 +164,7 @@ npm run build       # production build into dist/
 
 ## Testing
 
-- **Physics** (NFR-4): T1–T9 against hand calculations with relative error below 1e-9. T10 checks all 135 values in the Simulation sheet (`docs/specs/extracted/component_values_simulation.csv`) to 0.001 s or 0.001 m. Write each test before its code.
+- **Physics** (NFR-4): T1–T9 against hand calculations with relative error below 1e-9. T10 checks all 135 values in the Simulation sheet (`docs/specs/extracted/component_values_simulation.csv`) each within 0.0005 of the sheet's 3-decimal value. Write each test before its code.
 - **Balance**: the counts must match the Pass check sheet: 20/27 builds pass Mission 1, 9/27 Mission 2, 23/27 Mission 3, and 17 builds are faster on the shortcut. A mismatch is an Open issue. Do not tune a value to make it pass.
 - **Game rules**: Knowledge balance, the unlock rule (balance never below zero; previous mission completed), original/variant alternation, and later the merge rules (FR-43), against hand-worked cases.
 - **Questions**: every numerical answer checked by hand with g = 10 m/s².
