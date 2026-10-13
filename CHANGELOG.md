@@ -6,6 +6,14 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs
+- Game design v2 approved and recorded:
+  - `docs/DESIGN.md`, new: the world, missions as jobs with one judged trial, medals, the hub, reverse, rocks, speed feel, steering assist and hooks for future modifiers. Includes the simulation evidence.
+  - `docs/DECISIONS.md`: eight new rows. The Mission 3 tow row and the brake-input part of OI-8 are marked superseded, with their reasoning kept.
+  - `docs/PENDING_SPEC_EDITS.md`: E10–E25.
+  - `docs/ROADMAP.md`: M5 split into M5a (driving upgrades and level format) and M5b (Canyon Dash); M6, M7, M9, M10, M11 and M12 updated; the tow items in M11 marked superseded.
+  - `CLAUDE.md` and `README.md`: updated to match.
+
 ## [0.4.0] — 2026-10-13
 
 ### Added

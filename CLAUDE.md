@@ -7,6 +7,7 @@ Working guide for Claude Code. At the start of every session, read this file, th
 Rovem is a desktop-browser 3D game that teaches Grade 9 Kinematics and Dynamics. A student builds a rover from parts, answers prediction questions, drives a mission, and sees the physics explained using the numbers from their own run.
 
 - Learning loop: Predict → Experiment → Observe → Explain → Retry.
+- Game design v2 (`docs/DESIGN.md`, approved 2026-10-13): each mission is a job in a world (Ares Proving Ground) with one short judged trial, medals and an untimed approach. A free-roam hub sits between missions.
 - Sole developer: k._muz. Explain in plain language, briefly and directly.
 - Neither the developer nor the supervisors read UML. Any diagram you produce needs a short "How to read it" guide.
 
@@ -26,7 +27,7 @@ All source documents are in `docs/specs/`. Plain-text copies are in `docs/specs/
 
 Rules:
 - A higher-priority source wins, but **never resolve a conflict silently**. Log it under "Open issues" in `docs/ROADMAP.md` and ask k._muz.
-- Only these documents and `docs/DECISIONS.md` hold decisions. Earlier chat suggestions are not decisions.
+- Only these documents, `docs/DECISIONS.md` and the approved `docs/DESIGN.md` hold decisions. Where DECISIONS or DESIGN differs from a source document, it governs until the matching `docs/PENDING_SPEC_EDITS.md` edit is made. Earlier chat suggestions are not decisions.
 - In everything you write, keep apart what is **confirmed**, what is **provisional** (set, but to be tuned in playtesting), and what is **future scope**.
 - The PDFs and the spreadsheet cannot be edited from here. When one needs to change, add the exact replacement text, with document and section, to `docs/PENDING_SPEC_EDITS.md` and tell k._muz.
 
@@ -38,6 +39,8 @@ Rules:
 - **To review**: answered wrongly and not yet cleared. Comes back as its variant.
 - **Safe point**: a completed mission. The game resumes from there in the next session.
 - **Starting build**: Standard chassis, All-terrain wheels, Medium motor. Free and able to pass every mission.
+- **Judged trial**: the one timed or measured part of a mission (Mission 1: the Dash). Pass/fail, prediction, medals, balance and the explanation all come from it.
+- **Medal**: bronze (= pass), silver or gold, from the judged result. Only the best medal per mission is saved.
 
 ## Values: never invent
 
@@ -54,7 +57,9 @@ Rules:
 - Build quantities: m = sum of part masses; R = mg; F_r = μ_r·k_r·R; F_lim = μ_g·k_g·R; a_max = (min(F_d,max, F_lim) − F_r)/m; b_max = (min(F_b,max, F_lim) + F_r)/m; v_max from the motor.
 - Controls: throttle level u_t and brake level u_b run from 0 to 1. While a key is held, the level rises by Δt/T each step; on release it falls at the same rate. Each step uses the level at the **end** of that step. Holding both: the brake applies and the throttle counts as released.
 - F_d = min(u_t·F_d,max, F_lim) and F_b = min(u_b·F_b,max, F_lim). The wheels slip, and the screen shows it, when the requested force exceeds F_lim, counting only the force the current state uses (drive in Driving/At top speed, brake in Braking; DECISIONS OI-10).
-- Driving states: Stopped, Driving, At top speed, Cruising (Mission 3 only), Coasting, Braking. One per step. Chosen from control levels, not keys (DECISIONS OI-1).
+- Driving states: Stopped, Driving, At top speed, Cruising (old Mission 3 tow; removed in M11), Coasting, Braking. One per step. Chosen from control levels, not keys (DECISIONS OI-1).
+- Reverse (DECISIONS 2026-10-13): direction forward or reverse; v ≥ 0 stays the speed and the rover moves along heading × direction. In reverse the brake key drives and the throttle key brakes. At the start of a step with v = 0, holding only the current brake key flips the direction, and the levels carry on. Reverse top speed = 0.5 × v_max (content data). Steering is mirrored in reverse. Locks apply in both directions.
+- Rocks (game layer, not `step()`): a step ending with the rover's footprint overlapping a rock is undone, and v = 0; the clock advances. `step()` takes an optional `externalForceN`, default 0, unused in the MVP.
 - Step order: (1) update control levels, (2) forces, (3) state and a (if v = v_max and a > 0, set a = 0), (4) move with constant a, splitting the step if v reaches v_max or 0 inside it, (5) add distance and advance the clock, (6) check mission lines.
 - Braking and friction never push the rover backward. Speed stops at 0.
 - Steering changes direction, never speed. A stopped rover does not turn. Distance is measured along the path driven.
@@ -67,7 +72,8 @@ Rules:
 
 ## Controls and mission rules decided outside the specs
 
-- Keys: both sets work at the same time. Throttle: W or ↑. Brake: S or ↓. Steer: A/D or ←/→. Keys live in one mapping in `src/game/` so they can change in one place.
+- Keys: both sets work at the same time. Throttle: W or ↑. Brake: S or ↓ (keep holding it after stopping to reverse). Steer: A/D or ←/→. Keys live in one mapping in `src/game/` so they can change in one place.
+- Judged trials from rest start on a start grid. The control levels are held at 0 during the 3-2-1 countdown. Mission 1 medals: silver ≤ 8.50 s, gold ≤ 8.10 s (provisional). Mission 3 has a speed trap at the brake line: v ≥ 14 m/s and u_b = 0 (DESIGN §5).
 - Run prediction bands (FR-32, Mission 1), judged on the exact run time: "Under 8 s" means less than 8 s; "8 s to 9 s" includes exactly 8 s and exactly 9 s; "More than 9 s" means above 9 s, which is also a fail. This matches the pass rule (time ≤ 9 s).
 
 ## Tech stack (provisional, per the Tech Stack document)
@@ -101,13 +107,14 @@ package.json, package-lock.json, tsconfig.json, vite.config.ts, index.html
 docs/
   ROADMAP.md          milestones, status, open issues
   DECISIONS.md        dated log of decisions confirmed by k._muz
+  DESIGN.md           approved game design v2: world, missions, medals, hub, controls
   PENDING_SPEC_EDITS.md  exact text changes waiting to be made in the PDFs/sheet
   ASSETS.md           licence record for every outside asset
   captures/           demo screenshots and clips, one per milestone
   specs/              source documents; extracted/ holds plain-text copies
 src/
   physics/            build quantities, controls, states, step(); tests beside each file
-  content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas
+  content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a
   game/               attempt flow, rules, Knowledge, unlocks
   render/             three.js scene, camera, terrain
   ui/                 React screens and dialogs
@@ -169,7 +176,7 @@ npm run balance     # simulate all 27 builds against the mission limits (Node ru
 ## Testing
 
 - **Physics** (NFR-4): T1–T9 against hand calculations with relative error below 1e-9. T10 checks all 135 values in the Simulation sheet (`docs/specs/extracted/component_values_simulation.csv`) each within 0.0005 of the sheet's 3-decimal value. Write each test before its code.
-- **Balance**: the counts must match the Pass check sheet: 20/27 builds pass Mission 1, 9/27 Mission 2, 23/27 Mission 3, and 17 builds are faster on the shortcut. A mismatch is an Open issue. Do not tune a value to make it pass.
+- **Balance**: the counts must match the Pass check sheet: 20/27 builds pass Mission 1, 9/27 Mission 2, 23/27 Mission 3, and 17 builds are faster on the shortcut. From M5b, Mission 1 medals must also match: 20/14/5 can reach bronze/silver/gold. The Mission 3 count of 23/27 is replaced in M11 by targets k._muz sets before M11 (DESIGN §5); until then it stays as the tow-model check. A mismatch is an Open issue. Do not tune a value to make it pass.
 - **Game rules**: Knowledge balance, the unlock rule (balance never below zero; previous mission completed), original/variant alternation, and later the merge rules (FR-43), against hand-worked cases.
 - **Questions**: every numerical answer checked by hand with g = 10 m/s².
 
@@ -200,4 +207,4 @@ Do not edit a file that doesn't need it. A doc that is still accurate stays as i
 
 ## Out of scope for the MVP
 
-Do not build: more rover models, brakes as a part slot, student-made levels, modifiers (cannons, aliens, space weather), momentum and impulse, other planets or gravity, mobile or touch controls, level sharing, AI helper, leaderboards, saving run results.
+Do not build: more rover models, brakes as a part slot, student-made levels, modifiers (cannons, aliens, space weather; levels only reserve empty `hazards` and `modifiers` layers), momentum and impulse (so no collision damage), other planets or gravity, mobile or touch controls, level sharing, AI helper, leaderboards, saving run results (except the best medal per mission).
