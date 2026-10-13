@@ -4,7 +4,7 @@ Exact text changes for the source documents in `docs/specs/`, which can't be edi
 
 Entry format: an ID, the document and section, the exact current text, and the exact replacement text.
 
-E1–E3 were made and exported on 2026-10-12. E4–E7 below block no milestone; `docs/DECISIONS.md` governs until they are made.
+E1–E3 were made and exported on 2026-10-12. E4–E9 below block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ### E4: Physics Model Specification, "Driving states and acceleration" table, column "When"
 Source: DECISIONS OI-1.
@@ -29,3 +29,12 @@ Source: DECISIONS OI-3.
 Source: DECISIONS OI-5.
 - Current row: "Knowledge values, unlock costs and power-ups | Set (3.8); confirmed in playtesting"
 - Replacement: two rows, "Knowledge values and unlock costs | Confirmed (3.8)" and "Power-ups | Set (3.8); confirmed in playtesting"
+
+### E8: Component Values sheet, Pass check sheet, column "M3 passes"
+Source: DECISIONS OI-9 (2026-10-13).
+- Add a note under the table: "M3 passes means the build can pass: stopping distance from the brake line ≤ 23 m, so a student who brakes at the right point after the line stops with the whole rover inside the zone. A single attempt is judged by the Physics Model Specification rule (zone start + 2 m ≤ x ≤ zone end)."
+
+### E9: Physics Model Specification, "Driving states and acceleration", first paragraph
+Source: DECISIONS OI-10 (2026-10-13).
+- Current: "The wheels slip, and the screen shows it, whenever u_t × F_d,max or u_b × F_b,max exceeds F_lim (FR-9)."
+- Replacement: "The wheels slip, and the screen shows it, when the force the current state uses is requested above F_lim: u_t × F_d,max in Driving and At top speed, u_b × F_b,max in Braking (FR-9). A Stopped, Coasting or Cruising rover never shows slip."

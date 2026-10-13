@@ -71,7 +71,7 @@ tests/       shared test fixtures and the sheet regression test (T10)
 scripts/     balance report
 ```
 
-`src/ui/` and `src/render/` exist (M1); `src/physics/`, `src/content/` and `src/game/` (M2). The other folders are created as the milestones need them.
+`src/ui/` and `src/render/` exist (M1; the Build screen is in `src/ui/`, M3); `src/physics/`, `src/content/` and `src/game/` (M2). The other folders are created as the milestones need them.
 
 ## Documentation
 

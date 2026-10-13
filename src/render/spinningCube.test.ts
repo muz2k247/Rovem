@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPlaceholderScene } from './spinningCube';
+import { createPlaceholderScene } from './spinningCube.ts';
 
 describe('placeholder scene', () => {
   it('contains the cube and two lights', () => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { createPlaceholderScene } from './spinningCube';
+import { createPlaceholderScene } from './spinningCube.ts';
 
 /** One React component that owns the three.js renderer. */
 export function SceneCanvas() {

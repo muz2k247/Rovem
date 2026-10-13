@@ -12,8 +12,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 |---|---|---|---|
 | M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ✅ | M1 |
-| M3 | Build screen | ⬜ | M2 |
-| M4 | Driving scene | ⬜ | M2 |
+| M3 | Build screen | ✅ | M2 |
+| M4 | Driving scene | 🟨 | M2 |
 | M5 | Mission 1 rules and power-ups | ⬜ | M4 |
 | M6 | Questions, prediction and results | ⬜ | M3, M5, Q1 |
 | M7 | Guest saving, Knowledge and unlocks | ⬜ | M6 |
@@ -69,7 +69,9 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - HUD: time, speed in m/s, direction arrow, throttle and brake levels, distance to target, wheel-slip indicator.
 - Fixed-step loop separate from the frame rate; input recording for tests.
 
-**Done when:** the same input record gives identical results at 30 and 144 fps (T9); 30+ fps on an integrated-graphics laptop.
+- Fixes from the M2 review (2026-10-13): slip flag per DECISIONS OI-10; while towed (`towed: true`) the brake level stays 0, so a brake held before the Mission 3 line has no effect (OI-8, FR-30).
+
+**Done when:** the same input record gives identical results at 30 and 144 fps (T9); 30+ fps on an integrated-graphics laptop. Measured 2026-10-13 by k._muz: 60.0 fps (the browser's cap) on Intel UHD Graphics, Chrome DevTools FPS meter, test course at top speed.
 
 ### M5 — Mission 1 rules and power-ups
 **Goal:** Mission 1 can be passed or failed. FR-12, FR-33, FR-38, FR-40, SRS 3.5.
@@ -78,6 +80,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Motor boost (F_d,max × 1.2) and Lighter load (m × 0.9) side by side near the start of each route. One active at a time. Simulation and timer pause while a pickup question is shown. Effect shown as old → new value.
 - Pickup questions use the wireframe sample questions, marked as placeholders, until Q1 is done.
 - Run end (target or fail after 9 s) and route surfaces from the start line per DECISIONS OI-6.
+- The three wheel types look different on the model (art direction in `CLAUDE.md`; left out of M4).
 
 **Done when:** the starting build passes on both routes when driven cleanly; a test confirms each power-up changes only its own variable; a test confirms Motor boost is capped by grip on sand.
 
@@ -89,6 +92,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Results: distance, time, average speed, top speed reached, average acceleration; prediction beside actual; pre-written explanation filled with the run's values, showing the formula. Mission 1 uses distance, time, speed, acceleration and F = ma, and says "slow ground".
 - Retry and Change build.
 - Average acceleration per DECISIONS OI-7.
+- Remove the temporary "Test drive" button (M4) once the attempt flow reaches the drive.
 
 **Done when:** a full attempt plays end to end; explanation numbers match the run; a test covers each prediction band edge (exactly 8 s and 9 s); Q1 questions from k._muz replace every Mission 1 placeholder.
 
@@ -138,6 +142,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 - Brake boost and Grip tyres on two lanes before the brake line.
 - Results show stopping distance.
 - Prediction bands and when a brake input counts per DECISIONS OI-8.
+- While towed, the brake level stays 0 (fixed in `step()` during M4), so a brake held before the line does not pre-charge the build-up (test: same 18.767 m stop for the starting build whether or not S was held before the line).
+- Heavy chassis + All-terrain + Medium stops in 22.988 m: 0.012 m of slack, less than one step of travel at 15 m/s (0.125 m). It can pass only if a step starts within 0.012 m after the brake line. Place the line a whole number of metres from the start (15 × 1/120 = 0.125 exactly in floating point, so a step then starts exactly on the line) and keep lane changes before the pickups from shifting it, or accept that this build passes only with Brake boost. Decide in the M11 layout.
 
 **Done when:** balance matches the Pass check sheet (23 of 27 pass); Brake boost lets all 4 failing builds pass; Grip tyres let none of them pass.
 
@@ -165,11 +171,9 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 
 Conflicts and gaps between sources. Never resolve one silently: add it here and ask k._muz.
 
-| # | Issue | Raised |
-|---|---|---|
-| OI-9 | **Mission 3 "pass" in the balance report.** The Physics Model Specification says pass = whole rover inside the zone when stopped (19–23 m past the brake line). The Pass check sheet marks builds that stop in under 19 m as passing, so it must mean "can pass": the earliest stop is at most 23 m, and the player brakes later to land inside. `balance.ts` uses that reading and reproduces 23 of 27. Real attempts (M11) are judged by `classifyStop`. Please confirm, and say if the spec text should be changed. | 2026-10-13 |
+None open.
 
-Spec edits E4–E7 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
+Spec edits E4–E9 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ## Demo captures
 

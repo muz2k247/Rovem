@@ -53,7 +53,7 @@ Rules:
 - g = 9.8 m/s² in the simulation. Numerical questions say "take g = 10 m/s²".
 - Build quantities: m = sum of part masses; R = mg; F_r = μ_r·k_r·R; F_lim = μ_g·k_g·R; a_max = (min(F_d,max, F_lim) − F_r)/m; b_max = (min(F_b,max, F_lim) + F_r)/m; v_max from the motor.
 - Controls: throttle level u_t and brake level u_b run from 0 to 1. While a key is held, the level rises by Δt/T each step; on release it falls at the same rate. Each step uses the level at the **end** of that step. Holding both: the brake applies and the throttle counts as released.
-- F_d = min(u_t·F_d,max, F_lim) and F_b = min(u_b·F_b,max, F_lim). The wheels slip, and the screen shows it, when the requested force exceeds F_lim.
+- F_d = min(u_t·F_d,max, F_lim) and F_b = min(u_b·F_b,max, F_lim). The wheels slip, and the screen shows it, when the requested force exceeds F_lim, counting only the force the current state uses (drive in Driving/At top speed, brake in Braking; DECISIONS OI-10).
 - Driving states: Stopped, Driving, At top speed, Cruising (Mission 3 only), Coasting, Braking. One per step. Chosen from control levels, not keys (DECISIONS OI-1).
 - Step order: (1) update control levels, (2) forces, (3) state and a (if v = v_max and a > 0, set a = 0), (4) move with constant a, splitting the step if v reaches v_max or 0 inside it, (5) add distance and advance the clock, (6) check mission lines.
 - Braking and friction never push the rover backward. Speed stops at 0.
@@ -144,7 +144,7 @@ npm run balance     # simulate all 27 builds against the mission limits (Node ru
 
 ## Conventions
 
-- TypeScript strict mode. No `any`.
+- TypeScript strict mode. No `any`. Relative imports include `.ts`/`.tsx`; JSON imports use `with { type: 'json' }`; erasable syntax only, no `enum` or `namespace` (Node runs `scripts/` directly; DECISIONS 2026-10-13).
 - SI units throughout. Put the unit in physics names: `massKg`, `forceN`, `speedMps`, `distanceM`, `timeS`.
 - Comment each physics function with the textbook formula it implements.
 - Content (values, questions, explanations) is data, validated when it loads (NFR-5).
