@@ -139,6 +139,32 @@ describe('wheel slip flag', () => {
     const asphalt = step(createState({ throttleLevel: 1 }), HOLD, rover(), surface('asphalt'), constants);
     expect(asphalt.slipping).toBe(false);
   });
+
+  // DECISIONS OI-10: only the force the current state uses can make the wheels slip.
+  it('a parked rover with the brake held on sand does not slip', () => {
+    const s = run(createState(), BRAKE, 60, 'sand'); // u_b = 1 requests 1500 N, more than the 1024 N grip
+    expect(s.brakeLevel).toBe(1);
+    expect(s.drivingState).toBe('Stopped');
+    expect(s.slipping).toBe(false);
+  });
+  it('braking hard while moving on sand slips', () => {
+    const s = run(createState({ speedMps: 10 }), BRAKE, 60, 'sand');
+    expect(s.brakeLevel).toBe(1);
+    expect(s.drivingState).toBe('Braking');
+    expect(s.slipping).toBe(true);
+  });
+  it('leftover throttle while Braking with a small brake level does not slip', () => {
+    const both: StepInput = { throttleHeld: true, brakeHeld: true, steer: 0 };
+    for (const surfaceId of ['asphalt', 'ice']) {
+      const s = step(createState({ speedMps: 10, throttleLevel: 1 }), both, rover(), surface(surfaceId), constants);
+      expect(s.drivingState).toBe('Braking');
+      expect(s.slipping).toBe(false); // on ice the leftover 990 N would exceed the 205 N grip, but it is ignored
+    }
+  });
+  it('coasting and cruising never slip', () => {
+    expect(run(createState({ speedMps: 10 }), NONE, 10, 'ice').slipping).toBe(false);
+    expect(run(createState({ speedMps: 15 }), { ...NONE, towed: true }, 10, 'ice').slipping).toBe(false);
+  });
 });
 
 describe('steering', () => {
@@ -183,6 +209,29 @@ describe('tow line', () => {
     const s = run(createState({ speedMps: 15 }), { ...NONE, towed: true }, 50);
     expect(s.speedMps).toBe(15);
     expect(s.drivingState).toBe('Cruising');
+  });
+
+  // DECISIONS OI-8, FR-30: brake input before the tow is released has no effect.
+  const towedBrake: StepInput = { ...BRAKE, throttleLocked: true, towed: true };
+  const releasedBrake: StepInput = { ...BRAKE, throttleLocked: true };
+  const stopFrom = (s0: PhysicsState) => {
+    let s = s0;
+    const startM = s.distanceM;
+    while (s.speedMps > 0) s = step(s, releasedBrake, rover(), surface('asphalt'), constants);
+    return s.distanceM - startM;
+  };
+
+  it('keeps the brake level at 0 while towed, even with the brake held', () => {
+    const s = run(createState({ speedMps: 15 }), towedBrake, 60);
+    expect(s.brakeLevel).toBe(0);
+    expect(s.speedMps).toBe(15);
+    expect(s.drivingState).toBe('Cruising');
+  });
+  it('stops in the same 18.767 m whether or not the brake was held before the release', () => {
+    const held = stopFrom(run(createState({ speedMps: 15 }), towedBrake, 60));
+    const notHeld = stopFrom(run(createState({ speedMps: 15 }), { ...NONE, throttleLocked: true, towed: true }, 60));
+    expect(Math.abs(held - 18.767)).toBeLessThanOrEqual(0.0005);
+    expect(held).toBe(notHeld);
   });
 });
 

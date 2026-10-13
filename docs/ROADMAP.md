@@ -13,7 +13,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 | M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ✅ | M1 |
 | M3 | Build screen | ✅ | M2 |
-| M4 | Driving scene | 🟨 | M2 |
+| M4 | Driving scene | ✅ | M2 |
 | M5 | Mission 1 rules and power-ups | ⬜ | M4 |
 | M6 | Questions, prediction and results | ⬜ | M3, M5, Q1 |
 | M7 | Guest saving, Knowledge and unlocks | ⬜ | M6 |
@@ -183,3 +183,4 @@ Record a short clip or screenshot at the end of each milestone, for M14.
 |---|---|---|
 | M1 | [Spinning-cube placeholder screen](captures/m1-placeholder.png) | 2026-10-13 |
 | M2 | `npm run balance` output (27-build table and counts), saved as `docs/captures/m2-balance.txt` | 2026-10-13 |
+| M4 | [Driving scene at 60 fps](captures/m4-drive-60fps.png) | 2026-10-13 |

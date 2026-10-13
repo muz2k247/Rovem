@@ -6,11 +6,17 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-13
+
 ### Added
-- M4 driving scene (in progress): `src/game/controls.ts` (the one key mapping, both key sets at once), `src/game/driveSession.ts` (fixed-step loop wired to the physics, input taken by step number, input recording, reset), `src/game/hud.ts`, and `src/game/testCourse.ts` (placeholder asphalt strip on sand, replaced by the M5 routes).
+- M4 driving scene: `src/game/controls.ts` (the one key mapping, both key sets at once), `src/game/driveSession.ts` (fixed-step loop wired to the physics, input taken by step number, input recording, reset), `src/game/hud.ts`, and `src/game/testCourse.ts` (placeholder asphalt strip on sand, replaced by the M5 routes).
 - `src/render/driveScene.ts`: original low-poly rover (separate chassis, motor, four wheels), asphalt and sand, distance markers every 5 m, chase camera. `src/ui/DriveScreen.tsx`: HUD with time, speed, direction arrow, throttle and brake levels, distance to the placeholder 100 m target, wheel-slip indicator.
 - Temporary "Test drive" button on the Build screen to reach the driving scene; R restarts.
 - Tests: key mapping; T9 on the driving session (30, 60 and 144 fps give identical state; a recorded live drive replays exactly); 100 m in 8.500 s on the asphalt strip; stopped rover does not turn; steering leaves speed unchanged; HUD values; scene layout.
+
+### Fixed
+- Slip flag (DECISIONS OI-10): drive slip is flagged only in Driving or At top speed, brake slip only in Braking. A parked rover with the brake held, or leftover throttle while Braking, no longer shows "Wheels slipping: on". Tests added in `step.test.ts`.
+- Brake while towed (DECISIONS OI-8, FR-30): the brake level stays 0 while the tow line holds the rover, so a brake held before the brake line no longer pre-charges the build-up. Starting build stops in 18.767 m from release either way.
 
 ### Changed
 - CI also runs `npm run balance`, which checks the Pass check counts and that Node can run the `.ts` imports directly.

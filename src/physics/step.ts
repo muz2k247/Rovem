@@ -109,13 +109,12 @@ export function step(
   // 1. Control levels. Both held: the brake applies and the throttle counts as released (FR-6).
   const throttleKey = input.throttleHeld && !input.brakeHeld && !input.throttleLocked;
   const throttleLevel = input.throttleLocked ? 0 : nextLevel(prev.throttleLevel, throttleKey, constants.throttleBuildUpS, dtS);
-  const brakeLevel = nextLevel(prev.brakeLevel, input.brakeHeld, constants.brakeBuildUpS, dtS);
+  // While the tow line holds the rover, a held brake does nothing and its level stays 0 (FR-30, DECISIONS OI-8).
+  const brakeLevel = input.towed ? 0 : nextLevel(prev.brakeLevel, input.brakeHeld, constants.brakeBuildUpS, dtS);
 
   // 2. Forces. F_d = min(u_t F_d,max, F_lim); F_b = min(u_b F_b,max, F_lim).
   const driveForceN = Math.min(throttleLevel * rover.driveForceMaxN, q.gripLimitN);
   const brakeForceN = Math.min(brakeLevel * rover.brakeForceMaxN, q.gripLimitN);
-  const slipping =
-    throttleLevel * rover.driveForceMaxN > q.gripLimitN || brakeLevel * rover.brakeForceMaxN > q.gripLimitN;
 
   // 3. State and acceleration, chosen from the levels (DECISIONS OI-1).
   let drivingState: DrivingState;
@@ -150,6 +149,12 @@ export function step(
     a = 0;
   }
   if (v >= rover.topSpeedMps && a > 0) a = 0;
+
+  // Wheels slip when the force the current state uses is more than the grip can pass on (FR-9, DECISIONS OI-10):
+  // drive force in Driving and At top speed, brake force in Braking. Other states never show slip.
+  const slipping =
+    ((drivingState === 'Driving' || drivingState === 'At top speed') && throttleLevel * rover.driveForceMaxN > q.gripLimitN) ||
+    (drivingState === 'Braking' && brakeLevel * rover.brakeForceMaxN > q.gripLimitN);
 
   // Steering turns the heading before the move, only if the rover was moving at the start of the step.
   const turnRadPerS = (constants.turnRateDegPerS * Math.PI) / 180;
