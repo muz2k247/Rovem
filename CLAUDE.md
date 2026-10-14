@@ -7,7 +7,8 @@ Working guide for Claude Code. At the start of every session, read this file, th
 Rovem is a desktop-browser 3D game that teaches Grade 9 Kinematics and Dynamics. A student builds a rover from parts, answers prediction questions, drives a mission, and sees the physics explained using the numbers from their own run.
 
 - Learning loop: Predict → Experiment → Observe → Explain → Retry.
-- Game design v2 (`docs/DESIGN.md`, approved 2026-10-13): each mission is a job in a world (Ares Proving Ground) with one short judged trial, medals and an untimed approach. A free-roam hub sits between missions.
+- **Current focus: Demo v3, an endless canyon run** (`docs/DESIGN.md`, `docs/DEMO_BUILD_PLAN.md`, approved 2026-10-14; steps D1–D7 in `docs/ROADMAP.md`). The advisor ruled out multiple-choice questions and asked for a playable demo first, so the student steers a rover that always drives, and learns from the game showing their own numbers. Read Part A of the build plan before any demo work. The post-demo direction is not decided; do not assume v2 or the demo is the final product.
+- Game design v2 (paused, not superseded, until the post-demo direction is decided; `docs/DESIGN.md`, approved 2026-10-13): each mission is a job in a world (Ares Proving Ground) with one short judged trial, medals and an untimed approach. A free-roam hub sits between missions.
 - Sole developer: k._muz. Explain in plain language, briefly and directly.
 - Neither the developer nor the supervisors read UML. Any diagram you produce needs a short "How to read it" guide.
 
@@ -33,7 +34,7 @@ Rules:
 
 ## Key terms
 
-- **Knowledge**: in-game points. Earned by clearing questions; spent on unlocking parts and missions.
+- **Knowledge** (paused during the demo: the demo has no questions and no Knowledge; its parts unlock by best distance): in-game points. Earned by clearing questions; spent on unlocking parts and missions.
 - **Knowledge balance**: the points a student can spend right now. **No balance number is saved anywhere.** The game saves only which questions were cleared and what was unlocked. Whenever the balance is needed, it adds up the rewards of the cleared questions and subtracts the costs of the unlocks. So the balance always matches the saved progress and can never drift from it (FR-24, FR-35). In code: a function `knowledgeBalance(progress)`; never a stored field.
 - **Cleared**: answered correctly. Earns its reward once, the first time.
 - **To review**: answered wrongly and not yet cleared. Comes back as its variant.
@@ -47,6 +48,7 @@ Rules:
 - **Confirmed** (SRS 3.8): 10 Knowledge per required question; 5 per power-up or unlock question; earned only the first time a question is cleared. Missions 2 and 3 cost 20 each. Each of the 6 locked parts costs 15. Mission 1 and the 3 starting parts cost 0.
 - **Provisional** (set; tuned in playtesting): every part, surface, mission and power-up value in the Component Values sheet; the time step (1/120 s), throttle build-up (1.0 s), brake build-up (0.5 s) and maximum brake force (1500 N) from the Physics Model Specification. Use them exactly as written.
 - **Decided outside the specs** (see `docs/DECISIONS.md`): key bindings, steering turn rate, prediction band edges, the `unlockCost` name; and from Game design v2 (2026-10-13): reverse top speed 0.5 × v_max, rover footprint width 1.7 m, Mission 1 medal thresholds, the Mission 3 speed trap (14 m/s) and hub boost pads (top speed × 2, F_d,max × 1.5). Those marked provisional there are tuned in playtesting.
+- **Demo values** (DECISIONS 2026-10-14; all provisional; list in `docs/DEMO_BUILD_PLAN.md` A10, kept in `src/content/run.json`): mud (μ_r 0.6, μ_g 0.5), gravity ×0.5 and ×2, boost impulse 1200 N·s, sandbag 40 kg at 10 m/s head-on and 30 m/s kicker, a tunnel every 250 m, the score rule, the unlock ladder (200–2000 m best distance). Approved by k._muz: mud, gravity, boost, cannon speeds, tunnel spacing. Chosen by Claude at k._muz's request: score rule, sandbag mass, tunnel mud length, unlock ladder. Engineering numbers (fire interval, trigger distance, range, corridor width, warm-up, difficulty distances, chunk layouts) were set by Claude. Use them exactly as written.
 - **Not in any source or decision**: stop and ask k._muz. Never invent a value to make code run.
 - Every number lives in `src/content/` data files. Logic never hard-codes a game value.
 
@@ -59,6 +61,10 @@ Rules:
 - F_d = min(u_t·F_d,max, F_lim) and F_b = min(u_b·F_b,max, F_lim). The wheels slip, and the screen shows it, when the requested force exceeds F_lim, counting only the force the current state uses (drive in Driving/At top speed, brake in Braking; DECISIONS OI-10).
 - Driving states: Stopped, Driving, At top speed, Cruising (old Mission 3 tow; removed in M11), Coasting, Braking. One per step. Chosen from control levels, not keys (DECISIONS OI-1).
 - Reverse (DECISIONS 2026-10-13): direction forward or reverse; v ≥ 0 stays the speed and the rover moves along heading × direction. In reverse the brake key drives and the throttle key brakes. At the start of a step with v = 0, holding only the current brake key flips the direction, and the levels carry on. Reverse top speed = 0.5 × v_max (content data). Steering is mirrored in reverse. Locks apply in both directions.
+- Demo additions (DECISIONS 2026-10-14; text in PENDING E27–E29; formulas in `docs/DEMO_BUILD_PLAN.md` A5):
+  - **Above top speed:** with throttle level > 0 and v above the top speed in the current direction at the start of a step, the motor gives no force: state Coasting, `driveForceN` 0, a = −F_r/m. A step that falls to v_max is split at t₁ = (v_max − v)/a. Existing tests stay unchanged.
+  - **Momentum** (`src/physics/momentum.ts`, applied by the game layer after `step()`): `shareMomentum` is m₁u₁ + m₂u₂ = (m₁ + m₂)u′; `applyImpulse` is u′ = u + J/m. u is signed velocity along the heading; the new speed is |u′|, and the direction follows the sign of u′.
+  - **Gravity zones:** the game layer passes a different `gravityMps2` to `step()`; R, F_r and F_lim scale with g, mass does not. `step()` needs no other change.
 - Rocks (game layer, not `step()`): a step ending with the rover's footprint overlapping a rock is undone, and v = 0; the clock advances. `step()` takes an optional `externalForceN`, default 0, unused in the MVP.
 - Step order: (1) update control levels, (2) forces, (3) state and a (if v = v_max and a > 0, set a = 0), (4) move with constant a, splitting the step if v reaches v_max or 0 inside it, (5) add distance and advance the clock, (6) check mission lines.
 - Braking and friction never push the rover backward. Speed stops at 0.
@@ -114,11 +120,13 @@ docs/
   specs/              source documents; extracted/ holds plain-text copies
 src/
   physics/            build quantities, controls, states, step(); tests beside each file
-  content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a
+  content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a;
+                      demo: run.json, runChunks.json, runText.json (D2)
   game/               attempt flow, rules, Knowledge, unlocks
+    run/              demo (D3–D4): rng, course, runSession, unlocks, forcePanel, feedback
   render/             three.js scene, camera, terrain, rover model; engine sound (Web Audio)
   ui/                 React screens and dialogs
-  save/               progress storage
+  save/               progress storage; demoProgress.ts (D4, key rovem.demo.v1)
   main.tsx
 tests/fixtures/       expected values, e.g. the 135 Simulation sheet results; the M4 step trace
 tests/helpers/        test-only helpers that load real content (kept out of src/physics/)
@@ -141,6 +149,8 @@ npm run typecheck   # tsc --noEmit
 npm run build       # typecheck, then production build into dist/
 npm run balance     # simulate all 27 builds against the mission limits (Node runs the .ts directly)
 ```
+
+Planned, not yet present: `npm run preview` (`vite preview`) arrives in D7 (Session 7). Add it to this list when it exists.
 
 ## Claude Code helpers (`.claude/`)
 
@@ -171,6 +181,7 @@ npm run balance     # simulate all 27 builds against the mission limits (Node ru
 
 ## Questions
 
+- **Paused (2026-10-14):** the advisor ruled out multiple-choice questions. The demo has none, and no question work (Q1–Q3, M6) happens until the post-demo direction is decided. The rules below apply if questions return. Demo text (tidbits, formula lines, "try this" lines, briefing) is in `src/content/runText.json` with `"placeholder": true`, and k._muz reviews it.
 - Do not write question content. Question text, answers, variants and explanations come from k._muz after review.
 - Until then, use the three sample questions in the wireframes (one required, one power-up, one unlock) as stand-ins wherever a question of that kind is needed, marked `"placeholder": true`. The content loader logs a warning for each one. M6 is not done while a Mission 1 placeholder remains.
 
@@ -208,4 +219,6 @@ Do not edit a file that doesn't need it. A doc that is still accurate stays as i
 
 ## Out of scope for the MVP
 
-Do not build: more rover models, brakes as a part slot, student-made levels, modifiers (cannons, aliens, space weather; levels only reserve empty `hazards` and `modifiers` layers), momentum and impulse (so no collision damage), other planets or gravity, mobile or touch controls, level sharing, AI helper, leaderboards, saving run results (except the best medal per mission).
+**In scope for the demo only (DECISIONS 2026-10-14):** momentum and impulse (boost pads and sandbag hits), different gravity in the tunnels, and cannons as hazards of the endless run. They stay out of scope for the MVP until the post-demo direction is decided. Still out for both: collision damage, other planets.
+
+Do not build: more rover models, brakes as a part slot, student-made levels, other modifiers (aliens, space weather; levels only reserve empty `hazards` and `modifiers` layers), collision damage, other planets, mobile or touch controls, level sharing, AI helper, leaderboards, saving run results (except the best medal per mission).
