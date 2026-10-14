@@ -45,6 +45,7 @@ export function physicsConstants(content: Content): PhysicsConstants {
     throttleBuildUpS: c.throttleBuildUpS,
     brakeBuildUpS: c.brakeBuildUpS,
     turnRateDegPerS: c.turnRateDegPerS,
+    reverseTopSpeedFraction: c.reverseTopSpeedFraction,
   };
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { classifyStop, runMission1, runMission2, runMission3 } from './missions.ts';
-import { constants, rover, surface } from './testHelpers.ts';
+import { constants, rover, surface } from '../../tests/helpers/physics.ts';
 
 const m1 = { asphaltRouteLengthM: 100, sandRouteLengthM: 85, timeLimitS: 9 };
 const m2 = { iceLengthM: 25, iceTimeLimitS: 8, coastTargetM: 17.5 };

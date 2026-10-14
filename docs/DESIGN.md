@@ -113,7 +113,7 @@ Silver and gold thresholds are *provisional*. Gold needs unlocked parts, which g
 - If the rover's footprint overlaps a rock at the end of a step, the game layer undoes that step's movement and distance, and sets v = 0. The clock still advances.
 - No damage: damage needs momentum, which is outside the MVP.
 - The rover backs out in reverse. The HUD shows "Blocked".
-- The footprint is 2 m long (rover length) by the width of the M4 model. That width is recorded in content data and DECISIONS when M5a sets it.
+- The footprint is 2 m long (rover length) by the width of the M4 model, 1.7 m (`roverWidthM` in `src/content/constants.json`; DECISIONS 2026-10-13).
 
 **Speed limits.** Missions stay at 14–18 m/s, because every balance number depends on them. 100 m/s was rejected:
 - It's 360 km/h, faster than a Formula 1 car.

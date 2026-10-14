@@ -6,6 +6,50 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added
+- Reverse (DECISIONS 2026-10-13), in `src/physics/step.ts`:
+  - The rover has a direction of travel (`direction`); v ≥ 0 stays the speed.
+  - In reverse the brake key drives and the throttle key brakes.
+  - The direction flips at the start of a step with v = 0 when only the current brake key is held, and the levels carry on.
+  - Reverse top speed is 0.5 × v_max (`reverseTopSpeedFraction` in `constants.json`). Steering is mirrored. Distance adds up in both directions. Locks apply both ways.
+- `step()` takes an optional `externalForceN` (default 0, unused). A test proves that the default reproduces the M4 physics bit for bit (`tests/fixtures/stepTrace.json`).
+- Level format: `src/content/levels/`, validated on load with the bad path named. Layers: `surfaces` (polygon regions; later regions on top), `props` (rocks), `pickups`, `lines` (start, target, gate; grid box and zone as areas), `path`, and empty `hazards` and `modifiers`. The M4 test course is now `levels/testCourse.json`, with rocks beside the track and one behind the start.
+- `src/game/level.ts`: the surface under the rover's front comes from the level. `src/game/geometry.ts`: polygon, footprint and path geometry.
+- Rocks are solid. A step that ends with the footprint (2 m × 1.7 m, `roverWidthM`) overlapping a rock is undone, v = 0, and the clock advances. The heading is restored too (see OI-11). The HUD shows "Blocked" for 0.5 s after.
+- Steering assist (`src/game/steeringAssist.ts`): a toggle on the drive screen. When on, it steers along the level's `path`. A held steer key overrides it, and it does nothing in reverse. The flag is saved in each step's input record (`DriveInput.steeringAssist`).
+- Speed feel:
+  - lower chase camera
+  - field of view widening with speed
+  - dust from the rear wheels, heavier on sand
+  - camera shake on bumps
+  - posts beside the track every 10 m
+  - rolling wheels
+  - engine sound made with Web Audio (`src/render/engineSound.ts`; no outside asset), with a sound on/off button
+- Visual bumps on the track, at most 0.15 m: the rover lifts and tilts, and the physics stays flat.
+- HUD: km/h beside m/s, an "R" reverse indicator, and "Blocked".
+- Wheel looks (`src/render/roverModel.ts`): smooth (slim, pale, silver hub), all-terrain (chunky, tread blocks) and spiked (dark, steel spikes). All three keep the model 1.7 m wide.
+- Tests:
+  - reverse rules
+  - default `externalForceN` bit-identical to M4
+  - level loader
+  - geometry
+  - rock undo
+  - assist (straight-line equivalence, recovering from a 2 m offset, a 30 m bend within 0.5 m)
+  - T9 on the drive session with reverse and the assist in the record
+  - HUD additions
+  - wheel looks and model width
+  - engine tone
+
+### Changed
+- `createDriveSession` takes a `track` (level) instead of a `surfaceAt` function, and starts at the level's start pose.
+- The restart key (R) moved into `KEY_BINDINGS` in `src/game/controls.ts`, the one key mapping.
+- `src/physics/testHelpers.ts` moved to `tests/helpers/physics.ts`, so `src/physics/` holds no test-only code that imports content.
+- CI: `actions/checkout` and `actions/setup-node` updated from v4 to v7, which run on Node 24.
+- `package.json` `version` set to 0.4.0, matching the latest release. It is bumped with each release from now on.
+
+### Removed
+- `src/game/testCourse.ts` (replaced by `src/content/levels/testCourse.json`).
+
 ### Docs
 - Game design v2 approved and recorded:
   - `docs/DESIGN.md`, new: the world, missions as jobs with one judged trial, medals, the hub, reverse, rocks, speed feel, steering assist and hooks for future modifiers. Includes the simulation evidence.
@@ -13,6 +57,9 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
   - `docs/PENDING_SPEC_EDITS.md`: E10–E25.
   - `docs/ROADMAP.md`: M5 split into M5a (driving upgrades and level format) and M5b (Canyon Dash); M6, M7, M9, M10, M11 and M12 updated; the tow items in M11 marked superseded.
   - `CLAUDE.md` and `README.md`: updated to match.
+- `docs/DECISIONS.md`: rows for the rover footprint width (1.7 m) and for `MAX_SECONDS` and `maxStepsPerFrame` as engineering guards.
+- `docs/ROADMAP.md`: M5a in progress; OI-11 (a rock also undoes the heading), OI-12 (where the assist acts), OI-13 (whole km/h) and OI-14 (edge cases of a flip) opened.
+- `docs/PENDING_SPEC_EDITS.md`: E22 and E24 name the 1.7 m width.
 
 ## [0.4.0] — 2026-10-13
 

@@ -6,9 +6,13 @@ export const KEY_BINDINGS = {
   brake: ['KeyS', 'ArrowDown'],
   steerLeft: ['KeyA', 'ArrowLeft'],
   steerRight: ['KeyD', 'ArrowRight'],
+  /** Back to the start (test drive). Not a driving input. */
+  restart: ['KeyR'],
 } as const;
 
-const ALL_CODES: ReadonlySet<string> = new Set(Object.values(KEY_BINDINGS).flat());
+const DRIVING_CODES: ReadonlySet<string> = new Set(
+  [KEY_BINDINGS.throttle, KEY_BINDINGS.brake, KEY_BINDINGS.steerLeft, KEY_BINDINGS.steerRight].flat(),
+);
 
 /** Remembers which keys are held and turns them into the physics' per-step input. */
 export function createKeyTracker() {
@@ -16,15 +20,16 @@ export function createKeyTracker() {
   const anyHeld = (codes: readonly string[]) => codes.some((c) => held.has(c));
   return {
     down: (code: string) => {
-      if (ALL_CODES.has(code)) held.add(code);
+      if (DRIVING_CODES.has(code)) held.add(code);
     },
     up: (code: string) => {
       held.delete(code);
     },
     /** Forget every key, e.g. when the window loses focus and key-up events would be missed. */
     clear: () => held.clear(),
-    handles: (code: string) => ALL_CODES.has(code),
-    /** Throttle and brake are reported as held; `step()` makes the brake win (FR-6). */
+    handles: (code: string) => DRIVING_CODES.has(code),
+    /** Throttle key (W/↑) and brake key (S/↓) are reported as held; `step()` makes the brake win (FR-6) and swaps
+     * their roles in reverse. */
     read(): StepInput {
       const left = anyHeld(KEY_BINDINGS.steerLeft);
       const right = anyHeld(KEY_BINDINGS.steerRight);

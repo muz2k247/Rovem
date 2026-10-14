@@ -63,16 +63,16 @@ Accounts (milestone M12) need a `.env` file; copy `.env.example`. Only the Supab
 docs/        roadmap, decisions, pending spec edits, source documents
 src/
   physics/   build quantities, controls, driving states, fixed-step simulation
-  content/   parts, surfaces, missions, power-ups, questions (data)
+  content/   parts, surfaces, missions, power-ups, questions, levels (data)
   game/      attempt flow, rules, Knowledge, unlocks
-  render/    three.js scene
+  render/    three.js scene and rover model; engine sound
   ui/        React screens and dialogs
   save/      progress storage
-tests/       shared test fixtures and the sheet regression test (T10)
+tests/       shared test fixtures and helpers, and the sheet regression test (T10)
 scripts/     balance report
 ```
 
-`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4). The other folders are created as the milestones need them.
+`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The other folders are created as the milestones need them.
 
 ## Documentation
 

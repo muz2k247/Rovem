@@ -14,7 +14,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 | M2 | Physics core and content data | ✅ | M1 |
 | M3 | Build screen | ✅ | M2 |
 | M4 | Driving scene | ✅ | M2 |
-| M5a | Driving upgrades and level format | ⬜ | M4 |
+| M5a | Driving upgrades and level format | 🟨 | M4 |
 | M5b | Mission 1: Canyon Dash | ⬜ | M5a |
 | M6 | Questions, prediction and results | ⬜ | M3, M5b, Q1 |
 | M7 | Guest saving, Knowledge and unlocks | ⬜ | M6 |
@@ -116,6 +116,12 @@ M5 "Mission 1 rules and power-ups" was split into M5a and M5b when Game design v
 - T9 holds with reverse and the assist in the input record.
 - `physics-checker` has been run.
 - 30+ fps with the effects on, on Intel UHD Graphics (measured by k._muz).
+
+**Progress (2026-10-13):**
+- All items are built and all 253 tests pass. `npm run balance` is unchanged.
+- `physics-checker` was run on `src/physics/` and found no spec mismatches. Its edge cases are logged as OI-14.
+- `spec-sync` was run and found no spec mismatches. Its factual fixes are made.
+- Waiting on k._muz: the fps measurement and the feel of reverse.
 
 ### M5b — Mission 1: Canyon Dash
 **Goal:** Mission 1 as designed in DESIGN §5: it can be passed or failed, and medals are shown. FR-12, FR-33, FR-38, FR-40, SRS 3.5.
@@ -257,7 +263,17 @@ The lines below were written for the tow design. **They are superseded (2026-10-
 
 Conflicts and gaps between sources. Never resolve one silently: add it here and ask k._muz.
 
-None open.
+**OI-11 (M5a): a rock also undoes the heading.** DECISIONS (2026-10-13, rocks) says the step is undone "(position and distance)". The code also restores the heading. Reason: steering turns the rover about its front, so a turn alone can swing the rear into a rock. If the heading were kept, the rover could stop overlapping a rock; every later step would then end overlapping and be undone, and the rover would be stuck for good. Restoring the whole pose keeps the rover clear of rocks after every step (tested). Proposal: confirm, and change the DECISIONS row and E22 to "position, heading and distance". Built this way until k._muz decides.
+
+**OI-12 (M5a → M5b): where the steering assist acts.** DESIGN §6 says the assist steers "during judged sections". The M5a test course has no judged section, so the assist currently steers wherever the level has a `path`, while the toggle is on. Two further choices in M5a: a held steer key overrides the assist for that step, and the assist does nothing in reverse. Needs a decision before M5b: assist only in the Dash, or everywhere along the level's path?
+
+**OI-14 (M5a, from physics-checker): two edge cases of "the levels carry on" at a flip.** The code follows the DECISIONS rule to the letter. The question is whether that is the intended feel.
+1. *Instant reverse after a stop that wasn't a brake stop.* The pause in DESIGN §6 comes from the brake level falling to 0. If the rover stopped any other way, nothing makes it pause. Example: the rover drives into a rock with W held, so u_t ≈ 1 and u_b = 0, and the rock sets v = 0. The student switches to S, and the rover reverses at once with u_t ≈ 1. Options: (a) keep it; (b) set u_t to 0 at a flip.
+2. *Flip while drive is locked.* After the Mission 2 power cut, or the Mission 3 brake line, holding S at rest flips the direction flag. Nothing moves, but the HUD shows "R". Options: (a) keep it; (b) no flip while `throttleLocked`.
+
+Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`step.test.ts`, "reverse"), so changing either is a one-line edit plus its test.
+
+**OI-13 (M5a): km/h is shown as a whole number.** CLAUDE.md says speeds are shown to 2 decimals. The HUD shows m/s to 2 decimals and km/h beside it as a whole number ("16.00 m/s · 58 km/h", as in DESIGN §6's "16 m/s = 58 km/h"). Reason: km/h is there for feel, and a second 2-decimal number adds clutter (NFR-6). Proposal: confirm, and add "km/h whole" to the display rule.
 
 Spec edits E4–E25 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 

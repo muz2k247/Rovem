@@ -15,7 +15,11 @@ export interface Constants {
   brakeBuildUpS: number;
   maxBrakeForceN: number;
   roverLengthM: number;
+  /** Footprint width for rocks: the M4 model's outer wheel edges (DECISIONS 2026-10-13). */
+  roverWidthM: number;
   turnRateDegPerS: number;
+  /** Reverse top speed = this × v_max (DECISIONS 2026-10-13, provisional). */
+  reverseTopSpeedFraction: number;
 }
 
 export interface Surface {
@@ -80,4 +84,64 @@ export interface Content {
   parts: Part[];
   powerUps: PowerUp[];
   missions: MissionParams;
+  /** One per file in `levels/`, keyed by file name. */
+  levels: Levels;
+}
+
+/** A point on the ground, physics axes: x along the start heading, z to its left. */
+export interface PointM {
+  xM: number;
+  zM: number;
+}
+
+/** A region of one surface. Later regions are drawn over earlier ones, so friction tiles go last. */
+export interface SurfaceRegion {
+  surfaceId: string;
+  polygon: PointM[];
+}
+
+/** A solid rock (DECISIONS 2026-10-13): a circle on the ground. */
+export interface Rock {
+  kind: 'rock';
+  xM: number;
+  zM: number;
+  radiusM: number;
+}
+
+export interface Pickup {
+  powerUpId: string;
+  xM: number;
+  zM: number;
+  radiusM: number;
+}
+
+export type SegmentLineKind = 'start' | 'target' | 'gate';
+export type AreaLineKind = 'gridBox' | 'zone';
+
+/** A line the rover crosses (start, target, gate) or an area it stops in (grid box, zone). */
+export type LevelLine =
+  | { id: string; kind: SegmentLineKind; from: PointM; to: PointM }
+  | { id: string; kind: AreaLineKind; polygon: PointM[] };
+
+/** One level as data (DESIGN §8). `hazards` and `modifiers` are reserved and empty in the MVP. */
+export interface Level {
+  name: string;
+  /** True for stand-in layouts, such as the M4 test course. */
+  placeholder: boolean;
+  start: { xM: number; zM: number; headingDeg: number };
+  /** The surface wherever no region covers the ground. */
+  defaultSurfaceId: string;
+  surfaces: SurfaceRegion[];
+  props: Rock[];
+  pickups: Pickup[];
+  lines: LevelLine[];
+  /** The ideal line, used by the steering assist and the balance. */
+  path: PointM[];
+  hazards: never[];
+  modifiers: never[];
+}
+
+/** Every level the game ships, keyed by file name in `levels/`. M5b adds the Canyon Dash. */
+export interface Levels {
+  testCourse: Level;
 }

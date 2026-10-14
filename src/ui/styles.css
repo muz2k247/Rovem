@@ -230,7 +230,7 @@ body,
   font-weight: 700;
 }
 
-.drive-back,
+.drive-button,
 .test-drive {
   padding: 0.4rem 0.8rem;
   border: 1px solid #e0703c;
@@ -241,11 +241,38 @@ body,
   cursor: pointer;
 }
 
-.drive-back {
+.drive-buttons {
   position: absolute;
   top: 1rem;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.drive-button {
+  background: rgba(27, 20, 36, 0.6);
+}
+
+.drive-button.on {
+  background: #e0703c;
+  color: #1b1424;
+}
+
+.reverse-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.45rem;
+  border-radius: 6px;
+  background: #e0703c;
+  color: #1b1424;
+  font-weight: 700;
+  vertical-align: super;
+}
+
+.hud small.blocked {
+  color: #ffb347;
+  font-weight: 700;
 }
 
 .test-drive {

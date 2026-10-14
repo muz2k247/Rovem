@@ -125,7 +125,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - T10, Setup: "All 27 builds, all three missions" → "All 27 builds. The Mission 3 column is the stopping distance from 15 m/s with the brake building up from 0, kept as a physics regression".
 
 ### E22: Physics Model Specification, new section "Game-layer rules"
-- Add: "Collisions are handled by the game layer, not by step(). A step that ends with the rover's footprint (2 m by the model width) overlapping a rock is undone, and v is set to 0; the clock still advances. step() accepts an optional external force along the direction of travel, default 0, reserved for future modifiers and unused in the MVP."
+- Add: "Collisions are handled by the game layer, not by step(). A step that ends with the rover's footprint (2 m long by the model width, 1.7 m) overlapping a rock is undone, and v is set to 0; the clock still advances. step() accepts an optional external force along the direction of travel, default 0, reserved for future modifiers and unused in the MVP."
 
 ### E23: Data Model, player_mission
 - Row text:
@@ -135,7 +135,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 
 ### E24: Component Values sheet
 - Inputs:
-  - Add the Mission 1 medal thresholds (silver 8.5 s, gold 8.1 s), the Mission 3 speed trap (14 m/s), the reverse top speed ratio (0.5) and the hub boost pad (top speed × 2, F_d,max × 1.5).
+  - Add the Mission 1 medal thresholds (silver 8.5 s, gold 8.1 s), the Mission 3 speed trap (14 m/s), the reverse top speed ratio (0.5), the rover width for the rock footprint (1.7 m) and the hub boost pad (top speed × 2, F_d,max × 1.5).
   - Remove the Mission 3 approach speed of 15 m/s as a mission value. Keep it as the Simulation sheet's regression speed.
 - Pass check sheet, Mission 3: replace "M3 passes" (from 15 m/s) with columns computed before M11:
   - stopping distance from 14 m/s

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createKeyTracker } from './controls.ts';
+import { createKeyTracker, KEY_BINDINGS } from './controls.ts';
 
 const idle = { throttleHeld: false, brakeHeld: false, steer: 0 };
 
@@ -57,5 +57,14 @@ describe('key tracker', () => {
     k.down('KeyW');
     k.clear();
     expect(k.read()).toEqual(idle);
+  });
+});
+
+describe('key mapping', () => {
+  it('names the restart key in the one mapping, separate from the driving keys', () => {
+    expect(KEY_BINDINGS.restart).toEqual(['KeyR']);
+    const k = createKeyTracker();
+    k.down('KeyR');
+    expect(k.read()).toEqual(idle); // restart is not a driving input
   });
 });

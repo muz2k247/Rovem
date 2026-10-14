@@ -1,6 +1,6 @@
 ---
 name: physics-checker
-description: Independently checks Rovem physics code and tests against the Physics Model Specification and the Component Values sheet. Use after any change under src/physics/ or to physics content values, and before marking M2, M5, M10 or M11 done.
+description: Independently checks Rovem physics code and tests against the Physics Model Specification and the Component Values sheet. Use after any change under src/physics/ or to physics content values, and before marking M2, M5a, M5b, M10 or M11 done.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---

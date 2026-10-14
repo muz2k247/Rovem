@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyMultiplier, buildQuantities } from './build.ts';
-import { constants, rover, surface } from './testHelpers.ts';
+import { constants, rover, surface } from '../../tests/helpers/physics.ts';
 
 const close = (actual: number, expected: number) =>
   expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThan(1e-9);

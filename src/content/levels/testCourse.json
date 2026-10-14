@@ -1,0 +1,38 @@
+{
+  "name": "Test course",
+  "placeholder": true,
+  "start": { "xM": 0, "zM": 0, "headingDeg": 0 },
+  "defaultSurfaceId": "sand",
+  "surfaces": [
+    {
+      "surfaceId": "asphalt",
+      "polygon": [
+        { "xM": -10, "zM": -4 },
+        { "xM": 120, "zM": -4 },
+        { "xM": 120, "zM": 4 },
+        { "xM": -10, "zM": 4 }
+      ]
+    }
+  ],
+  "props": [
+    { "kind": "rock", "xM": -8, "zM": 0, "radiusM": 1 },
+    { "kind": "rock", "xM": 12, "zM": 7, "radiusM": 1.2 },
+    { "kind": "rock", "xM": 27, "zM": -8, "radiusM": 1.6 },
+    { "kind": "rock", "xM": 41, "zM": 9, "radiusM": 2 },
+    { "kind": "rock", "xM": 58, "zM": -7, "radiusM": 1 },
+    { "kind": "rock", "xM": 73, "zM": 8, "radiusM": 1.4 },
+    { "kind": "rock", "xM": 88, "zM": -9, "radiusM": 2.2 },
+    { "kind": "rock", "xM": 104, "zM": 7.5, "radiusM": 1.1 }
+  ],
+  "pickups": [],
+  "lines": [
+    { "id": "start", "kind": "start", "from": { "xM": 0, "zM": -4 }, "to": { "xM": 0, "zM": 4 } },
+    { "id": "target", "kind": "target", "from": { "xM": 100, "zM": -4 }, "to": { "xM": 100, "zM": 4 } }
+  ],
+  "path": [
+    { "xM": 0, "zM": 0 },
+    { "xM": 120, "zM": 0 }
+  ],
+  "hazards": [],
+  "modifiers": []
+}

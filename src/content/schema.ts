@@ -1,12 +1,18 @@
 import type {
+  AreaLineKind,
   Constants,
   Content,
+  Level,
+  LevelLine,
+  Levels,
   Mission1Params,
   Mission2Params,
   Mission3Params,
   Part,
+  PointM,
   PowerUp,
   PowerUpVariable,
+  SegmentLineKind,
   Slot,
   Surface,
 } from './types.ts';
@@ -62,6 +68,8 @@ const VARIABLES: readonly PowerUpVariable[] = [
 function constants(raw: unknown): Constants {
   const p = 'constants';
   const o = obj(raw, p);
+  const fraction = num(o, 'reverseTopSpeedFraction', p, { positive: true });
+  if (fraction > 1) fail(`${p}.reverseTopSpeedFraction`, 'must be at most 1 (reverse is never faster than forward)');
   return {
     gravityMps2: num(o, 'gravityMps2', p, { positive: true }),
     stepsPerSecond: num(o, 'stepsPerSecond', p, { positive: true }),
@@ -69,7 +77,9 @@ function constants(raw: unknown): Constants {
     brakeBuildUpS: num(o, 'brakeBuildUpS', p, { positive: true }),
     maxBrakeForceN: num(o, 'maxBrakeForceN', p, { positive: true }),
     roverLengthM: num(o, 'roverLengthM', p, { positive: true }),
+    roverWidthM: num(o, 'roverWidthM', p, { positive: true }),
     turnRateDegPerS: num(o, 'turnRateDegPerS', p, { min: 0 }),
+    reverseTopSpeedFraction: fraction,
   };
 }
 
@@ -155,6 +165,96 @@ function missions(raw: unknown): Content['missions'] {
   return { mission1, mission2, mission3 };
 }
 
+const SEGMENT_KINDS: readonly SegmentLineKind[] = ['start', 'target', 'gate'];
+const AREA_KINDS: readonly AreaLineKind[] = ['gridBox', 'zone'];
+
+function point(raw: unknown, path: string): PointM {
+  const o = obj(raw, path);
+  return { xM: num(o, 'xM', path), zM: num(o, 'zM', path) };
+}
+
+function points(raw: unknown, path: string, min: number, what: string): PointM[] {
+  const list = arr(raw, path);
+  if (list.length < min) fail(path, `a ${what} needs at least ${min} points`);
+  return list.map((p, i) => point(p, `${path}[${i}]`));
+}
+
+function oneOf(o: Obj, key: string, path: string, allowed: readonly string[]): string {
+  const v = str(o, key, path);
+  if (!allowed.includes(v)) fail(`${path}.${key}`, `"${v}" is not one of ${allowed.join(', ')}`);
+  return v;
+}
+
+function emptyLayer(o: Obj, key: string, path: string): never[] {
+  const list = arr(o[key], `${path}.${key}`);
+  if (list.length > 0) fail(`${path}.${key}`, 'must be empty in the MVP (future scope)');
+  return [];
+}
+
+/** One level file (DESIGN §8). Surface and power-up ids must exist in the rest of the content. */
+function level(raw: unknown, p: string, surfaceIds: readonly string[], powerUpIds: readonly string[]): Level {
+  const o = obj(raw, p);
+  const placeholder = o.placeholder === undefined ? false : bool(o, 'placeholder', p);
+  const start = obj(o.start, `${p}.start`);
+  const lines = arr(o.lines, `${p}.lines`).map((item, i): LevelLine => {
+    const lp = `${p}.lines[${i}]`;
+    const l = obj(item, lp);
+    const id = str(l, 'id', lp);
+    const kind = oneOf(l, 'kind', lp, [...SEGMENT_KINDS, ...AREA_KINDS]);
+    if ((AREA_KINDS as readonly string[]).includes(kind)) {
+      return { id, kind: kind as AreaLineKind, polygon: points(l.polygon, `${lp}.polygon`, 3, 'polygon') };
+    }
+    return { id, kind: kind as SegmentLineKind, from: point(l.from, `${lp}.from`), to: point(l.to, `${lp}.to`) };
+  });
+  noDuplicates(lines, `${p}.lines`);
+  return {
+    name: str(o, 'name', p),
+    placeholder,
+    start: { xM: num(start, 'xM', `${p}.start`), zM: num(start, 'zM', `${p}.start`), headingDeg: num(start, 'headingDeg', `${p}.start`) },
+    defaultSurfaceId: oneOf(o, 'defaultSurfaceId', p, surfaceIds),
+    surfaces: arr(o.surfaces, `${p}.surfaces`).map((item, i) => {
+      const sp = `${p}.surfaces[${i}]`;
+      const s = obj(item, sp);
+      return { surfaceId: oneOf(s, 'surfaceId', sp, surfaceIds), polygon: points(s.polygon, `${sp}.polygon`, 3, 'polygon') };
+    }),
+    props: arr(o.props, `${p}.props`).map((item, i) => {
+      const pp = `${p}.props[${i}]`;
+      const r = obj(item, pp);
+      oneOf(r, 'kind', pp, ['rock']);
+      return { kind: 'rock' as const, xM: num(r, 'xM', pp), zM: num(r, 'zM', pp), radiusM: num(r, 'radiusM', pp, { positive: true }) };
+    }),
+    pickups: arr(o.pickups, `${p}.pickups`).map((item, i) => {
+      const pp = `${p}.pickups[${i}]`;
+      const k = obj(item, pp);
+      return {
+        powerUpId: oneOf(k, 'powerUpId', pp, powerUpIds),
+        xM: num(k, 'xM', pp),
+        zM: num(k, 'zM', pp),
+        radiusM: num(k, 'radiusM', pp, { positive: true }),
+      };
+    }),
+    lines,
+    path: points(o.path, `${p}.path`, 2, 'path'),
+    hazards: emptyLayer(o, 'hazards', p),
+    modifiers: emptyLayer(o, 'modifiers', p),
+  };
+}
+
+const LEVEL_NAMES: readonly (keyof Levels)[] = ['testCourse'];
+
+function levels(raw: unknown, surfaceIds: readonly string[], powerUpIds: readonly string[]): Levels {
+  const o = obj(raw, 'levels');
+  for (const name of Object.keys(o)) {
+    if (!(LEVEL_NAMES as readonly string[]).includes(name)) fail(`levels.${name}`, 'unknown level');
+  }
+  const out: Partial<Levels> = {};
+  for (const name of LEVEL_NAMES) {
+    if (o[name] === undefined) fail(`levels.${name}`, 'missing level');
+    out[name] = level(o[name], `levels.${name}`, surfaceIds, powerUpIds);
+  }
+  return out as Levels;
+}
+
 function noDuplicates(items: { id: string }[], path: string): void {
   const seen = new Set<string>();
   for (const item of items) {
@@ -166,15 +266,22 @@ function noDuplicates(items: { id: string }[], path: string): void {
 /** Checks raw JSON and returns it as typed content. Throws with the path of the first problem. */
 export function validateContent(raw: unknown): Content {
   const o = obj(raw, 'content');
+  const checkedSurfaces = surfaces(o.surfaces);
+  const checkedPowerUps = powerUps(o.powerUps);
+  noDuplicates(checkedSurfaces, 'surfaces');
+  noDuplicates(checkedPowerUps, 'powerUps');
   const content: Content = {
     constants: constants(o.constants),
-    surfaces: surfaces(o.surfaces),
+    surfaces: checkedSurfaces,
     parts: parts(o.parts),
-    powerUps: powerUps(o.powerUps),
+    powerUps: checkedPowerUps,
     missions: missions(o.missions),
+    levels: levels(
+      o.levels,
+      checkedSurfaces.map((s) => s.id),
+      checkedPowerUps.map((x) => x.id),
+    ),
   };
-  noDuplicates(content.surfaces, 'surfaces');
   noDuplicates(content.parts, 'parts');
-  noDuplicates(content.powerUps, 'powerUps');
   return content;
 }

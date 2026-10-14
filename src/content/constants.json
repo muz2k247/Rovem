@@ -5,5 +5,7 @@
   "brakeBuildUpS": 0.5,
   "maxBrakeForceN": 1500,
   "roverLengthM": 2,
-  "turnRateDegPerS": 60
+  "roverWidthM": 1.7,
+  "turnRateDegPerS": 60,
+  "reverseTopSpeedFraction": 0.5
 }

@@ -27,3 +27,25 @@ describe('driving HUD', () => {
     expect(hud.stateText).toBe('Braking');
   });
 });
+
+describe('driving HUD, M5a additions', () => {
+  it('shows km/h beside m/s as a whole number (16 m/s = 58 km/h)', () => {
+    const hud = driveHud(createState({ speedMps: 16 }), 100);
+    expect(hud.speedText).toBe('16.00 m/s');
+    expect(hud.speedKmhText).toBe('58 km/h');
+  });
+
+  it('shows "R" in reverse', () => {
+    expect(driveHud(createState(), 100).reverse).toBe(false);
+    expect(driveHud(createState({ direction: 'reverse' }), 100).reverse).toBe(true);
+  });
+
+  it('shows "Blocked" for half a second after a rock stops the rover', () => {
+    const s = createState({ drivingState: 'Driving' });
+    expect(driveHud(s, 100).blocked).toBe(false);
+    expect(driveHud(s, 100, 0).stateText).toBe('Blocked');
+    expect(driveHud(s, 100, 0.5).blocked).toBe(true);
+    expect(driveHud(s, 100, 0.51).blocked).toBe(false);
+    expect(driveHud(s, 100, 0.51).stateText).toBe('Driving');
+  });
+});

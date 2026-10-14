@@ -31,6 +31,8 @@ export interface PhysicsConstants {
   /** T_b */
   brakeBuildUpS: number;
   turnRateDegPerS: number;
+  /** Reverse top speed = this × v_max. */
+  reverseTopSpeedFraction: number;
 }
 
 /** The rover variables a power-up can multiply. */

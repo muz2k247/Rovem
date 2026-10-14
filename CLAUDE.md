@@ -46,7 +46,7 @@ Rules:
 
 - **Confirmed** (SRS 3.8): 10 Knowledge per required question; 5 per power-up or unlock question; earned only the first time a question is cleared. Missions 2 and 3 cost 20 each. Each of the 6 locked parts costs 15. Mission 1 and the 3 starting parts cost 0.
 - **Provisional** (set; tuned in playtesting): every part, surface, mission and power-up value in the Component Values sheet; the time step (1/120 s), throttle build-up (1.0 s), brake build-up (0.5 s) and maximum brake force (1500 N) from the Physics Model Specification. Use them exactly as written.
-- **Decided outside the specs** (see `docs/DECISIONS.md`): key bindings, steering turn rate, prediction band edges, the `unlockCost` name.
+- **Decided outside the specs** (see `docs/DECISIONS.md`): key bindings, steering turn rate, prediction band edges, the `unlockCost` name; and from Game design v2 (2026-10-13): reverse top speed 0.5 × v_max, rover footprint width 1.7 m, Mission 1 medal thresholds, the Mission 3 speed trap (14 m/s) and hub boost pads (top speed × 2, F_d,max × 1.5). Those marked provisional there are tuned in playtesting.
 - **Not in any source or decision**: stop and ask k._muz. Never invent a value to make code run.
 - Every number lives in `src/content/` data files. Logic never hard-codes a game value.
 
@@ -101,7 +101,7 @@ save/                                 local copy of progress; Supabase sync (lat
 
 ```
 .claude/              Claude Code config: settings.json, agents/, skills/
-.github/workflows/    CI: typecheck and test on every push
+.github/workflows/    CI: typecheck, test and balance on every push and pull request
 .nvmrc                Node major version (24)
 package.json, package-lock.json, tsconfig.json, vite.config.ts, index.html
 docs/
@@ -116,11 +116,12 @@ src/
   physics/            build quantities, controls, states, step(); tests beside each file
   content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a
   game/               attempt flow, rules, Knowledge, unlocks
-  render/             three.js scene, camera, terrain
+  render/             three.js scene, camera, terrain, rover model; engine sound (Web Audio)
   ui/                 React screens and dialogs
   save/               progress storage
   main.tsx
-tests/fixtures/       expected values, e.g. the 135 Simulation sheet results
+tests/fixtures/       expected values, e.g. the 135 Simulation sheet results; the M4 step trace
+tests/helpers/        test-only helpers that load real content (kept out of src/physics/)
 scripts/              balance report over all 27 builds
 supabase/             migrations and functions (accounts milestone only)
 CHANGELOG.md
@@ -145,7 +146,7 @@ npm run balance     # simulate all 27 builds against the mission limits (Node ru
 
 - `/milestone M2`: work a roadmap milestone from plan to docs update.
 - `/sync-docs`: bring the docs back in line with the code and specs.
-- `physics-checker` agent: independent review of physics code against the spec. Run it before closing M2, M5, M10 or M11.
+- `physics-checker` agent: independent review of physics code against the spec. Run it before closing M2, M5a, M5b, M10 or M11.
 - `spec-sync` agent: finds drift between docs, specs and code.
 - `settings.json`: allows the npm scripts without prompting; blocks reading `.env` and editing the source PDFs and sheet.
 
