@@ -93,7 +93,7 @@ Every "at the front" below means the rover's physics position, its front point, 
     - It fires at that step's time, then every `fireIntervalS`, for as long as the front's x < cannon x.
     - Its bags travel in −x at `headOnSpeedMps`.
   - **Kicker:**
-    - It becomes active at the end of the first step in which the front's x ≥ cannon x + 2.
+    - It becomes active at the end of the first step in which the rover's rear edge (front x − rover length) ≥ cannon x + `kickerWakeRearOffsetM` (3 m; OI-15, DECISIONS 2026-10-15).
     - It fires `kickerShots` bags, at that step's time and then every `fireIntervalS`.
     - Its bags travel in +x at `kickerSpeedMps`. A bag can only catch a rover that is slower than it.
   - **Bag position:** at simulation time t, x = cannon x ∓ speed × (t − fire time). A bag is removed once it has travelled `rangeM`, or when it hits.
@@ -267,7 +267,7 @@ In `src/content/run.json`:
   "boostImpulseNs": 1200,
   "sandbag": {
     "massKg": 40, "radiusM": 0.5, "headOnSpeedMps": 10, "kickerSpeedMps": 30,
-    "fireIntervalS": 1.2, "headOnTriggerDistanceM": 90, "kickerShots": 3, "rangeM": 150
+    "fireIntervalS": 1.2, "headOnTriggerDistanceM": 90, "kickerShots": 3, "kickerWakeRearOffsetM": 3, "rangeM": 150
   },
   "unlocks": [
     { "partId": "wheels-smooth", "atBestDistanceM": 200 },

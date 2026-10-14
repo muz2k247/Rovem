@@ -179,6 +179,28 @@ describe('cannons', () => {
     expect(Math.abs(hit.speedAfterMps! - 18.248996)).toBeLessThan(1e-6);
   });
 
+  it('a kicker wakes only when the rover\'s rear edge is 3 m past the cannon (OI-15)', () => {
+    const s = session(worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] }));
+    s.course.ensureAhead(300);
+    const cannonXM = s.course.chunks[1]!.startXM + 5;
+    const wakeFrontXM = cannonXM + 3 + content.constants.roverLengthM;
+    runUntil(s, () => s.shots.length > 0);
+    expect(s.shots[0]!.cannonId.startsWith('1:')).toBe(true);
+    expect(s.state.positionXM).toBeGreaterThanOrEqual(wakeFrontXM);
+    expect(s.state.positionXM - s.state.speedMps * constants.timeStepS).toBeLessThan(wakeFrontXM);
+  });
+
+  it('the first kicker bag does not hit a rover that is faster than the bags', () => {
+    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] });
+    const probe = session(world);
+    probe.course.ensureAhead(300);
+    const cannonXM = probe.course.chunks[1]!.startXM + 5;
+    const s = session(world, { initialState: { positionXM: cannonXM + 3 + content.constants.roverLengthM - 0.5, speedMps: 40, throttleLevel: 1 } });
+    for (let i = 0; i < 120 * 3; i++) s.stepOnce();
+    expect(s.shots.filter((x) => x.cannonId.startsWith('1:'))).toHaveLength(3);
+    expect(eventsOf(s, 'kickerHit').filter((e) => e.xM < cannonXM + 60)).toHaveLength(0);
+  });
+
   it('a kicker misses a rover that is faster than its bags, and fires exactly 3 shots', () => {
     const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] });
     const s = session(world, { initialState: { positionXM: 70, speedMps: 40, throttleLevel: 1 } });

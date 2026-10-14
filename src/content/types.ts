@@ -161,6 +161,8 @@ export interface SandbagParams {
   /** A head-on cannon wakes when the front is this far before it. */
   headOnTriggerDistanceM: number;
   kickerShots: number;
+  /** A kicker wakes when the rover's rear edge is this far past the cannon (OI-15). */
+  kickerWakeRearOffsetM: number;
   /** A bag is removed once it has travelled this far. */
   rangeM: number;
 }

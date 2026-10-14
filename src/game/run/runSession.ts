@@ -146,7 +146,7 @@ export function createRunSession(options: RunSessionOptions) {
     // Cannons near the rover that have not woken yet.
     for (const cannon of course.cannonsInRange(front.x - 10, front.x + bagSpec.headOnTriggerDistanceM + 5)) {
       if (cannonStates.has(cannon.id)) continue;
-      const wake = cannon.kind === 'headOn' ? cannon.xM - bagSpec.headOnTriggerDistanceM : cannon.xM + 2;
+      const wake = cannon.kind === 'headOn' ? cannon.xM - bagSpec.headOnTriggerDistanceM : cannon.xM + bagSpec.kickerWakeRearOffsetM + footprint.lengthM;
       if (front.x >= wake) cannonStates.set(cannon.id, { cannon, activatedAtS: t, shotsFired: 0 });
     }
     // Fire every shot that is due: the first at the activation step's time, then every fireIntervalS.

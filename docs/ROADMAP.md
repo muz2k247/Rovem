@@ -303,7 +303,7 @@ Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`
 
 **OI-13 (M5a): km/h is shown as a whole number.** CLAUDE.md says speeds are shown to 2 decimals. The HUD shows m/s to 2 decimals and km/h beside it as a whole number ("16.00 m/s · 58 km/h", as in DESIGN §6's "16 m/s = 58 km/h"). Reason: km/h is there for feel, and a second 2-decimal number adds clutter (NFR-6). Proposal: confirm, and add "km/h whole" to the display rule.
 
-**OI-15 (Demo D4): a kicker bag hits a rover in its lane the moment it fires, even a fast one.** A4 wakes a kicker when the front reaches cannon x + 2 and puts the first bag at the cannon's x. The rover's rear edge is then at about the cannon's x, and the bag has radius 0.5 m, so the bag overlaps the rover at once and the first shot always hits a rover in the cannon's lane, however fast it is. Only the later shots obey "a bag can only catch a rover that is slower than it". Built as A4 is written. Proposal: wake the kicker when the rear edge is 1 m past the cannon (x + 3), or fire the first bag one interval later. Needs k._muz's decision before playtesting.
+**OI-15 (Demo D4): CLOSED 2026-10-15.** A kicker bag hit a rover in its lane the moment it fired, even a fast one, because A4 woke the kicker at front x ≥ cannon x + 2 and the bag started inside the rover. k._muz decided: wake it only when the rear edge is at cannon x + 3 (`sandbag.kickerWakeRearOffsetM` = 3 in `run.json`). Fixed in `runSession.ts` with two tests; see DECISIONS 2026-10-15. Boost stacking stays as it is.
 
 Spec edits E4–E30 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 

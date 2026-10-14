@@ -6,6 +6,9 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Changed
+- Demo OI-15: a kicker cannon now wakes when the rover's rear edge is 3 m past it (`sandbag.kickerWakeRearOffsetM` in `run.json`, an engineering number), not when the front is 2 m past it, so the first bag can no longer hit a rover faster than the bags. DEMO_BUILD_PLAN A4 and A10 updated.
+
 ### Added
 - Reverse (DECISIONS 2026-10-13), in `src/physics/step.ts`:
   - The rover has a direction of travel (`direction`); v ≥ 0 stays the speed.

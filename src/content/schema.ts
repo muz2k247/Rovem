@@ -327,6 +327,7 @@ function run(raw: unknown, partList: readonly Part[]): RunParams {
       fireIntervalS: num(s, 'fireIntervalS', sp, { positive: true }),
       headOnTriggerDistanceM: num(s, 'headOnTriggerDistanceM', sp, { positive: true }),
       kickerShots: num(s, 'kickerShots', sp, { positive: true }),
+      kickerWakeRearOffsetM: num(s, 'kickerWakeRearOffsetM', sp, { positive: true }),
       rangeM: num(s, 'rangeM', sp, { positive: true }),
     },
     unlocks,

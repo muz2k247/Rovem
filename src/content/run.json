@@ -13,6 +13,7 @@
     "fireIntervalS": 1.2,
     "headOnTriggerDistanceM": 90,
     "kickerShots": 3,
+    "kickerWakeRearOffsetM": 3,
     "rangeM": 150
   },
   "unlocks": [
