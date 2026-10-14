@@ -1,0 +1,545 @@
+{
+  "fieldChunks": [
+    {
+      "id": "mud-field",
+      "difficulty": 1,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "mud",
+          "xM": [
+            30,
+            42
+          ],
+          "zM": [
+            -15,
+            3
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            55,
+            57
+          ],
+          "zM": [
+            6,
+            12
+          ]
+        }
+      ],
+      "boostPads": [
+        {
+          "xM": [
+            70,
+            74
+          ],
+          "zM": [
+            -2,
+            2
+          ]
+        }
+      ],
+      "cannons": [],
+      "gravityZones": []
+    },
+    {
+      "id": "boost-alley",
+      "difficulty": 1,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "sand",
+          "xM": [
+            10,
+            40
+          ],
+          "zM": [
+            -15,
+            -4
+          ]
+        },
+        {
+          "surfaceId": "sand",
+          "xM": [
+            78,
+            95
+          ],
+          "zM": [
+            -15,
+            15
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            45,
+            47
+          ],
+          "zM": [
+            -12,
+            -6
+          ]
+        },
+        {
+          "xM": [
+            85,
+            87
+          ],
+          "zM": [
+            5,
+            11
+          ]
+        }
+      ],
+      "boostPads": [
+        {
+          "xM": [
+            20,
+            24
+          ],
+          "zM": [
+            -1,
+            3
+          ]
+        },
+        {
+          "xM": [
+            60,
+            64
+          ],
+          "zM": [
+            -1,
+            3
+          ]
+        }
+      ],
+      "cannons": [],
+      "gravityZones": []
+    },
+    {
+      "id": "cannon-ice",
+      "difficulty": 1,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "ice",
+          "xM": [
+            20,
+            60
+          ],
+          "zM": [
+            -15,
+            -5
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            40,
+            42
+          ],
+          "zM": [
+            8,
+            15
+          ]
+        }
+      ],
+      "boostPads": [],
+      "cannons": [
+        {
+          "kind": "headOn",
+          "xM": 98,
+          "zM": 0
+        }
+      ],
+      "gravityZones": []
+    },
+    {
+      "id": "kicker-run",
+      "difficulty": 2,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "mud",
+          "xM": [
+            60,
+            72
+          ],
+          "zM": [
+            -2,
+            15
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            30,
+            32
+          ],
+          "zM": [
+            2,
+            9
+          ]
+        },
+        {
+          "xM": [
+            80,
+            82
+          ],
+          "zM": [
+            -15,
+            -9
+          ]
+        }
+      ],
+      "boostPads": [
+        {
+          "xM": [
+            40,
+            44
+          ],
+          "zM": [
+            -8,
+            -4
+          ]
+        }
+      ],
+      "cannons": [
+        {
+          "kind": "kicker",
+          "xM": 5,
+          "zM": -6
+        }
+      ],
+      "gravityZones": []
+    },
+    {
+      "id": "crossfire",
+      "difficulty": 2,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "ice",
+          "xM": [
+            10,
+            90
+          ],
+          "zM": [
+            -4,
+            4
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            50,
+            52
+          ],
+          "zM": [
+            -15,
+            -11
+          ]
+        },
+        {
+          "xM": [
+            50,
+            52
+          ],
+          "zM": [
+            11,
+            15
+          ]
+        }
+      ],
+      "boostPads": [],
+      "cannons": [
+        {
+          "kind": "headOn",
+          "xM": 98,
+          "zM": -7
+        },
+        {
+          "kind": "headOn",
+          "xM": 98,
+          "zM": 7
+        }
+      ],
+      "gravityZones": []
+    },
+    {
+      "id": "slalom",
+      "difficulty": 2,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "mud",
+          "xM": [
+            44,
+            50
+          ],
+          "zM": [
+            -15,
+            15
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            15,
+            17
+          ],
+          "zM": [
+            -15,
+            -3
+          ]
+        },
+        {
+          "xM": [
+            35,
+            37
+          ],
+          "zM": [
+            3,
+            15
+          ]
+        },
+        {
+          "xM": [
+            55,
+            57
+          ],
+          "zM": [
+            -15,
+            -3
+          ]
+        },
+        {
+          "xM": [
+            75,
+            77
+          ],
+          "zM": [
+            3,
+            15
+          ]
+        }
+      ],
+      "boostPads": [],
+      "cannons": [],
+      "gravityZones": []
+    },
+    {
+      "id": "gauntlet",
+      "difficulty": 3,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "mud",
+          "xM": [
+            60,
+            70
+          ],
+          "zM": [
+            -15,
+            0
+          ]
+        },
+        {
+          "surfaceId": "sand",
+          "xM": [
+            75,
+            100
+          ],
+          "zM": [
+            0,
+            15
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            30,
+            32
+          ],
+          "zM": [
+            -6,
+            6
+          ]
+        }
+      ],
+      "boostPads": [
+        {
+          "xM": [
+            20,
+            24
+          ],
+          "zM": [
+            8,
+            12
+          ]
+        }
+      ],
+      "cannons": [
+        {
+          "kind": "headOn",
+          "xM": 98,
+          "zM": 0
+        },
+        {
+          "kind": "kicker",
+          "xM": 5,
+          "zM": 8
+        }
+      ],
+      "gravityZones": []
+    },
+    {
+      "id": "narrow-pass",
+      "difficulty": 3,
+      "lengthM": 100,
+      "tiles": [
+        {
+          "surfaceId": "mud",
+          "xM": [
+            47,
+            53
+          ],
+          "zM": [
+            -3,
+            3
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "xM": [
+            45,
+            55
+          ],
+          "zM": [
+            -15,
+            -3
+          ]
+        },
+        {
+          "xM": [
+            45,
+            55
+          ],
+          "zM": [
+            3,
+            15
+          ]
+        }
+      ],
+      "boostPads": [
+        {
+          "xM": [
+            20,
+            24
+          ],
+          "zM": [
+            -2,
+            2
+          ]
+        }
+      ],
+      "cannons": [],
+      "gravityZones": []
+    }
+  ],
+  "tunnel": {
+    "id": "tunnel",
+    "lengthM": 50,
+    "tiles": [
+      {
+        "surfaceId": "mud",
+        "xM": [
+          20,
+          28
+        ],
+        "zM": [
+          1.5,
+          12
+        ]
+      },
+      {
+        "surfaceId": "mud",
+        "xM": [
+          20,
+          28
+        ],
+        "zM": [
+          -12,
+          -1.5
+        ]
+      }
+    ],
+    "barriers": [
+      {
+        "xM": [
+          0,
+          45
+        ],
+        "zM": [
+          -1.5,
+          1.5
+        ]
+      },
+      {
+        "xM": [
+          5,
+          45
+        ],
+        "zM": [
+          12,
+          15
+        ]
+      },
+      {
+        "xM": [
+          5,
+          45
+        ],
+        "zM": [
+          -15,
+          -12
+        ]
+      }
+    ],
+    "boostPads": [],
+    "cannons": [],
+    "gravityZones": [
+      {
+        "kind": "low",
+        "xM": [
+          5,
+          45
+        ],
+        "zM": [
+          1.5,
+          12
+        ]
+      },
+      {
+        "kind": "high",
+        "xM": [
+          5,
+          45
+        ],
+        "zM": [
+          -12,
+          -1.5
+        ]
+      }
+    ]
+  }
+}

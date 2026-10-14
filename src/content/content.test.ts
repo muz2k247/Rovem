@@ -6,6 +6,9 @@ import rawParts from './parts.json';
 import rawPowerUps from './powerUps.json';
 import rawMissions from './missions.json';
 import rawTestCourse from './levels/testCourse.json';
+import rawRun from './run.json';
+import rawRunChunks from './runChunks.json';
+import rawRunText from './runText.json';
 
 // A deep copy of the shipped data that a test can break on purpose.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,6 +21,9 @@ const raw = (): Raw =>
     powerUps: rawPowerUps,
     missions: rawMissions,
     levels: { testCourse: rawTestCourse },
+    run: rawRun,
+    runChunks: rawRunChunks,
+    runText: rawRunText,
   });
 
 describe('content data', () => {
@@ -25,7 +31,7 @@ describe('content data', () => {
     expect(content.constants.stepsPerSecond).toBe(120);
     expect(content.constants.maxBrakeForceN).toBe(1500);
     expect(content.constants.turnRateDegPerS).toBe(60);
-    expect(content.surfaces.map((s) => s.id)).toEqual(['asphalt', 'sand', 'ice']);
+    expect(content.surfaces.map((s) => s.id)).toEqual(['asphalt', 'sand', 'ice', 'mud']);
     expect(content.parts).toHaveLength(9);
     expect(content.powerUps).toHaveLength(6);
     expect(content.missions.mission3.brakeLineBeforeZoneEndM).toBe(23);
@@ -113,7 +119,7 @@ describe('level data (DESIGN §8)', () => {
 
   it('names the bad path: an unknown surface or prop kind', () => {
     expect(bad((l) => (l.surfaces[0].surfaceId = 'lava'))).toThrow(/levels\.testCourse\.surfaces\[0\]\.surfaceId.*lava/);
-    expect(bad((l) => (l.defaultSurfaceId = 'mud'))).toThrow(/levels\.testCourse\.defaultSurfaceId/);
+    expect(bad((l) => (l.defaultSurfaceId = 'lava'))).toThrow(/levels\.testCourse\.defaultSurfaceId/);
     expect(bad((l) => (l.props[0].kind = 'tree'))).toThrow(/levels\.testCourse\.props\[0\]\.kind/);
   });
 

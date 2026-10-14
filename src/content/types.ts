@@ -86,6 +86,10 @@ export interface Content {
   missions: MissionParams;
   /** One per file in `levels/`, keyed by file name. */
   levels: Levels;
+  /** Demo v3 (DECISIONS 2026-10-14): the endless canyon run. */
+  run: RunParams;
+  runChunks: RunChunks;
+  runText: RunText;
 }
 
 /** A point on the ground, physics axes: x along the start heading, z to its left. */
@@ -144,4 +148,98 @@ export interface Level {
 /** Every level the game ships, keyed by file name in `levels/`. M5b adds the Canyon Dash. */
 export interface Levels {
   testCourse: Level;
+}
+
+// ---- Demo v3: endless canyon run (docs/DEMO_BUILD_PLAN.md A3, A10, A11) ----
+
+export interface SandbagParams {
+  massKg: number;
+  radiusM: number;
+  headOnSpeedMps: number;
+  kickerSpeedMps: number;
+  fireIntervalS: number;
+  /** A head-on cannon wakes when the front is this far before it. */
+  headOnTriggerDistanceM: number;
+  kickerShots: number;
+  /** A bag is removed once it has travelled this far. */
+  rangeM: number;
+}
+
+export interface RunUnlock {
+  partId: string;
+  atBestDistanceM: number;
+}
+
+/** In `run.json`. All provisional (DECISIONS 2026-10-14). */
+export interface RunParams {
+  /** The canyon runs along +x, |z| ≤ this. */
+  corridorHalfWidthM: number;
+  warmUpLengthM: number;
+  fieldChunksBetweenTunnels: number;
+  /** Distance at which difficulty 1, 2 and 3 chunks start to be allowed. */
+  difficultyStartsM: [number, number, number];
+  gravityMultipliers: { low: number; high: number };
+  boostImpulseNs: number;
+  sandbag: SandbagParams;
+  unlocks: RunUnlock[];
+}
+
+/** A rectangle in chunk-local metres: x from 0 to the chunk length, z across the canyon. */
+export interface RectM {
+  xM: [number, number];
+  zM: [number, number];
+}
+
+export interface ChunkTile extends RectM {
+  surfaceId: string;
+}
+
+export type CannonKind = 'headOn' | 'kicker';
+export type GravityKind = 'low' | 'high';
+
+export interface ChunkCannon {
+  kind: CannonKind;
+  xM: number;
+  zM: number;
+}
+
+export interface ChunkGravityZone extends RectM {
+  kind: GravityKind;
+}
+
+export interface RunChunk {
+  id: string;
+  /** 1–3. The tunnel has none (0). */
+  difficulty: number;
+  lengthM: number;
+  tiles: ChunkTile[];
+  barriers: RectM[];
+  boostPads: RectM[];
+  cannons: ChunkCannon[];
+  gravityZones: ChunkGravityZone[];
+}
+
+export interface RunChunks {
+  fieldChunks: RunChunk[];
+  tunnel: RunChunk;
+}
+
+/** The event kinds the student can meet (A7, A11). */
+export const EVENT_KINDS = ['mud', 'sand', 'ice', 'boost', 'headOnHit', 'kickerHit', 'gravity', 'slip', 'aboveTopSpeed'] as const;
+export type EventKind = (typeof EVENT_KINDS)[number];
+
+/** Effects that get a formula line in the report. */
+export const FORMULA_KINDS = ['mud', 'boost', 'headOnHit', 'kickerHit', 'gravity'] as const;
+export type FormulaKind = (typeof FORMULA_KINDS)[number];
+
+export const TRY_THIS_KEYS = ['stuckInHighGravity', 'smoothWheels', 'heavyChassis', 'steerEarlier', 'takeBoosts'] as const;
+export type TryThisKey = (typeof TRY_THIS_KEYS)[number];
+
+/** In `runText.json`. Placeholder text until k._muz reviews it (CLAUDE.md, Questions). */
+export interface RunText {
+  placeholder: boolean;
+  briefing: { headline: string; hazards: string[] };
+  tidbits: Record<EventKind, string>;
+  formulas: Record<FormulaKind, string>;
+  tryThis: Record<TryThisKey, string>;
 }

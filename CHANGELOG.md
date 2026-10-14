@@ -7,6 +7,7 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 ## [Unreleased]
 
 ### Added
+- Demo D2 (content): the Mud surface (`surfaces.json`), `run.json`, `runChunks.json` (8 field chunks and the tunnel), `runText.json` (placeholder text; the loader logs one warning). Validators in `schema.ts` name the bad path for: rectangles (from < to, inside the chunk and the corridor), surface and part ids, unlock ids that are starting parts, difficulties, cannon and gravity-zone kinds, duplicate ids and missing text. Tests in `runContent.test.ts`.
 - Demo D1 (physics): the above-top-speed rule in `step()` (throttle held and v above the top speed gives Coasting, `driveForceN` 0, a = −F_r/m, with the step split at t₁ = (v_max − v)/a), and `src/physics/momentum.ts` (`shareMomentum`, `applyImpulse`). Hand-check tests for mud at g = 9.8, 4.9 and 19.6, the Light/Smooth/Small build, boost, head-on and kicker bags, and a rover pushed into reverse. `physics-checker` found no mismatch. T1–T10 and `npm run balance` unchanged.
 - Reverse (DECISIONS 2026-10-13), in `src/physics/step.ts`:
   - The rover has a direction of travel (`direction`); v ≥ 0 stays the speed.

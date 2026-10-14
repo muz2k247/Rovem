@@ -1,0 +1,26 @@
+{
+  "corridorHalfWidthM": 15,
+  "warmUpLengthM": 60,
+  "fieldChunksBetweenTunnels": 2,
+  "difficultyStartsM": [0, 500, 1500],
+  "gravityMultipliers": { "low": 0.5, "high": 2 },
+  "boostImpulseNs": 1200,
+  "sandbag": {
+    "massKg": 40,
+    "radiusM": 0.5,
+    "headOnSpeedMps": 10,
+    "kickerSpeedMps": 30,
+    "fireIntervalS": 1.2,
+    "headOnTriggerDistanceM": 90,
+    "kickerShots": 3,
+    "rangeM": 150
+  },
+  "unlocks": [
+    { "partId": "wheels-smooth", "atBestDistanceM": 200 },
+    { "partId": "chassis-heavy", "atBestDistanceM": 400 },
+    { "partId": "chassis-light", "atBestDistanceM": 700 },
+    { "partId": "motor-large", "atBestDistanceM": 1000 },
+    { "partId": "wheels-spiked", "atBestDistanceM": 1500 },
+    { "partId": "motor-small", "atBestDistanceM": 2000 }
+  ]
+}

@@ -1,7 +1,13 @@
+import { EVENT_KINDS, FORMULA_KINDS, TRY_THIS_KEYS } from './types.ts';
 import type {
   AreaLineKind,
+  CannonKind,
+  ChunkCannon,
+  ChunkGravityZone,
+  ChunkTile,
   Constants,
   Content,
+  GravityKind,
   Level,
   LevelLine,
   Levels,
@@ -12,6 +18,12 @@ import type {
   PointM,
   PowerUp,
   PowerUpVariable,
+  RectM,
+  RunChunk,
+  RunChunks,
+  RunParams,
+  RunText,
+  RunUnlock,
   SegmentLineKind,
   Slot,
   Surface,
@@ -263,6 +275,154 @@ function noDuplicates(items: { id: string }[], path: string): void {
   }
 }
 
+// ---- Demo v3: endless canyon run (docs/DEMO_BUILD_PLAN.md A3, A10, A11) ----
+
+function range(raw: unknown, path: string): [number, number] {
+  const list = arr(raw, path);
+  if (list.length !== 2 || list.some((x) => typeof x !== 'number' || !Number.isFinite(x))) {
+    fail(path, 'expected [from, to], two numbers');
+  }
+  return [list[0] as number, list[1] as number];
+}
+
+function run(raw: unknown, partList: readonly Part[]): RunParams {
+  const p = 'run';
+  const o = obj(raw, p);
+  const s = obj(o.sandbag, `${p}.sandbag`);
+  const sp = `${p}.sandbag`;
+  const g = obj(o.gravityMultipliers, `${p}.gravityMultipliers`);
+  const starts = arr(o.difficultyStartsM, `${p}.difficultyStartsM`);
+  if (starts.length !== 3 || starts.some((x) => typeof x !== 'number' || !Number.isFinite(x))) {
+    fail(`${p}.difficultyStartsM`, 'expected three numbers (where difficulty 1, 2 and 3 start)');
+  }
+  const [d1, d2, d3] = starts as [number, number, number];
+  if (d1 < 0 || !(d1 < d2 && d2 < d3)) fail(`${p}.difficultyStartsM`, 'must start at 0 or more and rise: difficulty 1, then 2, then 3');
+  const between = num(o, 'fieldChunksBetweenTunnels', p, { positive: true });
+  if (!Number.isInteger(between)) fail(`${p}.fieldChunksBetweenTunnels`, 'must be a whole number');
+  const unlocks = arr(o.unlocks, `${p}.unlocks`).map((item, i): RunUnlock => {
+    const up = `${p}.unlocks[${i}]`;
+    const u = obj(item, up);
+    const partId = str(u, 'partId', up);
+    const part = partList.find((x) => x.id === partId);
+    if (!part) fail(`${up}.partId`, `unknown part "${partId}"`);
+    if (part.startsUnlocked) fail(`${up}.partId`, `"${partId}" is a starting part and is always open`);
+    return { partId, atBestDistanceM: num(u, 'atBestDistanceM', up, { positive: true }) };
+  });
+  noDuplicates(unlocks.map((u) => ({ id: u.partId })), `${p}.unlocks`);
+  return {
+    corridorHalfWidthM: num(o, 'corridorHalfWidthM', p, { positive: true }),
+    warmUpLengthM: num(o, 'warmUpLengthM', p, { min: 0 }),
+    fieldChunksBetweenTunnels: between,
+    difficultyStartsM: [d1, d2, d3],
+    gravityMultipliers: {
+      low: num(g, 'low', `${p}.gravityMultipliers`, { positive: true }),
+      high: num(g, 'high', `${p}.gravityMultipliers`, { positive: true }),
+    },
+    boostImpulseNs: num(o, 'boostImpulseNs', p, { positive: true }),
+    sandbag: {
+      massKg: num(s, 'massKg', sp, { positive: true }),
+      radiusM: num(s, 'radiusM', sp, { positive: true }),
+      headOnSpeedMps: num(s, 'headOnSpeedMps', sp, { positive: true }),
+      kickerSpeedMps: num(s, 'kickerSpeedMps', sp, { positive: true }),
+      fireIntervalS: num(s, 'fireIntervalS', sp, { positive: true }),
+      headOnTriggerDistanceM: num(s, 'headOnTriggerDistanceM', sp, { positive: true }),
+      kickerShots: num(s, 'kickerShots', sp, { positive: true }),
+      rangeM: num(s, 'rangeM', sp, { positive: true }),
+    },
+    unlocks,
+  };
+}
+
+/** A rectangle: from < to on both axes, inside the chunk in x and inside the corridor in z. */
+function rect(raw: unknown, path: string, lengthM: number, halfWidthM: number): RectM {
+  const o = obj(raw, path);
+  const xM = range(o.xM, `${path}.xM`);
+  const zM = range(o.zM, `${path}.zM`);
+  if (!(xM[0] < xM[1])) fail(`${path}.xM`, 'from must be less than to');
+  if (!(zM[0] < zM[1])) fail(`${path}.zM`, 'from must be less than to');
+  if (xM[0] < 0 || xM[1] > lengthM) fail(`${path}.xM`, `must lie inside the chunk (0 to ${lengthM} m)`);
+  if (zM[0] < -halfWidthM || zM[1] > halfWidthM) fail(`${path}.zM`, `must lie inside the corridor (±${halfWidthM} m)`);
+  return { xM, zM };
+}
+
+function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly string[], isTunnel: boolean): RunChunk {
+  const o = obj(raw, path);
+  const lengthM = num(o, 'lengthM', path, { positive: true });
+  const halfWidthM = run.corridorHalfWidthM;
+  let difficulty = 0;
+  if (!isTunnel) {
+    difficulty = num(o, 'difficulty', path);
+    if (![1, 2, 3].includes(difficulty)) fail(`${path}.difficulty`, 'must be 1, 2 or 3');
+  }
+  const list = (key: string) => arr(o[key], `${path}.${key}`);
+  return {
+    id: str(o, 'id', path),
+    difficulty,
+    lengthM,
+    tiles: list('tiles').map((item, i): ChunkTile => {
+      const tp = `${path}.tiles[${i}]`;
+      return { ...rect(item, tp, lengthM, halfWidthM), surfaceId: oneOf(obj(item, tp), 'surfaceId', tp, surfaceIds) };
+    }),
+    barriers: list('barriers').map((item, i) => rect(item, `${path}.barriers[${i}]`, lengthM, halfWidthM)),
+    boostPads: list('boostPads').map((item, i) => rect(item, `${path}.boostPads[${i}]`, lengthM, halfWidthM)),
+    cannons: list('cannons').map((item, i): ChunkCannon => {
+      const cp = `${path}.cannons[${i}]`;
+      const c = obj(item, cp);
+      const kind = oneOf(c, 'kind', cp, CANNON_KINDS) as CannonKind;
+      const xM = num(c, 'xM', cp);
+      const zM = num(c, 'zM', cp);
+      if (xM < 0 || xM > lengthM) fail(`${cp}.xM`, `must lie inside the chunk (0 to ${lengthM} m)`);
+      if (Math.abs(zM) > halfWidthM) fail(`${cp}.zM`, `must lie inside the corridor (±${halfWidthM} m)`);
+      return { kind, xM, zM };
+    }),
+    gravityZones: list('gravityZones').map((item, i): ChunkGravityZone => {
+      const zp = `${path}.gravityZones[${i}]`;
+      return { ...rect(item, zp, lengthM, halfWidthM), kind: oneOf(obj(item, zp), 'kind', zp, GRAVITY_KINDS) as GravityKind };
+    }),
+  };
+}
+
+const CANNON_KINDS: readonly CannonKind[] = ['headOn', 'kicker'];
+const GRAVITY_KINDS: readonly GravityKind[] = ['low', 'high'];
+
+function runChunks(raw: unknown, runParams: RunParams, surfaceIds: readonly string[]): RunChunks {
+  const o = obj(raw, 'runChunks');
+  const fieldChunks = arr(o.fieldChunks, 'runChunks.fieldChunks').map((item, i) =>
+    chunk(item, `runChunks.fieldChunks[${i}]`, runParams, surfaceIds, false),
+  );
+  noDuplicates(fieldChunks, 'runChunks.fieldChunks');
+  for (const d of [1, 2, 3]) {
+    if (!fieldChunks.some((c) => c.difficulty === d)) fail('runChunks.fieldChunks', `no chunk of difficulty ${d}`);
+  }
+  if (fieldChunks.length < 2) fail('runChunks.fieldChunks', 'needs at least 2 chunks so the same one is never used twice in a row');
+  return { fieldChunks, tunnel: chunk(o.tunnel, 'runChunks.tunnel', runParams, surfaceIds, true) };
+}
+
+function textMap<K extends string>(raw: unknown, path: string, keys: readonly K[]): Record<K, string> {
+  const o = obj(raw, path);
+  const out = {} as Record<K, string>;
+  for (const k of keys) out[k] = str(o, k, path);
+  return out;
+}
+
+function runText(raw: unknown): RunText {
+  const p = 'runText';
+  const o = obj(raw, p);
+  const b = obj(o.briefing, `${p}.briefing`);
+  const hazards = arr(b.hazards, `${p}.briefing.hazards`);
+  if (hazards.length === 0) fail(`${p}.briefing.hazards`, 'needs at least one line');
+  hazards.forEach((h, i) => {
+    if (typeof h !== 'string' || h === '') fail(`${p}.briefing.hazards[${i}]`, 'expected a non-empty string');
+  });
+  return {
+    placeholder: bool(o, 'placeholder', p),
+    briefing: { headline: str(b, 'headline', `${p}.briefing`), hazards: hazards as string[] },
+    tidbits: textMap(o.tidbits, `${p}.tidbits`, EVENT_KINDS),
+    formulas: textMap(o.formulas, `${p}.formulas`, FORMULA_KINDS),
+    tryThis: textMap(o.tryThis, `${p}.tryThis`, TRY_THIS_KEYS),
+  };
+}
+
 /** Checks raw JSON and returns it as typed content. Throws with the path of the first problem. */
 export function validateContent(raw: unknown): Content {
   const o = obj(raw, 'content');
@@ -270,10 +430,12 @@ export function validateContent(raw: unknown): Content {
   const checkedPowerUps = powerUps(o.powerUps);
   noDuplicates(checkedSurfaces, 'surfaces');
   noDuplicates(checkedPowerUps, 'powerUps');
+  const checkedParts = parts(o.parts);
+  const checkedRun = run(o.run, checkedParts);
   const content: Content = {
     constants: constants(o.constants),
     surfaces: checkedSurfaces,
-    parts: parts(o.parts),
+    parts: checkedParts,
     powerUps: checkedPowerUps,
     missions: missions(o.missions),
     levels: levels(
@@ -281,6 +443,9 @@ export function validateContent(raw: unknown): Content {
       checkedSurfaces.map((s) => s.id),
       checkedPowerUps.map((x) => x.id),
     ),
+    run: checkedRun,
+    runChunks: runChunks(o.runChunks, checkedRun, checkedSurfaces.map((x) => x.id)),
+    runText: runText(o.runText),
   };
   noDuplicates(content.parts, 'parts');
   return content;
