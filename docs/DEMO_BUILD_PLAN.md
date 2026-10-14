@@ -1,6 +1,6 @@
 # Rovem demo: build plan and session prompts
 
-**Status:** approved by k._muz in chat on 2026-10-14. Session 0 copies the decisions below into `docs/DESIGN.md` and `docs/DECISIONS.md`. Until then, this file is the brief.
+**Status:** approved by k._muz in chat on 2026-10-14. Session 0 copied the decisions below into `docs/DESIGN.md` and `docs/DECISIONS.md` on 2026-10-14. Where they differ, this Part A governs.
 
 **Why the demo exists.** The advisor ruled out multiple-choice questions: students must learn by playing. He asked for a playable demo of the idea, on even one topic. The direction after the demo is decided once he has seen it. So the demo is not the MVP. It is one game mode that shows the idea: physics is the thing you play with, and the game shows you your own numbers.
 

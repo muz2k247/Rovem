@@ -1,4 +1,59 @@
-# Rovem — Game design v2
+# Rovem — Game design
+
+This file holds two designs. **Demo v3** (the endless canyon run) is the current work. **Game design v2** (from the heading "Game design v2 (paused 2026-10-14, not superseded)" down) is paused, not superseded.
+
+## Demo v3: endless canyon run (approved 2026-10-14)
+
+**Status: approved by k._muz in chat on 2026-10-14** (DECISIONS, 2026-10-14). The full detail, with every number, the chunk layouts and the session prompts, is in [`docs/DEMO_BUILD_PLAN.md`](DEMO_BUILD_PLAN.md), Part A. This section is the summary; where they differ, Part A governs. All demo values are *provisional* (see DECISIONS for which k._muz approved and which Claude chose).
+
+**Why it exists.** The student's advisor ruled out multiple-choice questions: students must learn by playing. He asked for a playable demo of the idea, on even one topic, and the direction after the demo is decided once he has seen it. So the demo is not the MVP. It is one game mode that shows the idea: physics is the thing you play with, and the game shows you your own numbers.
+
+**Relationship to design v2.** Design v2 is **paused, not superseded**. Nothing in it is withdrawn, and all its sections and reasoning stay below. Whether v2 resumes, changes or is dropped is decided after the advisor has seen the demo. Until then the milestones M5b–M14 and Q1–Q3 are paused (`docs/ROADMAP.md`).
+
+### The game
+
+The rover drives forward on its own through an endless, straight canyon (a corridor 30 m wide along +x). The student only steers (A/D or ←/→). The throttle is always held; there are no brake, reverse or throttle keys in the demo. Along the way:
+- **Tiles:** mud slows you; sand and ice change how fast you regain or lose speed.
+- **Boost pads:** each gives a one-time push (an impulse).
+- **Cannons:** they fire sandbags at you head-on, or from behind (a "kicker").
+- **Gravity tunnels:** every 250 m the canyon splits into two, one lane with low gravity (×0.5) and one with high gravity (×2).
+
+The run ends when the rover hits a barrier or the canyon wall (crash), or gets stuck in mud (friction beats the motor). The score grows with distance and with speed (each step adds distance × v / v_max). The best distance unlocks parts in the garage. There is no battery, no clock and no multiple-choice question.
+
+### How the learning works
+
+Learning by play, with no questions: the game shows the student's own numbers at the moment something happens.
+- **Captions** at the right edge name the event and the number that changed (e.g. `Boost · 16.00 → 21.74 m/s`). The first time an event kind is seen, a one-line tidbit explains it.
+- **Force panel** (bottom-left): arrows for motor, friction, weight and ground push, with a "Balanced: constant speed" label at top speed.
+- **Run report** when the run ends: the cause, up to 3 effects ranked by size, a formula line for each, and one "Try this" tip.
+- **Garage** (the first screen): three slots (Body, Wheels, Motor) and a panel showing, with the physics functions' own numbers, what the rover will do in mud, on a boost pad, under a sandbag hit and in each gravity. A field log keeps the tidbits.
+
+### New physics (all textbook formulas, in `src/physics/`)
+
+1. **Above top speed:** a rover faster than its top speed gets no push from the motor. It coasts, slowed only by friction (Newton's first law).
+2. **Momentum events:** `shareMomentum` (a sandbag collides and moves off together: m₁u₁ + m₂u₂ = (m₁ + m₂)u′) and `applyImpulse` (a boost pad: Δv = J ÷ m).
+3. **Gravity zones:** a different g passed to `step()`. Weight and friction change; mass does not.
+4. **Mud:** a new surface, μ_r = 0.6, μ_g = 0.5.
+
+Momentum and gravity were *future work* in SRS section 6. They are now in scope for the demo only (DECISIONS 2026-10-14).
+
+### The course
+
+A seeded generator builds the canyon lazily from hand-designed chunks: a 60 m warm-up, then field chunk, field chunk, tunnel chunk, repeating (a tunnel every 250 m). Difficulty grows with distance (from 0, 500 and 1500 m). The same seed always gives the same course, and every chunk is mirrored with probability ½. The endless run uses its own chunk format, not the `Level` format; the `Level` format stays for the missions.
+
+### Paused, kept, unchanged
+
+- **Paused:** M5b–M14, the questions, Knowledge, accounts and hosting. The old Build screen and test drive stay in the code, reachable from a developer link on the garage.
+- **Kept in code, unused by the demo:** reverse controls, the steering assist and the throttle bars.
+- **Unchanged:** T1–T10 and `npm run balance` must keep passing.
+
+### The demo is done when
+
+A run plays from the garage to the report and back; each object behaves as specified and shows its caption; the force panel shows "Balanced" at top speed on asphalt; every hand-check value is tested; the same seed and steering give an identical run at 30 and 144 fps; T1–T10 and the balance report are unchanged; `physics-checker` has been run; k._muz measures 30+ fps on Intel UHD Graphics and has a 1–2 minute screen recording (Part A14).
+
+---
+
+# Game design v2 (paused 2026-10-14, not superseded)
 
 **Status: approved by k._muz on 2026-10-13** (DECISIONS, 2026-10-13, "Game design v2"). Until the spec edits in `docs/PENDING_SPEC_EDITS.md` (E10–E25) are made, this file and `docs/DECISIONS.md` override the source documents wherever they differ. Values marked *provisional* are set but get tuned in playtesting. Items marked *open* must be decided by k._muz before the milestone named.
 

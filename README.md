@@ -6,6 +6,10 @@ A browser-based 3D game that teaches Grade 9 Kinematics and Dynamics. Students b
 
 **Status:** build phase. Current milestone: see [`docs/ROADMAP.md`](docs/ROADMAP.md). Changes: see [`CHANGELOG.md`](CHANGELOG.md).
 
+## Current focus: the demo
+
+The advisor ruled out multiple-choice questions and asked for a playable demo first, so the work now is **Demo v3: an endless canyon run** where the student steers and learns by playing (mud, boost pads, sandbag cannons, gravity tunnels). The game shows the student's own numbers. The full design is in [`docs/DEMO_BUILD_PLAN.md`](docs/DEMO_BUILD_PLAN.md) and [`docs/DESIGN.md`](docs/DESIGN.md). The mission design below (game design v2) is paused, not dropped, until the direction after the demo is decided.
+
 ## What the MVP includes
 
 - **One world, three missions and a free-roam hub** (game design v2, [`docs/DESIGN.md`](docs/DESIGN.md)). The world is the Ares Proving Ground, a Mars test base. Each mission is a short job with an untimed approach and one judged trial, and earns a bronze, silver or gold medal.

@@ -4,7 +4,9 @@ Every milestone ends with something that can be run or tested. A milestone is do
 
 M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions.
 
-Status key: ⬜ Not started · 🟨 In progress · ✅ Done
+**2026-10-14: M5b–M14 and Q1–Q3 are paused** while the demo is built (see "Demo v3" below and DECISIONS 2026-10-14). Their text is unchanged.
+
+Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused (until the post-demo direction is decided, DECISIONS 2026-10-14)
 
 ## Status
 
@@ -15,19 +17,45 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done
 | M3 | Build screen | ✅ | M2 |
 | M4 | Driving scene | ✅ | M2 |
 | M5a | Driving upgrades and level format | 🟨 | M4 |
-| M5b | Mission 1: Canyon Dash | ⬜ | M5a |
-| M6 | Questions, prediction and results | ⬜ | M3, M5b, Q1 |
-| M7 | Guest saving, Knowledge and unlocks | ⬜ | M6 |
-| M8 | Deployment | ⬜ | M7 |
-| — | **Mission 1 prototype complete** | ⬜ | M1–M8 |
-| Q1 | Mission 1 questions (3 required, 2 power-up, 2 unlock; each with a variant) | ⬜ | Runs alongside M2–M5b |
-| M9 | Proving Ground hub, unlock questions and Concepts cleared | ⬜ | M7 |
-| M10 | Mission 2: Frozen Lake | ⬜ | M7, Q2 |
-| M11 | Mission 3: Landing Pad | ⬜ | M10, Q3 |
-| Q2, Q3 | Mission 2 and Mission 3 questions | ⬜ | Runs alongside M8–M10 |
-| M12 | Accounts and cloud sync | ⬜ | M7 |
-| M13 | Playtesting and tuning | ⬜ | M11 |
-| M14 | Supervisor pitch | ⬜ | M13 |
+| Demo | **Demo v3: endless canyon run** (`docs/DEMO_BUILD_PLAN.md`) | 🟨 | M5a |
+| D1 | Physics additions: above-top-speed rule, `shareMomentum`, `applyImpulse` | ⬜ | Session 0 |
+| D2 | Content: mud, `run.json`, `runChunks.json`, `runText.json`, validation | ⬜ | D1 |
+| D3 | Course generator: seeded rng, `footprintOverlapsBox`, endless course | ⬜ | D2 |
+| D4 | Run session, unlocks, force panel, feedback, demo save | ⬜ | D1, D3 |
+| D5 | 3D run scene | ⬜ | D3 |
+| D6 | Screens: garage, run screen, report | ⬜ | D4, D5 |
+| D7 | Polish, `preview` script, review, recording | ⬜ | D6 |
+| M5b | Mission 1: Canyon Dash | ⏸ Paused | M5a |
+| M6 | Questions, prediction and results | ⏸ Paused | M3, M5b, Q1 |
+| M7 | Guest saving, Knowledge and unlocks | ⏸ Paused | M6 |
+| M8 | Deployment | ⏸ Paused | M7 |
+| — | **Mission 1 prototype complete** | ⏸ Paused | M1–M8 |
+| Q1 | Mission 1 questions (3 required, 2 power-up, 2 unlock; each with a variant) | ⏸ Paused | Runs alongside M2–M5b |
+| M9 | Proving Ground hub, unlock questions and Concepts cleared | ⏸ Paused | M7 |
+| M10 | Mission 2: Frozen Lake | ⏸ Paused | M7, Q2 |
+| M11 | Mission 3: Landing Pad | ⏸ Paused | M10, Q3 |
+| Q2, Q3 | Mission 2 and Mission 3 questions | ⏸ Paused | Runs alongside M8–M10 |
+| M12 | Accounts and cloud sync | ⏸ Paused | M7 |
+| M13 | Playtesting and tuning | ⏸ Paused | M11 |
+| M14 | Supervisor pitch | ⏸ Paused | M13 |
+
+## Demo v3: endless canyon run
+
+**Paused work (2026-10-14):** the advisor ruled out multiple-choice questions and asked for a playable demo first (DECISIONS 2026-10-14). M5b–M14 and Q1–Q3 are paused, not cancelled. Their text below stays as written; the post-demo direction decides whether they resume, change or end. M5a stays as it is (its fps and reverse checks by k._muz are still waiting); the demo builds on it.
+
+The design is in `docs/DESIGN.md` (Demo v3) and the detail, with the session prompts, in `docs/DEMO_BUILD_PLAN.md`. Steps D1–D7 are Sessions 1–7 of that file (Session 0 is this documentation step). Each step ends with `npm run typecheck` and `npm run test` passing, T1–T10 and `npm run balance` unchanged, and a CHANGELOG entry.
+
+| Step | Session | Goal | Done when |
+|---|---|---|---|
+| D1 | 1 | Physics additions in `src/physics/` only: the above-top-speed rule in `step()`, `shareMomentum` and `applyImpulse` in `momentum.ts` | Every hand-check value in A5 passes to a relative error below 1e-9; the existing tests and the step trace are unchanged; `physics-checker` run |
+| D2 | 2 | Demo content with validation (NFR-5): mud in `surfaces.json`, `run.json`, `runChunks.json` (8 field chunks and the tunnel), `runText.json` (placeholders) | The real content loads; each kind of bad data is rejected with its path named |
+| D3 | 3 | `src/game/run/`: `rng.ts`, `course.ts`, and `footprintOverlapsBox` in `geometry.ts` | Same seed gives an identical course whatever the call order; tunnels every 250 m; difficulty respected; mirroring swaps z |
+| D4 | 4 | `runSession.ts`, `unlocks.ts`, `forcePanel.ts`, `feedback.ts` and `src/save/demoProgress.ts` | Each A5 number is reached through a real session; crash, stuck, pads, bags, score and unlocks tested; T9 holds for the run; storage that throws falls back to defaults |
+| D5 | 5 | `src/render/runScene.ts`: chunks added and removed as the rover moves; original low-poly shapes | Object counts match the course (tested) |
+| D6 | 6 | Garage, run screen, report overlay and `App.tsx` in `src/ui/` | Several full runs played: each object, caption, crash, stuck, unlock, units, force panel toggle, replay |
+| D7 | 7 | Polish, the `preview` script, play-check of every item in A14, `physics-checker` and `spec-sync`, recording checklist | A14 is all passed; k._muz has measured 30+ fps and has the recording; CHANGELOG entries moved under `demo-0.1.0` |
+
+**Demo done when:** the A14 list in the build plan is true. Then k._muz shows the advisor, and the post-demo direction is decided.
 
 ## Mission 1 prototype
 
@@ -275,7 +303,7 @@ Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`
 
 **OI-13 (M5a): km/h is shown as a whole number.** CLAUDE.md says speeds are shown to 2 decimals. The HUD shows m/s to 2 decimals and km/h beside it as a whole number ("16.00 m/s · 58 km/h", as in DESIGN §6's "16 m/s = 58 km/h"). Reason: km/h is there for feel, and a second 2-decimal number adds clutter (NFR-6). Proposal: confirm, and add "km/h whole" to the display rule.
 
-Spec edits E4–E25 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
+Spec edits E4–E30 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ## Demo captures
 

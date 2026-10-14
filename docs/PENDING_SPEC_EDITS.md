@@ -4,7 +4,7 @@ Exact text changes for the source documents in `docs/specs/`, which can't be edi
 
 Entry format: an ID, the document and section, the exact current text, and the exact replacement text.
 
-E1–E3 were made and exported on 2026-10-12. E4–E25 below block no milestone; `docs/DECISIONS.md` governs until they are made.
+E1–E3 were made and exported on 2026-10-12. E4–E30 below block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ### E4: Physics Model Specification, "Driving states and acceleration" table, column "When"
 Source: DECISIONS OI-1.
@@ -149,3 +149,36 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Build: the "Unlock question" button moves to the hub terminals (M9).
 - Drive HUD: add km/h beside m/s, a reverse indicator ("R"), and "Blocked" while touching a rock.
 - Results: add the medal.
+
+### E26: SRS Draft 0.5, sections affected by the advisor's ruling — **waiting for the post-demo direction decision**
+Source: DECISIONS 2026-10-14 (advisor's ruling: no multiple-choice questions; learning by play; demo first).
+- No text is changed yet. The ruling affects these sections, and what they say stays in force for the MVP (design v2) until k._muz decides the direction after the advisor has seen the demo:
+  - FR-17–FR-19, FR-21: question format (three required scenario questions per mission, reasoning questions, pre-written answers, wrong-answer explanation and variant).
+  - FR-20, FR-22, FR-23: cleared/to-review marking, "Concepts cleared", attempt counts.
+  - FR-26: the attempt order (build → questions → predict → drive → results).
+  - FR-32–FR-37: run prediction, power-up questions, unlock questions, Knowledge, unlocking and the starting build.
+  - FR-44: the unlock check against the Knowledge balance.
+  - Section 3.8, FR-24, FR-35 and FR-43: Knowledge and progression (rewards 10/5, costs 20/15), the Knowledge balance worked out from saved progress, and the progress merge rules.
+  - Section 6, Future Work: "Momentum and impulse" and "Weight vs. mass through different gravity" are in the demo (E27–E29) but remain future work for the MVP until decided.
+- Once the direction is decided, replace this entry with exact current/replacement text per section.
+
+### E27: Physics Model Specification, "Driving states and acceleration", new rule "Above top speed"
+Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.1.
+- Add after the states table: "If the throttle level is above 0 and v is above the top speed in the current direction at the start of a step, the motor gives no force: the state is Coasting, F_d is reported as 0 and a = −F_r ÷ m. If v would fall below the top speed during the step, the step is split at t₁ = (v_max − v) ÷ a. For the rest of the step the rover holds v_max if min(u_t × F_d,max, F_lim) ≥ F_r; otherwise it continues with a₂ = (min(u_t × F_d,max, F_lim) − F_r) ÷ m."
+- In "The fixed time step", step 3, add: "A rover above its top speed is handled by the rule above."
+
+### E28: Physics Model Specification, new section "Momentum events"
+Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.2.
+- Add: "Momentum events are applied by the game layer after step(), never inside it. Velocity along the heading is u = +v when moving forward and u = −v in reverse. After an event the new speed is |u′| and the direction is set by the sign of u′ (unchanged if u′ = 0); nothing else changes.
+  - Collision where the two bodies move off together: m₁u₁ + m₂u₂ = (m₁ + m₂)u′, where m₁ is the rover, m₂ the other body and u₂ its velocity along the rover's heading. The other body then leaves with no sideways or along-track force, so the rover keeps u′.
+  - Impulse: J = m(u′ − u), so u′ = u + J ÷ m."
+
+### E29: Physics Model Specification, new section "Gravity zones"
+Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.3.
+- Add: "g may differ by region. The game layer passes the g that applies at the rover's front for each step; step() has no other change. R = mg, so F_r = μ_r × k_r × R and F_lim = μ_g × k_g × R scale with g, while the mass m does not. In the demo g = 9.8 × 0.5 (low) or 9.8 × 2 (high) inside a gravity zone, and 9.8 elsewhere (values in content)."
+- Add to Automated tests: "Doubling g doubles F_r and F_lim, and leaves m unchanged."
+
+### E30: Component Values sheet, Inputs, surface table
+Source: DECISIONS 2026-10-14 (mud).
+- Add a row after Ice: "Mud | 0.6 | 0.5" (rolling friction μ_r, grip μ_g; provisional).
+- Hand check for the starting build (209 kg) at g = 9.8: F_r = 1228.92 N, which is more than the Medium motor's 1000 N, so the rover slows at 1.095311 m/s² from top speed.

@@ -51,6 +51,13 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 - `src/game/testCourse.ts` (replaced by `src/content/levels/testCourse.json`).
 
 ### Docs
+- Demo v3 (endless canyon run) approved and recorded (DECISIONS 2026-10-14):
+  - `docs/DEMO_BUILD_PLAN.md`: the demo design (Part A) and the session prompts (Part B).
+  - `docs/DESIGN.md`: new section "Demo v3" at the top. Design v2 is paused, not superseded; all its sections are kept.
+  - `docs/DECISIONS.md`: six rows (advisor's ruling, demo design, physics additions, mud, run values and who chose them, momentum and gravity in scope for the demo).
+  - `docs/ROADMAP.md`: new Demo milestone with steps D1–D7; M5b–M14 and Q1–Q3 marked paused.
+  - `docs/PENDING_SPEC_EDITS.md`: E26 (SRS sections affected, waiting for the post-demo decision), E27–E29 (Physics Model Specification additions), E30 (mud row in the Component Values sheet).
+  - `README.md`: "Current focus: the demo" note.
 - Game design v2 approved and recorded:
   - `docs/DESIGN.md`, new: the world, missions as jobs with one judged trial, medals, the hub, reverse, rocks, speed feel, steering assist and hooks for future modifiers. Includes the simulation evidence.
   - `docs/DECISIONS.md`: eight new rows. The Mission 3 tow row and the brake-input part of OI-8 are marked superseded, with their reasoning kept.
