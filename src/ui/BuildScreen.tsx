@@ -31,10 +31,13 @@ export function BuildScreen({
   selection,
   onSelectionChange,
   onTestDrive,
+  onExit,
 }: {
   selection: BuildSelection;
   onSelectionChange: (selection: BuildSelection) => void;
   onTestDrive: () => void;
+  /** Back to the garage (the demo's first screen), when this screen is opened from there. */
+  onExit?: () => void;
 }) {
   const owned = ownedPartIds(content);
   const columns = partEffects(content, selection, MISSION_1_SURFACE_IDS);
@@ -56,6 +59,11 @@ export function BuildScreen({
       <header className="build-header">
         <span className="brand">ROVEM</span>
         <span>Mission 1 · Motion Trial · Build</span>
+        {onExit && (
+          <button type="button" className="unlock" onClick={onExit}>
+            Back to garage
+          </button>
+        )}
       </header>
 
       <div className="build-body">

@@ -21,8 +21,7 @@ const FOV_AT_REST_DEG = 58;
 const FOV_PER_MPS_DEG = 1.1;
 const FOV_EASE_PER_S = 3;
 
-const WALL_INNER_M = 15;
-const WALL_OUTER_M = 18;
+const WALL_THICKNESS_M = 3; // the corridor width itself comes from content (run.corridorHalfWidthM)
 const WALL_HEIGHT_M = 6;
 const ROOF_HEIGHT_M = 4.6;
 const BAG_BARREL_HEIGHT_M = 2;
@@ -125,6 +124,8 @@ export interface RunScene {
 export function createRunScene(session: RunSession, content: Content, wheelStyle: WheelStyle): RunScene {
   const { course } = session;
   const run = content.run;
+  const WALL_INNER_M = run.corridorHalfWidthM;
+  const WALL_OUTER_M = WALL_INNER_M + WALL_THICKNESS_M;
   const roverLengthM = content.constants.roverLengthM;
   const roverWidthM = content.constants.roverWidthM;
   const scene = new THREE.Scene();
@@ -273,6 +274,8 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   scene.add(rover);
   const camera = new THREE.PerspectiveCamera(FOV_AT_REST_DEG, 1, 0.1, 400);
   const dust = createDust(scene);
+  const dustPoints = scene.getObjectByName('dust') as THREE.Points | undefined;
+  if (dustPoints) (dustPoints.material as THREE.PointsMaterial).size = 0.22; // smaller than the test course: near puffs hid the track
   const dustColour = new THREE.Color();
   let lastDistanceM = 0;
   let wheelAngle = 0;

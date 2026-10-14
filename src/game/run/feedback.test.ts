@@ -107,6 +107,13 @@ describe('report effects', () => {
     expect(e[3]!.sizeMps).toBeCloseTo(0.1, 12);
   });
 
+  it('lists the first two gravity zones and counts the rest', () => {
+    const z = { kind: 'high' as const, speedInMps: 16, speedOutMps: 14 };
+    const e = reportEffects(stats({ gravityZones: [z, z, z, z] }), text, 'mps');
+    expect(e[0]!.label).toBe('Gravity zones · High gravity 16.00 → 14.00 m/s, High gravity 16.00 → 14.00 m/s and 2 more');
+    expect(e[0]!.sizeMps).toBe(8); // the size still counts every zone
+  });
+
   it('leaves out effects that did not happen', () => {
     expect(reportEffects(stats(), text, 'mps')).toEqual([]);
   });

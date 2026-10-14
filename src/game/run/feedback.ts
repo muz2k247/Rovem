@@ -181,11 +181,14 @@ export function reportEffects(stats: RunStats, text: RunText, unit: SpeedUnit): 
     effects.push({ kind: 'kickerHit', sizeMps: Math.abs(stats.kickerGainMps), formula: text.formulas.kickerHit, label: `Kicker hits · gained ${amount(stats.kickerGainMps)} in ${plural(stats.kickerHits, 'hit', 'hits')}` });
   }
   if (stats.gravityZones.length > 0) {
-    const used = stats.gravityZones
+    const MAX_SHOWN = 2; // a long run passes many tunnels; the label lists the first few
+    const shown = stats.gravityZones.slice(0, MAX_SHOWN);
+    const more = stats.gravityZones.length - shown.length;
+    const used = shown
       .map((z) => `${z.kind === 'low' ? 'Low' : 'High'} gravity ${(z.speedInMps * k).toFixed(2)} → ${speedText(z.speedOutMps, unit)}`)
       .join(', ');
     effects.push({
-      kind: 'gravity', formula: text.formulas.gravity, label: `Gravity zones · ${used}`,
+      kind: 'gravity', formula: text.formulas.gravity, label: `Gravity zones · ${used}${more > 0 ? ` and ${more} more` : ''}`,
       sizeMps: stats.gravityZones.reduce((sum, z) => sum + Math.abs(z.speedOutMps - z.speedInMps), 0),
     });
   }
