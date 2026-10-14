@@ -49,7 +49,7 @@ function groundPolygon(points: readonly { xM: number; zM: number }[], color: num
 }
 
 /** A small, cheap dust system: a fixed pool of points that fade out. Random spread is visual only. */
-function createDust(scene: THREE.Scene) {
+export function createDust(scene: THREE.Scene) {
   const count = 220;
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 4);
