@@ -113,7 +113,8 @@ package.json, package-lock.json, tsconfig.json, vite.config.ts, index.html
 docs/
   ROADMAP.md          milestones, status, open issues
   DECISIONS.md        dated log of decisions confirmed by k._muz
-  DESIGN.md           approved game design v2: world, missions, medals, hub, controls
+  DESIGN.md           approved design: Demo v3 (top section) and game design v2 (paused)
+  DEMO_BUILD_PLAN.md  the demo's design (Part A) and session prompts (Part B)
   PENDING_SPEC_EDITS.md  exact text changes waiting to be made in the PDFs/sheet
   ASSETS.md           licence record for every outside asset
   captures/           demo screenshots and clips, one per milestone
@@ -123,7 +124,7 @@ src/
   content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a;
                       demo: run.json, runChunks.json, runText.json (D2)
   game/               attempt flow, rules, Knowledge, unlocks
-    run/              demo (D3–D4): rng, course, runSession, unlocks, forcePanel, feedback
+    run/              demo (D3–D6): rng, course, runSession, unlocks, forcePanel, feedback, garageNumbers
   render/             three.js scene, camera, terrain, rover model; engine sound (Web Audio)
   ui/                 React screens and dialogs
   save/               progress storage; demoProgress.ts (D4, key rovem.demo.v1)
@@ -148,9 +149,8 @@ npm run test        # unit tests (Vitest)
 npm run typecheck   # tsc --noEmit
 npm run build       # typecheck, then production build into dist/
 npm run balance     # simulate all 27 builds against the mission limits (Node runs the .ts directly)
+npm run preview     # serve the built dist/ (run npm run build first)
 ```
-
-Planned, not yet present: `npm run preview` (`vite preview`) arrives in D7 (Session 7). Add it to this list when it exists.
 
 ## Claude Code helpers (`.claude/`)
 

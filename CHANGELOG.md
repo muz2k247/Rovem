@@ -7,11 +7,6 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 ## [Unreleased]
 
 ### Added
-- Demo D5 (3D run scene): `src/render/runScene.ts` (`createRunScene`): chunks are built as they come within 240 m ahead and removed 60 m behind, with shared unit-box geometry and materials. Corridor asphalt, red canyon walls, tiles (mud dark brown), orange/white barriers, cyan boost pads with chevrons, cannon gantries, sandbags that drop from barrel height, tunnel walls, roofs and canvas banner signs (numbers from content), posts every 10 m, fog, rover body sag/bob by gravity zone, and the gravity kind exposed for the UI tint. `driveScene.ts` now exports `createDust`; nothing else changed there. Tests check the object counts against the course.
-- Demo D4 (run rules, no rendering): `src/game/run/runSession.ts` (always-on throttle, crash and stuck endings, boost pads, cannons and bags, gravity per zone, score, events, per-run stats), `unlocks.ts` (the best-distance ladder), `forcePanel.ts`, `feedback.ts` (captions with first-time tidbits and ×n merging, ranked report effects, try-this rules, report) and `src/save/demoProgress.ts` (key `rovem.demo.v1`; storage that throws falls back to defaults). Tests include a boost to 21.741627 m/s, a head-on hit to 11.823293 m/s and a kicker hit to 18.248996 m/s through a real session, and T9 for the run (same seed and steering, identical result at 30 and 144 fps).
-- Demo D3 (course): `src/game/run/rng.ts` (mulberry32), `src/game/run/course.ts` (`createRunCourse(content, seed)`: lazy sequential chunks, 60 m warm-up, field-field-tunnel pattern, difficulty by start distance, no repeat, mirroring with probability ½, and world-space queries), and `footprintOverlapsBox` and `footprintCorners` in `geometry.ts`. Reading chosen: a harder difficulty adds to the easier ones (difficulty ≤ allowed), since A3 does not say whether level 1 chunks stop appearing.
-- Demo D2 (content): the Mud surface (`surfaces.json`), `run.json`, `runChunks.json` (8 field chunks and the tunnel), `runText.json` (placeholder text; the loader logs one warning). Validators in `schema.ts` name the bad path for: rectangles (from < to, inside the chunk and the corridor), surface and part ids, unlock ids that are starting parts, difficulties, cannon and gravity-zone kinds, duplicate ids and missing text. Tests in `runContent.test.ts`.
-- Demo D1 (physics): the above-top-speed rule in `step()` (throttle held and v above the top speed gives Coasting, `driveForceN` 0, a = −F_r/m, with the step split at t₁ = (v_max − v)/a), and `src/physics/momentum.ts` (`shareMomentum`, `applyImpulse`). Hand-check tests for mud at g = 9.8, 4.9 and 19.6, the Light/Smooth/Small build, boost, head-on and kicker bags, and a rover pushed into reverse. `physics-checker` found no mismatch. T1–T10 and `npm run balance` unchanged.
 - Reverse (DECISIONS 2026-10-13), in `src/physics/step.ts`:
   - The rover has a direction of travel (`direction`); v ≥ 0 stays the speed.
   - In reverse the brake key drives and the throttle key brakes.
@@ -56,13 +51,6 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 - `src/game/testCourse.ts` (replaced by `src/content/levels/testCourse.json`).
 
 ### Docs
-- Demo v3 (endless canyon run) approved and recorded (DECISIONS 2026-10-14):
-  - `docs/DEMO_BUILD_PLAN.md`: the demo design (Part A) and the session prompts (Part B).
-  - `docs/DESIGN.md`: new section "Demo v3" at the top. Design v2 is paused, not superseded; all its sections are kept.
-  - `docs/DECISIONS.md`: six rows (advisor's ruling, demo design, physics additions, mud, run values and who chose them, momentum and gravity in scope for the demo).
-  - `docs/ROADMAP.md`: new Demo milestone with steps D1–D7; M5b–M14 and Q1–Q3 marked paused.
-  - `docs/PENDING_SPEC_EDITS.md`: E26 (SRS sections affected, waiting for the post-demo decision), E27–E29 (Physics Model Specification additions), E30 (mud row in the Component Values sheet).
-  - `README.md`: "Current focus: the demo" note.
 - Game design v2 approved and recorded:
   - `docs/DESIGN.md`, new: the world, missions as jobs with one judged trial, medals, the hub, reverse, rocks, speed feel, steering assist and hooks for future modifiers. Includes the simulation evidence.
   - `docs/DECISIONS.md`: eight new rows. The Mission 3 tow row and the brake-input part of OI-8 are marked superseded, with their reasoning kept.
@@ -72,6 +60,28 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 - `docs/DECISIONS.md`: rows for the rover footprint width (1.7 m) and for `MAX_SECONDS` and `maxStepsPerFrame` as engineering guards.
 - `docs/ROADMAP.md`: M5a in progress; OI-11 (a rock also undoes the heading), OI-12 (where the assist acts), OI-13 (whole km/h) and OI-14 (edge cases of a flip) opened.
 - `docs/PENDING_SPEC_EDITS.md`: E22 and E24 name the 1.7 m width.
+
+## [demo-0.1.0] — 2026-10-14
+
+Demo v3: the endless canyon run (steps D1–D7). Awaiting k._muz's fps measurement and recording before the Demo is marked done.
+
+### Added
+- Demo D7 (started): `npm run preview` (`vite preview`) added to `package.json`; Commands in `CLAUDE.md` and `README.md` updated.
+- Demo D6 (screens): `src/ui/GarageScreen.tsx` (Body/Wheels/Motor slots, locked parts with "Unlocks at N m best distance", "Your rover in the canyon" numbers from `src/game/run/garageNumbers.ts` (physics functions, hand-checked tests), field log, settings, replay, developer link to the old Build screen and test drive), `RunScreen.tsx` (briefing card, game loop over `runSession`, HUD, captions, force panel, gravity tint, engine sound, report overlay with Run again / Replay this course / Garage; saves best distance, best score, seen events and last seed when a run ends), and `App.tsx` now opens the garage with a new random seed per run (UI only). `BuildScreen` gets an optional "Back to garage" button. `styles.css` gained the garage, run-screen and report styles. In `runScene.ts` the dust puffs are smaller (0.22) than on the test course, because near puffs hid the track. The report lists at most two gravity zones and counts the rest ("and 3 more").
+- Demo D5 (3D run scene): `src/render/runScene.ts` (`createRunScene`): chunks are built as they come within 240 m ahead and removed 60 m behind, with shared unit-box geometry and materials. Corridor asphalt, red canyon walls, tiles (mud dark brown), orange/white barriers, cyan boost pads with chevrons, cannon gantries, sandbags that drop from barrel height, tunnel walls, roofs and canvas banner signs (numbers from content), posts every 10 m, fog, rover body sag/bob by gravity zone, and the gravity kind exposed for the UI tint. `driveScene.ts` now exports `createDust`; nothing else changed there. Tests check the object counts against the course.
+- Demo D4 (run rules, no rendering): `src/game/run/runSession.ts` (always-on throttle, crash and stuck endings, boost pads, cannons and bags, gravity per zone, score, events, per-run stats), `unlocks.ts` (the best-distance ladder), `forcePanel.ts`, `feedback.ts` (captions with first-time tidbits and ×n merging, ranked report effects, try-this rules, report) and `src/save/demoProgress.ts` (key `rovem.demo.v1`; storage that throws falls back to defaults). Tests include a boost to 21.741627 m/s, a head-on hit to 11.823293 m/s and a kicker hit to 18.248996 m/s through a real session, and T9 for the run (same seed and steering, identical result at 30 and 144 fps).
+- Demo D3 (course): `src/game/run/rng.ts` (mulberry32), `src/game/run/course.ts` (`createRunCourse(content, seed)`: lazy sequential chunks, 60 m warm-up, field-field-tunnel pattern, difficulty by start distance, no repeat, mirroring with probability ½, and world-space queries), and `footprintOverlapsBox` and `footprintCorners` in `geometry.ts`. Reading chosen: a harder difficulty adds to the easier ones (difficulty ≤ allowed), since A3 does not say whether level 1 chunks stop appearing.
+- Demo D2 (content): the Mud surface (`surfaces.json`), `run.json`, `runChunks.json` (8 field chunks and the tunnel), `runText.json` (placeholder text; the loader logs one warning). Validators in `schema.ts` name the bad path for: rectangles (from < to, inside the chunk and the corridor), surface and part ids, unlock ids that are starting parts, difficulties, cannon and gravity-zone kinds, duplicate ids and missing text. Tests in `runContent.test.ts`.
+- Demo D1 (physics): the above-top-speed rule in `step()` (throttle held and v above the top speed gives Coasting, `driveForceN` 0, a = −F_r/m, with the step split at t₁ = (v_max − v)/a), and `src/physics/momentum.ts` (`shareMomentum`, `applyImpulse`). Hand-check tests for mud at g = 9.8, 4.9 and 19.6, the Light/Smooth/Small build, boost, head-on and kicker bags, and a rover pushed into reverse. `physics-checker` found no mismatch. T1–T10 and `npm run balance` unchanged.
+
+### Docs
+- Demo v3 (endless canyon run) approved and recorded (DECISIONS 2026-10-14):
+  - `docs/DEMO_BUILD_PLAN.md`: the demo design (Part A) and the session prompts (Part B).
+  - `docs/DESIGN.md`: new section "Demo v3" at the top. Design v2 is paused, not superseded; all its sections are kept.
+  - `docs/DECISIONS.md`: six rows (advisor's ruling, demo design, physics additions, mud, run values and who chose them, momentum and gravity in scope for the demo).
+  - `docs/ROADMAP.md`: new Demo milestone with steps D1–D7; M5b–M14 and Q1–Q3 marked paused.
+  - `docs/PENDING_SPEC_EDITS.md`: E26 (SRS sections affected, waiting for the post-demo decision), E27–E29 (Physics Model Specification additions), E30 (mud row in the Component Values sheet).
+  - `README.md`: "Current focus: the demo" note.
 
 ## [0.4.0] — 2026-10-13
 

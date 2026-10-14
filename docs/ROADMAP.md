@@ -23,8 +23,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused (until
 | D3 | Course generator: seeded rng, `footprintOverlapsBox`, endless course | ✅ | D2 |
 | D4 | Run session, unlocks, force panel, feedback, demo save | ✅ | D1, D3 |
 | D5 | 3D run scene | ✅ | D3 |
-| D6 | Screens: garage, run screen, report | ⬜ | D4, D5 |
-| D7 | Polish, `preview` script, review, recording | ⬜ | D6 |
+| D6 | Screens: garage, run screen, report | ✅ | D4, D5 |
+| D7 | Polish, `preview` script, review, recording | 🟨 | D6 |
 | M5b | Mission 1: Canyon Dash | ⏸ Paused | M5a |
 | M6 | Questions, prediction and results | ⏸ Paused | M3, M5b, Q1 |
 | M7 | Guest saving, Knowledge and unlocks | ⏸ Paused | M6 |

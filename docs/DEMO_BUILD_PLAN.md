@@ -206,7 +206,7 @@ These are textbook formulas. Each function gets a comment naming its formula, an
   - boosts: total gain
   - sandbag hits: total loss
   - kicker hits: total gain
-  - gravity zones: which ones were used, and the speed in and out of each
+  - gravity zones: the first two used, with the speed in and out of each, then "and n more"
 
   Each effect gets one formula line from content text.
 - **One "Try this" line,** chosen by rules over the run's stats and the unlocked parts, in this order of preference:
@@ -296,6 +296,7 @@ In `src/content/run.json`:
   - kicker shots
   - corridor width
   - warm-up
+  - scene build range (240 m ahead, 60 m behind), course generation range (400 m ahead), longest frame the run screen simulates (0.1 s)
   - difficulty distances
   - chunk layouts
 - Caption times, arrow scales and colours are presentation, so they stay in UI and render code.

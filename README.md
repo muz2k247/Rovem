@@ -56,6 +56,7 @@ npm run test       # unit tests
 npm run typecheck  # type check
 npm run build      # type check, then production build into dist/
 npm run balance    # simulate all 27 builds against the mission limits (needs Node 24)
+npm run preview    # serve the built dist/ (run npm run build first)
 ```
 
 Accounts (milestone M12) need a `.env` file; copy `.env.example`. Only the Supabase URL and public anon key go in it. The service-role key never goes in the browser build.
@@ -68,15 +69,15 @@ docs/        roadmap, decisions, pending spec edits, source documents
 src/
   physics/   build quantities, controls, driving states, fixed-step simulation
   content/   parts, surfaces, missions, power-ups, questions, levels (data)
-  game/      attempt flow, rules, Knowledge, unlocks
+  game/      attempt flow, rules, Knowledge, unlocks; run/ holds the demo course, run rules, feedback and garage numbers
   render/    three.js scene and rover model; engine sound
   ui/        React screens and dialogs
-  save/      progress storage
+  save/      progress storage (demo save: demoProgress.ts)
 tests/       shared test fixtures and helpers, and the sheet regression test (T10)
 scripts/     balance report
 ```
 
-`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The other folders are created as the milestones need them.
+`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The demo adds the garage, run screen and run scene (D5–D6) and the demo save (D4). The other folders are created as the milestones need them.
 
 ## Documentation
 
@@ -92,7 +93,8 @@ scripts/     balance report
 | `docs/specs/extracted/` | Plain-text copies of the above, for search |
 | `docs/ROADMAP.md` | Milestones, status, open issues |
 | `docs/DECISIONS.md` | Confirmed decisions |
-| `docs/DESIGN.md` | Approved game design v2: world, missions, medals, hub, controls |
+| `docs/DESIGN.md` | Approved design: Demo v3 (top section) and game design v2 (paused) |
+| `docs/DEMO_BUILD_PLAN.md` | Demo v3 design and session prompts |
 | `docs/ASSETS.md` | Licences of any outside assets |
 | `docs/PENDING_SPEC_EDITS.md` | Text changes waiting to be made in the source documents |
 | `CHANGELOG.md` | Changes by version |
