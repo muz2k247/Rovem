@@ -86,3 +86,63 @@ export function pathLengthM(path: readonly PointM[]): number {
   for (let i = 0; i + 1 < path.length; i++) total += Math.hypot(path[i + 1]!.xM - path[i]!.xM, path[i + 1]!.zM - path[i]!.zM);
   return total;
 }
+
+/** The four corners of the rover's footprint: front edge centred on (frontX, frontZ), extending back along the heading. */
+export function footprintCorners(
+  frontXM: number,
+  frontZM: number,
+  headingRad: number,
+  lengthM: number,
+  widthM: number,
+): PointM[] {
+  const fx = Math.cos(headingRad);
+  const fz = Math.sin(headingRad);
+  const nx = -fz;
+  const nz = fx;
+  const out: PointM[] = [];
+  for (const along of [0, -lengthM]) {
+    for (const side of [widthM / 2, -widthM / 2]) {
+      out.push({ xM: frontXM + fx * along + nx * side, zM: frontZM + fz * along + nz * side });
+    }
+  }
+  return out;
+}
+
+/**
+ * Does the rover's footprint overlap an axis-aligned box? Separating-axis test: two convex shapes are apart
+ * if their shadows on some axis do not overlap. The axes are the box's x and z, and the footprint's own
+ * forward and sideways. Touching is not overlapping.
+ */
+export function footprintOverlapsBox(
+  frontXM: number,
+  frontZM: number,
+  headingRad: number,
+  lengthM: number,
+  widthM: number,
+  box: { xM: readonly [number, number]; zM: readonly [number, number] },
+): boolean {
+  const corners = footprintCorners(frontXM, frontZM, headingRad, lengthM, widthM);
+  const boxCorners: PointM[] = [
+    { xM: box.xM[0], zM: box.zM[0] },
+    { xM: box.xM[1], zM: box.zM[0] },
+    { xM: box.xM[1], zM: box.zM[1] },
+    { xM: box.xM[0], zM: box.zM[1] },
+  ];
+  const axes = [
+    { x: 1, z: 0 },
+    { x: 0, z: 1 },
+    { x: Math.cos(headingRad), z: Math.sin(headingRad) },
+    { x: -Math.sin(headingRad), z: Math.cos(headingRad) },
+  ];
+  for (const axis of axes) {
+    const shadow = (points: PointM[]) => {
+      const values = points.map((p) => p.xM * axis.x + p.zM * axis.z);
+      return { min: Math.min(...values), max: Math.max(...values) };
+    };
+    const a = shadow(corners);
+    const b = shadow(boxCorners);
+    // A tiny tolerance so a rounded cos/sin does not turn "touching" into "overlapping".
+    if (a.max <= b.min + 1e-12 || b.max <= a.min + 1e-12) return false;
+  }
+  return true;
+}
