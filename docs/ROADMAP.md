@@ -21,7 +21,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused (until
 | D1 | Physics additions: above-top-speed rule, `shareMomentum`, `applyImpulse` | ✅ | Session 0 |
 | D2 | Content: mud, `run.json`, `runChunks.json`, `runText.json`, validation | ✅ | D1 |
 | D3 | Course generator: seeded rng, `footprintOverlapsBox`, endless course | ✅ | D2 |
-| D4 | Run session, unlocks, force panel, feedback, demo save | ⬜ | D1, D3 |
+| D4 | Run session, unlocks, force panel, feedback, demo save | ✅ | D1, D3 |
 | D5 | 3D run scene | ⬜ | D3 |
 | D6 | Screens: garage, run screen, report | ⬜ | D4, D5 |
 | D7 | Polish, `preview` script, review, recording | ⬜ | D6 |
@@ -302,6 +302,8 @@ Conflicts and gaps between sources. Never resolve one silently: add it here and 
 Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`step.test.ts`, "reverse"), so changing either is a one-line edit plus its test.
 
 **OI-13 (M5a): km/h is shown as a whole number.** CLAUDE.md says speeds are shown to 2 decimals. The HUD shows m/s to 2 decimals and km/h beside it as a whole number ("16.00 m/s · 58 km/h", as in DESIGN §6's "16 m/s = 58 km/h"). Reason: km/h is there for feel, and a second 2-decimal number adds clutter (NFR-6). Proposal: confirm, and add "km/h whole" to the display rule.
+
+**OI-15 (Demo D4): a kicker bag hits a rover in its lane the moment it fires, even a fast one.** A4 wakes a kicker when the front reaches cannon x + 2 and puts the first bag at the cannon's x. The rover's rear edge is then at about the cannon's x, and the bag has radius 0.5 m, so the bag overlaps the rover at once and the first shot always hits a rover in the cannon's lane, however fast it is. Only the later shots obey "a bag can only catch a rover that is slower than it". Built as A4 is written. Proposal: wake the kicker when the rear edge is 1 m past the cannon (x + 3), or fire the first bag one interval later. Needs k._muz's decision before playtesting.
 
 Spec edits E4–E30 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 
