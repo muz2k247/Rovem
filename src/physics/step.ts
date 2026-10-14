@@ -143,7 +143,10 @@ export function step(
   const brakeLevel = input.towed ? 0 : nextLevel(prev.brakeLevel, keys.brakeHeld, constants.brakeBuildUpS, dtS);
 
   // 2. Forces. F_d = min(u_t F_d,max, F_lim); F_b = min(u_b F_b,max, F_lim).
-  const driveForceN = Math.min(throttleLevel * rover.driveForceMaxN, q.gripLimitN);
+  const driveCapN = Math.min(throttleLevel * rover.driveForceMaxN, q.gripLimitN);
+  // Above top speed with no brake the motor gives no force (see step 3); the report shows 0.
+  const aboveTopSpeed = brakeLevel === 0 && throttleLevel > 0 && !input.towed && v > topSpeedMps;
+  const driveForceN = aboveTopSpeed ? 0 : driveCapN;
   const brakeForceN = Math.min(brakeLevel * rover.brakeForceMaxN, q.gripLimitN);
 
   // 3. State and acceleration, chosen from the levels (DECISIONS OI-1).
@@ -164,6 +167,11 @@ export function step(
     if (v === 0 && driveForceN <= q.rollingForceN) {
       drivingState = 'Stopped';
       a = 0;
+    } else if (v > topSpeedMps) {
+      // Above top speed (DECISIONS 2026-10-14): the motor cannot push a rover that is already faster than
+      // its top speed, so it gives no force and only friction acts: a = −F_r/m (Newton's first law).
+      drivingState = 'Coasting';
+      a = -q.rollingForceN / q.massKg;
     } else if (v >= topSpeedMps && driveForceN >= q.rollingForceN) {
       drivingState = 'At top speed'; // the motor only balances friction (FR-28)
       a = 0;
@@ -196,7 +204,19 @@ export function step(
   const headingRad = v > 0 && steer !== 0 ? prev.headingRad + steer * turnRadPerS * dtS : prev.headingRad;
 
   // 4. Move with constant a.
-  const moved = advance(v, a, dtS, topSpeedMps);
+  let moved = advance(v, a, dtS, topSpeedMps);
+  if (aboveTopSpeed && v + a * dtS < topSpeedMps) {
+    // The rover falls to v_max inside the step: split at t₁ = (v_max − v)/a. For the rest of the step it holds
+    // v_max if the motor can balance friction (driveCap ≥ F_r); otherwise a₂ = (driveCap − F_r)/m.
+    const t1 = (topSpeedMps - v) / a;
+    const d1 = v * t1 + 0.5 * a * t1 * t1;
+    const t2 = dtS - t1;
+    const second =
+      driveCapN >= q.rollingForceN
+        ? { speedMps: topSpeedMps, distanceM: topSpeedMps * t2 }
+        : advance(topSpeedMps, (driveCapN - q.rollingForceN) / q.massKg, t2, topSpeedMps);
+    moved = { speedMps: second.speedMps, distanceM: d1 + second.distanceM };
+  }
 
   // 5. Add distance along the path (d in either direction), advance the clock. Position moves along heading × direction.
   const alongM = direction === 'forward' ? moved.distanceM : -moved.distanceM;

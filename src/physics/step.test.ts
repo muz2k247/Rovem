@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { advance, createState, step, type StepInput, type PhysicsState } from './step.ts';
 import { createFixedStepLoop } from './loop.ts';
+import { shareMomentum } from './momentum.ts';
 import { buildQuantities } from './build.ts';
-import { constants, rover, surface } from '../../tests/helpers/physics.ts';
+import { constants, rover, roverOf, surface } from '../../tests/helpers/physics.ts';
+import type { SurfaceSpec } from './types.ts';
 import stepTrace from '../../tests/fixtures/stepTrace.json' with { type: 'json' };
 
+/** For the rounded values printed in the plan (6 decimals); the exact formula is checked with close(). */
+const closeRounded = (actual: number, expected: number) =>
+  expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThan(1e-5);
 const close = (actual: number, expected: number) =>
   expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThan(1e-9);
 
@@ -429,3 +434,146 @@ describe('T9 frame-rate independence', () => {
     for (let i = 0; i < n; i++) expect(a[i]).toEqual(b[i]);
   });
 });
+
+describe('demo D1: above top speed (DECISIONS 2026-10-14, A5.1)', () => {
+  const TOP = 16;
+  const MASS = 209;
+  const FR_ASPHALT = 0.02 * MASS * 9.8; // F_r = μ_r k_r m g
+  const A_ASPHALT = -FR_ASPHALT / MASS; // −0.196 m/s²
+  const dt = constants.timeStepS;
+
+  it('on asphalt above v_max with the throttle held: Coasting, no drive force, a = −F_r/m', () => {
+    const s = step(createState({ speedMps: 17, throttleLevel: 1 }), HOLD, rover(), surface('asphalt'), constants);
+    expect(s.drivingState).toBe('Coasting');
+    expect(s.driveForceN).toBe(0);
+    close(s.accelerationMps2, -0.196);
+    close(s.accelerationMps2, A_ASPHALT);
+    close(s.speedMps, 17 + A_ASPHALT * dt);
+    close(s.distanceM, 17 * dt + 0.5 * A_ASPHALT * dt * dt);
+    expect(s.slipping).toBe(false);
+  });
+
+  it('keeps slowing step after step until it reaches v_max, then holds it (At top speed)', () => {
+    let s = createState({ speedMps: 16.5, throttleLevel: 1 });
+    for (let i = 0; i < 1000; i++) {
+      s = step(s, HOLD, rover(), surface('asphalt'), constants);
+      expect(s.speedMps).toBeGreaterThanOrEqual(TOP);
+    }
+    expect(s.speedMps).toBe(TOP);
+    expect(s.drivingState).toBe('At top speed');
+  });
+
+  it('a step that crosses v_max is split at t₁ = (v_max − v)/a and holds v_max after it', () => {
+    const v = 16.001;
+    const s = step(createState({ speedMps: v, throttleLevel: 1 }), HOLD, rover(), surface('asphalt'), constants);
+    const t1 = (TOP - v) / A_ASPHALT; // 0.005102041 s, inside the step
+    expect(t1).toBeGreaterThan(0);
+    expect(t1).toBeLessThan(dt);
+    expect(s.speedMps).toBe(TOP);
+    expect(s.drivingState).toBe('Coasting');
+    close(s.distanceM, v * t1 + 0.5 * A_ASPHALT * t1 * t1 + TOP * (dt - t1));
+  });
+
+  it('after the split in mud, where F_r beats the motor, it continues with a₂ = (min(u_t F_d,max, F_lim) − F_r)/m', () => {
+    const mud: SurfaceSpec = { rollingFriction: 0.6, grip: 0.5 };
+    const fr = 0.6 * MASS * 9.8; // 1228.92 N
+    const aFirst = -fr / MASS; // −5.88 m/s²
+    const a2 = (1000 - fr) / MASS; // −1.095311 m/s²
+    const v = 16.0001;
+    const s = step(createState({ speedMps: v, throttleLevel: 1 }), HOLD, rover(), mud, constants);
+    const t1 = (TOP - v) / aFirst;
+    const t2 = dt - t1;
+    close(s.speedMps, TOP + a2 * t2);
+    close(s.distanceM, v * t1 + 0.5 * aFirst * t1 * t1 + TOP * t2 + 0.5 * a2 * t2 * t2);
+    expect(s.drivingState).toBe('Coasting');
+    expect(s.driveForceN).toBe(0);
+  });
+
+  it('without the throttle, above v_max is plain coasting, as before', () => {
+    const s = step(createState({ speedMps: 17 }), NONE, rover(), surface('asphalt'), constants);
+    expect(s.drivingState).toBe('Coasting');
+    close(s.accelerationMps2, A_ASPHALT);
+  });
+
+  it('the brake still wins above v_max', () => {
+    const s = step(createState({ speedMps: 17, throttleLevel: 1 }), BRAKE, rover(), surface('asphalt'), constants);
+    expect(s.drivingState).toBe('Braking');
+  });
+
+  it('reverse: above the reverse top speed (8 m/s) the motor gives no force either', () => {
+    // In reverse the brake key drives.
+    const s = step(createState({ speedMps: 9, direction: 'reverse', throttleLevel: 1 }), BRAKE, rover(), surface('asphalt'), constants);
+    expect(s.drivingState).toBe('Coasting');
+    expect(s.driveForceN).toBe(0);
+  });
+});
+
+describe('demo D1: mud at the hand-check values (A5)', () => {
+  const mud: SurfaceSpec = { rollingFriction: 0.6, grip: 0.5 };
+  const atTop = (g: number, build = rover(), v = 16) =>
+    step(createState({ speedMps: v, throttleLevel: 1 }), HOLD, build, mud, { ...constants, gravityMps2: g });
+
+  it('g = 9.8, top speed 16: F_r = 1228.92 N beats 1000 N, a = −1.095311 m/s²', () => {
+    const s = atTop(9.8);
+    closeRounded(buildQuantities(rover(), mud, constants).rollingForceN, 1228.92);
+    close(s.accelerationMps2, (1000 - 1228.92) / 209);
+    closeRounded(s.accelerationMps2, -1.095311);
+    expect(s.drivingState).toBe('Driving');
+    expect(s.slipping).toBe(false);
+  });
+
+  it('low gravity g = 4.9: F_lim = 512.05 N < 1000 N, the wheels slip, a = −0.49 m/s²', () => {
+    const s = atTop(4.9);
+    close(buildQuantities(rover(), mud, { gravityMps2: 4.9 }).gripLimitN, 512.05);
+    close(s.accelerationMps2, (512.05 - 614.46) / 209);
+    close(s.accelerationMps2, -0.49);
+    expect(s.slipping).toBe(true);
+    close(s.driveForceN, 512.05);
+  });
+
+  it('high gravity g = 19.6: a = −6.975311 m/s²', () => {
+    const s = atTop(19.6);
+    close(s.accelerationMps2, (1000 - 2457.84) / 209);
+    closeRounded(s.accelerationMps2, -6.975311);
+  });
+
+  it('Light/Smooth/Small (151 kg) on mud: F_d = F_lim = 591.92 N slips, beats F_r = 532.728 N, a = +0.392 m/s²', () => {
+    const light = roverOf({ chassisId: 'chassis-light', wheelsId: 'wheels-smooth', motorId: 'motor-small' });
+    expect(light.massKg).toBe(151);
+    const q = buildQuantities(light, mud, constants);
+    close(q.gripLimitN, 591.92);
+    close(q.rollingForceN, 532.728);
+    const s = atTop(9.8, light, 10);
+    close(s.driveForceN, 591.92);
+    close(s.accelerationMps2, (591.92 - 532.728) / 151);
+    close(s.accelerationMps2, 0.392);
+    expect(s.slipping).toBe(true);
+  });
+
+  it('g × 2 doubles F_r and F_lim, and the mass does not change', () => {
+    const one = buildQuantities(rover(), mud, { gravityMps2: 9.8 });
+    const two = buildQuantities(rover(), mud, { gravityMps2: 19.6 });
+    close(two.rollingForceN, 2 * one.rollingForceN);
+    close(two.gripLimitN, 2 * one.gripLimitN);
+    close(two.weightN, 2 * one.weightN);
+    expect(two.massKg).toBe(one.massKg);
+  });
+});
+
+describe('demo D1: pushed into reverse with the throttle held', () => {
+  it('brakes to 0, flips forward and drives on', () => {
+    const pushed = shareMomentum(createState({ speedMps: 1, throttleLevel: 1 }), 209, 40, -10);
+    expect(pushed.direction).toBe('reverse');
+    let s = pushed;
+    let sawBraking = false;
+    for (let i = 0; i < 120 * 4; i++) {
+      s = step(s, HOLD, rover(), surface('asphalt'), constants);
+      if (s.direction === 'reverse' && s.drivingState === 'Braking') sawBraking = true;
+    }
+    expect(sawBraking).toBe(true);
+    expect(s.direction).toBe('forward');
+    expect(s.speedMps).toBeGreaterThan(1);
+    expect(s.drivingState).toBe('Driving');
+  });
+});
+

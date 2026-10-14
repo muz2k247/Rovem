@@ -18,7 +18,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused (until
 | M4 | Driving scene | ✅ | M2 |
 | M5a | Driving upgrades and level format | 🟨 | M4 |
 | Demo | **Demo v3: endless canyon run** (`docs/DEMO_BUILD_PLAN.md`) | 🟨 | M5a |
-| D1 | Physics additions: above-top-speed rule, `shareMomentum`, `applyImpulse` | ⬜ | Session 0 |
+| D1 | Physics additions: above-top-speed rule, `shareMomentum`, `applyImpulse` | ✅ | Session 0 |
 | D2 | Content: mud, `run.json`, `runChunks.json`, `runText.json`, validation | ⬜ | D1 |
 | D3 | Course generator: seeded rng, `footprintOverlapsBox`, endless course | ⬜ | D2 |
 | D4 | Run session, unlocks, force panel, feedback, demo save | ⬜ | D1, D3 |
