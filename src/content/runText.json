@@ -1,12 +1,13 @@
 {
   "placeholder": true,
   "briefing": {
-    "headline": "Drive as far as you can. Hold W to go, S to brake, A/D to steer. Don't hit the barriers.",
+    "headline": "Drive as far as you can. Hold W to go, S to brake (hold S at rest to reverse), A/D to steer. Don't hit the barriers.",
     "hazards": [
       "Mud slows you.",
       "Boost pads push you.",
       "Cannons fire sandbags.",
-      "Tunnels change gravity."
+      "Tunnels change gravity.",
+      "Fast corners slide."
     ]
   },
   "tidbits": {
@@ -18,7 +19,8 @@
     "kickerHit": "The bag from behind hands you some of its momentum. The total stays the same, so you speed up.",
     "gravity": "Gravity presses you into the ground, so friction grows with it. Your mass stays the same; your weight changes.",
     "slip": "Your motor or your brake pushes harder than the tyres can grip.",
-    "aboveTopSpeed": "Nothing pushes you now. Only friction slows you: Newton's first law."
+    "aboveTopSpeed": "Nothing pushes you now. Only friction slows you: Newton's first law.",
+    "slide": "Tyres can only bend your path so fast, and the faster you go the slower that is. Steer harder than the tyres allow and you slide."
   },
   "formulas": {
     "mud": "Friction = mud's friction × your wheels' rolling × mass × g",
@@ -36,6 +38,7 @@
     "heavyChassis": "Try the Heavy chassis: a heavier rover loses less speed to a sandbag.",
     "dodgeCannon": "Dodge the cannon's line: the sandbags cost you the most speed.",
     "steerEarlier": "You crashed fast. Steer earlier.",
+    "brakeBeforeCorner": "Brake before the corner: a slower rover slides less.",
     "takeBoosts": "Take the boost pads: each one adds speed."
   }
 }

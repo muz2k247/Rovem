@@ -34,6 +34,11 @@ describe('caption main lines (A7)', () => {
     expect(m({ kind: 'crash', timeS: 0, xM: 0 })).toBeUndefined();
   });
 
+  it('slide: the tyres\' limit in °/s', () => {
+    const slide: RunEvent = { kind: 'slide', timeS: 0, xM: 0, turnLimitRadPerS: 0.49 };
+    expect(captionMain(slide, 'mps')).toBe('Sliding · tyres bend your path 28°/s at most');
+  });
+
   it('shows km/h with 2 decimals when chosen (km/h = m/s × 3.6)', () => {
     expect(speedText(16, 'kmh')).toBe('57.60 km/h');
     expect(captionMain(boost(0), 'kmh')).toBe('Boost · 57.60 → 78.27 km/h');
@@ -50,6 +55,21 @@ const surfaceEvent = (kind: 'mud' | 'sand' | 'ice', mu: number, k: number, g: nu
 });
 
 describe('worked formulas', () => {
+  const slideEvent = (grip: number, wheel: number, g: number, v: number, rate = 60): RunEvent => ({
+    kind: 'slide', timeS: 0, xM: 0, surfaceGrip: grip, wheelGrip: wheel, gravityMps2: g, slideSpeedMps: v,
+    turnLimitRadPerS: (grip * wheel * g) / v, turnRateDegPerS: rate,
+  });
+  it('slide: Tyres bend your path at most 0.8 × 9.8 ÷ 16 = 0.49 rad/s (28°/s); you steer 60°/s → you slide', () => {
+    expect(workedLine(slideEvent(0.8, 1, 9.8, 16), 'mps')).toBe('Tyres bend your path at most 0.8 × 9.8 ÷ 16 = 0.49 rad/s (28°/s); you steer 60°/s → you slide');
+  });
+  it('slide: a wheel factor other than 1 is shown, and the speed is always m/s', () => {
+    expect(workedLine(slideEvent(0.5, 1.4, 9.8, 15.37), 'kmh')).toBe(
+      'Tyres bend your path at most 0.5 × 1.4 × 9.8 ÷ 15.37 = 0.45 rad/s (26°/s); you steer 60°/s → you slide  (formulas use m/s)',
+    );
+  });
+  it('slide: no "you slide" tail if the tyres could keep up with the steering', () => {
+    expect(workedLine(slideEvent(0.8, 1, 9.8, 5), 'mps')).toBe('Tyres bend your path at most 0.8 × 9.8 ÷ 5 = 1.57 rad/s (90°/s)');
+  });
   it('head-on sandbag: 209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s', () => {
     expect(workedLine(hit('headOnHit', 16, -10, (209 * 16 - 40 * 10) / 249), 'mps')).toBe('209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s');
   });
@@ -223,12 +243,12 @@ describe('report effects', () => {
     expect(e[0]!.why).toBe(text.tidbits.boost); // the longer explanation lives in the report
   });
 
-  it('tunnels show both lanes: "You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s"', () => {
+  it('tunnels show both lanes: "You: low gravity, out at 15.80 m/s · Other lane, throttle held: high gravity, out at 12.31 m/s"', () => {
     const e = reportEffects(
       stats({ gravityZones: [zone('low', 16, 15.8, { other: { kind: 'high', outcome: 'out', speedOutMps: 12.31 } })] }),
       text, 'mps',
     );
-    expect(e[0]!.detail).toEqual(['You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s']);
+    expect(e[0]!.detail).toEqual(['You: low gravity, out at 15.80 m/s · Other lane, throttle held: high gravity, out at 12.31 m/s']);
   });
 
   it('says "stuck" for a lane that sticks, on either side, and "crashed at" for a crash in the lane', () => {
@@ -237,19 +257,19 @@ describe('report effects', () => {
     const crashed = zone('high', 16, 14, { outcome: 'crash', other: { kind: 'low', outcome: 'out', speedOutMps: 16 } });
     const e = reportEffects(stats({ gravityZones: [stuckOther, stuckYou, crashed] }), text, 'mps');
     expect(e[0]!.detail).toEqual([
-      'You: low gravity, out at 15.80 m/s · High gravity: stuck',
-      'You: high gravity, stuck · Low gravity: out at 15.90 m/s',
+      'You: low gravity, out at 15.80 m/s · Other lane, throttle held: high gravity, stuck',
+      'You: high gravity, stuck · Other lane, throttle held: low gravity, out at 15.90 m/s',
       'and 1 more',
     ]);
     expect(reportEffects(stats({ gravityZones: [crashed] }), text, 'mps')[0]!.detail).toEqual([
-      'You: high gravity, crashed at 14.00 m/s · Low gravity: out at 16.00 m/s',
+      'You: high gravity, crashed at 14.00 m/s · Other lane, throttle held: low gravity, out at 16.00 m/s',
     ]);
   });
 
   it('a zone with no second lane lists only your own lane; km/h follows the unit setting', () => {
     expect(reportEffects(stats({ gravityZones: [zone('high', 16, 14)] }), text, 'mps')[0]!.detail).toEqual(['You: high gravity, out at 14.00 m/s']);
     const k = reportEffects(stats({ gravityZones: [zone('low', 16, 15.8, { other: { kind: 'high', outcome: 'out', speedOutMps: 12.31 } })] }), text, 'kmh');
-    expect(k[0]!.detail[0]).toBe('You: low gravity, out at 56.88 km/h · High gravity: out at 44.32 km/h');
+    expect(k[0]!.detail[0]).toBe('You: low gravity, out at 56.88 km/h · Other lane, throttle held: high gravity, out at 44.32 km/h');
   });
 
   it('lists the first two tunnels and counts the rest; the size still counts every zone', () => {
@@ -396,6 +416,14 @@ describe("try this: brake before the cannon's line (DECISIONS 2026-10-16)", () =
     expect(tryThisLine(crash(10), ranked('headOnHit'), all2, FITTED, text, true)).toBe(text.tryThis.heavyChassis);
     expect(tryThisLine(crash(10), ranked('boost'), start2, FITTED, text, false)).toBe(text.tryThis.takeBoosts);
     expect(tryThisLine(crash(10), ranked('mud'), all2, FITTED, text, false)).toBe(text.tryThis.smoothWheels); // the mud rule comes first
+  });
+  it('a slide caused the crash → brake before the corner (after stuck-in-high-gravity and the divider, before the rest)', () => {
+    const slid = (over: Partial<RunEnd> = {}): RunEnd => ({ ...crash(10), sliding: true, ...over });
+    expect(tryThisLine(slid(), ranked('boost'), start2, FITTED, text, true)).toBe(text.tryThis.brakeBeforeCorner);
+    expect(tryThisLine(slid(), ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.brakeBeforeCorner);
+    expect(tryThisLine(slid({ speedMps: 25 }), ranked('mud'), all2, FITTED, text, true)).toBe(text.tryThis.brakeBeforeCorner);
+    expect(tryThisLine(slid({ atDivider: true }), ranked('boost'), start2, FITTED, text, true)).toBe(text.tryThis.pickLane);
+    expect(tryThisLine(crash(10), ranked('boost'), start2, FITTED, text, true)).toBe(text.tryThis.takeBoosts); // no slide, no advice
   });
   it('the earlier rules still win: stuck in high gravity, and the divider', () => {
     expect(tryThisLine(stuck('high'), ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.stuckInHighGravity);

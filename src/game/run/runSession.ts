@@ -5,14 +5,17 @@ import { applyImpulse, shareMomentum } from '../../physics/momentum.ts';
 import { createState, step, type PhysicsState } from '../../physics/step.ts';
 import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/types.ts';
 import { surfaceSpec } from '../buildFromParts.ts';
-import { footprintOverlapsCircle } from '../geometry.ts';
+import { footprintCorners, footprintOverlapsCircle } from '../geometry.ts';
+import { SLIDE_MARK_RAD, slideAngleRad, travelTurnLimitRadPerS, turnTravelDirection } from './drift.ts';
 import { createRunCourse, type RunCourse, type WorldCannon } from './course.ts';
 import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
 // The run rules of the endless canyon (docs/DEMO_BUILD_PLAN.md A2, A4, A6). Game layer: no rendering, no React.
 // The student drives (DECISIONS 2026-10-16): the throttle, brake and steer keys are read each step. The run starts at
-// rest with the throttle level 0. There is no reverse in the run: the brake is not sent at rest (or in reverse), so S at
-// v = 0 does nothing. The physics is unchanged.
+// rest with the throttle level 0. Reverse works as the physics does (S at rest flips the direction; in reverse S drives
+// and W brakes); the keys are passed through as pressed. The physics is unchanged.
+// Reverse and drifting (DECISIONS 2026-10-16, demo only): the game layer passes the reverse top speed from run.json, keeps
+// a travel direction separate from the heading, and puts a wall behind the start line.
 // With no steer key held the game steers the heading back to 0 (DECISIONS 2026-10-16); `steerSent` records what was
 // really passed to step(), so replaying that record with the return switched off gives the same run (T9).
 
@@ -60,6 +63,10 @@ export interface RunEvent {
   otherVelocityMps?: number;
   /** u′ after the bag: negative if the hit pushed the rover into reverse. */
   resultVelocityMps?: number;
+  // The numbers behind the slide caption (drifting): the speed at the start of the step, the tyres' limit and the turn rate.
+  slideSpeedMps?: number;
+  turnLimitRadPerS?: number;
+  turnRateDegPerS?: number;
 }
 
 export interface RunEnd {
@@ -71,6 +78,8 @@ export interface RunEnd {
   atDivider?: boolean;
   /** The gravity zone the rover was in when it ended, if any. */
   gravityKind?: GravityKind;
+  /** The rover was sliding (slide angle at least 5°) in the step that crashed. */
+  sliding?: boolean;
 }
 
 export interface GravityZoneUse {
@@ -146,6 +155,8 @@ export function createRunSession(options: RunSessionOptions) {
   const { content, rover, constants, seed, input, stopAtStep } = options;
   const drive = options.drive ?? HOLD_THROTTLE;
   const run = content.run;
+  // The game layer passes the demo's reverse top speed (run.json) to step(); constants.json keeps the v2 value.
+  const baseConstants: PhysicsConstants = { ...constants, reverseTopSpeedFraction: run.reverseTopSpeedFactor };
   const bagSpec = run.sandbag;
   const footprint = { lengthM: content.constants.roverLengthM, widthM: content.constants.roverWidthM };
   const course = options.course ?? createRunCourse(content, seed);
@@ -171,8 +182,17 @@ export function createRunSession(options: RunSessionOptions) {
   let wasAboveTop = false;
   let steerSent: (-1 | 0 | 1)[] = [];
   let driveSent: DriveKeys[] = [];
-  const turnRadPerS = (constants.turnRateDegPerS * Math.PI) / 180;
-  const returnDeadbandRad = (turnRadPerS * constants.timeStepS) / 2;
+  const turnRadPerS = (baseConstants.turnRateDegPerS * Math.PI) / 180;
+  const returnDeadbandRad = (turnRadPerS * baseConstants.timeStepS) / 2;
+  /** The wall behind the start line: the rover starts with its back against it. */
+  const startWallXM = -footprint.lengthM;
+  /** The way the rover is driving: its heading, or the opposite way in reverse. */
+  const drivingAngle = (s: PhysicsState) => (s.direction === 'forward' ? s.headingRad : s.headingRad + Math.PI);
+  /** The way the rover is travelling (differs from the driving angle while it slides). */
+  let travelRad = drivingAngle(state);
+  let slideRad = 0;
+  let wasSliding = false;
+  let zoneEnteredForward = false;
 
   /**
    * The steer input that turns the heading back toward 0 at the normal turn rate; 0 when the heading is within half
@@ -193,7 +213,7 @@ export function createRunSession(options: RunSessionOptions) {
   }
 
   const gravityAt = (zone: GravityKind | undefined): number =>
-    zone === undefined ? constants.gravityMps2 : constants.gravityMps2 * run.gravityMultipliers[zone];
+    zone === undefined ? baseConstants.gravityMps2 : baseConstants.gravityMps2 * run.gravityMultipliers[zone];
 
   /** u: +v forward, −v in reverse (momentum.ts). */
   const signed = (s: PhysicsState) => (s.direction === 'forward' ? s.speedMps : -s.speedMps);
@@ -274,7 +294,8 @@ export function createRunSession(options: RunSessionOptions) {
 
   function endZone(speedOutMps: number, outcome: GravityZoneUse['outcome']) {
     if (currentZone === undefined) return;
-    const other = simulateOtherLane({ course, rover, constants, surfaces: specs, gravityMultipliers: run.gravityMultipliers, entry: zoneEntryState });
+    // Only a lane that was entered at its near end, driving forward, has a "same entry state" to compare (DECISIONS 2026-10-16).
+    const other = !zoneEnteredForward ? undefined : simulateOtherLane({ course, rover, constants: baseConstants, surfaces: specs, gravityMultipliers: run.gravityMultipliers, entry: zoneEntryState });
     stats.gravityZones.push({ kind: currentZone, speedInMps: zoneEntrySpeedMps, speedOutMps, outcome, ...(other ? { other } : {}) });
   }
 
@@ -298,42 +319,76 @@ export function createRunSession(options: RunSessionOptions) {
     const held = input(prev.stepCount);
     const steer = held !== 0 ? held : returnToStraight(prev);
     steerSent.push(steer);
-    // The brake key counts only while the rover rolls forward: at rest it would start a reverse, and in reverse the
-    // physics reads the brake key as the drive. Neither belongs to this run, so the game layer does not send it.
+    // The keys go to step() as pressed. S at rest flips to reverse; in reverse S drives and W brakes (the physics decides).
     const keys = drive(prev.stepCount);
-    const brakeHeld = keys.brakeHeld && prev.speedMps > 0 && prev.direction === 'forward';
-    driveSent.push({ throttleHeld: keys.throttleHeld, brakeHeld });
-    if (brakeHeld) stats.brakeUsed = true;
+    driveSent.push({ throttleHeld: keys.throttleHeld, brakeHeld: keys.brakeHeld });
+    // The brake pedal is S going forward and W in reverse; it counts as used only while the rover is rolling.
+    if ((prev.direction === 'forward' ? keys.brakeHeld : keys.throttleHeld) && prev.speedMps > 0) stats.brakeUsed = true;
+    const gStep = gravityAt(prevZone);
     const next = step(
       prev,
-      { throttleHeld: keys.throttleHeld, brakeHeld, steer },
+      { throttleHeld: keys.throttleHeld, brakeHeld: keys.brakeHeld, steer },
       rover,
       surface,
-      { ...constants, gravityMps2: gravityAt(prevZone) },
+      { ...baseConstants, gravityMps2: gStep },
     );
     state = next;
     const t = next.timeS;
 
+    // Drifting: the heading turned in step(); the travel direction follows the way the rover is driving, at most as fast
+    // as the tyres can bend the path (ω = μ_g k_g g / v at the speed the step started with), and the step distance is
+    // moved along it. At rest the limit is infinite, so it snaps. Sliding does not change the speed or the distance.
+    const travelBefore = travelRad;
+    const target = drivingAngle(next);
+    const turnLimit = run.drift ? travelTurnLimitRadPerS(surface.grip, rover.gripFactor, gStep, prev.speedMps) : Infinity;
+    travelRad = turnTravelDirection(travelRad, target, turnLimit, baseConstants.timeStepS);
+    slideRad = slideAngleRad(travelRad, target);
+    if (slideRad > 0) {
+      const d = next.distanceM - prev.distanceM;
+      state = { ...next, positionXM: prev.positionXM + d * Math.cos(travelRad), positionZM: prev.positionZM + d * Math.sin(travelRad) };
+    }
+    const sliding = slideRad >= SLIDE_MARK_RAD;
+
     // 4. Crash: a barrier, or a corner past the canyon wall. The step is undone (position, heading, distance) and v = 0.
-    const hit = course.barrierHit(next.positionXM, next.positionZM, next.headingRad, footprint.lengthM, footprint.widthM);
+    const hit = course.barrierHit(state.positionXM, state.positionZM, state.headingRad, footprint.lengthM, footprint.widthM);
     if (hit) {
       state = { ...next, positionXM: prev.positionXM, positionZM: prev.positionZM, headingRad: prev.headingRad, distanceM: prev.distanceM, speedMps: 0 };
+      travelRad = travelBefore;
+      slideRad = 0;
       endZone(prev.speedMps, 'crash');
       closeOpenMud(prev.speedMps);
-      ended = { cause: 'crash', speedMps: prev.speedMps, obstacle: hit.kind, ...(hit.atDivider ? { atDivider: true } : {}), gravityKind: prevZone };
+      ended = {
+        cause: 'crash', speedMps: prev.speedMps, obstacle: hit.kind, ...(hit.atDivider ? { atDivider: true } : {}), gravityKind: prevZone,
+        ...(sliding ? { sliding: true } : {}),
+      };
       record({ kind: 'crash', timeS: t, xM: state.positionXM, speedBeforeMps: prev.speedMps, speedAfterMps: 0 });
       return;
     }
 
-    // 5. Boost pads: each works once. Impulse J·cos(heading) along the heading: u′ = u + J/m.
+    // 4b. The wall behind the start line: a step that moves the rover backward (x falls) and leaves a corner of the footprint
+    // behind it is undone and v = 0. The run goes on (this is not a crash). Like the rocks, the whole pose is undone. Only a
+    // step toward the wall counts, so a rover with its back to the wall can still turn and drive away: turning swings a
+    // rear corner a few centimetres behind the line while the rover moves forward.
+    if (
+      state.positionXM < prev.positionXM &&
+      footprintCorners(state.positionXM, state.positionZM, state.headingRad, footprint.lengthM, footprint.widthM).some((c) => c.xM < startWallXM)
+    ) {
+      state = { ...next, positionXM: prev.positionXM, positionZM: prev.positionZM, headingRad: prev.headingRad, distanceM: prev.distanceM, speedMps: 0 };
+      travelRad = travelBefore;
+      slideRad = 0;
+    }
+
+    // 5. Boost pads: each works once. The impulse J·|cos(heading)| goes along the way the rover is moving, so it always
+    // speeds the rover up: u′ = u + J/m with u signed along the heading (negative in reverse).
     const pad = course.boostPadAt(state.positionXM, state.positionZM);
     if (pad && !usedPads.has(pad.id)) {
       usedPads.add(pad.id);
       const before = state.speedMps;
-      state = applyImpulse(state, rover.massKg, run.boostImpulseNs * Math.cos(state.headingRad));
+      const impulseNs = run.boostImpulseNs * Math.abs(Math.cos(state.headingRad));
+      state = applyImpulse(state, rover.massKg, state.direction === 'forward' ? impulseNs : -impulseNs);
       record({
         kind: 'boost', timeS: t, xM: state.positionXM, speedBeforeMps: before, speedAfterMps: state.speedMps,
-        massKg: rover.massKg, impulseNs: run.boostImpulseNs * Math.cos(state.headingRad),
+        massKg: rover.massKg, impulseNs,
       });
       stats.boosts += 1;
       stats.boostGainMps += state.speedMps - before;
@@ -344,9 +399,11 @@ export function createRunSession(options: RunSessionOptions) {
     moveBags(t);
     hitBags(t);
 
-    // 7. Score and distance. Each step adds max(0, Δx) × (v̄ / v_max); v̄ is the mean of the start and end speeds.
-    const dx = state.positionXM - prev.positionXM;
-    score += Math.max(0, dx) * (((prev.speedMps + state.speedMps) / 2) / rover.topSpeedMps);
+    // 7. Score and distance count only new ground (DECISIONS 2026-10-16): each step adds the ground beyond the furthest x
+    // reached so far × (v̄ / v_max); v̄ is the mean of the start and end speeds, in either direction. Reverse adds nothing
+    // by itself, and nor does driving back over old ground.
+    const newGroundM = Math.max(0, state.positionXM - progressM);
+    score += newGroundM * (((prev.speedMps + state.speedMps) / 2) / rover.topSpeedMps);
     progressM = Math.max(progressM, state.positionXM);
     stats.maxSpeedMps = Math.max(stats.maxSpeedMps, state.speedMps);
 
@@ -369,10 +426,13 @@ export function createRunSession(options: RunSessionOptions) {
     }
     const zone = course.gravityKindAt(state.positionXM, state.positionZM);
     if (zone !== currentZone) {
-      endZone(state.speedMps, 'out');
+      // A lane is "left" only through its far end (driving forward). Backing out of the near end records nothing.
+      const movedForward = state.positionXM > prev.positionXM;
+      if (movedForward) endZone(state.speedMps, 'out');
       currentZone = zone;
       zoneEntrySpeedMps = state.speedMps;
       zoneEntryState = state;
+      zoneEnteredForward = movedForward;
       if (zone !== undefined) {
         const multiplier = run.gravityMultipliers[zone];
         record({ kind: 'gravity', timeS: t, xM: state.positionXM, gravityKind: zone, gravityMultiplier: multiplier, weightN: rover.massKg * gravityAt(zone),
@@ -387,6 +447,13 @@ export function createRunSession(options: RunSessionOptions) {
       });
     }
     wasSlipping = next.slipping;
+    if (sliding && !wasSliding) {
+      record({
+        kind: 'slide', timeS: t, xM: state.positionXM, slideSpeedMps: prev.speedMps, turnLimitRadPerS: turnLimit,
+        massKg: rover.massKg, gravityMps2: gStep, surfaceGrip: surface.grip, wheelGrip: rover.gripFactor, turnRateDegPerS: baseConstants.turnRateDegPerS,
+      });
+    }
+    wasSliding = sliding;
     const aboveTop = next.drivingState === 'Coasting' && next.throttleLevel > 0;
     if (aboveTop && !wasAboveTop) {
       record({
@@ -406,7 +473,7 @@ export function createRunSession(options: RunSessionOptions) {
     }
   }
 
-  const loop = createFixedStepLoop(constants.timeStepS, onStep);
+  const loop = createFixedStepLoop(baseConstants.timeStepS, onStep);
 
   return {
     get state(): PhysicsState {
@@ -432,6 +499,16 @@ export function createRunSession(options: RunSessionOptions) {
     get score(): number {
       return score;
     },
+    /** The way the rover is travelling, radians (physics axes). Equals the driving angle unless it slides; the camera follows it. */
+    get travelRad(): number {
+      return travelRad;
+    },
+    /** The angle between the travel direction and the way the rover is driving. At least 5° shows squeal and skid marks. */
+    get slideAngleRad(): number {
+      return slideRad;
+    },
+    /** The wall behind the start line (x, physics axes). */
+    startWallXM,
     /** The largest x the front has reached (A6). */
     get progressM(): number {
       return progressM;
@@ -475,6 +552,10 @@ export function createRunSession(options: RunSessionOptions) {
       wasAboveTop = false;
       steerSent = [];
       driveSent = [];
+      travelRad = drivingAngle(state);
+      slideRad = 0;
+      wasSliding = false;
+      zoneEnteredForward = false;
     },
   };
 }

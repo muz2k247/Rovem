@@ -124,7 +124,7 @@ src/
   content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a;
                       demo: run.json, runChunks.json, runText.json (D2)
   game/               attempt flow, rules, Knowledge, unlocks
-    run/              demo (D3–D6): rng, course, runSession, unlocks, forcePanel, feedback, garageNumbers
+    run/              demo (D3–D6): rng, course, runSession, unlocks, forcePanel, feedback, garageNumbers, drift
   render/             three.js scene, camera, terrain, rover model; engine sound (Web Audio)
   ui/                 React screens and dialogs
   save/               progress storage; demoProgress.ts (D4, key rovem.demo.v1)

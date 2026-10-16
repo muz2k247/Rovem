@@ -179,6 +179,10 @@ export interface RunParams {
   warmUpLengthM: number;
   /** With no steer key held, the game steers the heading back toward 0 (DECISIONS 2026-10-16). Off: the heading stays where it was left. */
   steerReturnToStraight: boolean;
+  /** Demo only (DECISIONS 2026-10-16): reverse top speed = this × v_max, passed to step() by the game layer. The v2 value (0.5) stays in constants.json. */
+  reverseTopSpeedFactor: number;
+  /** Demo only: the travel direction lags the heading when the tyres cannot turn the rover fast enough (DESIGN, drifting). Off: the rover moves along its heading. */
+  drift: boolean;
   fieldChunksBetweenTunnels: number;
   /** Distance at which difficulty 1, 2 and 3 chunks start to be allowed. */
   difficultyStartsM: [number, number, number];
@@ -229,14 +233,14 @@ export interface RunChunks {
 }
 
 /** The event kinds the student can meet (A7, A11). */
-export const EVENT_KINDS = ['mud', 'sand', 'ice', 'boost', 'headOnHit', 'kickerHit', 'gravity', 'slip', 'aboveTopSpeed'] as const;
+export const EVENT_KINDS = ['mud', 'sand', 'ice', 'boost', 'headOnHit', 'kickerHit', 'gravity', 'slip', 'aboveTopSpeed', 'slide'] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 /** Effects that get a formula line in the report. */
 export const FORMULA_KINDS = ['mud', 'boost', 'headOnHit', 'kickerHit', 'gravity'] as const;
 export type FormulaKind = (typeof FORMULA_KINDS)[number];
 
-export const TRY_THIS_KEYS = ['pickLane', 'stuckInHighGravity', 'smoothWheels', 'brakeFirst', 'heavyChassis', 'dodgeCannon', 'steerEarlier', 'takeBoosts'] as const;
+export const TRY_THIS_KEYS = ['pickLane', 'stuckInHighGravity', 'smoothWheels', 'brakeFirst', 'heavyChassis', 'dodgeCannon', 'steerEarlier', 'brakeBeforeCorner', 'takeBoosts'] as const;
 export type TryThisKey = (typeof TRY_THIS_KEYS)[number];
 
 /** In `runText.json`. Placeholder text until k._muz reviews it (CLAUDE.md, Questions). */

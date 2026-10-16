@@ -22,6 +22,7 @@ const EVENT_TITLES: Record<EventKind, string> = {
   gravity: 'Gravity zone',
   slip: 'Wheels slipping',
   aboveTopSpeed: 'Above top speed',
+  slide: 'Sliding',
 };
 
 function partDetail(part: Part): string {

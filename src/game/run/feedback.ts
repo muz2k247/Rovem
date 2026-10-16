@@ -17,6 +17,8 @@ function speedChange(fromMps: number, toMps: number, unit: SpeedUnit): string {
   return `${(fromMps * k).toFixed(2)} → ${speedText(toMps, unit)}`;
 }
 
+const degPerS = (radPerS: number) => (radPerS * 180) / Math.PI;
+
 const SURFACE_NAMES: Record<string, string> = { mud: 'Mud', sand: 'Sand', ice: 'Ice' };
 
 /** The main line of a caption: what happened · the number that changed. Undefined for the events that end a run. */
@@ -39,6 +41,8 @@ export function captionMain(event: RunEvent, unit: SpeedUnit): string | undefine
       return `Wheels slipping · grip ${whole(event.gripN)} N`;
     case 'aboveTopSpeed':
       return "Above top speed · motor can't push";
+    case 'slide':
+      return `Sliding · tyres bend your path ${whole(degPerS(event.turnLimitRadPerS ?? 0))}°/s at most`;
     default:
       return undefined;
   }
@@ -91,6 +95,14 @@ export function workedLine(event: RunEvent, unit: SpeedUnit = 'mps'): string | u
       if (e.surfaceGrip === undefined || e.wheelGrip === undefined || e.massKg === undefined || e.gravityMps2 === undefined || e.gripN === undefined) return undefined;
       // F_lim = grip of the surface × grip of the wheels × m g
       return `Grip = ${plain(e.surfaceGrip)} × ${plain(e.wheelGrip)} × ${whole(e.massKg)} × ${plain(e.gravityMps2)} = ${whole(e.gripN)} N`;
+    case 'slide': {
+      if (e.surfaceGrip === undefined || e.wheelGrip === undefined || e.gravityMps2 === undefined || e.slideSpeedMps === undefined || e.turnLimitRadPerS === undefined) return undefined;
+      // ω_max = μ_g × k_g × g ÷ v: the sideways acceleration v·ω can be at most the grip times g
+      const wheel = e.wheelGrip === 1 ? '' : ` × ${plain(e.wheelGrip)}`;
+      const limitDeg = degPerS(e.turnLimitRadPerS);
+      const tail = e.turnRateDegPerS !== undefined && e.turnRateDegPerS > limitDeg ? `; you steer ${plain(e.turnRateDegPerS)}°/s → you slide` : '';
+      return `Tyres bend your path at most ${plain(e.surfaceGrip)}${wheel} × ${plain(e.gravityMps2)} ÷ ${plain(e.slideSpeedMps)} = ${two(e.turnLimitRadPerS)} rad/s (${whole(limitDeg)}°/s)${tail}${note}`;
+    }
     case 'aboveTopSpeed':
       if (e.frictionN === undefined || e.massKg === undefined) return undefined;
       // a = −F_r / m
@@ -228,7 +240,7 @@ export interface ReportInput {
 
 const laneName = (kind: GravityKind) => (kind === 'low' ? 'low gravity' : 'high gravity');
 
-/** "You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s" (or "stuck", or "crashed at"). */
+/** "You: low gravity, out at 15.80 m/s · Other lane, throttle held: high gravity, out at 12.31 m/s" (or "stuck", or "crashed at"). */
 export function laneComparison(zone: GravityZoneUse, unit: SpeedUnit): string {
   const you =
     zone.outcome === 'stuck' ? 'stuck' : zone.outcome === 'crash' ? `crashed at ${speedText(zone.speedOutMps, unit)}` : `out at ${speedText(zone.speedOutMps, unit)}`;
@@ -236,7 +248,8 @@ export function laneComparison(zone: GravityZoneUse, unit: SpeedUnit): string {
   if (!zone.other) return mine;
   const name = laneName(zone.other.kind);
   const theirs = zone.other.outcome === 'stuck' ? 'stuck' : `out at ${speedText(zone.other.speedOutMps, unit)}`;
-  return `${mine} · ${name[0]!.toUpperCase()}${name.slice(1)}: ${theirs}`;
+  // The other lane is always driven with the throttle held, whatever the student did (DECISIONS 2026-10-16).
+  return `${mine} · Other lane, throttle held: ${name}, ${theirs}`;
 }
 
 /** Every effect that happened, largest first (before the cut to 3). */
@@ -288,6 +301,7 @@ export function tryThisLine(
   const biggest = effectsRanked[0]?.kind;
   if (ended.cause === 'stuck' && ended.gravityKind === 'high') return text.tryThis.stuckInHighGravity;
   if (ended.atDivider) return text.tryThis.pickLane;
+  if (ended.sliding) return text.tryThis.brakeBeforeCorner;
   if (biggest === 'mud' && unlockedIds.includes('wheels-smooth') && fitted.wheelsId !== 'wheels-smooth') return text.tryThis.smoothWheels;
   // The student drives now, so a hit-heavy run in which the brake was never touched gets the free advice first.
   if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !brakeUsed) return text.tryThis.brakeFirst;

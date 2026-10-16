@@ -6,6 +6,21 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (reverse and drifting; DECISIONS 2026-10-16, approved by k._muz, provisional, demo only)
+- **Reverse in the run.** The game layer passes the keys as pressed, so S at rest reverses (W brakes in reverse, steering mirrored). `reverseTopSpeedFactor` = 1.0 in `run.json` (reverse top speed = v_max), passed to `step()`; the v2 value 0.5 stays in `constants.json`. Distance, score and unlocks count only new ground. The course behind stays solid; a wall at x = −2 m (the back edge of the starting pose) stops a step that moves the rover backward, v = 0, the run goes on. Boost pads add J|cos h|/m in the direction of motion; sandbag hits use world directions (tested while reversing); stuck is either drive key at rest in mud; the tunnel comparison is made only for a lane left through its far end. R indicator beside the speed.
+- **Drifting** (`drift` in `run.json`, default on; off = the runs of before, T9 replay tested). `src/game/run/drift.ts`: a travel direction apart from the heading, turned toward the driving direction by at most μ_g × k_g × g ÷ v × Δt; the step distance is moved along it; at v = 0 it snaps. Tests: 28.07°/s at 16 m/s on asphalt with All-terrain wheels, 17.5°/s mud, 3.5°/s ice, no slide below the limit, slower = less slide. Squeal and skid marks at a slide angle of 5° or more; a first-time `slide` caption with a worked line using the student's numbers; try-this "Brake before the corner" after a crash caused by a slide (`slide` tidbit, `brakeBeforeCorner` and the briefing line are placeholder text).
+- Camera follows the travel direction, blending over 0.5 s when it jumps (`createCameraBlend`); a start area with the wall behind the start line is drawn.
+
+### Changed (reverse and drifting)
+- The tunnel comparison line now reads `You: low gravity, out at 15.80 m/s · Other lane, throttle held: high gravity, out at 12.31 m/s`.
+- Briefing: "Hold W to go, S to brake (hold S at rest to reverse), A/D to steer." and a new hazard line "Fast corners slide."
+- Score: each step adds the ground beyond the furthest x so far × v̄ / v_max (unchanged for forward driving).
+- `RunEnd.sliding`, `RunEvent` slide fields, `session.travelRad`, `slideAngleRad` and `startWallXM` added to the run session. `src/physics/` untouched; T1–T10 and `npm run balance` unchanged.
+- The "no reverse in the run" rule of the earlier 2026-10-16 entry below is superseded (reasoning kept in DECISIONS and DEMO_BUILD_PLAN A2).
+
+### Docs (reverse and drifting)
+- DECISIONS row; DESIGN.md (Demo v3: reverse, drifting and its simplifications); DEMO_BUILD_PLAN A1, A2, A4, A5, A6, A7, A10, A12, A14 and Session 7; ROADMAP D7: the recording is dropped, k._muz shows the demo in person.
+
 ### Added (student drives; brake feedback; DECISIONS 2026-10-16)
 - The student drives: W/↑ throttle, S/↓ brake, A/D or arrows steer, from the existing key mapping. The run starts at rest with the throttle level 0. `createRunSession` takes a `drive` provider (default: throttle held, used by tests and the tunnel comparison's other lane) and records `driveSent`. No reverse in the run: the brake is not sent at rest or in reverse (game layer; `src/physics/` unchanged). Tests: rest at the start, W drives, S at rest does nothing, release coasts at −F_r/m, braking, no reverse, recovery from a reverse push, stuck, T9 with a key record at 30 and 144 fps.
 - `RunStats.brakeUsed` and a new try-this, "Brake before the cannon's line" (`tryThis.brakeFirst`), when hits were the biggest effect and the brake was never used. Force panel tests for coasting, rest and braking.

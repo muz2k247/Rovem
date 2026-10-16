@@ -4,6 +4,7 @@ import type { CourseChunk } from '../game/run/course.ts';
 import { GENERATE_AHEAD_M, type RunSession } from '../game/run/runSession.ts';
 import { createDust } from './driveScene.ts';
 import { createSkidMarks } from './skidMarks.ts';
+import { SLIDE_MARK_RAD, wrapAngle } from '../game/run/drift.ts';
 import { createRoverModel, ROVER_WHEEL_RADIUS_M, type WheelStyle } from './roverModel.ts';
 
 // The 3D view of the endless canyon (docs/DEMO_BUILD_PLAN.md A3, A4, A7). Original low-poly shapes; no outside assets.
@@ -31,9 +32,43 @@ export const CAMERA_WALL_MARGIN_M = 0.8;
 const SHAKE_HZ = 38;
 const SHAKE_UP_SHARE = 0.6; // the shake is smaller up and down than sideways
 
+/** When the travel direction jumps (a flip into or out of reverse) the camera swings round over this long (DECISIONS 2026-10-16). */
+export const CAMERA_BLEND_S = 0.5;
+/** A change of direction bigger than this between two frames counts as a jump; smaller ones (steering, a slide) are followed at once. */
+const CAMERA_JUMP_RAD = 1;
+
+/**
+ * The angle the camera follows. It is the travel direction; a jump in it is blended over CAMERA_BLEND_S so a flip into
+ * reverse swings the view round instead of cutting. Presentation only.
+ */
+export function createCameraBlend() {
+  let lastTarget: number | undefined;
+  let offset = 0;
+  let startOffset = 0;
+  let leftS = 0;
+  return {
+    follow(targetRad: number, frameS: number): number {
+      if (lastTarget !== undefined) {
+        const delta = wrapAngle(targetRad - lastTarget);
+        if (Math.abs(delta) > CAMERA_JUMP_RAD) {
+          offset = wrapAngle(offset - delta); // the camera stays where it was
+          startOffset = offset;
+          leftS = CAMERA_BLEND_S;
+        }
+      }
+      if (frameS > 0 && leftS > 0) {
+        leftS = Math.max(0, leftS - frameS);
+        offset = startOffset * (leftS / CAMERA_BLEND_S);
+      }
+      lastTarget = targetRad;
+      return targetRad + offset;
+    },
+  };
+}
+
 /**
  * Where the chase camera stands and what it looks at, in physics axes (x forward, z left). It sits behind the rover
- * along a direction that follows only part of the rover's heading, and is kept inside the canyon walls.
+ * along the direction it is given (the travel direction; once only part of the heading), and is kept inside the canyon walls.
  */
 export function cameraPose(xM: number, zM: number, headingRad: number, wallInnerM: number) {
   const angle = headingRad * CAMERA_HEADING_SHARE;
@@ -180,6 +215,16 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   far.position.y = -0.03;
   scene.add(far);
 
+  // The start area: a strip of asphalt under the rover's back, the canyon walls along it, and the wall behind the start line.
+  const startGroup = new THREE.Group();
+  startGroup.name = 'startArea';
+  const wallX = session.startWallXM;
+  startGroup.add(boxAt(materials.asphalt, [wallX, 0], [-WALL_INNER_M, WALL_INNER_M], -0.02, 0.02, 'startPad'));
+  startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, 0], [WALL_INNER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'startSide'));
+  startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, 0], [-WALL_OUTER_M, -WALL_INNER_M], 0, WALL_HEIGHT_M, 'startSide'));
+  startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, wallX], [-WALL_OUTER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'startWall'));
+  scene.add(startGroup);
+
   const chunkGroups = new Map<number, THREE.Group>();
   const cannonX = new Map<string, number>();
   const ownedTextures = new Map<number, THREE.Texture[]>();
@@ -324,6 +369,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   let gravityKind: GravityKind | undefined;
   let shakeM = 0;
   const skid = createSkidMarks(scene);
+  const cameraAngle = createCameraBlend();
   /** Where each wheel touched the ground last frame while slipping; null when not slipping. */
   let lastWheelPoints: { x: number; z: number }[] | null = null;
 
@@ -390,7 +436,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     // Skid marks: while the physics reports wheel slip, a strip behind each of the four wheels (presentation only).
     if (frameS > 0) {
       skid.update(frameS);
-      if (state.slipping && state.speedMps > 0) {
+      if ((state.slipping || s.slideAngleRad >= SLIDE_MARK_RAD) && state.speedMps > 0) {
         const side = roverWidthM / 2 - 0.1;
         const points: { x: number; z: number }[] = [];
         for (const backM of [model.frontAxleBackM, model.rearAxleBackM]) {
@@ -409,7 +455,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
     camera.updateProjectionMatrix();
-    const pose = cameraPose(x, z, state.headingRad, WALL_INNER_M);
+    const pose = cameraPose(x, z, cameraAngle.follow(s.travelRad, frameS), WALL_INNER_M);
     let shakeX = 0;
     let shakeY = 0;
     let shakeZ = 0;

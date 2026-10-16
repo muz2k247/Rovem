@@ -66,7 +66,7 @@ describe('demo run content (D2)', () => {
 
   it('flags the text as placeholder', () => {
     expect(content.runText.placeholder).toBe(true);
-    expect(Object.keys(content.runText.tidbits)).toHaveLength(9);
+    expect(Object.keys(content.runText.tidbits)).toHaveLength(10);
   });
 
   it('names the bad path: run values', () => {
@@ -74,6 +74,16 @@ describe('demo run content (D2)', () => {
     expect(bad((r) => delete r.run.sandbag.massKg)).toThrow(/run\.sandbag\.massKg/);
     expect(bad((r) => (r.run.gravityMultipliers.low = 0))).toThrow(/run\.gravityMultipliers\.low/);
     expect(bad((r) => (r.run.difficultyStartsM = [0, 1500, 500]))).toThrow(/run\.difficultyStartsM/);
+  });
+
+  it('loads the reverse and drift switches (DECISIONS 2026-10-16, demo only)', () => {
+    expect(content.run.reverseTopSpeedFactor).toBe(1);
+    expect(content.run.drift).toBe(true);
+    expect(content.constants.reverseTopSpeedFraction).toBe(0.5); // the v2 value stays untouched in its own file
+    expect(bad((r) => (r.run.reverseTopSpeedFactor = 0))).toThrow(/run.reverseTopSpeedFactor/);
+    expect(bad((r) => delete r.run.drift)).toThrow(/run.drift/);
+    expect(bad((r) => delete r.runText.tidbits.slide)).toThrow(/runText.tidbits/);
+    expect(bad((r) => delete r.runText.tryThis.brakeBeforeCorner)).toThrow(/runText.tryThis/);
   });
 
   it('names the bad path: unlock part ids must exist and must not be starting parts', () => {

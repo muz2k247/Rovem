@@ -16,6 +16,7 @@ import {
 } from '../game/run/feedback.ts';
 import { forcePanel, type ForcePanel } from '../game/run/forcePanel.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
+import { SLIDE_MARK_RAD } from '../game/run/drift.ts';
 import { createRunSession } from '../game/run/runSession.ts';
 import { displayPartName, nextUnlock } from '../game/run/unlocks.ts';
 import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
@@ -357,8 +358,10 @@ export function RunScreen({
       renderer.render(view.scene, view.camera);
       engine.setMuted(!soundRef.current || phase === 'crashing' || phase === 'ended' || driver.paused);
       effects.setMuted(!soundRef.current);
-      // Tyre squeal whenever the physics reports wheel slip (a hard brake or a hard start on a slippery surface).
-      effects.setSqueal(phase === 'running' && !driver.paused && state.slipping && state.speedMps > 0, state.speedMps / rover.topSpeedMps);
+      // Tyre squeal whenever the physics reports wheel slip (a hard brake or a hard start on a slippery surface), and
+      // while the rover slides sideways (slide angle of 5° or more).
+      const squealing = state.slipping || session.slideAngleRad >= SLIDE_MARK_RAD;
+      effects.setSqueal(phase === 'running' && !driver.paused && squealing && state.speedMps > 0, state.speedMps / rover.topSpeedMps);
       engine.update(state.speedMps / rover.topSpeedMps, phase === 'running' ? state.throttleLevel : 0);
 
       for (; eventsHandled < session.events.length; eventsHandled++) {
@@ -419,7 +422,14 @@ export function RunScreen({
             </div>
             <div className="hud-direction">
               <small>SPEED</small>
-              <strong>{speedText(hud.speedMps, unit)}</strong>
+              <strong>
+                {speedText(hud.speedMps, unit)}
+                {hud.reverse && (
+                  <span className="reverse-badge" aria-label="Reverse">
+                    R
+                  </span>
+                )}
+              </strong>
             </div>
             <div className="hud-score">
               <small>SCORE</small>

@@ -17,7 +17,7 @@
 
 ## A1. The game in one paragraph
 
-The student drives a rover through an endless canyon: W/↑ throttle, S/↓ brake, A/D or ←/→ steer (changed 2026-10-16; the first design had the rover always driving and the student only steering, see A2). Along the way:
+The student drives a rover through an endless canyon: W/↑ throttle, S/↓ brake, A/D or ←/→ steer (changed 2026-10-16; the first design had the rover always driving and the student only steering, see A2). Holding S at rest reverses, and a rover that steers harder than its tyres allow slides (both added 2026-10-16, see A2). Along the way:
 - **Tiles:** mud slows you; sand and ice change how fast you regain or lose speed.
 - **Boost pads:** each gives a push.
 - **Cannons:** they fire sandbags at you head-on, or from behind.
@@ -30,12 +30,24 @@ The run ends when the rover hits a barrier or the canyon wall, or gets stuck in 
 - **Steer:** A/D or ←/→, using the existing key mapping in `src/game/controls.ts`.
 - **Steering returns to straight (added 2026-10-16, then switched off the same day after playtest; superseded, code kept):** `steerReturnToStraight` in `run.json` is now `false` and the heading stays where it was left. The code and its tests stay, and the camera follows the heading fully again (share 1; it was 0.35 while the return was on). Original rule, kept for its reasoning: when no steer key is held and v > 0, the game layer sends the steer input that turns the heading back toward 0 at the normal turn rate, and sends 0 once |heading| is within half of one step's turn. `step()` is unchanged. The session records what it really sent (`steerSent`); replaying that record with `steerReturnToStraight` false gives the same run (T9). The switch is `steerReturnToStraight` in `run.json`.
 - **Pause (added 2026-10-16):** Esc, or the window losing focus, pauses the run: no steps run and the fixed-step loop keeps its leftover time, so a pause never changes the run. Any key resumes. Esc at the briefing only skips it.
-- **Throttle and brake (changed 2026-10-16):** the student drives. W/↑ is the throttle and S/↓ the brake, from the existing key mapping. The run starts at v = 0 on the start line with the throttle level 0, and nothing happens until the student presses. Releasing the throttle coasts (physics unchanged). **No reverse in the run:** the game layer sends the brake only while the rover rolls forward (v > 0, direction forward), so S at v = 0 does nothing; `src/physics/` is not changed.
+- **Throttle and brake (changed 2026-10-16):** the student drives. W/↑ is the throttle and S/↓ the brake, from the existing key mapping. The run starts at v = 0 on the start line with the throttle level 0, and nothing happens until the student presses. Releasing the throttle coasts (physics unchanged). **Reverse (changed 2026-10-16, approved by k._muz, provisional):** the keys go to `step()` as pressed, so S held at v = 0 reverses as the physics does; in reverse S drives and W brakes, and steering is mirrored. `src/physics/` is not changed.
+  - **Superseded 2026-10-16:** "No reverse in the run: the game layer sends the brake only while the rover rolls forward (v > 0, direction forward), so S at v = 0 does nothing." It was a game-layer rule; the physics always supported reverse. The reason was not written down when the rule was made.
   - **Superseded 2026-10-16:** "Throttle: always held. The game layer feeds `throttleHeld: true, brakeHeld: false` to `step()` every step. The student has no throttle, brake or reverse keys in the demo. S/↓ and W/↑ do nothing." Why it was chosen: the demo was meant to be about steering and seeing the numbers, with the fewest controls (NFR-6). It was dropped because k._muz, after playing it, wanted the student to control speed, so braking before a cannon's line and lifting off in mud are choices.
 - **Start:** a briefing card shows for 2.5 s; any key skips it. On the first run ever it waits for a key instead (`briefingSeen` in A9). Then steps start from rest at the start pose: x = 0, z = 0, heading 0, on asphalt. The throttle builds up over 1.0 s as usual. There is no countdown.
 - **The run ends at the end of the first step in which:**
   - **Crash:** the rover's footprint overlaps a barrier box, or any footprint corner has |z| > the corridor half-width. That step is undone (position, heading and distance, as for rocks) and v is set to 0. Record the crash speed as the speed at the start of that step.
-  - **Stuck:** v = 0, throttle level = 1, brake level = 0 and the driving state is `Stopped`. This means mud's friction is more than the motor can beat (FR-8).
+  - **Stuck:** v = 0, throttle level = 1, brake level = 0 and the driving state is `Stopped`. This means mud's friction is more than the motor can beat (FR-8). The level is the drive level, so either drive key counts: W going forward, S in reverse (2026-10-16).
+- **Reverse in the run (added 2026-10-16, approved by k._muz, provisional, demo only):**
+  - Reverse top speed = `reverseTopSpeedFactor` × v_max, with the factor 1.0 in `run.json`; the game layer passes it to `step()` as `reverseTopSpeedFraction`. The v2 value (0.5) stays in `constants.json`.
+  - **New ground only:** distance (`progressM`), score and unlocks count the furthest x reached. Driving back over old ground earns nothing. The score multiplier uses the speed in either direction over the forward v_max.
+  - **The course behind the rover stays solid.** A wall behind the start line (at x = −(rover length), the back edge of the starting pose) stops a step that moves the rover backward with a footprint corner behind it: the step is undone (position, heading, distance), v = 0, the clock advances, and the run goes on. It is not a crash.
+  - Boost pads and sandbag hits in reverse: A4.
+- **Drifting (added 2026-10-16, approved by k._muz, provisional; switch `drift` in `run.json`, default on):**
+  - The game layer keeps a **travel direction** apart from the heading. The heading turns as before. The travel direction turns toward the **driving direction** (the heading going forward, the heading + 180° in reverse) by at most (grip × wheel grip factor × g ÷ v) × Δt, where grip is the surface's μ_g under the front, g is the zone's g and v is the speed at the start of the step. The rover moves its step distance along the travel direction. At v = 0 the limit is infinite, so it snaps. With `drift` off the rover moves along its heading and every run is as before (T9 replay test).
+  - Hand checks (All-terrain, g = 9.8, 16 m/s): asphalt 0.8 × 9.8 ÷ 16 = 0.49 rad/s = 28.07°/s; mud 17.5°/s; ice 3.5°/s. Below the limit there is no slide; the slower the rover, the less it slides.
+  - **Simplifications:** sliding does not change speed; turning grip and drive grip are not shared. Sandbag hits and boosts still act along the heading.
+  - **Slide angle** = the angle between the travel direction and the driving direction. At 5° or more the run plays the tyre squeal and draws the skid marks (as for brake slip). First time: a caption with the student's numbers (A7), and a try-this after a crash caused by a slide.
+  - The camera follows the travel direction and blends over 0.5 s when it jumps (a flip into or out of reverse); the wall clearance and the shake stay.
 - **Brake feedback (added 2026-10-16):** whenever `step()` reports wheel slip (`slipping`), the run plays a tyre squeal (Web Audio, in code, follows the Sound setting) and draws skid marks behind the four wheels that fade after 4 s. The existing "Wheels slipping" caption shows as before. Presentation only: no new physics and no drift model.
 - **After the run ends,** no more steps run. A crash plays a 0.5 s crash moment first (camera shake, a flash and a thud; the camera stays inside the walls); "stuck" goes straight on. Then the run report opens.
 
@@ -90,7 +102,7 @@ Every "at the front" below means the rover's physics position, its front point, 
 
 - **Tiles (mud, sand, ice).** The surface under the front is passed to `step()`, as levels already do. Later tiles in a chunk are drawn on top of earlier ones. **Mud is a new surface:** rolling friction μ_r = 0.6, grip μ_g = 0.5 (provisional).
 - **Barriers.** Solid boxes. Overlap ends the run (see A2). There is a new geometry function, `footprintOverlapsBox`, which uses a separating-axis test of the footprint rectangle against an axis-aligned box.
-- **Boost pads.** When the front point is inside a pad not yet used in this run, apply an impulse J = `boostImpulseNs` × cos(heading) along the heading, after the step. Each pad works once per run.
+- **Boost pads.** When the front point is inside a pad not yet used in this run, apply an impulse J = `boostImpulseNs` × |cos(heading)| along the way the rover is moving, after the step: u′ = u + J/m with u signed, so J is negative in reverse and a pad always speeds the rover up (changed 2026-10-16). Each pad works once per run.
 - **Cannons.** They fire sandbags of `sandbag.massKg` and radius `sandbag.radiusM` along a line of constant z (the cannon's z). A cannon is a gantry over the lane and is not solid.
   - **Head-on:**
     - It becomes active at the end of the first step in which the front's x ≥ cannon x − `headOnTriggerDistanceM`.
@@ -101,7 +113,7 @@ Every "at the front" below means the rover's physics position, its front point, 
     - It fires `kickerShots` bags, at that step's time and then every `fireIntervalS`.
     - Its bags travel in +x at `kickerSpeedMps`. A bag can only catch a rover that is slower than it.
   - **Bag position:** at simulation time t, x = cannon x ∓ speed × (t − fire time). A bag is removed once it has travelled `rangeM`, or when it hits.
-  - **Hit:** after the step, if the footprint overlaps a bag's circle (`footprintOverlapsCircle`), apply `shareMomentum` (A5) with the bag's velocity component along the heading, ±speed × cos(heading). Then remove the bag; it "sticks for an instant and drops off". Several bags in one step are applied one after another, in firing order.
+  - **Hit:** after the step, if the footprint overlaps a bag's circle (`footprintOverlapsCircle`), apply `shareMomentum` (A5) with the bag's velocity component along the heading, ±speed × cos(heading). These are world directions, so a reversing rover works out the same way: a head-on bag (−x) speeds up a rover reversing in −x, and a kicker bag (+x) can push it forward (tested 2026-10-16). Then remove the bag; it "sticks for an instant and drops off". Several bags in one step are applied one after another, in firing order.
 - **Gravity zones.** The zone kind at the front sets g for that step: 9.8 × `gravityMultipliers.low` or `.high`; 9.8 elsewhere. The game layer passes a copy of the constants with that `gravityMps2` to `step()`. The physics code needs no change for this.
 
 **Order inside one game step:**
@@ -142,12 +154,12 @@ These are textbook formulas. Each function gets a comment naming its formula, an
 | Head-on bag when the rover is at 1 m/s | u′ = (209 − 400)/249 = −0.767068, so the direction becomes reverse at 0.767068 m/s |
 | Above top speed on asphalt, throttle full | a = −0.02 × 9.8 = −0.196 m/s², driveForceN = 0, state `Coasting` |
 
-**If the rover is pushed into reverse** (a sandbag hit at low speed): W is still the throttle key, and in reverse the physics reads it as the brake, so holding W brakes it to 0, flips it forward and drives on. The game layer never sends S in reverse (it would drive the rover further backward), and one test shows the recovery.
+**If the rover is pushed into reverse** (a sandbag hit at low speed): W is still the throttle key, and in reverse the physics reads it as the brake, so holding W brakes it to 0, flips it forward and drives on. One test shows the recovery. *Changed 2026-10-16:* the game layer now sends S as pressed, so S in reverse drives the rover further backward, as the physics does. W is the way out.
 
 ## A6. Score, distance, unlocks
 
-- **Distance** (`progressM`): the largest x the front has reached. This is not the path length, so weaving doesn't inflate it.
-- **Score:** each step adds max(0, Δx) × (v̄ / v_max), where v̄ is the mean of the speeds at the start and end of the step and v_max is the build's forward top speed. It is shown as a whole number. The multiplier is shown live as "×1.36" (v / v_max, 2 decimals).
+- **Distance** (`progressM`): the largest x the front has reached. This is not the path length, so weaving doesn't inflate it, and reversing and driving back over old ground add nothing (changed 2026-10-16).
+- **Score:** each step adds (the ground beyond the furthest x reached so far) × (v̄ / v_max), which is max(0, Δx) while the rover is moving forward into new ground (changed 2026-10-16), where v̄ is the mean of the speeds at the start and end of the step and v_max is the build's forward top speed. It is shown as a whole number. The multiplier is shown live as "×1.36" (v / v_max, 2 decimals).
 - **Best distance and best score** are saved (A9).
 - **Unlocks:** the three starting parts are always open. The others open when best distance ≥:
 
@@ -186,6 +198,7 @@ These are textbook formulas. Each function gets a comment naming its formula, an
 | Enter a gravity zone | `Gravity ×2 · weight 4096 N` |
 | Wheels start slipping | `Wheels slipping · grip 512 N` |
 | Above top speed | `Above top speed · motor can't push` |
+| Sliding (added 2026-10-16) | `Sliding · tyres bend your path 28°/s at most` |
 
 **Worked formulas** (second line of a first-time caption, and the report). All values are the run's own; these use the starting build (m = 209 kg, g = 9.8):
 
@@ -198,6 +211,7 @@ These are textbook formulas. Each function gets a comment naming its formula, an
 | Gravity zone | `Weight = 209 × 19.6 = 4096 N` |
 | Wheels slipping | `Grip = 0.5 × 1 × 209 × 4.9 = 512 N` |
 | Above top speed | `a = −friction ÷ mass = −41 ÷ 209 = −0.20 m/s²` |
+| Sliding (added 2026-10-16) | `Tyres bend your path at most 0.8 × 9.8 ÷ 16 = 0.49 rad/s (28°/s); you steer 60°/s → you slide` (surface grip × wheel grip × g ÷ speed; the wheel factor is left out when it is 1, and "→ you slide" only when the steering rate is above the limit) |
 
 The signed speed along the heading is used, so a hit seen from a rover in reverse shows `(−2.00)`, and a hit that pushes the rover into reverse shows a negative v. The heading's cosine is already in the bag's speed and the boost's J.
 
@@ -230,10 +244,11 @@ The signed speed along the heading is used, so a hit seen from a rover in revers
   - gravity zones: the first two used, with the speed in and out of each, then "and n more"
 
   Each effect gets its **worked formula** (changed 2026-10-16): the formula filled in with the numbers of the first such event in the run (the first hit, the first patch), then the longer explanation (the old tidbit) in small type.
-- **Tunnel comparison (new rule, 2026-10-16).** When the rover leaves a gravity lane (out of the far end, stuck in it, or crashed in it), the game simulates the other lane with the same build and the same entry state, straight down the middle of that lane, through that lane's zone and mud, using `step()` with that lane's g (`tunnelCompare.ts`). The gravity effect lists the first two tunnels, one line each: `You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s` (or `stuck`, or `crashed at`), then "and n more". A test shows that the comparison equals a real run down the other lane from the same entry state. It is a straight-line what-if: bags and other objects outside the tunnel chunk are not simulated. The tunnel signs carry the question "Which lane keeps you faster?" (`tunnelQuestion` in `runText.json`).
+- **Tunnel comparison (new rule, 2026-10-16).** When the rover leaves a gravity lane (out of the far end, stuck in it, or crashed in it), the game simulates the other lane with the same build and the same entry state, straight down the middle of that lane, through that lane's zone and mud, using `step()` with that lane's g (`tunnelCompare.ts`). The gravity effect lists the first two tunnels, one line each: `You: low gravity, out at 15.80 m/s · Other lane, throttle held: high gravity, out at 12.31 m/s` (or `stuck`, or `crashed at`; changed 2026-10-16: the other lane's part says "Other lane, throttle held"), then "and n more". The comparison is made only when the lane is left through its far end, driving forward (2026-10-16): backing out of the near end records nothing, and a lane entered by reversing in from the far end has no comparison. A test shows that the comparison equals a real run down the other lane from the same entry state. It is a straight-line what-if: bags and other objects outside the tunnel chunk are not simulated. The tunnel signs carry the question "Which lane keeps you faster?" (`tunnelQuestion` in `runText.json`).
 - **One "Try this" line,** chosen by rules over the run's stats and the unlocked parts, in this order of preference (changed 2026-10-16: new rules 2 and 5):
   1. stuck in high gravity → try the low-gravity tunnel
   2. crashed on the divider between the tunnel lanes → pick a lane before the tunnel
+  2b. (added 2026-10-16) a slide caused the crash (slide angle of 5° or more in the step that crashed) → "Brake before the corner"
   3. mud was the biggest effect, and Smooth wheels are unlocked but not fitted → try Smooth wheels
   4. hits were the biggest effect, and Heavy chassis is unlocked but not fitted → try Heavy chassis
   5. hits were the biggest effect, and Heavy chassis is still locked → dodge the cannon's line
@@ -290,6 +305,8 @@ In `src/content/run.json`:
   "corridorHalfWidthM": 15,
   "warmUpLengthM": 60,
   "steerReturnToStraight": true,
+  "reverseTopSpeedFactor": 1.0,
+  "drift": true,
   "fieldChunksBetweenTunnels": 2,
   "difficultyStartsM": [0, 500, 1500],
   "gravityMultipliers": { "low": 0.5, "high": 2 },
@@ -351,7 +368,7 @@ CLAUDE.md says explanations come from k._muz. So every tidbit, formula line, "tr
 ## A12. Paused or hidden, not deleted
 
 - **Paused:** M5b–M14, the questions, Knowledge, accounts and hosting. The old Build screen and test drive stay in the code, reachable only from the developer link.
-- **Kept in code, unused by the demo:** reverse (the run never sends the brake at rest), the steering assist, the steering return (switched off) and the throttle bars.
+- **Kept in code, unused by the demo:** the steering assist, the steering return (switched off) and the throttle bars. (Reverse is used in the run since 2026-10-16.)
 - **Unchanged:** T1–T10 and `npm run balance` must keep passing.
 
 ## A13. File map
@@ -377,7 +394,7 @@ The endless run uses its own chunk format, not the M5a `Level` format. A chunk i
 - T1–T10 and `npm run balance` are unchanged.
 - `physics-checker` has been run on the physics changes.
 - 30+ fps on Intel UHD Graphics, measured by k._muz.
-- k._muz has a 1–2 minute screen recording.
+- k._muz shows the demo in person. (Changed 2026-10-16: the 1–2 minute screen recording is dropped.)
 
 ---
 
@@ -587,10 +604,10 @@ Task: roadmap step D7, finish the demo.
 - Play-check every item in A14 and list each one as passed or failed. Fix small issues; report
   anything larger.
 - Run physics-checker and spec-sync, and fix the drift they find.
-- Write a recording checklist for k._muz, a 1–2 minute clip showing: the garage, a run with mud,
+- (Dropped 2026-10-16: k._muz shows the demo in person.) Write a recording checklist for k._muz, a 1–2 minute clip showing: the garage, a run with mud,
   a boost, a sandbag hit, a kicker, both tunnels with their captions and tint, the force panel
   "Balanced", a crash, the report with try-this, an unlock.
 - CHANGELOG: move the demo entries under a "demo-0.1.0" heading. ROADMAP: mark the Demo done
-  once k._muz confirms fps and has the recording.
+  once k._muz confirms fps (the recording was dropped 2026-10-16).
 Suggested commit: "Demo D7: polish, preview script, review".
 ```

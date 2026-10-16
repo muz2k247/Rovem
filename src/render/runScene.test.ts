@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { content } from '../content/index.ts';
 import { constants, rover } from '../../tests/helpers/physics.ts';
 import { createRunSession } from '../game/run/runSession.ts';
-import { BUILD_AHEAD_M, CAMERA_HEADING_SHARE, CAMERA_WALL_MARGIN_M, cameraPose, createRunScene, KEEP_BEHIND_M } from './runScene.ts';
+import { BUILD_AHEAD_M, CAMERA_HEADING_SHARE, CAMERA_WALL_MARGIN_M, cameraPose, createCameraBlend, createRunScene, KEEP_BEHIND_M } from './runScene.ts';
+import { wrapAngle } from '../game/run/drift.ts';
 
 const names = (root: THREE.Object3D) => {
   const found: string[] = [];
@@ -188,5 +189,65 @@ describe('skid marks follow the physics slip flag', () => {
     const { view, slippedSteps } = play(false);
     expect(slippedSteps).toBe(0);
     expect(view.skidMarkCount).toBe(0);
+  });
+});
+
+describe('the camera follows the travel direction (DECISIONS 2026-10-16)', () => {
+  it('blends over 0.5 s when the direction jumps (a flip into reverse), and follows small turns at once', () => {
+    const blend = createCameraBlend();
+    expect(blend.follow(0, 0)).toBe(0);
+    expect(blend.follow(0.05, 1 / 60)).toBeCloseTo(0.05, 12); // a turn: no lag
+    const t = 0.05;
+    expect(wrapAngle(blend.follow(t + Math.PI, 0) - t)).toBeCloseTo(0, 12); // the jump: the camera stays where it was (angles mod 2π)
+    expect(Math.abs(wrapAngle(blend.follow(t + Math.PI, 0.25) - (t + Math.PI)))).toBeCloseTo(Math.PI / 2, 9); // half way
+    expect(wrapAngle(blend.follow(t + Math.PI, 0.25) - (t + Math.PI))).toBeCloseTo(0, 9); // 0.5 s in total: arrived
+    expect(wrapAngle(blend.follow(t + Math.PI, 1) - (t + Math.PI))).toBeCloseTo(0, 12);
+  });
+  it('is called with the travel direction: reversing, the camera ends up looking toward −x', () => {
+    const { session, view } = make(3, { positionXM: 200, speedMps: 5, direction: 'reverse' });
+    for (let i = 0; i < 10; i++) {
+      session.stepOnce();
+      view.update(session, 1 / 60);
+    }
+    for (let i = 0; i < 40; i++) view.update(session, 1 / 60); // 0.67 s: the blend is over
+    const dir = new THREE.Vector3();
+    view.camera.getWorldDirection(dir);
+    expect(dir.x).toBeLessThan(-0.5);
+  });
+});
+
+describe('the wall behind the start line', () => {
+  it('is drawn at the session\'s wall position, and stays when the rover drives away', () => {
+    const { session, view } = make(7);
+    const wallMesh = view.scene.getObjectByName('startWall')!;
+    expect(wallMesh).toBeDefined();
+    const box = new THREE.Box3().setFromObject(wallMesh);
+    expect(box.max.x).toBeCloseTo(session.startWallXM, 6);
+    view.update(fakeAt(session, 1500));
+    expect(view.scene.getObjectByName('startWall')).toBe(wallMesh);
+  });
+});
+
+describe('skid marks also follow a slide (angle of 5° or more)', () => {
+  it('steering hard at speed lays strips; going straight does not', () => {
+    const slide = (steer: -1 | 0 | 1) => {
+      const session = createRunSession({
+        content, rover: rover(), constants, seed: 5, input: (i) => (i >= 20 && i < 140 ? steer : 0),
+        initialState: { positionXM: 70, speedMps: 16, throttleLevel: 1 },
+      });
+      const view = createRunScene(session, content, 'all-terrain');
+      let slidSteps = 0;
+      for (let i = 0; i < 160; i++) {
+        session.stepOnce();
+        if (session.slideAngleRad >= (5 * Math.PI) / 180) slidSteps++;
+        view.update(session, 1 / 120);
+      }
+      return { view, slidSteps, slipped: session.state.slipping };
+    };
+    const hard = slide(1);
+    expect(hard.slidSteps).toBeGreaterThan(0);
+    expect(hard.view.skidMarkCount).toBeGreaterThan(0);
+    const straight = slide(0);
+    expect(straight.view.skidMarkCount).toBe(0);
   });
 });

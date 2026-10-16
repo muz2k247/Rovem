@@ -24,7 +24,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused (until
 | D4 | Run session, unlocks, force panel, feedback, demo save | ✅ | D1, D3 |
 | D5 | 3D run scene | ✅ | D3 |
 | D6 | Screens: garage, run screen, report | ✅ | D4, D5 |
-| D7 | Polish, `preview` script, review, recording | 🟨 Polish part 2 done 2026-10-16; waits for k._muz's fps check, text review and recording | D6 |
+| D7 | Polish, `preview` script, review | 🟨 Polish part 2 and reverse and drifting done 2026-10-16; waits for k._muz's fps check and text review (recording dropped: k._muz shows the demo in person) | D6 |
 | M5b | Mission 1: Canyon Dash | ⏸ Paused | M5a |
 | M6 | Questions, prediction and results | ⏸ Paused | M3, M5b, Q1 |
 | M7 | Guest saving, Knowledge and unlocks | ⏸ Paused | M6 |
@@ -53,7 +53,7 @@ The design is in `docs/DESIGN.md` (Demo v3) and the detail, with the session pro
 | D4 | 4 | `runSession.ts`, `unlocks.ts`, `forcePanel.ts`, `feedback.ts` and `src/save/demoProgress.ts` | Each A5 number is reached through a real session; crash, stuck, pads, bags, score and unlocks tested; T9 holds for the run; storage that throws falls back to defaults |
 | D5 | 5 | `src/render/runScene.ts`: chunks added and removed as the rover moves; original low-poly shapes | Object counts match the course (tested) |
 | D6 | 6 | Garage, run screen, report overlay and `App.tsx` in `src/ui/` | Several full runs played: each object, caption, crash, stuck, unlock, units, force panel toggle, replay |
-| D7 | 7 | Polish, the `preview` script, play-check of every item in A14, `physics-checker` and `spec-sync`, recording checklist | A14 is all passed; k._muz has measured 30+ fps and has the recording; CHANGELOG entries moved under `demo-0.1.0` |
+| D7 | 7 | Polish, the `preview` script, play-check of every item in A14, `physics-checker` and `spec-sync`, ~~recording checklist~~ (dropped 2026-10-16) | A14 is all passed; k._muz has measured 30+ fps (no recording; k._muz shows the demo in person); CHANGELOG entries moved under `demo-0.1.0` |
 
 **Demo done when:** the A14 list in the build plan is true. Then k._muz shows the advisor, and the post-demo direction is decided.
 

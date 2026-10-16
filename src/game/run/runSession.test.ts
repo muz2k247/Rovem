@@ -102,7 +102,7 @@ describe('crash', () => {
   });
 
   it('a canyon wall ends the run when a footprint corner passes the corridor edge', () => {
-    const s = session(worldOf({}), {}, () => 1);
+    const s = session(worldOf({}), { initialState: { positionXM: 100, speedMps: 16, throttleLevel: 1 } }, () => 1);
     runUntil(s, () => false);
     expect(s.ended?.cause).toBe('crash');
     expect(s.ended?.obstacle).toBe('wall');
@@ -379,7 +379,7 @@ describe('steering returns to straight (code kept, switched off in run.json)', (
     const left = drive(world, (i) => (i >= 240 && i < 288 ? -1 : 0), 600);
     expect(left.state.positionZM).toBeLessThan(-0.5);
     expect(Math.abs(left.state.headingRad)).toBeLessThanOrEqual(deadbandRad + 1e-12);
-    const rev = createRunSession({ content: world, rover: rover(), constants, seed: unmirroredSeed(world), input: STRAIGHT, initialState: { speedMps: 3, direction: 'reverse', headingRad: 0.2 } });
+    const rev = createRunSession({ content: world, rover: rover(), constants, seed: unmirroredSeed(world), input: STRAIGHT, initialState: { speedMps: 3, direction: 'reverse', headingRad: 0.2, positionXM: 100 } });
     rev.stepOnce();
     expect(rev.steerSent[0]).toBe(1); // reverse mirrors the input, so +1 turns the heading down
     expect(rev.state.headingRad).toBeLessThan(0.2);
@@ -415,26 +415,34 @@ describe('the student drives (DECISIONS 2026-10-16)', () => {
     expect(s.state.drivingState).toBe('Driving');
   });
 
-  it('S at v = 0 does nothing: no brake sent, no reverse', () => {
+  it('S at v = 0 at the start line goes nowhere: the wall behind the rover stops it, and the run goes on', () => {
     const s = run(make(() => S), 300);
     expect(s.state.speedMps).toBe(0);
-    expect(s.state.direction).toBe('forward');
-    expect(s.state.brakeLevel).toBe(0);
-    expect(s.driveSent.every((k) => !k.brakeHeld)).toBe(true);
-    expect(s.stats.brakeUsed).toBe(false);
+    expect(s.state.positionXM).toBe(0);
+    expect(s.ended).toBeUndefined();
+    expect(s.state.direction).toBe('reverse'); // the physics did flip; the wall holds the rover
   });
 
-  it('S pressed at rest first does not get in the way of W afterwards', () => {
-    const s = run(make((i) => (i < 60 ? S : W)), 300);
+  it('S held at rest elsewhere reverses, as the physics does', () => {
+    const s = run(make(() => S, { positionXM: 100 }), 300);
+    expect(s.state.direction).toBe('reverse');
     expect(s.state.speedMps).toBeGreaterThan(0);
+    expect(s.state.positionXM).toBeLessThan(100);
+    expect(s.driveSent.every((k) => k.brakeHeld)).toBe(true); // the key is sent as it was pressed
+    expect(s.stats.brakeUsed).toBe(false); // driving in reverse is not braking
+  });
+
+  it('S pressed at rest first, then W: W brakes the reverse and the rover drives on forward', () => {
+    const s = run(make((i) => (i < 60 ? S : W), { positionXM: 100 }), 1500);
     expect(s.state.direction).toBe('forward');
-    expect(s.stats.brakeUsed).toBe(false);
+    expect(s.state.speedMps).toBeGreaterThan(0);
   });
 
   it('S and W together once rolling: the brake wins (FR-6), never a reverse', () => {
-    const s = run(make(() => ({ throttleHeld: true, brakeHeld: true })), 2000);
+    const s = run(make(() => ({ throttleHeld: true, brakeHeld: true }), { speedMps: 5, positionXM: 100 }), 2000);
     expect(s.state.direction).toBe('forward');
-    expect(s.state.positionXM).toBeGreaterThanOrEqual(0);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.state.positionXM).toBeGreaterThanOrEqual(100);
     expect(s.stats.brakeUsed).toBe(true);
   });
 
@@ -447,26 +455,38 @@ describe('the student drives (DECISIONS 2026-10-16)', () => {
   });
 
   it('S while rolling brakes, and the stats remember the brake was used', () => {
-    const s = make(() => S, { speedMps: 10 });
+    const s = make(() => S, { speedMps: 10, positionXM: 100 });
     s.stepOnce();
     expect(s.driveSent[0]).toEqual(S);
     run(s, 50);
     expect(s.state.drivingState).toBe('Braking');
     expect(s.state.speedMps).toBeLessThan(10);
     expect(s.stats.brakeUsed).toBe(true);
-    run(s, 2000);
-    expect(s.state.speedMps).toBe(0);
-    expect(s.state.direction).toBe('forward'); // braking to a stop never reverses
-    expect(s.ended).toBeUndefined();
   });
 
-  it('S does not drive a rover that a sandbag pushed into reverse; W brakes it, then it drives on forward', () => {
-    const s = make((i) => ({ throttleHeld: true, brakeHeld: i === 0 }), { speedMps: 2, direction: 'reverse', throttleLevel: 1 });
+  it('braking to a stop and then letting go does not reverse; holding S on does', () => {
+    const released = make((i) => (i < 150 ? S : NONE), { speedMps: 10, positionXM: 100 }); // lets go with the rover still rolling
+    run(released, 1500);
+    expect(released.state.speedMps).toBe(0);
+    expect(released.state.direction).toBe('forward');
+    expect(released.ended).toBeUndefined();
+    const held = make(() => S, { speedMps: 10, positionXM: 100 });
+    run(held, 400);
+    expect(held.state.direction).toBe('reverse');
+    expect(held.state.speedMps).toBeGreaterThan(0);
+  });
+
+  it('a rover that a sandbag pushed into reverse: W brakes it, flips it forward and it drives on (S would drive it further back)', () => {
+    const s = make(() => W, { speedMps: 2, direction: 'reverse', throttleLevel: 0, positionXM: 100 });
     s.stepOnce();
-    expect(s.driveSent[0]!.brakeHeld).toBe(false);
+    expect(s.driveSent[0]).toEqual(W);
     run(s, 1500);
     expect(s.state.direction).toBe('forward');
     expect(s.state.speedMps).toBeGreaterThan(0);
+    const back = make(() => S, { speedMps: 2, direction: 'reverse', positionXM: 100 });
+    run(back, 60);
+    expect(back.state.direction).toBe('reverse');
+    expect(back.state.speedMps).toBeGreaterThan(2);
   });
 
   it('stuck needs full throttle held at rest in mud; stopping in mud and not pressing is not stuck', () => {
