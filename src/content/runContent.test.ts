@@ -79,6 +79,8 @@ describe('demo run content (D2)', () => {
   it('loads the reverse and drift switches (DECISIONS 2026-10-16, demo only)', () => {
     expect(content.run.reverseTopSpeedFactor).toBe(1);
     expect(content.run.drift).toBe(true);
+    expect(content.run.startWallXM).toBe(-10);
+    expect(bad((r) => (r.run.startWallXM = 1))).toThrow(/run.startWallXM/);
     expect(content.constants.reverseTopSpeedFraction).toBe(0.5); // the v2 value stays untouched in its own file
     expect(bad((r) => (r.run.reverseTopSpeedFactor = 0))).toThrow(/run.reverseTopSpeedFactor/);
     expect(bad((r) => delete r.run.drift)).toThrow(/run.drift/);

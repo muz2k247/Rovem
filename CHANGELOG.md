@@ -6,6 +6,11 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Changed (start wall and tyre sound; DECISIONS 2026-10-16, approved by k._muz, presentation values, provisional)
+- The start wall moves from x = −2 m to x = −10 m (`startWallXM` in `run.json`), so the camera no longer starts behind it; `cameraPose` keeps the camera 0.8 m in front of it.
+- The two-tone squeal is now a soft filtered-noise tyre hiss at about half the gain (0.0125–0.03), brighter with speed. It starts at a 10° slide or on brake/drive slip; skid marks stay at 5°.
+- CLAUDE.md: Demo values and Reverse bullet note the demo overrides (reverse 1.0 × v_max, `drift` switch).
+
 ### Added (reverse and drifting; DECISIONS 2026-10-16, approved by k._muz, provisional, demo only)
 - **Reverse in the run.** The game layer passes the keys as pressed, so S at rest reverses (W brakes in reverse, steering mirrored). `reverseTopSpeedFactor` = 1.0 in `run.json` (reverse top speed = v_max), passed to `step()`; the v2 value 0.5 stays in `constants.json`. Distance, score and unlocks count only new ground. The course behind stays solid; a wall at x = −2 m (the back edge of the starting pose) stops a step that moves the rover backward, v = 0, the run goes on. Boost pads add J|cos h|/m in the direction of motion; sandbag hits use world directions (tested while reversing); stuck is either drive key at rest in mud; the tunnel comparison is made only for a lane left through its far end. R indicator beside the speed.
 - **Drifting** (`drift` in `run.json`, default on; off = the runs of before, T9 replay tested). `src/game/run/drift.ts`: a travel direction apart from the heading, turned toward the driving direction by at most μ_g × k_g × g ÷ v × Δt; the step distance is moved along it; at v = 0 it snaps. Tests: 28.07°/s at 16 m/s on asphalt with All-terrain wheels, 17.5°/s mud, 3.5°/s ice, no slide below the limit, slower = less slide. Squeal and skid marks at a slide angle of 5° or more; a first-time `slide` caption with a worked line using the student's numbers; try-this "Brake before the corner" after a crash caused by a slide (`slide` tidbit, `brakeBeforeCorner` and the briefing line are placeholder text).

@@ -183,6 +183,8 @@ export interface RunParams {
   reverseTopSpeedFactor: number;
   /** Demo only: the travel direction lags the heading when the tyres cannot turn the rover fast enough (DESIGN, drifting). Off: the rover moves along its heading. */
   drift: boolean;
+  /** Demo only: the wall behind the start line (x < 0), clear of the chase camera. Engineering value, set by Claude (DECISIONS 2026-10-16). */
+  startWallXM: number;
   fieldChunksBetweenTunnels: number;
   /** Distance at which difficulty 1, 2 and 3 chunks start to be allowed. */
   difficultyStartsM: [number, number, number];

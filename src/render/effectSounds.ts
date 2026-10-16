@@ -62,19 +62,20 @@ export function effectRecipe(kind: EffectKind): EffectRecipe {
 }
 
 /**
- * Tyre squeal while the physics reports wheel slip: a thin, harsh pair of tones whose pitch rises with speed
- * (speed as a share of top speed, 0–1). Pure, so it can be tested.
+ * Tyre hiss while the wheels slip or the rover slides: soft band-filtered noise whose brightness and volume rise with
+ * speed (speed as a share of top speed, 0–1). Presentation values (DECISIONS 2026-10-16): centre 2500–4000 Hz, wide band
+ * (Q 0.7), gain 0.0125–0.03, about half of the old two-tone squeal. Pure, so it can be tested.
  */
-export function squealTone(speedShare: number): { frequencyHz: number; gain: number } {
+export function squealTone(speedShare: number): { frequencyHz: number; gain: number; q: number } {
   const s = Math.min(1, Math.max(0, speedShare));
-  return { frequencyHz: 900 + 500 * s, gain: 0.025 + 0.035 * s };
+  return { frequencyHz: 2500 + 1500 * s, gain: 0.0125 + 0.0175 * s, q: 0.7 };
 }
 
 export interface EffectSounds {
   /** Starts the audio. Browsers allow this only after a user gesture, e.g. the first key press. */
   start(): void;
   play(kind: EffectKind): void;
-  /** Tyre squeal: on while the wheels slip. Silent when muted. */
+  /** Tyre hiss: on while the wheels slip or the rover slides. Silent when muted. */
   setSqueal(slipping: boolean, speedShare: number): void;
   setMuted(muted: boolean): void;
   dispose(): void;
@@ -84,7 +85,7 @@ export function createEffectSounds(): EffectSounds {
   let ctx: AudioContext | null = null;
   let noiseBuffer: AudioBuffer | null = null;
   let muted = false;
-  let squealOscs: OscillatorNode[] = [];
+  let squealBand: BiquadFilterNode | null = null;
   let squealGain: GainNode | null = null;
 
   return {
@@ -102,26 +103,23 @@ export function createEffectSounds(): EffectSounds {
       // The squeal runs all the time at gain 0 and is switched by gain, so it never clicks on and off.
       squealGain = ctx.createGain();
       squealGain.gain.value = 0;
-      const band = ctx.createBiquadFilter();
-      band.type = 'bandpass';
-      band.frequency.value = 1500;
-      band.Q.value = 2;
-      band.connect(squealGain);
+      const hiss = ctx.createBufferSource();
+      hiss.buffer = noiseBuffer;
+      hiss.loop = true;
+      squealBand = ctx.createBiquadFilter();
+      squealBand.type = 'bandpass';
+      squealBand.frequency.value = 2500;
+      squealBand.Q.value = 0.7;
+      hiss.connect(squealBand);
+      squealBand.connect(squealGain);
       squealGain.connect(ctx.destination);
-      squealOscs = [1, 1.51].map((ratio) => {
-        const osc = ctx!.createOscillator();
-        osc.type = 'square';
-        osc.frequency.value = 900 * ratio;
-        osc.connect(band);
-        osc.start();
-        return osc;
-      });
+      hiss.start();
     },
     setSqueal(slipping, speedShare) {
       if (!ctx || !squealGain) return;
       const tone = squealTone(speedShare);
       const now = ctx.currentTime;
-      squealOscs.forEach((osc, i) => osc.frequency.setTargetAtTime(tone.frequencyHz * (i === 0 ? 1 : 1.51), now, 0.05));
+      squealBand?.frequency.setTargetAtTime(tone.frequencyHz, now, 0.05);
       squealGain.gain.setTargetAtTime(slipping && !muted ? tone.gain : 0, now, 0.03);
     },
     play(kind) {
@@ -164,7 +162,7 @@ export function createEffectSounds(): EffectSounds {
       if (ctx) void ctx.close();
       ctx = null;
       noiseBuffer = null;
-      squealOscs = [];
+      squealBand = null;
       squealGain = null;
     },
   };

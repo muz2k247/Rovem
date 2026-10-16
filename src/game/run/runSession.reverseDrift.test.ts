@@ -98,7 +98,7 @@ describe('reverse in the run', () => {
       s.stepOnce();
       min = Math.min(min, s.state.positionXM - content.constants.roverLengthM);
     }
-    expect(s.startWallXM).toBe(-content.constants.roverLengthM);
+    expect(s.startWallXM).toBe(-10);
     expect(min).toBeGreaterThanOrEqual(s.startWallXM - 1e-12);
     expect(s.state.speedMps).toBe(0);
     expect(s.ended).toBeUndefined();

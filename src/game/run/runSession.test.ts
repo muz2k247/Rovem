@@ -415,10 +415,11 @@ describe('the student drives (DECISIONS 2026-10-16)', () => {
     expect(s.state.drivingState).toBe('Driving');
   });
 
-  it('S at v = 0 at the start line goes nowhere: the wall behind the rover stops it, and the run goes on', () => {
-    const s = run(make(() => S), 300);
+  it('S at v = 0 at the start line backs up to the wall 10 m behind it, stops there, and the run goes on', () => {
+    const s = run(make(() => S), 600);
     expect(s.state.speedMps).toBe(0);
-    expect(s.state.positionXM).toBe(0);
+    expect(s.state.positionXM).toBeGreaterThanOrEqual(-10 + content.constants.roverLengthM - 1e-9); // rear edge at the wall
+    expect(s.state.positionXM).toBeLessThan(-7.9);
     expect(s.ended).toBeUndefined();
     expect(s.state.direction).toBe('reverse'); // the physics did flip; the wall holds the rover
   });

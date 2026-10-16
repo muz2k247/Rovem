@@ -42,3 +42,6 @@ export function slideAngleRad(travelRad: number, targetRad: number): number {
 /** Squeal and skid marks start at this slide angle (DECISIONS 2026-10-16). Presentation threshold, in degrees. */
 export const SLIDE_MARK_DEG = 5;
 export const SLIDE_MARK_RAD = (SLIDE_MARK_DEG * Math.PI) / 180;
+/** The tyre hiss starts at this slide angle (DECISIONS 2026-10-16), or on brake/drive slip. Presentation threshold. */
+export const SLIDE_SOUND_DEG = 10;
+export const SLIDE_SOUND_RAD = (SLIDE_SOUND_DEG * Math.PI) / 180;

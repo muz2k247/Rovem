@@ -68,15 +68,15 @@ export function createCameraBlend() {
 
 /**
  * Where the chase camera stands and what it looks at, in physics axes (x forward, z left). It sits behind the rover
- * along the direction it is given (the travel direction; once only part of the heading), and is kept inside the canyon walls.
+ * along the direction it is given (the travel direction; once only part of the heading), and is kept inside the canyon walls and in front of the start wall.
  */
-export function cameraPose(xM: number, zM: number, headingRad: number, wallInnerM: number) {
+export function cameraPose(xM: number, zM: number, headingRad: number, wallInnerM: number, startWallXM = -Infinity) {
   const angle = headingRad * CAMERA_HEADING_SHARE;
   const dx = Math.cos(angle);
   const dz = Math.sin(angle);
   const limit = wallInnerM - CAMERA_WALL_MARGIN_M;
   return {
-    position: { x: xM - dx * CAMERA_BACK_M, z: Math.min(limit, Math.max(-limit, zM - dz * CAMERA_BACK_M)) },
+    position: { x: Math.max(startWallXM + CAMERA_WALL_MARGIN_M, xM - dx * CAMERA_BACK_M), z: Math.min(limit, Math.max(-limit, zM - dz * CAMERA_BACK_M)) },
     look: { x: xM + dx * CAMERA_LOOK_AHEAD_M, z: zM + dz * CAMERA_LOOK_AHEAD_M },
   };
 }
@@ -455,7 +455,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
     camera.updateProjectionMatrix();
-    const pose = cameraPose(x, z, cameraAngle.follow(s.travelRad, frameS), WALL_INNER_M);
+    const pose = cameraPose(x, z, cameraAngle.follow(s.travelRad, frameS), WALL_INNER_M, s.startWallXM);
     let shakeX = 0;
     let shakeY = 0;
     let shakeZ = 0;

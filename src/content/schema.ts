@@ -60,11 +60,12 @@ function bool(o: Obj, key: string, path: string): boolean {
   return v;
 }
 
-function num(o: Obj, key: string, path: string, opts: { min?: number; positive?: boolean } = {}): number {
+function num(o: Obj, key: string, path: string, opts: { min?: number; max?: number; positive?: boolean } = {}): number {
   const v = o[key];
   if (typeof v !== 'number' || !Number.isFinite(v)) fail(`${path}.${key}`, 'expected a number');
   if (opts.positive && v <= 0) fail(`${path}.${key}`, 'must be greater than 0');
   if (opts.min !== undefined && v < opts.min) fail(`${path}.${key}`, `must be at least ${opts.min}`);
+  if (opts.max !== undefined && v > opts.max) fail(`${path}.${key}`, `must be at most ${opts.max}`);
   return v;
 }
 
@@ -315,6 +316,7 @@ function run(raw: unknown, partList: readonly Part[]): RunParams {
     steerReturnToStraight: bool(o, 'steerReturnToStraight', p),
     reverseTopSpeedFactor: num(o, 'reverseTopSpeedFactor', p, { positive: true }),
     drift: bool(o, 'drift', p),
+    startWallXM: num(o, 'startWallXM', p, { max: 0 }),
     fieldChunksBetweenTunnels: between,
     difficultyStartsM: [d1, d2, d3],
     gravityMultipliers: {

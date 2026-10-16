@@ -4,6 +4,7 @@
   "steerReturnToStraight": false,
   "reverseTopSpeedFactor": 1.0,
   "drift": true,
+  "startWallXM": -10,
   "fieldChunksBetweenTunnels": 2,
   "difficultyStartsM": [0, 500, 1500],
   "gravityMultipliers": { "low": 0.5, "high": 2 },

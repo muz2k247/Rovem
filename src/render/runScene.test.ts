@@ -146,6 +146,21 @@ describe('chase camera', () => {
       }
     }
   });
+  it('starts in front of the start wall, not behind it (the wall is 10 m back, the camera 6.2 m)', () => {
+    const { session, view } = make(3);
+    expect(session.startWallXM).toBe(-10);
+    expect(view.camera.position.x).toBeGreaterThanOrEqual(session.startWallXM + CAMERA_WALL_MARGIN_M);
+  });
+  it('is kept CAMERA_WALL_MARGIN_M in front of the start wall, turned or not', () => {
+    const wallX = -10;
+    for (const x of [-9.5, -8, 0]) {
+      for (const heading of [-Math.PI, -2, 0, 2, Math.PI]) {
+        const pose = cameraPose(x, 0, heading, wall, wallX);
+        expect(pose.position.x).toBeGreaterThanOrEqual(wallX + CAMERA_WALL_MARGIN_M - 1e-12);
+      }
+    }
+    expect(cameraPose(0, 0, 0, wall, wallX).position.x).toBeCloseTo(-6.2, 9); // not touched when already clear
+  });
   it('stays inside the walls with the crash shake on', () => {
     const { session, view } = make(3);
     session.stepOnce();

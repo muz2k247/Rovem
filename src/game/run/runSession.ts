@@ -184,8 +184,8 @@ export function createRunSession(options: RunSessionOptions) {
   let driveSent: DriveKeys[] = [];
   const turnRadPerS = (baseConstants.turnRateDegPerS * Math.PI) / 180;
   const returnDeadbandRad = (turnRadPerS * baseConstants.timeStepS) / 2;
-  /** The wall behind the start line: the rover starts with its back against it. */
-  const startWallXM = -footprint.lengthM;
+  /** The wall behind the start line (content), well behind the chase camera. */
+  const startWallXM = run.startWallXM;
   /** The way the rover is driving: its heading, or the opposite way in reverse. */
   const drivingAngle = (s: PhysicsState) => (s.direction === 'forward' ? s.headingRad : s.headingRad + Math.PI);
   /** The way the rover is travelling (differs from the driving angle while it slides). */
