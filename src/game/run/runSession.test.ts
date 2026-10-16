@@ -317,3 +317,61 @@ describe('the course stays ahead', () => {
     }
   });
 });
+
+describe('steering returns to straight (DECISIONS 2026-10-16)', () => {
+  const world = worldOf({});
+  const tap: RunInputProvider = (i) => (i >= 240 && i < 288 ? 1 : 0); // a 0.4 s tap at 120 steps per second, once moving
+  const deadbandRad = (constants.turnRateDegPerS * Math.PI / 180) * constants.timeStepS / 2;
+  const drive = (w: Content, input: RunInputProvider, steps: number) => {
+    const s = session(w, {}, input);
+    for (let i = 0; i < steps; i++) s.stepOnce();
+    return s;
+  };
+
+  it('a 0.4 s tap leaves a sideways offset and a heading back to about 0', () => {
+    const s = drive(world, tap, 600);
+    expect(Math.abs(s.state.positionZM)).toBeGreaterThan(0.5);
+    expect(Math.abs(s.state.headingRad)).toBeLessThanOrEqual(deadbandRad + 1e-12);
+    expect(s.ended).toBeUndefined();
+  });
+
+  it('sends the steer input that turns back: the tap is 48 steps left, so about as many steps right', () => {
+    const s = drive(world, tap, 600);
+    const returned = s.steerSent.slice(288).filter((x) => x === -1).length;
+    expect(returned).toBeGreaterThanOrEqual(47);
+    expect(returned).toBeLessThanOrEqual(49);
+    expect(s.steerSent.slice(288).filter((x) => x === 1).length).toBe(0);
+  });
+
+  it('can be switched off: the heading then stays where the tap left it', () => {
+    const off: Content = { ...world, run: { ...world.run, steerReturnToStraight: false } };
+    const s = drive(off, tap, 600);
+    expect(s.state.headingRad).toBeGreaterThan(0.3);
+    expect(s.steerSent.every((x) => x === 0 || x === 1)).toBe(true);
+  });
+
+  it('does nothing to a straight rover, and a stopped rover does not turn', () => {
+    expect(drive(world, STRAIGHT, 300).steerSent.every((x) => x === 0)).toBe(true);
+  });
+
+  it('T9: replaying the recorded input with the return off gives the same run', () => {
+    const a = drive(world, tap, 900);
+    const off: Content = { ...world, run: { ...world.run, steerReturnToStraight: false } };
+    const record = a.steerSent;
+    const b = createRunSession({ content: off, rover: rover(), constants, seed: a.seed, input: (i) => record[i] ?? 0 });
+    for (let i = 0; i < 900; i++) b.stepOnce();
+    expect(b.state).toEqual(a.state);
+    expect(b.score).toBe(a.score);
+    expect(b.steerSent).toEqual(a.steerSent);
+  });
+
+  it('steers back from the other side too, and mirrored in reverse', () => {
+    const left = drive(world, (i) => (i >= 240 && i < 288 ? -1 : 0), 600);
+    expect(left.state.positionZM).toBeLessThan(-0.5);
+    expect(Math.abs(left.state.headingRad)).toBeLessThanOrEqual(deadbandRad + 1e-12);
+    const rev = createRunSession({ content: world, rover: rover(), constants, seed: unmirroredSeed(world), input: STRAIGHT, initialState: { speedMps: 3, direction: 'reverse', headingRad: 0.2 } });
+    rev.stepOnce();
+    expect(rev.steerSent[0]).toBe(1); // reverse mirrors the input, so +1 turns the heading down
+    expect(rev.state.headingRad).toBeLessThan(0.2);
+  });
+});

@@ -1,10 +1,9 @@
+import { useEffect, useState } from 'react';
 import { content, type EventKind, type Part, type Slot } from '../content/index.ts';
-import { EVENT_KINDS, FORMULA_KINDS } from '../content/types.ts';
 import { roverFromParts } from '../game/buildFromParts.ts';
 import { garageNumbers } from '../game/run/garageNumbers.ts';
-import { speedText } from '../game/run/feedback.ts';
-import { displayPartName, nextUnlock, unlockedPartIds, unlockText } from '../game/run/unlocks.ts';
-import { formatForce, formatMass } from '../game/partEffects.ts';
+import { compareRows, fieldLogEntries, garageRows } from '../game/run/garageView.ts';
+import { displayPartName, newPartIds, nextUnlock, unlockedPartIds, unlockProgress, unlockText } from '../game/run/unlocks.ts';
 import type { DemoBuild, DemoProgress } from '../save/demoProgress.ts';
 
 const SLOTS: { slot: Slot; title: string; key: keyof DemoBuild; note?: string }[] = [
@@ -31,6 +30,20 @@ function partDetail(part: Part): string {
   return `${part.massKg} kg · ${part.driveForceMaxN} N · top speed ${part.topSpeedMps} m/s`;
 }
 
+/** "350 / 400 m" with a thin bar, on a locked part. */
+function UnlockBar({ partId, bestDistanceM }: { partId: string; bestDistanceM: number }) {
+  const progress = unlockProgress(content, partId, bestDistanceM);
+  if (!progress) return null;
+  return (
+    <span className="unlock-progress">
+      {progress.text}
+      <span className="bar" aria-hidden="true">
+        <span style={{ width: `${(progress.fraction * 100).toFixed(1)}%` }} />
+      </span>
+    </span>
+  );
+}
+
 export function GarageScreen({
   progress,
   onProgressChange,
@@ -46,12 +59,24 @@ export function GarageScreen({
 }) {
   const unlocked = new Set(unlockedPartIds(content, progress.bestDistanceM));
   const rover = roverFromParts(content, progress.build);
-  const n = garageNumbers(content, rover);
   const unit = progress.speedUnit;
   const next = nextUnlock(content, progress.bestDistanceM);
-  const seen = EVENT_KINDS.filter((k) => progress.seenEvents.includes(k));
-  const text = content.runText;
-  const k = unit === 'kmh' ? 3.6 : 1;
+  const log = fieldLogEntries(progress.seenEvents, content.runText);
+
+  // Parts opened since the last visit wear a NEW badge for this whole visit; they are marked as seen on arrival.
+  const [fresh] = useState(() => newPartIds(content, progress.bestDistanceM, progress.partsSeen));
+  useEffect(() => {
+    if (fresh.length > 0) onProgressChange({ ...progress, partsSeen: [...new Set([...progress.partsSeen, ...fresh])] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Hovering (or focusing) a part shows the numbers with that part fitted: before → after.
+  const [preview, setPreview] = useState<{ key: keyof DemoBuild; id: string } | null>(null);
+  const previewed =
+    preview && progress.build[preview.key] !== preview.id
+      ? garageRows(garageNumbers(content, roverFromParts(content, { ...progress.build, [preview.key]: preview.id })), unit)
+      : undefined;
+  const rows = compareRows(garageRows(garageNumbers(content, rover), unit), previewed);
 
   return (
     <main className="garage">
@@ -79,16 +104,27 @@ export function GarageScreen({
                     const open = unlocked.has(part.id);
                     const selected = progress.build[key] === part.id;
                     return (
-                      <div key={part.id} className={`part${selected ? ' selected' : ''}${open ? '' : ' locked'}`}>
+                      <div
+                        key={part.id}
+                        className={`part${selected ? ' selected' : ''}${open ? '' : ' locked'}`}
+                        onMouseEnter={() => setPreview({ key, id: part.id })}
+                        onMouseLeave={() => setPreview(null)}
+                      >
                         <button
                           type="button"
                           disabled={!open}
                           aria-pressed={selected}
+                          onFocus={() => setPreview({ key, id: part.id })}
+                          onBlur={() => setPreview(null)}
                           onClick={() => onProgressChange({ ...progress, build: { ...progress.build, [key]: part.id } })}
                         >
-                          <strong>{displayPartName(part.name)}</strong>
+                          <strong>
+                            {displayPartName(part.name)}
+                            {fresh.includes(part.id) && <em className="new-badge">NEW</em>}
+                          </strong>
                           <span>{partDetail(part)}</span>
                           {!open && <span className="lock">{unlockText(content, part.id)}</span>}
+                          {!open && <UnlockBar partId={part.id} bestDistanceM={progress.bestDistanceM} />}
                         </button>
                       </div>
                     );
@@ -103,58 +139,34 @@ export function GarageScreen({
           <h2>Your rover in the canyon</h2>
           <table className="numbers">
             <tbody>
-              <tr>
-                <th scope="row">Mass</th>
-                <td>{formatMass(n.massKg)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Motor force</th>
-                <td>{formatForce(n.motorForceN)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Top speed</th>
-                <td>{speedText(n.topSpeedMps, unit)}</td>
-              </tr>
-              <tr>
-                <th scope="row">In mud</th>
-                <td>
-                  friction {formatForce(n.mud.frictionN)} vs motor {formatForce(n.mud.motorN)}: <b>{n.mud.verdict}</b>
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">Boost pad</th>
-                <td>+{speedText(n.boostGainMps, unit)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Sandbag hit</th>
-                <td>
-                  {(n.sandbag.fromMps * k).toFixed(2)} → {speedText(n.sandbag.toMps, unit)}
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">Weight, low gravity</th>
-                <td>{formatForce(n.weightLowN)}</td>
-              </tr>
-              <tr>
-                <th scope="row">Weight, high gravity</th>
-                <td>{formatForce(n.weightHighN)}</td>
-              </tr>
+              {rows.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row">{row.label}</th>
+                  <td>
+                    {row.after === undefined ? (
+                      row.value
+                    ) : (
+                      <>
+                        <span className="before">{row.value}</span> → <b className="after">{row.after}</b>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
-          <p className="note">These come from the same physics the run uses.</p>
+          <p className="note">These come from the same physics the run uses. Point at a part to see what it changes.</p>
 
           <h2>Field log</h2>
-          {seen.length === 0 ? (
+          {log.length === 0 ? (
             <p className="note">Things you meet in the canyon are written down here.</p>
           ) : (
             <ul className="field-log">
-              {seen.map((kind) => (
-                <li key={kind}>
-                  <strong>{EVENT_TITLES[kind]}</strong>
-                  <span>{text.tidbits[kind]}</span>
-                  {(FORMULA_KINDS as readonly string[]).includes(kind) && (
-                    <em>{text.formulas[kind as (typeof FORMULA_KINDS)[number]]}</em>
-                  )}
+              {log.map((entry) => (
+                <li key={entry.kind}>
+                  <strong>{EVENT_TITLES[entry.kind]}</strong>
+                  <span>{entry.tidbit}</span>
+                  {entry.formula && <em>{entry.formula}</em>}
                 </li>
               ))}
             </ul>

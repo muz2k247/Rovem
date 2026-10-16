@@ -20,6 +20,27 @@ const CAMERA_LOOK_AHEAD_M = 6;
 const FOV_AT_REST_DEG = 58;
 const FOV_PER_MPS_DEG = 1.1;
 const FOV_EASE_PER_S = 3;
+/** The camera looks mostly down the canyon: it turns only this share of the way with the rover (DECISIONS 2026-10-16). */
+export const CAMERA_HEADING_SHARE = 0.35;
+/** The camera never goes closer to a canyon wall than this, so it cannot end up inside it. */
+export const CAMERA_WALL_MARGIN_M = 0.8;
+const SHAKE_HZ = 38;
+const SHAKE_UP_SHARE = 0.6; // the shake is smaller up and down than sideways
+
+/**
+ * Where the chase camera stands and what it looks at, in physics axes (x forward, z left). It sits behind the rover
+ * along a direction that follows only part of the rover's heading, and is kept inside the canyon walls.
+ */
+export function cameraPose(xM: number, zM: number, headingRad: number, wallInnerM: number) {
+  const angle = headingRad * CAMERA_HEADING_SHARE;
+  const dx = Math.cos(angle);
+  const dz = Math.sin(angle);
+  const limit = wallInnerM - CAMERA_WALL_MARGIN_M;
+  return {
+    position: { x: xM - dx * CAMERA_BACK_M, z: Math.min(limit, Math.max(-limit, zM - dz * CAMERA_BACK_M)) },
+    look: { x: xM + dx * CAMERA_LOOK_AHEAD_M, z: zM + dz * CAMERA_LOOK_AHEAD_M },
+  };
+}
 
 const WALL_THICKNESS_M = 3; // the corridor width itself comes from content (run.corridorHalfWidthM)
 const WALL_HEIGHT_M = 6;
@@ -125,6 +146,8 @@ export interface RunScene {
   readonly gravityKind: GravityKind | undefined;
   /** Indices of the chunks that currently have meshes, in order. */
   loadedChunkIndices(): number[];
+  /** Camera shake for the crash moment: the amplitude in metres (0 = none). The camera stays inside the walls. */
+  setShake(amplitudeM: number): void;
   /** Moves the rover, the chunks, the bags and the camera to the session. `frameS` drives the effects only. */
   update(session: RunSession, frameS?: number): void;
   dispose(): void;
@@ -293,6 +316,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   let clockS = 0;
   let sagM = 0;
   let gravityKind: GravityKind | undefined;
+  let shakeM = 0;
 
   const update = (s: RunSession, frameS = 0) => {
     clockS += frameS;
@@ -358,8 +382,19 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
     camera.updateProjectionMatrix();
-    camera.position.set(x - fx * CAMERA_BACK_M, CAMERA_UP_M, -(z - fz * CAMERA_BACK_M));
-    camera.lookAt(x + fx * CAMERA_LOOK_AHEAD_M, 0.8, -(z + fz * CAMERA_LOOK_AHEAD_M));
+    const pose = cameraPose(x, z, state.headingRad, WALL_INNER_M);
+    let shakeX = 0;
+    let shakeY = 0;
+    let shakeZ = 0;
+    if (shakeM > 0) {
+      shakeX = Math.sin(clockS * SHAKE_HZ * 1.3) * shakeM * 0.5;
+      shakeY = Math.sin(clockS * SHAKE_HZ * 0.9 + 1) * shakeM * SHAKE_UP_SHARE;
+      shakeZ = Math.sin(clockS * SHAKE_HZ) * shakeM;
+    }
+    const limit = WALL_INNER_M - CAMERA_WALL_MARGIN_M;
+    const camZ = Math.min(limit, Math.max(-limit, pose.position.z + shakeZ));
+    camera.position.set(pose.position.x + shakeX, CAMERA_UP_M + shakeY, -camZ);
+    camera.lookAt(pose.look.x, 0.8, -pose.look.z);
   };
   update(session);
 
@@ -370,6 +405,9 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     roverBody: model.body,
     get gravityKind() {
       return gravityKind;
+    },
+    setShake(amplitudeM) {
+      shakeM = Math.max(0, amplitudeM);
     },
     loadedChunkIndices: () => [...chunkGroups.keys()].sort((a, b) => a - b),
     update,

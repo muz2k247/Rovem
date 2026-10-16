@@ -11,6 +11,8 @@ import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
 // The run rules of the endless canyon (docs/DEMO_BUILD_PLAN.md A2, A4, A6). Game layer: no rendering, no React.
 // The rover always drives: every step gets throttleHeld true, brakeHeld false. The student only steers.
+// With no steer key held the game steers the heading back to 0 (DECISIONS 2026-10-16); `steerSent` records what was
+// really passed to step(), so replaying that record with the return switched off gives the same run (T9).
 
 /** What the student does at a given step number: steer left (+1), right (−1) or straight. */
 export type RunInputProvider = (stepIndex: number) => -1 | 0 | 1;
@@ -149,6 +151,20 @@ export function createRunSession(options: RunSessionOptions) {
   let mudEntrySpeedMps = 0;
   let wasSlipping = false;
   let wasAboveTop = false;
+  let steerSent: (-1 | 0 | 1)[] = [];
+  const turnRadPerS = (constants.turnRateDegPerS * Math.PI) / 180;
+  const returnDeadbandRad = (turnRadPerS * constants.timeStepS) / 2;
+
+  /**
+   * The steer input that turns the heading back toward 0 at the normal turn rate; 0 when the heading is within half
+   * of one step's turn, when the rover is stopped (a stopped rover does not turn) or when the setting is off.
+   * Steering is mirrored in reverse, so the input flips with the direction.
+   */
+  function returnToStraight(s: PhysicsState): -1 | 0 | 1 {
+    if (!run.steerReturnToStraight || s.speedMps === 0 || Math.abs(s.headingRad) <= returnDeadbandRad) return 0;
+    const wanted = s.headingRad > 0 ? -1 : 1; // the way the heading must turn
+    return s.direction === 'forward' ? wanted : wanted === 1 ? -1 : 1;
+  }
 
   function emptyStats(): RunStats {
     return {
@@ -260,9 +276,12 @@ export function createRunSession(options: RunSessionOptions) {
 
     // 2–3. Surface and gravity at the front, then the physics step.
     const surface = specs.get(course.surfaceIdAt(prev.positionXM, prev.positionZM))!;
+    const held = input(prev.stepCount);
+    const steer = held !== 0 ? held : returnToStraight(prev);
+    steerSent.push(steer);
     const next = step(
       prev,
-      { throttleHeld: true, brakeHeld: false, steer: input(prev.stepCount) },
+      { throttleHeld: true, brakeHeld: false, steer },
       rover,
       surface,
       { ...constants, gravityMps2: gravityAt(prevZone) },
@@ -373,6 +392,10 @@ export function createRunSession(options: RunSessionOptions) {
     get bags(): readonly Bag[] {
       return bags;
     },
+    /** The steer input passed to step() at each step, in step order (the input record of this run). */
+    get steerSent(): readonly (-1 | 0 | 1)[] {
+      return steerSent;
+    },
     get shots(): readonly Shot[] {
       return shots;
     },
@@ -420,6 +443,7 @@ export function createRunSession(options: RunSessionOptions) {
       zoneEntryState = state;
       wasSlipping = false;
       wasAboveTop = false;
+      steerSent = [];
     },
   };
 }

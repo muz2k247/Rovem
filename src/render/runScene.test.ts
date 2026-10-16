@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { content } from '../content/index.ts';
 import { constants, rover } from '../../tests/helpers/physics.ts';
 import { createRunSession } from '../game/run/runSession.ts';
-import { BUILD_AHEAD_M, createRunScene, KEEP_BEHIND_M } from './runScene.ts';
+import { BUILD_AHEAD_M, CAMERA_HEADING_SHARE, CAMERA_WALL_MARGIN_M, cameraPose, createRunScene, KEEP_BEHIND_M } from './runScene.ts';
 
 const names = (root: THREE.Object3D) => {
   const found: string[] = [];
@@ -126,3 +126,35 @@ function fakeAt(session: ReturnType<typeof make>['session'], xM: number) {
   });
   return s;
 }
+
+describe('chase camera', () => {
+  const wall = content.run.corridorHalfWidthM;
+  it('looks mostly down the canyon: it turns only part of the way with the rover', () => {
+    const heading = 0.6;
+    const pose = cameraPose(100, 0, heading, wall);
+    const lookAngle = Math.atan2(pose.look.z - 0, pose.look.x - 100);
+    expect(lookAngle).toBeCloseTo(heading * CAMERA_HEADING_SHARE, 9);
+    expect(lookAngle).toBeLessThan(heading / 2);
+    expect(cameraPose(100, 0, 0, wall).position.z).toBe(0);
+  });
+  it('never ends up inside a wall, even beside it and turned', () => {
+    for (const z of [-14.9, -10, 0, 10, 14.9]) {
+      for (const heading of [-1.2, -0.5, 0, 0.5, 1.2]) {
+        const pose = cameraPose(100, z, heading, wall);
+        expect(Math.abs(pose.position.z)).toBeLessThanOrEqual(wall - CAMERA_WALL_MARGIN_M + 1e-12);
+      }
+    }
+  });
+  it('stays inside the walls with the crash shake on', () => {
+    const { session, view } = make(3);
+    session.stepOnce();
+    view.setShake(0.4);
+    for (let i = 0; i < 60; i++) {
+      view.update(session, 1 / 60);
+      expect(Math.abs(view.camera.position.z)).toBeLessThanOrEqual(wall - CAMERA_WALL_MARGIN_M + 1e-9);
+    }
+    view.setShake(0);
+    view.update(session, 1 / 60);
+    expect(view.camera.position.y).toBeCloseTo(2.3, 9);
+  });
+});

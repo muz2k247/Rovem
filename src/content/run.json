@@ -1,6 +1,7 @@
 {
   "corridorHalfWidthM": 15,
   "warmUpLengthM": 60,
+  "steerReturnToStraight": true,
   "fieldChunksBetweenTunnels": 2,
   "difficultyStartsM": [0, 500, 1500],
   "gravityMultipliers": { "low": 0.5, "high": 2 },

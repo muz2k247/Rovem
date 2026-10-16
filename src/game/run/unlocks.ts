@@ -34,3 +34,20 @@ export function unlockText(content: Content, partId: string): string | undefined
   const step = content.run.unlocks.find((u) => u.partId === partId);
   return step ? `Unlocks at ${step.atBestDistanceM} m best distance` : undefined;
 }
+
+/**
+ * Parts that are open but not yet marked as seen: the garage shows them with a NEW badge and then marks them
+ * seen (`partsSeen`, A9). The three starting parts are never new.
+ */
+export function newPartIds(content: Content, bestDistanceM: number, partsSeen: readonly string[]): string[] {
+  const startIds = new Set(content.parts.filter((p) => p.startsUnlocked).map((p) => p.id));
+  return unlockedPartIds(content, bestDistanceM).filter((id) => !startIds.has(id) && !partsSeen.includes(id));
+}
+
+/** Progress towards a locked part: "350 / 400 m" and the share (0–1) for a bar. Undefined for a part with no step. */
+export function unlockProgress(content: Content, partId: string, bestDistanceM: number): { text: string; fraction: number } | undefined {
+  const step = content.run.unlocks.find((u) => u.partId === partId);
+  if (!step) return undefined;
+  const shown = Math.min(Math.floor(bestDistanceM), step.atBestDistanceM);
+  return { text: `${shown} / ${step.atBestDistanceM} m`, fraction: Math.min(1, bestDistanceM / step.atBestDistanceM) };
+}

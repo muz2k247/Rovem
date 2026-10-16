@@ -24,6 +24,10 @@ export interface DemoProgress {
   speedUnit: 'mps' | 'kmh';
   showForces: boolean;
   soundOn: boolean;
+  /** The first run ever waits for a key at the briefing; once it has been seen, later runs close it after 2.5 s. */
+  briefingSeen: boolean;
+  /** Unlockable parts the garage has already shown as open, so a part opened since the last visit gets a NEW badge. */
+  partsSeen: string[];
 }
 
 /** The starting build is free (CLAUDE.md, Key terms). */
@@ -43,6 +47,8 @@ export function defaultProgress(): DemoProgress {
     speedUnit: 'mps',
     showForces: true,
     soundOn: true,
+    briefingSeen: false,
+    partsSeen: [],
   };
 }
 
@@ -88,6 +94,8 @@ export function loadDemoProgress(storage: StorageLike | undefined = defaultStora
     if (o.speedUnit === 'mps' || o.speedUnit === 'kmh') out.speedUnit = o.speedUnit;
     if (typeof o.showForces === 'boolean') out.showForces = o.showForces;
     if (typeof o.soundOn === 'boolean') out.soundOn = o.soundOn;
+    if (typeof o.briefingSeen === 'boolean') out.briefingSeen = o.briefingSeen;
+    if (Array.isArray(o.partsSeen)) out.partsSeen = o.partsSeen.filter(isString);
   } catch {
     return defaultProgress();
   }

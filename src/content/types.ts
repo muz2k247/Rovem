@@ -177,6 +177,8 @@ export interface RunParams {
   /** The canyon runs along +x, |z| ≤ this. */
   corridorHalfWidthM: number;
   warmUpLengthM: number;
+  /** With no steer key held, the game steers the heading back toward 0 (DECISIONS 2026-10-16). Off: the heading stays where it was left. */
+  steerReturnToStraight: boolean;
   fieldChunksBetweenTunnels: number;
   /** Distance at which difficulty 1, 2 and 3 chunks start to be allowed. */
   difficultyStartsM: [number, number, number];

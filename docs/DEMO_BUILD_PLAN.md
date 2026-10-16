@@ -28,12 +28,14 @@ The run ends when the rover hits a barrier or the canyon wall, or gets stuck in 
 ## A2. Controls, start and end of a run
 
 - **Steer:** A/D or ←/→, using the existing key mapping in `src/game/controls.ts`.
+- **Steering returns to straight (added 2026-10-16):** when no steer key is held and v > 0, the game layer sends the steer input that turns the heading back toward 0 at the normal turn rate, and sends 0 once |heading| is within half of one step's turn. `step()` is unchanged. The session records what it really sent (`steerSent`); replaying that record with `steerReturnToStraight` false gives the same run (T9). The switch is `steerReturnToStraight` in `run.json`.
+- **Pause (added 2026-10-16):** Esc, or the window losing focus, pauses the run: no steps run and the fixed-step loop keeps its leftover time, so a pause never changes the run. Any key resumes. Esc at the briefing only skips it.
 - **Throttle:** always held. The game layer feeds `throttleHeld: true, brakeHeld: false` to `step()` every step. The student has no throttle, brake or reverse keys in the demo. S/↓ and W/↑ do nothing.
-- **Start:** a briefing card shows for 2.5 s; any key skips it. Then steps start from rest at the start pose: x = 0, z = 0, heading 0, on asphalt. The throttle builds up over 1.0 s as usual. There is no countdown.
+- **Start:** a briefing card shows for 2.5 s; any key skips it. On the first run ever it waits for a key instead (`briefingSeen` in A9). Then steps start from rest at the start pose: x = 0, z = 0, heading 0, on asphalt. The throttle builds up over 1.0 s as usual. There is no countdown.
 - **The run ends at the end of the first step in which:**
   - **Crash:** the rover's footprint overlaps a barrier box, or any footprint corner has |z| > the corridor half-width. That step is undone (position, heading and distance, as for rocks) and v is set to 0. Record the crash speed as the speed at the start of that step.
   - **Stuck:** v = 0, throttle level = 1, brake level = 0 and the driving state is `Stopped`. This means mud's friction is more than the motor can beat (FR-8).
-- **After the run ends,** no more steps run, and the run report opens.
+- **After the run ends,** no more steps run. A crash plays a 0.5 s crash moment first (camera shake, a flash and a thud; the camera stays inside the walls); "stuck" goes straight on. Then the run report opens.
 
 ## A3. The course
 
@@ -246,7 +248,9 @@ The signed speed along the heading is used, so a hit seen from a rover in revers
 - **Three slots:** Body, Wheels, Motor.
   - The **Body** slot carries a note: "also called the chassis: the rover's frame".
   - Part names are shown with "chassis" replaced by "body". This is a display change only; `parts.json` names stay as they are.
-- **Locked parts** show "Unlocks at 400 m best distance".
+- **Locked parts** show "Unlocks at 400 m best distance" and the student's progress ("350 / 400 m", with a thin bar). A part opened since the last visit wears a NEW badge for that visit (`partsSeen` in A9).
+  - **Hover or focus on a part** shows the panel's numbers with that part fitted, as "before → after" where they differ.
+  - **One screen at 1366×768:** nothing scrolls except the field log, inside its own panel. Each formula is written once in the field log (the two hit kinds share a line).
 - **"Your rover in the canyon" panel:** every number comes from the physics functions (FR-3).
   - mass
   - motor force
@@ -270,6 +274,8 @@ The signed speed along the heading is used, so a hit seen from a rover in revers
   - `speedUnit` (`'mps'` or `'kmh'`)
   - `showForces`
   - `soundOn`
+  - `briefingSeen` (the first run waits at the briefing)
+  - `partsSeen` (unlockable parts the garage has shown as open)
 - Every read and write is wrapped in try/catch. If storage fails, the game works with defaults.
 - No Knowledge and no question progress. This is not the Data Model; it is demo-only and is replaced if the project direction changes.
 
@@ -281,6 +287,7 @@ In `src/content/run.json`:
 {
   "corridorHalfWidthM": 15,
   "warmUpLengthM": 60,
+  "steerReturnToStraight": true,
   "fieldChunksBetweenTunnels": 2,
   "difficultyStartsM": [0, 500, 1500],
   "gravityMultipliers": { "low": 0.5, "high": 2 },

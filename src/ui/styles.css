@@ -637,3 +637,135 @@ body,
 .report-buttons button {
   margin: 0;
 }
+
+/* Garage on one screen (1366×768): only the field log scrolls, inside its own panel */
+.garage {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.6rem 1.25rem;
+}
+
+.garage h2 {
+  margin: 0.8rem 0 0.4rem;
+}
+
+.garage h3 {
+  margin: 0.5rem 0 0.3rem;
+}
+
+.garage .part button {
+  padding: 0.45rem 0.6rem;
+}
+
+.garage-body {
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  padding-top: 0.4rem;
+}
+
+.garage-body > section {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.garage-body > section:nth-child(2) .field-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+
+.garage-body > section:nth-child(2) .note {
+  margin: 0.4rem 0 0;
+}
+
+.numbers th,
+.numbers td {
+  padding: 0.25rem 0.4rem;
+}
+
+.garage-footer {
+  padding-top: 0.4rem;
+}
+
+.new-badge {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #28d8e8;
+  color: #0b0f1a;
+  font-size: 0.65rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+}
+
+.garage .part .unlock-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: #c9d0e8;
+}
+
+.unlock-progress .bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #243052;
+  overflow: hidden;
+}
+
+.unlock-progress .bar > span {
+  display: block;
+  height: 100%;
+  background: #ffb347;
+}
+
+.numbers .before {
+  color: #9aa4c4;
+}
+
+.numbers .after {
+  color: #28d8e8;
+}
+
+/* Crash moment and pause */
+.crash-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(255, 245, 230, 0.9);
+  animation: crash-flash 0.5s ease-out forwards;
+}
+
+@keyframes crash-flash {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.pause-card {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  padding: 1rem 2rem;
+  border: 1px solid #243052;
+  border-radius: 10px;
+  background: rgba(11, 15, 26, 0.88);
+  text-align: center;
+}
+
+.pause-card h2 {
+  margin: 0 0 0.4rem;
+}
+
+.pause-card small {
+  color: #9aa4c4;
+}

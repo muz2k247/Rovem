@@ -6,6 +6,19 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (demo polish, part 2: feel and finish; DECISIONS 2026-10-16)
+- Steering returns to straight: with no steer key held, the run session sends the steer input that turns the heading back toward 0 (stopping within half a step's turn). `steerReturnToStraight` in `run.json` switches it off. The session records what it sent (`steerSent`); a test replays that record with the return off and gets the same run (T9). Another test: a 0.4 s tap leaves a sideways offset and a heading back to about 0.
+- Pause: Esc or the window losing focus pauses the run, any key resumes (`src/game/run/pausableRun.ts`). Tests show a long pause changes nothing in the run.
+- Crash moment: 0.5 s of camera shake, a white flash and a thud before the report (not for "stuck"). The camera is kept 0.8 m inside the walls, shake included (tested).
+- Sounds in code (`src/render/effectSounds.ts`, Web Audio, no assets): boost, sandbag hit, kicker hit, crash thud. They follow the Sound setting.
+- First run ever: the briefing waits for a key (`briefingSeen` in demo progress); later runs close it after 2.5 s.
+- Garage: NEW badge on parts opened since the last visit (`partsSeen`); progress on locked parts ("350 / 400 m" and a bar); hovering or focusing a part shows before → after in "Your rover in the canyon"; fits 1366×768 without page scroll (field log scrolls in its panel); each formula once in the field log. Pure helpers in `src/game/run/garageView.ts`, with tests.
+- Favicon (inline SVG) and a meta description in `index.html`.
+
+### Changed
+- Camera looks mostly down the canyon: it turns 35 % of the way with the rover (`cameraPose` in `runScene.ts`).
+- DECISIONS, DESIGN.md and DEMO_BUILD_PLAN A2, A8, A9 and A10 match.
+
 ### Added (demo polish, part 1: the teaching; DECISIONS 2026-10-16)
 - Worked formulas: `workedLine` in `src/game/run/feedback.ts` fills each formula with the run's own numbers (friction, boost, both sandbag hits, weight, grip, above top speed). First-time captions show it under the main line; every report effect shows the first such event's. Run events now carry the numbers behind them (`RunEvent`), and `RunStats.firstEvents` keeps the first of each kind.
 - Tunnel comparison: `src/game/run/tunnelCompare.ts` drives the other lane straight from the same entry state with `step()` and that lane's g. The report shows both lanes (`You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s`, or `stuck`). A test shows it equals a real run down the other lane (four entry cases and two stuck cases). The tunnel signs ask "Which lane keeps you faster?" (`tunnelQuestion` in `runText.json`).

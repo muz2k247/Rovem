@@ -312,6 +312,7 @@ function run(raw: unknown, partList: readonly Part[]): RunParams {
   return {
     corridorHalfWidthM: num(o, 'corridorHalfWidthM', p, { positive: true }),
     warmUpLengthM: num(o, 'warmUpLengthM', p, { min: 0 }),
+    steerReturnToStraight: bool(o, 'steerReturnToStraight', p),
     fieldChunksBetweenTunnels: between,
     difficultyStartsM: [d1, d2, d3],
     gravityMultipliers: {

@@ -15,15 +15,22 @@ import {
   type RunReport,
 } from '../game/run/feedback.ts';
 import { forcePanel, type ForcePanel } from '../game/run/forcePanel.ts';
+import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
 import { createRunSession } from '../game/run/runSession.ts';
 import { displayPartName, nextUnlock } from '../game/run/unlocks.ts';
+import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { wheelStyleFor } from '../render/roverModel.ts';
 import { createRunScene } from '../render/runScene.ts';
 import { recordRun, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
 
-const MAX_FRAME_S = 0.1; // a long pause (hidden tab) must not make the rover jump
 const BRIEFING_S = 2.5;
+/** The crash moment before the report: shake, flash and a thud (DECISIONS 2026-10-16). Presentation values. */
+const CRASH_MOMENT_S = 0.5;
+const CRASH_SHAKE_M = 0.35;
+
+/** The sound that goes with an event, if any. */
+const EVENT_SOUNDS: Partial<Record<string, EffectKind>> = { boost: 'boost', headOnHit: 'sandbagHit', kickerHit: 'kickerHit' };
 
 interface Hud {
   speedMps: number;
@@ -194,6 +201,10 @@ export function RunScreen({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [briefing, setBriefing] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [crashMoment, setCrashMoment] = useState(false);
+  // The first run ever waits for a key at the briefing; later runs close it after BRIEFING_S.
+  const firstBriefing = useRef(!progress.briefingSeen);
   const [hud, setHud] = useState<Hud | null>(null);
   const [report, setReport] = useState<RunReport | null>(null);
   // This screen is mounted afresh for every run (key = run id), so what the run starts with is read once.
@@ -218,6 +229,8 @@ export function RunScreen({
     const session = createRunSession({ content, rover, constants, seed, input: () => keys.read().steer });
     const view = createRunScene(session, content, wheelStyleFor(start.build.wheelsId));
     const engine = createEngineSound();
+    const effects = createEffectSounds();
+    const driver = createPausableRun(session);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     host.appendChild(renderer.domElement);
@@ -230,16 +243,41 @@ export function RunScreen({
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 
-    let phase: 'briefing' | 'running' | 'ended' = 'briefing';
+    let phase: 'briefing' | 'running' | 'crashing' | 'ended' = 'briefing';
     let briefingLeftS = BRIEFING_S;
+    let crashLeftS = 0;
     const skipBriefing = () => {
       if (phase !== 'briefing') return;
       phase = 'running';
       setBriefing(false);
+      if (!progressRef.current.briefingSeen) {
+        const seen = { ...progressRef.current, briefingSeen: true };
+        saveDemoProgress(seen);
+        onChangeRef.current(seen);
+      }
+    };
+    // Pause (Esc, or the window losing focus): no steps run. Any key resumes.
+    const pause = () => {
+      if (phase !== 'running' || driver.paused) return;
+      driver.pause();
+      keys.clear();
+      setPaused(true);
+    };
+    const resume = () => {
+      driver.resume();
+      setPaused(false);
     };
     const onKeyDown = (e: KeyboardEvent) => {
       engine.start(); // audio may only start after a user gesture
+      effects.start();
+      const wasPaused = driver.paused;
+      const wasBriefing = phase === 'briefing';
+      if (wasPaused) resume();
       skipBriefing();
+      if (e.code === 'Escape') {
+        if (!wasPaused && !wasBriefing) pause(); // Esc at the briefing only skips it
+        return;
+      }
       if (!keys.handles(e.code)) return;
       e.preventDefault(); // arrow keys must not scroll the page
       keys.down(e.code);
@@ -247,7 +285,7 @@ export function RunScreen({
     const onKeyUp = (e: KeyboardEvent) => keys.up(e.code);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', keys.clear);
+    window.addEventListener('blur', pause);
 
     let feed: CaptionFeed = emptyFeed;
     const seenKinds = new Set<EventKind>(start.seenEvents);
@@ -278,26 +316,45 @@ export function RunScreen({
     renderer.setAnimationLoop((nowMs) => {
       const frameS = Math.min((nowMs - lastMs) / 1000, MAX_FRAME_S);
       lastMs = nowMs;
-      if (phase === 'briefing') {
+      if (phase === 'briefing' && !firstBriefing.current) {
         briefingLeftS -= frameS;
         if (briefingLeftS <= 0) skipBriefing();
       }
       if (phase === 'running') {
-        session.advanceFrame(frameS);
+        driver.advance(frameS);
         if (session.ended) {
-          phase = 'ended';
           keys.clear();
+          if (session.ended.cause === 'crash') {
+            phase = 'crashing';
+            crashLeftS = CRASH_MOMENT_S;
+            effects.play('thud');
+            setCrashMoment(true);
+          } else {
+            phase = 'ended';
+            finish();
+          }
+        }
+      } else if (phase === 'crashing') {
+        crashLeftS -= frameS;
+        view.setShake(CRASH_SHAKE_M * Math.max(0, crashLeftS / CRASH_MOMENT_S));
+        if (crashLeftS <= 0) {
+          view.setShake(0);
+          phase = 'ended';
+          setCrashMoment(false);
           finish();
         }
       }
       const state = session.state;
-      view.update(session, frameS);
+      view.update(session, driver.paused ? 0 : frameS);
       renderer.render(view.scene, view.camera);
-      engine.setMuted(!soundRef.current || phase === 'ended');
+      engine.setMuted(!soundRef.current || phase === 'crashing' || phase === 'ended' || driver.paused);
+      effects.setMuted(!soundRef.current);
       engine.update(state.speedMps / rover.topSpeedMps, phase === 'running' ? state.throttleLevel : 0);
 
       for (; eventsHandled < session.events.length; eventsHandled++) {
         const event = session.events[eventsHandled]!;
+        const sound = EVENT_SOUNDS[event.kind];
+        if (sound) effects.play(sound);
         const pushed = pushCaption(feed, event, event.timeS, { seenKinds, unit: unitRef.current });
         feed = pushed.feed;
         if (pushed.firstTime) seenKinds.add(event.kind as EventKind);
@@ -323,13 +380,14 @@ export function RunScreen({
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('blur', keys.clear);
+      window.removeEventListener('blur', pause);
       observer.disconnect();
       renderer.setAnimationLoop(null);
       view.dispose();
       renderer.dispose();
       renderer.domElement.remove();
       engine.dispose();
+      effects.dispose();
     };
   }, [seed]);
 
@@ -375,6 +433,13 @@ export function RunScreen({
         </div>
       )}
       {hud && progress.showForces && <ForcePanelView panel={hud.panel} />}
+      {crashMoment && <div className="crash-flash" aria-hidden="true" />}
+      {paused && (
+        <div className="pause-card" role="status">
+          <h2>Paused</h2>
+          <small>Press any key to continue</small>
+        </div>
+      )}
       {briefing && (
         <div className="briefing" role="status">
           <h2>{text.headline}</h2>
@@ -383,7 +448,7 @@ export function RunScreen({
               <li key={h}>{h}</li>
             ))}
           </ul>
-          <small>Press any key to start</small>
+          <small>{firstBriefing.current ? 'Press any key to start' : 'Starting… (any key to skip)'}</small>
         </div>
       )}
       {report && <ReportOverlay report={report} onAgain={onAgain} onReplay={onReplay} onGarage={onGarage} />}

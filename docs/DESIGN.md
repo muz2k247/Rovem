@@ -12,13 +12,13 @@ This file holds two designs. **Demo v3** (the endless canyon run) is the current
 
 ### The game
 
-The rover drives forward on its own through an endless, straight canyon (a corridor 30 m wide along +x). The student only steers (A/D or ←/→). The throttle is always held; there are no brake, reverse or throttle keys in the demo. Along the way:
+The rover drives forward on its own through an endless, straight canyon (a corridor 30 m wide along +x). The student only steers (A/D or ←/→); when no steer key is held the rover turns back to straight at the normal turn rate (DECISIONS 2026-10-16; switch `steerReturnToStraight` in `run.json`). The throttle is always held; there are no brake, reverse or throttle keys in the demo. Esc, or the window losing focus, pauses the run; any key resumes. Along the way:
 - **Tiles:** mud slows you; sand and ice change how fast you regain or lose speed.
 - **Boost pads:** each gives a one-time push (an impulse).
 - **Cannons:** they fire sandbags at you head-on, or from behind (a "kicker").
 - **Gravity tunnels:** every 250 m the canyon splits into two, one lane with low gravity (×0.5) and one with high gravity (×2).
 
-The run ends when the rover hits a barrier or the canyon wall (crash), or gets stuck in mud (friction beats the motor). The score grows with distance and with speed (each step adds distance × v / v_max). The best distance unlocks parts in the garage. There is no battery, no clock and no multiple-choice question.
+The run ends when the rover hits a barrier or the canyon wall (crash; 0.5 s of shake, flash and a thud, then the report), or gets stuck in mud (friction beats the motor). The score grows with distance and with speed (each step adds distance × v / v_max). The best distance unlocks parts in the garage. There is no battery, no clock and no multiple-choice question.
 
 ### How the learning works
 
