@@ -98,11 +98,18 @@ function bannerTexture(text: string, question: string, colour: string): THREE.Te
   g.lineWidth = 6;
   g.strokeRect(6, 6, 500, 180);
   g.fillStyle = '#f1f1ec';
-  g.font = 'bold 54px system-ui, sans-serif';
+  // Each line shrinks until it fits inside the frame, so no text is cut off.
+  const fit = (line: string, sizePx: number) => {
+    for (let size = sizePx; size > 12; size -= 2) {
+      g.font = `bold ${size}px system-ui, sans-serif`;
+      if (g.measureText(line).width <= 470) break;
+    }
+  };
+  fit(text, 54);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillText(text, 256, 66);
-  g.font = 'bold 40px system-ui, sans-serif';
+  fit(question, 40);
   g.fillText(question, 256, 134);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

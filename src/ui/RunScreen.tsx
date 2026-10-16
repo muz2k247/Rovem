@@ -54,7 +54,7 @@ const LONGEST_V = 40; // longest vertical arrow, px
 const HEAD = 9; // arrow head length, px
 const COLOURS = { motor: '#28d8e8', friction: '#ffb347', weight: '#c9d0e8', push: '#8fe0a0' };
 
-function ForcePanelView({ panel }: { panel: ForcePanel }) {
+export function ForcePanelView({ panel }: { panel: ForcePanel }) {
   // A visible arrow is never shorter than its head.
   const length = (fraction: number, longest: number) => (fraction > 0 ? Math.max(HEAD + 2, longest * fraction) : 0);
   const arrow = (x1: number, y1: number, x2: number, y2: number, colour: keyof typeof COLOURS) => (
