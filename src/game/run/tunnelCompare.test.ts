@@ -90,3 +90,26 @@ describe('a gravity zone with no second lane', () => {
     expect(s.stats.gravityZones[0]!.other).toBeUndefined();
   });
 });
+
+describe('tunnel comparison: the other lane always holds the throttle (the student now drives)', () => {
+  // The student may coast or brake through their own lane. The comparison does not copy that: it drives the other lane
+  // with the throttle held and no brake, from the same entry state, so it stays a fixed, repeatable what-if.
+  // "A real run" here is a session with the throttle held (the default of createRunSession).
+  it('the other lane equals a real throttle-held run, even if the student coasted through their own lane', () => {
+    const coasting = createRunSession({
+      content: world, rover: rover(), constants, seed: SEED, input: () => 0,
+      drive: () => ({ throttleHeld: false, brakeHeld: false }),
+      initialState: { positionXM: tunnel.startXM + 1, positionZM: laneZ('low'), speedMps: 16, throttleLevel: 0 },
+    });
+    let entry: PhysicsState | undefined;
+    for (let i = 0; i < 20000 && !coasting.ended && coasting.stats.gravityZones.length === 0; i++) {
+      coasting.stepOnce();
+      if (!entry && coasting.events.some((e) => e.kind === 'gravity')) entry = coasting.state;
+    }
+    const zone = coasting.stats.gravityZones[0]!;
+    expect(zone.other?.kind).toBe('high');
+    const real = runLane('high', {}, { ...entry!, positionZM: laneZ('high'), headingRad: 0 });
+    expect(zone.other!.outcome).toBe(real.s.stats.gravityZones[0]!.outcome);
+    expect(zone.other!.speedOutMps).toBe(real.s.stats.gravityZones[0]!.speedOutMps);
+  });
+});

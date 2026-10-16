@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effectRecipe, type EffectKind } from './effectSounds.ts';
+import { effectRecipe, squealTone, type EffectKind } from './effectSounds.ts';
 
 const KINDS: EffectKind[] = ['boost', 'sandbagHit', 'kickerHit', 'thud'];
 
@@ -23,5 +23,18 @@ describe('effect recipes', () => {
     expect(effectRecipe('sandbagHit').tones[0]!.toHz).toBeLessThan(effectRecipe('sandbagHit').tones[0]!.fromHz);
     expect(effectRecipe('thud').tones[0]!.toHz).toBeLessThan(effectRecipe('sandbagHit').tones[0]!.toHz);
     expect(effectRecipe('thud').tones[0]!.durationS).toBeGreaterThan(effectRecipe('sandbagHit').tones[0]!.durationS);
+  });
+});
+
+describe('tyre squeal', () => {
+  it('is audible but quiet, and rises in pitch and volume with speed', () => {
+    const slow = squealTone(0);
+    const fast = squealTone(1);
+    expect(slow.gain).toBeGreaterThan(0);
+    expect(fast.gain).toBeLessThanOrEqual(0.1);
+    expect(fast.frequencyHz).toBeGreaterThan(slow.frequencyHz);
+    expect(fast.gain).toBeGreaterThan(slow.gain);
+    expect(squealTone(5)).toEqual(fast); // clamped
+    expect(squealTone(-1)).toEqual(slow);
   });
 });

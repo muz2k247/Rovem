@@ -71,3 +71,31 @@ describe('force panel', () => {
     expect(big.motor.lengthFraction).toBe(1);
   });
 });
+
+describe('force panel when the student lifts off the pedals', () => {
+  const RELEASE = { throttleHeld: false, brakeHeld: false, steer: 0 as const };
+  it('coasting after release: motor 0 N, friction F_r, not balanced', () => {
+    const s = step(createState({ speedMps: 10, throttleLevel: 0 }), RELEASE, rover(), surface('asphalt'), constants);
+    expect(s.drivingState).toBe('Coasting');
+    const p = forcePanel(s, rover(), surface('asphalt'), g);
+    expect(p.motor.valueN).toBe(0);
+    expect(p.motor.lengthFraction).toBe(0);
+    expect(p.friction.valueN).toBeCloseTo(FR, 9);
+    expect(p.balancedLabel).toBeUndefined();
+  });
+  it('at rest at the start (throttle level 0): both arrows 0 N, no label', () => {
+    const s = step(createState(), RELEASE, rover(), surface('asphalt'), constants);
+    const p = forcePanel(s, rover(), surface('asphalt'), g);
+    expect(p.motor.valueN).toBe(0);
+    expect(p.friction.valueN).toBe(0);
+    expect(p.balancedLabel).toBeUndefined();
+  });
+  it('braking: "Brake + friction" = F_b + F_r', () => {
+    const s = step(createState({ speedMps: 10, brakeLevel: 0.2 }), { throttleHeld: false, brakeHeld: true, steer: 0 }, rover(), surface('asphalt'), constants);
+    expect(s.drivingState).toBe('Braking');
+    const p = forcePanel(s, rover(), surface('asphalt'), g);
+    expect(p.friction.label).toBe('Brake + friction');
+    expect(p.friction.valueN).toBeCloseTo(s.brakeForceN + FR, 9);
+    expect(p.motor.valueN).toBe(0);
+  });
+});

@@ -226,7 +226,15 @@ export function RunScreen({
     const rover = roverFromParts(content, start.build);
     const constants = physicsConstants(content);
     const keys = createKeyTracker();
-    const session = createRunSession({ content, rover, constants, seed, input: () => keys.read().steer });
+    // The student drives: W/↑ throttle, S/↓ brake, A/D or ←/→ steer (the key mapping in game/controls.ts).
+    const session = createRunSession({
+      content, rover, constants, seed,
+      input: () => keys.read().steer,
+      drive: () => {
+        const { throttleHeld, brakeHeld } = keys.read();
+        return { throttleHeld, brakeHeld };
+      },
+    });
     const view = createRunScene(session, content, wheelStyleFor(start.build.wheelsId));
     const engine = createEngineSound();
     const effects = createEffectSounds();
@@ -349,6 +357,8 @@ export function RunScreen({
       renderer.render(view.scene, view.camera);
       engine.setMuted(!soundRef.current || phase === 'crashing' || phase === 'ended' || driver.paused);
       effects.setMuted(!soundRef.current);
+      // Tyre squeal whenever the physics reports wheel slip (a hard brake or a hard start on a slippery surface).
+      effects.setSqueal(phase === 'running' && !driver.paused && state.slipping && state.speedMps > 0, state.speedMps / rover.topSpeedMps);
       engine.update(state.speedMps / rover.topSpeedMps, phase === 'running' ? state.throttleLevel : 0);
 
       for (; eventsHandled < session.events.length; eventsHandled++) {

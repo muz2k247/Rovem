@@ -283,11 +283,14 @@ export function tryThisLine(
   unlockedIds: readonly string[],
   fitted: ReportInput['fitted'],
   text: RunText,
+  brakeUsed: boolean,
 ): string {
   const biggest = effectsRanked[0]?.kind;
   if (ended.cause === 'stuck' && ended.gravityKind === 'high') return text.tryThis.stuckInHighGravity;
   if (ended.atDivider) return text.tryThis.pickLane;
   if (biggest === 'mud' && unlockedIds.includes('wheels-smooth') && fitted.wheelsId !== 'wheels-smooth') return text.tryThis.smoothWheels;
+  // The student drives now, so a hit-heavy run in which the brake was never touched gets the free advice first.
+  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !brakeUsed) return text.tryThis.brakeFirst;
   if ((biggest === 'headOnHit' || biggest === 'kickerHit') && unlockedIds.includes('chassis-heavy') && fitted.chassisId !== 'chassis-heavy') {
     return text.tryThis.heavyChassis;
   }
@@ -312,6 +315,6 @@ export function buildReport(input: ReportInput): RunReport {
     newBestScore: score > previousBestScore,
     unlocked: newlyUnlocked(content, previousBestDistanceM, bestDistanceM),
     effects: ranked.slice(0, 3),
-    tryThis: tryThisLine(ended, ranked, unlockedPartIds(content, bestDistanceM), input.fitted, content.runText),
+    tryThis: tryThisLine(ended, ranked, unlockedPartIds(content, bestDistanceM), input.fitted, content.runText, stats.brakeUsed),
   };
 }

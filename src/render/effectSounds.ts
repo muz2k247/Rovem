@@ -61,10 +61,21 @@ export function effectRecipe(kind: EffectKind): EffectRecipe {
   return RECIPES[kind];
 }
 
+/**
+ * Tyre squeal while the physics reports wheel slip: a thin, harsh pair of tones whose pitch rises with speed
+ * (speed as a share of top speed, 0–1). Pure, so it can be tested.
+ */
+export function squealTone(speedShare: number): { frequencyHz: number; gain: number } {
+  const s = Math.min(1, Math.max(0, speedShare));
+  return { frequencyHz: 900 + 500 * s, gain: 0.025 + 0.035 * s };
+}
+
 export interface EffectSounds {
   /** Starts the audio. Browsers allow this only after a user gesture, e.g. the first key press. */
   start(): void;
   play(kind: EffectKind): void;
+  /** Tyre squeal: on while the wheels slip. Silent when muted. */
+  setSqueal(slipping: boolean, speedShare: number): void;
   setMuted(muted: boolean): void;
   dispose(): void;
 }
@@ -73,6 +84,8 @@ export function createEffectSounds(): EffectSounds {
   let ctx: AudioContext | null = null;
   let noiseBuffer: AudioBuffer | null = null;
   let muted = false;
+  let squealOscs: OscillatorNode[] = [];
+  let squealGain: GainNode | null = null;
 
   return {
     start() {
@@ -86,6 +99,30 @@ export function createEffectSounds(): EffectSounds {
       noiseBuffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const data = noiseBuffer.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      // The squeal runs all the time at gain 0 and is switched by gain, so it never clicks on and off.
+      squealGain = ctx.createGain();
+      squealGain.gain.value = 0;
+      const band = ctx.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.value = 1500;
+      band.Q.value = 2;
+      band.connect(squealGain);
+      squealGain.connect(ctx.destination);
+      squealOscs = [1, 1.51].map((ratio) => {
+        const osc = ctx!.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = 900 * ratio;
+        osc.connect(band);
+        osc.start();
+        return osc;
+      });
+    },
+    setSqueal(slipping, speedShare) {
+      if (!ctx || !squealGain) return;
+      const tone = squealTone(speedShare);
+      const now = ctx.currentTime;
+      squealOscs.forEach((osc, i) => osc.frequency.setTargetAtTime(tone.frequencyHz * (i === 0 ? 1 : 1.51), now, 0.05));
+      squealGain.gain.setTargetAtTime(slipping && !muted ? tone.gain : 0, now, 0.03);
     },
     play(kind) {
       if (!ctx || muted) return;
@@ -127,6 +164,8 @@ export function createEffectSounds(): EffectSounds {
       if (ctx) void ctx.close();
       ctx = null;
       noiseBuffer = null;
+      squealOscs = [];
+      squealGain = null;
     },
   };
 }

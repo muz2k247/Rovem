@@ -318,8 +318,11 @@ describe('the course stays ahead', () => {
   });
 });
 
-describe('steering returns to straight (DECISIONS 2026-10-16)', () => {
-  const world = worldOf({});
+// The return is switched OFF in run.json (DECISIONS 2026-10-16, second change); the code and these tests stay.
+// They turn it on in their own world.
+describe('steering returns to straight (code kept, switched off in run.json)', () => {
+  const plain = worldOf({});
+  const world: Content = { ...plain, run: { ...plain.run, steerReturnToStraight: true } };
   const tap: RunInputProvider = (i) => (i >= 240 && i < 288 ? 1 : 0); // a 0.4 s tap at 120 steps per second, once moving
   const deadbandRad = (constants.turnRateDegPerS * Math.PI / 180) * constants.timeStepS / 2;
   const drive = (w: Content, input: RunInputProvider, steps: number) => {
@@ -327,6 +330,13 @@ describe('steering returns to straight (DECISIONS 2026-10-16)', () => {
     for (let i = 0; i < steps; i++) s.stepOnce();
     return s;
   };
+
+  it('is off in the shipped content: a tap leaves the heading where it was left', () => {
+    expect(content.run.steerReturnToStraight).toBe(false);
+    const s = drive(plain, tap, 600);
+    expect(s.state.headingRad).toBeGreaterThan(0.3);
+    expect(s.steerSent.every((x) => x === 0 || x === 1)).toBe(true);
+  });
 
   it('a 0.4 s tap leaves a sideways offset and a heading back to about 0', () => {
     const s = drive(world, tap, 600);
@@ -373,5 +383,117 @@ describe('steering returns to straight (DECISIONS 2026-10-16)', () => {
     rev.stepOnce();
     expect(rev.steerSent[0]).toBe(1); // reverse mirrors the input, so +1 turns the heading down
     expect(rev.state.headingRad).toBeLessThan(0.2);
+  });
+});
+
+describe('the student drives (DECISIONS 2026-10-16)', () => {
+  const world = worldOf({});
+  const W = { throttleHeld: true, brakeHeld: false };
+  const S = { throttleHeld: false, brakeHeld: true };
+  const NONE = { throttleHeld: false, brakeHeld: false };
+  const make = (drive: (i: number) => { throttleHeld: boolean; brakeHeld: boolean }, initialState = {}) =>
+    createRunSession({ content: world, rover: rover(), constants, seed: unmirroredSeed(world), input: STRAIGHT, drive, initialState });
+  const run = (s: ReturnType<typeof make>, n: number) => {
+    for (let i = 0; i < n && !s.ended; i++) s.stepOnce();
+    return s;
+  };
+
+  it('starts at rest with the throttle level 0, and stays there until the student presses', () => {
+    const s = make(() => NONE);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.state.throttleLevel).toBe(0);
+    run(s, 600);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.state.positionXM).toBe(0);
+    expect(s.ended).toBeUndefined(); // sitting still at the start is not "stuck"
+  });
+
+  it('W drives, with the usual 1.0 s build-up', () => {
+    const s = run(make(() => W), 120);
+    expect(s.state.throttleLevel).toBeCloseTo(1, 12);
+    expect(s.state.speedMps).toBeGreaterThan(0);
+    expect(s.state.drivingState).toBe('Driving');
+  });
+
+  it('S at v = 0 does nothing: no brake sent, no reverse', () => {
+    const s = run(make(() => S), 300);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.state.direction).toBe('forward');
+    expect(s.state.brakeLevel).toBe(0);
+    expect(s.driveSent.every((k) => !k.brakeHeld)).toBe(true);
+    expect(s.stats.brakeUsed).toBe(false);
+  });
+
+  it('S pressed at rest first does not get in the way of W afterwards', () => {
+    const s = run(make((i) => (i < 60 ? S : W)), 300);
+    expect(s.state.speedMps).toBeGreaterThan(0);
+    expect(s.state.direction).toBe('forward');
+    expect(s.stats.brakeUsed).toBe(false);
+  });
+
+  it('S and W together once rolling: the brake wins (FR-6), never a reverse', () => {
+    const s = run(make(() => ({ throttleHeld: true, brakeHeld: true })), 2000);
+    expect(s.state.direction).toBe('forward');
+    expect(s.state.positionXM).toBeGreaterThanOrEqual(0);
+    expect(s.stats.brakeUsed).toBe(true);
+  });
+
+  it('release = coast: only friction acts, a = −F_r/m (−0.196 m/s² on asphalt)', () => {
+    const s = make(() => NONE, { speedMps: 10 });
+    s.stepOnce();
+    expect(s.state.drivingState).toBe('Coasting');
+    close(s.state.accelerationMps2, -0.196);
+    close(s.state.speedMps, 10 - 0.196 / 120);
+  });
+
+  it('S while rolling brakes, and the stats remember the brake was used', () => {
+    const s = make(() => S, { speedMps: 10 });
+    s.stepOnce();
+    expect(s.driveSent[0]).toEqual(S);
+    run(s, 50);
+    expect(s.state.drivingState).toBe('Braking');
+    expect(s.state.speedMps).toBeLessThan(10);
+    expect(s.stats.brakeUsed).toBe(true);
+    run(s, 2000);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.state.direction).toBe('forward'); // braking to a stop never reverses
+    expect(s.ended).toBeUndefined();
+  });
+
+  it('S does not drive a rover that a sandbag pushed into reverse; W brakes it, then it drives on forward', () => {
+    const s = make((i) => ({ throttleHeld: true, brakeHeld: i === 0 }), { speedMps: 2, direction: 'reverse', throttleLevel: 1 });
+    s.stepOnce();
+    expect(s.driveSent[0]!.brakeHeld).toBe(false);
+    run(s, 1500);
+    expect(s.state.direction).toBe('forward');
+    expect(s.state.speedMps).toBeGreaterThan(0);
+  });
+
+  it('stuck needs full throttle held at rest in mud; stopping in mud and not pressing is not stuck', () => {
+    const mud = worldOf({ tiles: [{ surfaceId: 'mud', xM: [0, 100], zM: [-15, 15] }] });
+    const start = { positionXM: 70 }; // inside the mud chunk, at rest
+    const held = createRunSession({ content: mud, rover: rover(), constants, seed: unmirroredSeed(mud), input: STRAIGHT, drive: () => W, initialState: start });
+    for (let i = 0; i < 400 && !held.ended; i++) held.stepOnce();
+    expect(held.ended?.cause).toBe('stuck');
+    const idle = createRunSession({ content: mud, rover: rover(), constants, seed: unmirroredSeed(mud), input: STRAIGHT, drive: () => NONE, initialState: start });
+    for (let i = 0; i < 400; i++) idle.stepOnce();
+    expect(idle.ended).toBeUndefined();
+  });
+
+  it('T9: the same seed and the same key record give the same run at 30 and 144 fps', () => {
+    const steer: RunInputProvider = (i) => (Math.floor(i / 80) % 4 === 0 ? 1 : Math.floor(i / 80) % 4 === 2 ? -1 : 0);
+    const pedals = (i: number) => (i < 300 ? W : i < 700 ? NONE : i < 900 ? S : W);
+    const play = (fps: number) => {
+      const s = createRunSession({ content: world, rover: rover(), constants, seed: 99, input: steer, drive: pedals, stopAtStep: 1500 });
+      let frames = 0;
+      while (s.state.stepCount < 1500 && frames++ < 100000) s.advanceFrame(1 / fps);
+      return s;
+    };
+    const a = play(30);
+    const b = play(144);
+    expect(a.state).toEqual(b.state);
+    expect(a.driveSent).toEqual(b.driveSent);
+    expect(a.score).toBe(b.score);
+    expect(a.stats.brakeUsed).toBe(true);
   });
 });

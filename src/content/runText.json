@@ -1,7 +1,7 @@
 {
   "placeholder": true,
   "briefing": {
-    "headline": "Drive as far as you can. Steer with A/D or ←/→. Don't hit the barriers.",
+    "headline": "Drive as far as you can. Hold W to go, S to brake, A/D to steer. Don't hit the barriers.",
     "hazards": [
       "Mud slows you.",
       "Boost pads push you.",
@@ -17,7 +17,7 @@
     "headOnHit": "You hand part of your momentum to the bag. The total stays the same, so you slow down.",
     "kickerHit": "The bag from behind hands you some of its momentum. The total stays the same, so you speed up.",
     "gravity": "Gravity presses you into the ground, so friction grows with it. Your mass stays the same; your weight changes.",
-    "slip": "Your motor pushes harder than the tyres can grip.",
+    "slip": "Your motor or your brake pushes harder than the tyres can grip.",
     "aboveTopSpeed": "Nothing pushes you now. Only friction slows you: Newton's first law."
   },
   "formulas": {
@@ -32,6 +32,7 @@
     "pickLane": "Pick a lane before the tunnel: the divider is solid.",
     "stuckInHighGravity": "Try the low-gravity tunnel: less weight means less friction.",
     "smoothWheels": "Try Smooth wheels: they lose less speed in mud.",
+    "brakeFirst": "Brake before the cannon's line: a slower rover loses less speed to a sandbag.",
     "heavyChassis": "Try the Heavy chassis: a heavier rover loses less speed to a sandbag.",
     "dodgeCannon": "Dodge the cannon's line: the sandbags cost you the most speed.",
     "steerEarlier": "You crashed fast. Steer earlier.",

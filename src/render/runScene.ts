@@ -3,6 +3,7 @@ import type { Content, GravityKind } from '../content/index.ts';
 import type { CourseChunk } from '../game/run/course.ts';
 import { GENERATE_AHEAD_M, type RunSession } from '../game/run/runSession.ts';
 import { createDust } from './driveScene.ts';
+import { createSkidMarks } from './skidMarks.ts';
 import { createRoverModel, ROVER_WHEEL_RADIUS_M, type WheelStyle } from './roverModel.ts';
 
 // The 3D view of the endless canyon (docs/DEMO_BUILD_PLAN.md A3, A4, A7). Original low-poly shapes; no outside assets.
@@ -20,8 +21,11 @@ const CAMERA_LOOK_AHEAD_M = 6;
 const FOV_AT_REST_DEG = 58;
 const FOV_PER_MPS_DEG = 1.1;
 const FOV_EASE_PER_S = 3;
-/** The camera looks mostly down the canyon: it turns only this share of the way with the rover (DECISIONS 2026-10-16). */
-export const CAMERA_HEADING_SHARE = 0.35;
+/**
+ * How much of the rover's heading the camera follows. 1 = fully (DECISIONS 2026-10-16, second change). Before that it
+ * was 0.35, "looks mostly down the canyon", which went with steering returning to straight; kept as a value so it can be tuned.
+ */
+export const CAMERA_HEADING_SHARE = 1;
 /** The camera never goes closer to a canyon wall than this, so it cannot end up inside it. */
 export const CAMERA_WALL_MARGIN_M = 0.8;
 const SHAKE_HZ = 38;
@@ -148,6 +152,8 @@ export interface RunScene {
   loadedChunkIndices(): number[];
   /** Camera shake for the crash moment: the amplitude in metres (0 = none). The camera stays inside the walls. */
   setShake(amplitudeM: number): void;
+  /** Skid marks currently on the ground (they fade away). */
+  readonly skidMarkCount: number;
   /** Moves the rover, the chunks, the bags and the camera to the session. `frameS` drives the effects only. */
   update(session: RunSession, frameS?: number): void;
   dispose(): void;
@@ -317,6 +323,9 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   let sagM = 0;
   let gravityKind: GravityKind | undefined;
   let shakeM = 0;
+  const skid = createSkidMarks(scene);
+  /** Where each wheel touched the ground last frame while slipping; null when not slipping. */
+  let lastWheelPoints: { x: number; z: number }[] | null = null;
 
   const update = (s: RunSession, frameS = 0) => {
     clockS += frameS;
@@ -378,6 +387,24 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
       dust.update(frameS, emitters, state.speedMps * perMps, dustColour, new THREE.Vector3(-fx, 0, fz));
     }
 
+    // Skid marks: while the physics reports wheel slip, a strip behind each of the four wheels (presentation only).
+    if (frameS > 0) {
+      skid.update(frameS);
+      if (state.slipping && state.speedMps > 0) {
+        const side = roverWidthM / 2 - 0.1;
+        const points: { x: number; z: number }[] = [];
+        for (const backM of [model.frontAxleBackM, model.rearAxleBackM]) {
+          const ax = x - fx * backM;
+          const az = z - fz * backM;
+          points.push({ x: ax - fz * side, z: az + fx * side }, { x: ax + fz * side, z: az - fx * side });
+        }
+        if (lastWheelPoints) points.forEach((pt, i) => skid.addSegment(lastWheelPoints![i]!.x, lastWheelPoints![i]!.z, pt.x, pt.z));
+        lastWheelPoints = points;
+      } else {
+        lastWheelPoints = null;
+      }
+    }
+
     // Low chase camera; the field of view widens with speed.
     const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
@@ -406,12 +433,16 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     get gravityKind() {
       return gravityKind;
     },
+    get skidMarkCount() {
+      return skid.count;
+    },
     setShake(amplitudeM) {
       shakeM = Math.max(0, amplitudeM);
     },
     loadedChunkIndices: () => [...chunkGroups.keys()].sort((a, b) => a - b),
     update,
     dispose() {
+      skid.dispose();
       for (const index of [...chunkGroups.keys()]) removeChunk(index);
     },
   };

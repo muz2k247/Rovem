@@ -12,7 +12,7 @@ This file holds two designs. **Demo v3** (the endless canyon run) is the current
 
 ### The game
 
-The rover drives forward on its own through an endless, straight canyon (a corridor 30 m wide along +x). The student only steers (A/D or ←/→); when no steer key is held the rover turns back to straight at the normal turn rate (DECISIONS 2026-10-16; switch `steerReturnToStraight` in `run.json`). The throttle is always held; there are no brake, reverse or throttle keys in the demo. Esc, or the window losing focus, pauses the run; any key resumes. Along the way:
+The student drives a rover through an endless, straight canyon (a corridor 30 m wide along +x): W/↑ throttle, S/↓ brake, A/D or ←/→ steer. The run starts at rest; there is no reverse in the run (S at rest does nothing). Wheel slip is shown with tyre squeal and fading skid marks. *Superseded 2026-10-16:* the first design had the throttle always held and the student only steering, to keep the controls to a minimum (NFR-6); k._muz changed it after playtesting so the student controls speed. A second 2026-10-16 idea, steering that returns to straight when no key is held (`steerReturnToStraight`), is switched off in `run.json` (code kept; superseded the same day after playtest). Esc, or the window losing focus, pauses the run; any key resumes. Along the way:
 - **Tiles:** mud slows you; sand and ice change how fast you regain or lose speed.
 - **Boost pads:** each gives a one-time push (an impulse).
 - **Cannons:** they fire sandbags at you head-on, or from behind (a "kicker").
@@ -44,7 +44,7 @@ A seeded generator builds the canyon lazily from hand-designed chunks: a 60 m wa
 ### Paused, kept, unchanged
 
 - **Paused:** M5b–M14, the questions, Knowledge, accounts and hosting. The old Build screen and test drive stay in the code, reachable from a developer link on the garage.
-- **Kept in code, unused by the demo:** reverse controls, the steering assist and the throttle bars.
+- **Kept in code, unused by the demo:** reverse (never sent in the run), the steering assist, the steering return (switched off) and the throttle bars.
 - **Unchanged:** T1–T10 and `npm run balance` must keep passing.
 
 ### The demo is done when

@@ -10,12 +10,24 @@ import { createRunCourse, type RunCourse, type WorldCannon } from './course.ts';
 import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
 // The run rules of the endless canyon (docs/DEMO_BUILD_PLAN.md A2, A4, A6). Game layer: no rendering, no React.
-// The rover always drives: every step gets throttleHeld true, brakeHeld false. The student only steers.
+// The student drives (DECISIONS 2026-10-16): the throttle, brake and steer keys are read each step. The run starts at
+// rest with the throttle level 0. There is no reverse in the run: the brake is not sent at rest (or in reverse), so S at
+// v = 0 does nothing. The physics is unchanged.
 // With no steer key held the game steers the heading back to 0 (DECISIONS 2026-10-16); `steerSent` records what was
 // really passed to step(), so replaying that record with the return switched off gives the same run (T9).
 
 /** What the student does at a given step number: steer left (+1), right (−1) or straight. */
 export type RunInputProvider = (stepIndex: number) => -1 | 0 | 1;
+
+/** Which pedals the student holds at a given step number. */
+export interface DriveKeys {
+  throttleHeld: boolean;
+  brakeHeld: boolean;
+}
+export type RunDriveProvider = (stepIndex: number) => DriveKeys;
+
+/** Throttle held, brake free: what a session does when no `drive` is given (tests, and the tunnel comparison's other lane). */
+export const HOLD_THROTTLE: RunDriveProvider = () => ({ throttleHeld: true, brakeHeld: false });
 
 export type RunEventKind = EventKind | 'crash' | 'stuck';
 
@@ -84,6 +96,8 @@ export interface RunStats {
   kickerHits: number;
   gravityZones: GravityZoneUse[];
   maxSpeedMps: number;
+  /** The student used the brake (at least one step with the brake sent). */
+  brakeUsed: boolean;
   /** The first event of each kind in this run: the report works its formulas with these numbers. */
   firstEvents: Partial<Record<EventKind, RunEvent>>;
 }
@@ -107,7 +121,10 @@ export interface RunSessionOptions {
   rover: RoverSpec;
   constants: PhysicsConstants;
   seed: number;
+  /** The steer key at each step. */
   input: RunInputProvider;
+  /** The throttle and brake keys at each step. Default: throttle held, brake free. */
+  drive?: RunDriveProvider;
   /** Stop running steps once this many have run (tests compare runs at exactly the same step). */
   stopAtStep?: number;
   /** Test hook: start from a different state (e.g. already fast, or already in mud). */
@@ -127,6 +144,7 @@ export const GENERATE_AHEAD_M = 400;
 
 export function createRunSession(options: RunSessionOptions) {
   const { content, rover, constants, seed, input, stopAtStep } = options;
+  const drive = options.drive ?? HOLD_THROTTLE;
   const run = content.run;
   const bagSpec = run.sandbag;
   const footprint = { lengthM: content.constants.roverLengthM, widthM: content.constants.roverWidthM };
@@ -152,6 +170,7 @@ export function createRunSession(options: RunSessionOptions) {
   let wasSlipping = false;
   let wasAboveTop = false;
   let steerSent: (-1 | 0 | 1)[] = [];
+  let driveSent: DriveKeys[] = [];
   const turnRadPerS = (constants.turnRateDegPerS * Math.PI) / 180;
   const returnDeadbandRad = (turnRadPerS * constants.timeStepS) / 2;
 
@@ -169,7 +188,7 @@ export function createRunSession(options: RunSessionOptions) {
   function emptyStats(): RunStats {
     return {
       mudLossMps: 0, mudPatches: 0, boostGainMps: 0, boosts: 0, headOnLossMps: 0, headOnHits: 0,
-      kickerGainMps: 0, kickerHits: 0, gravityZones: [], maxSpeedMps: 0, firstEvents: {},
+      kickerGainMps: 0, kickerHits: 0, gravityZones: [], maxSpeedMps: 0, brakeUsed: false, firstEvents: {},
     };
   }
 
@@ -279,9 +298,15 @@ export function createRunSession(options: RunSessionOptions) {
     const held = input(prev.stepCount);
     const steer = held !== 0 ? held : returnToStraight(prev);
     steerSent.push(steer);
+    // The brake key counts only while the rover rolls forward: at rest it would start a reverse, and in reverse the
+    // physics reads the brake key as the drive. Neither belongs to this run, so the game layer does not send it.
+    const keys = drive(prev.stepCount);
+    const brakeHeld = keys.brakeHeld && prev.speedMps > 0 && prev.direction === 'forward';
+    driveSent.push({ throttleHeld: keys.throttleHeld, brakeHeld });
+    if (brakeHeld) stats.brakeUsed = true;
     const next = step(
       prev,
-      { throttleHeld: true, brakeHeld: false, steer },
+      { throttleHeld: keys.throttleHeld, brakeHeld, steer },
       rover,
       surface,
       { ...constants, gravityMps2: gravityAt(prevZone) },
@@ -371,7 +396,8 @@ export function createRunSession(options: RunSessionOptions) {
     }
     wasAboveTop = aboveTop;
 
-    // 8. Stuck: the motor at full strength, no brake, and still at rest: friction beats the motor (FR-8).
+    // 8. Stuck: the student holds full throttle, no brake, and the rover is still at rest: friction beats the motor (FR-8).
+    // A rover that merely stopped (throttle level below 1) is not stuck: the student can still drive off.
     if (state.speedMps === 0 && state.throttleLevel === 1 && state.brakeLevel === 0 && state.drivingState === 'Stopped') {
       endZone(0, 'stuck');
       closeOpenMud(0);
@@ -395,6 +421,10 @@ export function createRunSession(options: RunSessionOptions) {
     /** The steer input passed to step() at each step, in step order (the input record of this run). */
     get steerSent(): readonly (-1 | 0 | 1)[] {
       return steerSent;
+    },
+    /** The throttle and brake inputs passed to step() at each step, in step order. */
+    get driveSent(): readonly DriveKeys[] {
+      return driveSent;
     },
     get shots(): readonly Shot[] {
       return shots;
@@ -444,6 +474,7 @@ export function createRunSession(options: RunSessionOptions) {
       wasSlipping = false;
       wasAboveTop = false;
       steerSent = [];
+      driveSent = [];
     },
   };
 }

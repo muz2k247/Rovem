@@ -6,6 +6,17 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (student drives; brake feedback; DECISIONS 2026-10-16)
+- The student drives: W/↑ throttle, S/↓ brake, A/D or arrows steer, from the existing key mapping. The run starts at rest with the throttle level 0. `createRunSession` takes a `drive` provider (default: throttle held, used by tests and the tunnel comparison's other lane) and records `driveSent`. No reverse in the run: the brake is not sent at rest or in reverse (game layer; `src/physics/` unchanged). Tests: rest at the start, W drives, S at rest does nothing, release coasts at −F_r/m, braking, no reverse, recovery from a reverse push, stuck, T9 with a key record at 30 and 144 fps.
+- `RunStats.brakeUsed` and a new try-this, "Brake before the cannon's line" (`tryThis.brakeFirst`), when hits were the biggest effect and the brake was never used. Force panel tests for coasting, rest and braking.
+- Tyre squeal whenever the physics reports slip (`squealTone`, `setSqueal` in `src/render/effectSounds.ts`) and skid marks behind the four wheels that fade after 4 s (`src/render/skidMarks.ts`). Presentation only.
+
+### Changed
+- `steerReturnToStraight` is `false` in `run.json` (code and tests kept; the tests switch it on in their own world). The camera follows the rover heading fully again (`CAMERA_HEADING_SHARE` 1).
+- Briefing: "Hold W to go, S to brake, A/D to steer." Slip tidbit: "Your motor or your brake pushes harder than the tyres can grip." (`runText.json`, still `placeholder: true`).
+- The tunnel comparison keeps driving the other lane with the throttle held, now stated in code and in a test.
+- Docs: DESIGN.md and DEMO_BUILD_PLAN A1, A2, A5, A7 and A12 mark the old rules superseded and keep their reasoning; CLAUDE.md's one-line project summary no longer says the rover "always drives".
+
 ### Added (demo polish, part 2: feel and finish; DECISIONS 2026-10-16)
 - Steering returns to straight: with no steer key held, the run session sends the steer input that turns the heading back toward 0 (stopping within half a step's turn). `steerReturnToStraight` in `run.json` switches it off. The session records what it sent (`steerSent`); a test replays that record with the return off and gets the same run (T9). Another test: a 0.4 s tap leaves a sideways offset and a heading back to about 0.
 - Pause: Esc or the window losing focus pauses the run, any key resumes (`src/game/run/pausableRun.ts`). Tests show a long pause changes nothing in the run.

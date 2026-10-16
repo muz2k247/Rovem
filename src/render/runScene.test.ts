@@ -129,12 +129,12 @@ function fakeAt(session: ReturnType<typeof make>['session'], xM: number) {
 
 describe('chase camera', () => {
   const wall = content.run.corridorHalfWidthM;
-  it('looks mostly down the canyon: it turns only part of the way with the rover', () => {
+  it('follows the rover heading fully (share 1); the share stays a tunable value', () => {
     const heading = 0.6;
     const pose = cameraPose(100, 0, heading, wall);
     const lookAngle = Math.atan2(pose.look.z - 0, pose.look.x - 100);
+    expect(CAMERA_HEADING_SHARE).toBe(1);
     expect(lookAngle).toBeCloseTo(heading * CAMERA_HEADING_SHARE, 9);
-    expect(lookAngle).toBeLessThan(heading / 2);
     expect(cameraPose(100, 0, 0, wall).position.z).toBe(0);
   });
   it('never ends up inside a wall, even beside it and turned', () => {
@@ -156,5 +156,37 @@ describe('chase camera', () => {
     view.setShake(0);
     view.update(session, 1 / 60);
     expect(view.camera.position.y).toBeCloseTo(2.3, 9);
+  });
+});
+
+describe('skid marks follow the physics slip flag', () => {
+  const emptyChunk = { id: 'ice-a', difficulty: 1, lengthM: 100, tiles: [{ surfaceId: 'ice', xM: [0, 100] as [number, number], zM: [-15, 15] as [number, number] }], barriers: [], boostPads: [], cannons: [], gravityZones: [] };
+  const world = { ...content, runChunks: { fieldChunks: [emptyChunk, { ...emptyChunk, id: 'ice-b' }], tunnel: content.runChunks.tunnel } };
+  const play = (brake: boolean) => {
+    const session = createRunSession({
+      content: world, rover: rover(), constants, seed: 5, input: () => 0,
+      drive: () => ({ throttleHeld: false, brakeHeld: brake }), initialState: { positionXM: 70, speedMps: 12 },
+    });
+    const view = createRunScene(session, world, 'all-terrain');
+    let slippedSteps = 0;
+    for (let i = 0; i < 60; i++) {
+      session.stepOnce();
+      if (session.state.slipping) slippedSteps++;
+      view.update(session, 1 / 120);
+    }
+    return { session, view, slippedSteps };
+  };
+  it('hard braking on ice slips, and strips appear behind the wheels', () => {
+    const { view, slippedSteps, session } = play(true);
+    expect(session.state.drivingState).toBe('Braking');
+    expect(slippedSteps).toBeGreaterThan(0);
+    expect(view.skidMarkCount).toBeGreaterThan(0);
+    for (let i = 0; i < 4 * 120 + 5; i++) view.update(session, 1 / 120); // marks fade out after a few seconds
+    expect(view.skidMarkCount).toBe(0);
+  });
+  it('coasting on ice does not slip, so no marks', () => {
+    const { view, slippedSteps } = play(false);
+    expect(slippedSteps).toBe(0);
+    expect(view.skidMarkCount).toBe(0);
   });
 });

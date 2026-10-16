@@ -42,6 +42,7 @@ export function simulateOtherLane(input: OtherLaneInput): LaneResult | undefined
     const zoneKind = course.gravityKindAt(s.positionXM, s.positionZM);
     const g = zoneKind === undefined ? constants.gravityMps2 : constants.gravityMps2 * gravityMultipliers[zoneKind];
     const surface = surfaces.get(course.surfaceIdAt(s.positionXM, s.positionZM))!;
+    // The other lane is always driven with the throttle held and no brake: a fixed, repeatable what-if, whatever the student did.
     s = step(s, { throttleHeld: true, brakeHeld: false, steer: 0 }, rover, surface, { ...constants, gravityMps2: g });
     if (course.gravityKindAt(s.positionXM, s.positionZM) !== other.kind) return { kind: other.kind, outcome: 'out', speedOutMps: s.speedMps };
     if (s.speedMps === 0 && s.throttleLevel === 1 && s.brakeLevel === 0 && s.drivingState === 'Stopped') {

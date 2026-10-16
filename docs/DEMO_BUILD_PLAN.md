@@ -17,7 +17,7 @@
 
 ## A1. The game in one paragraph
 
-The rover drives forward on its own through an endless canyon, and the student only steers. Along the way:
+The student drives a rover through an endless canyon: W/↑ throttle, S/↓ brake, A/D or ←/→ steer (changed 2026-10-16; the first design had the rover always driving and the student only steering, see A2). Along the way:
 - **Tiles:** mud slows you; sand and ice change how fast you regain or lose speed.
 - **Boost pads:** each gives a push.
 - **Cannons:** they fire sandbags at you head-on, or from behind.
@@ -28,13 +28,15 @@ The run ends when the rover hits a barrier or the canyon wall, or gets stuck in 
 ## A2. Controls, start and end of a run
 
 - **Steer:** A/D or ←/→, using the existing key mapping in `src/game/controls.ts`.
-- **Steering returns to straight (added 2026-10-16):** when no steer key is held and v > 0, the game layer sends the steer input that turns the heading back toward 0 at the normal turn rate, and sends 0 once |heading| is within half of one step's turn. `step()` is unchanged. The session records what it really sent (`steerSent`); replaying that record with `steerReturnToStraight` false gives the same run (T9). The switch is `steerReturnToStraight` in `run.json`.
+- **Steering returns to straight (added 2026-10-16, then switched off the same day after playtest; superseded, code kept):** `steerReturnToStraight` in `run.json` is now `false` and the heading stays where it was left. The code and its tests stay, and the camera follows the heading fully again (share 1; it was 0.35 while the return was on). Original rule, kept for its reasoning: when no steer key is held and v > 0, the game layer sends the steer input that turns the heading back toward 0 at the normal turn rate, and sends 0 once |heading| is within half of one step's turn. `step()` is unchanged. The session records what it really sent (`steerSent`); replaying that record with `steerReturnToStraight` false gives the same run (T9). The switch is `steerReturnToStraight` in `run.json`.
 - **Pause (added 2026-10-16):** Esc, or the window losing focus, pauses the run: no steps run and the fixed-step loop keeps its leftover time, so a pause never changes the run. Any key resumes. Esc at the briefing only skips it.
-- **Throttle:** always held. The game layer feeds `throttleHeld: true, brakeHeld: false` to `step()` every step. The student has no throttle, brake or reverse keys in the demo. S/↓ and W/↑ do nothing.
+- **Throttle and brake (changed 2026-10-16):** the student drives. W/↑ is the throttle and S/↓ the brake, from the existing key mapping. The run starts at v = 0 on the start line with the throttle level 0, and nothing happens until the student presses. Releasing the throttle coasts (physics unchanged). **No reverse in the run:** the game layer sends the brake only while the rover rolls forward (v > 0, direction forward), so S at v = 0 does nothing; `src/physics/` is not changed.
+  - **Superseded 2026-10-16:** "Throttle: always held. The game layer feeds `throttleHeld: true, brakeHeld: false` to `step()` every step. The student has no throttle, brake or reverse keys in the demo. S/↓ and W/↑ do nothing." Why it was chosen: the demo was meant to be about steering and seeing the numbers, with the fewest controls (NFR-6). It was dropped because k._muz, after playing it, wanted the student to control speed, so braking before a cannon's line and lifting off in mud are choices.
 - **Start:** a briefing card shows for 2.5 s; any key skips it. On the first run ever it waits for a key instead (`briefingSeen` in A9). Then steps start from rest at the start pose: x = 0, z = 0, heading 0, on asphalt. The throttle builds up over 1.0 s as usual. There is no countdown.
 - **The run ends at the end of the first step in which:**
   - **Crash:** the rover's footprint overlaps a barrier box, or any footprint corner has |z| > the corridor half-width. That step is undone (position, heading and distance, as for rocks) and v is set to 0. Record the crash speed as the speed at the start of that step.
   - **Stuck:** v = 0, throttle level = 1, brake level = 0 and the driving state is `Stopped`. This means mud's friction is more than the motor can beat (FR-8).
+- **Brake feedback (added 2026-10-16):** whenever `step()` reports wheel slip (`slipping`), the run plays a tyre squeal (Web Audio, in code, follows the Sound setting) and draws skid marks behind the four wheels that fade after 4 s. The existing "Wheels slipping" caption shows as before. Presentation only: no new physics and no drift model.
 - **After the run ends,** no more steps run. A crash plays a 0.5 s crash moment first (camera shake, a flash and a thud; the camera stays inside the walls); "stuck" goes straight on. Then the run report opens.
 
 ## A3. The course
@@ -140,7 +142,7 @@ These are textbook formulas. Each function gets a comment naming its formula, an
 | Head-on bag when the rover is at 1 m/s | u′ = (209 − 400)/249 = −0.767068, so the direction becomes reverse at 0.767068 m/s |
 | Above top speed on asphalt, throttle full | a = −0.02 × 9.8 = −0.196 m/s², driveForceN = 0, state `Coasting` |
 
-**If the rover is pushed into reverse:** the throttle is still held, and in reverse W brakes, so the existing reverse rules brake it to 0, flip it forward and drive on. No new code is needed for this; one test should show it happening.
+**If the rover is pushed into reverse** (a sandbag hit at low speed): W is still the throttle key, and in reverse the physics reads it as the brake, so holding W brakes it to 0, flips it forward and drives on. The game layer never sends S in reverse (it would drive the rover further backward), and one test shows the recovery.
 
 ## A6. Score, distance, unlocks
 
@@ -240,7 +242,7 @@ The signed speed along the heading is used, so a hit seen from a rover in revers
 - **Buttons:** Run again (new course) · Replay this course · Garage.
 
 **Briefing card** (2.5 s, any key skips):
-- *Drive as far as you can. Steer with A/D or ←/→. Don't hit the barriers.*
+- *Drive as far as you can. Hold W to go, S to brake, A/D to steer. Don't hit the barriers.* (changed 2026-10-16; text in `runText.json`, still a placeholder)
 - Then one line per hazard: mud slows you · boost pads push you · cannons fire sandbags · tunnels change gravity.
 
 ## A8. The garage (replaces the Build screen as the demo's first screen)
@@ -349,7 +351,7 @@ CLAUDE.md says explanations come from k._muz. So every tidbit, formula line, "tr
 ## A12. Paused or hidden, not deleted
 
 - **Paused:** M5b–M14, the questions, Knowledge, accounts and hosting. The old Build screen and test drive stay in the code, reachable only from the developer link.
-- **Kept in code, unused by the demo:** reverse controls, the steering assist and the throttle bars.
+- **Kept in code, unused by the demo:** reverse (the run never sends the brake at rest), the steering assist, the steering return (switched off) and the throttle bars.
 - **Unchanged:** T1–T10 and `npm run balance` must keep passing.
 
 ## A13. File map
