@@ -22,7 +22,7 @@ export interface ForcePanel {
   friction: ForceArrow;
   weight: ForceArrow;
   groundPush: ForceArrow;
-  /** "Balanced: constant speed" when the forward and backward values are equal, else undefined. */
+  /** "Balanced: constant speed" when the rover is moving and the forward and backward values are equal, else undefined. */
   balancedLabel: string | undefined;
 }
 
@@ -55,6 +55,6 @@ export function forcePanel(state: PhysicsState, rover: RoverSpec, surface: Surfa
     friction: { label: frictionLabel, valueN: frictionN, lengthFraction: fraction(frictionN, HORIZONTAL_SCALE_N) },
     weight: { label: 'Weight', valueN: q.weightN, lengthFraction: fraction(q.weightN, VERTICAL_SCALE_N) },
     groundPush: { label: 'Ground push', valueN: q.weightN, lengthFraction: fraction(q.weightN, VERTICAL_SCALE_N) },
-    balancedLabel: equal ? 'Balanced: constant speed' : undefined,
+    balancedLabel: equal && state.speedMps > 0 ? 'Balanced: constant speed' : undefined,
   };
 }

@@ -65,11 +65,18 @@ describe('run scene', () => {
     const { session, view } = make(7);
     view.update(fakeAt(session, 200)); // the first tunnel starts at 260 m
     const banners: string[] = [];
+    const questions: string[] = [];
     view.scene.traverse((o) => {
-      if (o.name === 'banner') banners.push(String(o.userData.text));
+      if (o.name === 'banner') {
+        banners.push(String(o.userData.text));
+        questions.push(String(o.userData.question));
+      }
     });
     const { low, high } = content.run.gravityMultipliers;
     expect(banners.sort()).toEqual([`HIGH GRAVITY ×${high}`, `LOW GRAVITY ×${low}`]);
+    // Both signs ask the question from content text: which lane keeps you faster?
+    expect(questions).toEqual([content.runText.tunnelQuestion, content.runText.tunnelQuestion]);
+    expect(content.runText.tunnelQuestion).toBe('Which lane keeps you faster?');
   });
 
   it('puts the front of the rover at the physics position (the 3D z axis is mirrored)', () => {

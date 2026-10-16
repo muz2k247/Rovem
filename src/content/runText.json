@@ -10,27 +10,30 @@
     ]
   },
   "tidbits": {
-    "mud": "Friction F = μR. In mud it can beat your motor, and then you slow down.",
+    "mud": "Friction pushes against you. In mud it can beat your motor, and then you slow down.",
     "sand": "Sand's friction is lower than your motor's force, so at top speed you hold your speed.",
     "ice": "Ice has very little friction and very little grip.",
     "boost": "An impulse changes momentum: Δv = J ÷ m. Lighter rovers gain more.",
-    "headOnHit": "Momentum is shared, not lost: m₁u₁ + m₂u₂ = (m₁ + m₂)v.",
-    "kickerHit": "A faster bag from behind shares its momentum with you.",
-    "gravity": "Gravity pulls down, not back. But it presses you into the ground, and friction grows with it. Your mass stays the same; your weight changes.",
+    "headOnHit": "You hand part of your momentum to the bag. The total stays the same, so you slow down.",
+    "kickerHit": "The bag from behind hands you some of its momentum. The total stays the same, so you speed up.",
+    "gravity": "Gravity presses you into the ground, so friction grows with it. Your mass stays the same; your weight changes.",
     "slip": "Your motor pushes harder than the tyres can grip.",
     "aboveTopSpeed": "Nothing pushes you now. Only friction slows you: Newton's first law."
   },
   "formulas": {
-    "mud": "Friction force F_r = μ_r × k_r × m × g",
+    "mud": "Friction = mud's friction × your wheels' rolling × mass × g",
     "boost": "Δv = J ÷ m",
-    "headOnHit": "m₁u₁ + m₂u₂ = (m₁ + m₂)v",
-    "kickerHit": "m₁u₁ + m₂u₂ = (m₁ + m₂)v",
+    "headOnHit": "Momentum before = momentum after: m₁u₁ + m₂u₂ = (m₁ + m₂)v",
+    "kickerHit": "Momentum before = momentum after: m₁u₁ + m₂u₂ = (m₁ + m₂)v",
     "gravity": "Weight W = m × g"
   },
+  "tunnelQuestion": "Which lane keeps you faster?",
   "tryThis": {
+    "pickLane": "Pick a lane before the tunnel: the divider is solid.",
     "stuckInHighGravity": "Try the low-gravity tunnel: less weight means less friction.",
     "smoothWheels": "Try Smooth wheels: they lose less speed in mud.",
     "heavyChassis": "Try the Heavy chassis: a heavier rover loses less speed to a sandbag.",
+    "dodgeCannon": "Dodge the cannon's line: the sandbags cost you the most speed.",
     "steerEarlier": "You crashed fast. Steer earlier.",
     "takeBoosts": "Take the boost pads: each one adds speed."
   }

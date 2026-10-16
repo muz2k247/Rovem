@@ -119,6 +119,9 @@ describe('demo run content (D2)', () => {
   it('names the bad path: text', () => {
     expect(bad((r) => delete r.runText.tidbits.mud)).toThrow(/runText\.tidbits\.mud/);
     expect(bad((r) => (r.runText.placeholder = 'yes'))).toThrow(/runText\.placeholder/);
+    expect(bad((r) => delete r.runText.tunnelQuestion)).toThrow(/runText\.tunnelQuestion/);
+    expect(bad((r) => delete r.runText.tryThis.pickLane)).toThrow(/runText\.tryThis\.pickLane/);
+    expect(bad((r) => delete r.runText.tryThis.dodgeCannon)).toThrow(/runText\.tryThis\.dodgeCannon/);
     expect(bad((r) => (r.runText.briefing.hazards = []))).toThrow(/runText\.briefing\.hazards/);
   });
 });

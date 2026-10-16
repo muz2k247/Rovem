@@ -7,6 +7,7 @@ import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/typ
 import { surfaceSpec } from '../buildFromParts.ts';
 import { footprintOverlapsCircle } from '../geometry.ts';
 import { createRunCourse, type RunCourse, type WorldCannon } from './course.ts';
+import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
 // The run rules of the endless canyon (docs/DEMO_BUILD_PLAN.md A2, A4, A6). Game layer: no rendering, no React.
 // The rover always drives: every step gets throttleHeld true, brakeHeld false. The student only steers.
@@ -31,6 +32,20 @@ export interface RunEvent {
   gripN?: number;
   gravityKind?: GravityKind;
   gravityMultiplier?: number;
+  // The numbers behind the worked formulas (DECISIONS 2026-10-16). Signed velocities are along the heading.
+  massKg?: number;
+  gravityMps2?: number;
+  /** μ_r and μ_g of the surface just entered; k_r and k_g of the wheels. */
+  surfaceRolling?: number;
+  surfaceGrip?: number;
+  wheelRolling?: number;
+  wheelGrip?: number;
+  impulseNs?: number;
+  otherMassKg?: number;
+  roverVelocityMps?: number;
+  otherVelocityMps?: number;
+  /** u′ after the bag: negative if the hit pushed the rover into reverse. */
+  resultVelocityMps?: number;
 }
 
 export interface RunEnd {
@@ -38,6 +53,8 @@ export interface RunEnd {
   /** Crash: the speed at the start of the step that crashed. Stuck: 0. */
   speedMps: number;
   obstacle?: 'barrier' | 'wall';
+  /** The crash was on the divider between the two tunnel lanes. */
+  atDivider?: boolean;
   /** The gravity zone the rover was in when it ended, if any. */
   gravityKind?: GravityKind;
 }
@@ -46,6 +63,10 @@ export interface GravityZoneUse {
   kind: GravityKind;
   speedInMps: number;
   speedOutMps: number;
+  /** How the rover left the lane: out of the far end, stuck in it, or crashed in it. */
+  outcome: 'out' | 'stuck' | 'crash';
+  /** The other lane, driven straight from the same entry state. Undefined if the zone has no second lane. */
+  other?: LaneResult;
 }
 
 /** Per-run totals for the report. Speed changes are in m/s. */
@@ -61,6 +82,8 @@ export interface RunStats {
   kickerHits: number;
   gravityZones: GravityZoneUse[];
   maxSpeedMps: number;
+  /** The first event of each kind in this run: the report works its formulas with these numbers. */
+  firstEvents: Partial<Record<EventKind, RunEvent>>;
 }
 
 export interface Bag {
@@ -122,6 +145,7 @@ export function createRunSession(options: RunSessionOptions) {
   let currentSurfaceId = 'asphalt';
   let currentZone: GravityKind | undefined;
   let zoneEntrySpeedMps = 0;
+  let zoneEntryState: PhysicsState = state;
   let mudEntrySpeedMps = 0;
   let wasSlipping = false;
   let wasAboveTop = false;
@@ -129,14 +153,20 @@ export function createRunSession(options: RunSessionOptions) {
   function emptyStats(): RunStats {
     return {
       mudLossMps: 0, mudPatches: 0, boostGainMps: 0, boosts: 0, headOnLossMps: 0, headOnHits: 0,
-      kickerGainMps: 0, kickerHits: 0, gravityZones: [], maxSpeedMps: 0,
+      kickerGainMps: 0, kickerHits: 0, gravityZones: [], maxSpeedMps: 0, firstEvents: {},
     };
   }
 
   const gravityAt = (zone: GravityKind | undefined): number =>
     zone === undefined ? constants.gravityMps2 : constants.gravityMps2 * run.gravityMultipliers[zone];
 
-  const record = (event: RunEvent) => events.push(event);
+  /** u: +v forward, −v in reverse (momentum.ts). */
+  const signed = (s: PhysicsState) => (s.direction === 'forward' ? s.speedMps : -s.speedMps);
+
+  const record = (event: RunEvent) => {
+    events.push(event);
+    if (event.kind !== 'crash' && event.kind !== 'stuck') stats.firstEvents[event.kind] ??= event;
+  };
 
   /** Recomputed from the build for the surface and gravity in force (for the captions). */
   const quantities = (surfaceId: string, zone: GravityKind | undefined) =>
@@ -188,9 +218,14 @@ export function createRunSession(options: RunSessionOptions) {
       // The bag and the rover move off together: m₁u₁ + m₂u₂ = (m₁ + m₂)u′, along the heading.
       const bagSpeed = bag.kind === 'headOn' ? -bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps;
       const before = state.speedMps;
-      state = shareMomentum(state, rover.massKg, bagSpec.massKg, bagSpeed * Math.cos(state.headingRad));
+      const roverBefore = state;
+      const bagAlongHeading = bagSpeed * Math.cos(state.headingRad);
+      state = shareMomentum(state, rover.massKg, bagSpec.massKg, bagAlongHeading);
       const after = state.speedMps;
-      record({ kind: bag.kind === 'headOn' ? 'headOnHit' : 'kickerHit', timeS: t, xM: state.positionXM, speedBeforeMps: before, speedAfterMps: after });
+      record({
+        kind: bag.kind === 'headOn' ? 'headOnHit' : 'kickerHit', timeS: t, xM: state.positionXM, speedBeforeMps: before, speedAfterMps: after,
+        massKg: rover.massKg, otherMassKg: bagSpec.massKg, roverVelocityMps: signed(roverBefore), otherVelocityMps: bagAlongHeading, resultVelocityMps: signed(state),
+      });
       if (bag.kind === 'headOn') {
         stats.headOnHits += 1;
         stats.headOnLossMps += before - after;
@@ -202,8 +237,10 @@ export function createRunSession(options: RunSessionOptions) {
     bags = remaining;
   }
 
-  function endZone(speedOutMps: number) {
-    if (currentZone !== undefined) stats.gravityZones.push({ kind: currentZone, speedInMps: zoneEntrySpeedMps, speedOutMps });
+  function endZone(speedOutMps: number, outcome: GravityZoneUse['outcome']) {
+    if (currentZone === undefined) return;
+    const other = simulateOtherLane({ course, rover, constants, surfaces: specs, gravityMultipliers: run.gravityMultipliers, entry: zoneEntryState });
+    stats.gravityZones.push({ kind: currentZone, speedInMps: zoneEntrySpeedMps, speedOutMps, outcome, ...(other ? { other } : {}) });
   }
 
   /** A run that ends inside a mud patch still counts the speed lost in it. */
@@ -218,8 +255,8 @@ export function createRunSession(options: RunSessionOptions) {
     if (ended) return;
     if (stopAtStep !== undefined && state.stepCount >= stopAtStep) return;
     const prev = state;
-    const prevZone = course.gravityKindAt(prev.positionXM, prev.positionZM);
     course.ensureAhead(prev.positionXM + GENERATE_AHEAD_M);
+    const prevZone = course.gravityKindAt(prev.positionXM, prev.positionZM);
 
     // 2–3. Surface and gravity at the front, then the physics step.
     const surface = specs.get(course.surfaceIdAt(prev.positionXM, prev.positionZM))!;
@@ -237,9 +274,9 @@ export function createRunSession(options: RunSessionOptions) {
     const hit = course.barrierHit(next.positionXM, next.positionZM, next.headingRad, footprint.lengthM, footprint.widthM);
     if (hit) {
       state = { ...next, positionXM: prev.positionXM, positionZM: prev.positionZM, headingRad: prev.headingRad, distanceM: prev.distanceM, speedMps: 0 };
-      endZone(prev.speedMps);
+      endZone(prev.speedMps, 'crash');
       closeOpenMud(prev.speedMps);
-      ended = { cause: 'crash', speedMps: prev.speedMps, obstacle: hit.kind, gravityKind: prevZone };
+      ended = { cause: 'crash', speedMps: prev.speedMps, obstacle: hit.kind, ...(hit.atDivider ? { atDivider: true } : {}), gravityKind: prevZone };
       record({ kind: 'crash', timeS: t, xM: state.positionXM, speedBeforeMps: prev.speedMps, speedAfterMps: 0 });
       return;
     }
@@ -250,7 +287,10 @@ export function createRunSession(options: RunSessionOptions) {
       usedPads.add(pad.id);
       const before = state.speedMps;
       state = applyImpulse(state, rover.massKg, run.boostImpulseNs * Math.cos(state.headingRad));
-      record({ kind: 'boost', timeS: t, xM: state.positionXM, speedBeforeMps: before, speedAfterMps: state.speedMps });
+      record({
+        kind: 'boost', timeS: t, xM: state.positionXM, speedBeforeMps: before, speedAfterMps: state.speedMps,
+        massKg: rover.massKg, impulseNs: run.boostImpulseNs * Math.cos(state.headingRad),
+      });
       stats.boosts += 1;
       stats.boostGainMps += state.speedMps - before;
     }
@@ -276,31 +316,45 @@ export function createRunSession(options: RunSessionOptions) {
       if (surfaceId === 'mud') mudEntrySpeedMps = state.speedMps;
       if (surfaceId === 'mud' || surfaceId === 'sand' || surfaceId === 'ice') {
         const zone = course.gravityKindAt(state.positionXM, state.positionZM);
-        record({ kind: surfaceId, timeS: t, xM: state.positionXM, surfaceId, frictionN: quantities(surfaceId, zone).rollingForceN });
+        record({
+          kind: surfaceId, timeS: t, xM: state.positionXM, surfaceId, frictionN: quantities(surfaceId, zone).rollingForceN,
+          massKg: rover.massKg, gravityMps2: gravityAt(zone), surfaceRolling: specs.get(surfaceId)!.rollingFriction, wheelRolling: rover.rollingFactor,
+        });
       }
       currentSurfaceId = surfaceId;
     }
     const zone = course.gravityKindAt(state.positionXM, state.positionZM);
     if (zone !== currentZone) {
-      endZone(state.speedMps);
+      endZone(state.speedMps, 'out');
       currentZone = zone;
       zoneEntrySpeedMps = state.speedMps;
+      zoneEntryState = state;
       if (zone !== undefined) {
         const multiplier = run.gravityMultipliers[zone];
-        record({ kind: 'gravity', timeS: t, xM: state.positionXM, gravityKind: zone, gravityMultiplier: multiplier, weightN: rover.massKg * gravityAt(zone) });
+        record({ kind: 'gravity', timeS: t, xM: state.positionXM, gravityKind: zone, gravityMultiplier: multiplier, weightN: rover.massKg * gravityAt(zone),
+          massKg: rover.massKg, gravityMps2: gravityAt(zone),
+        });
       }
     }
     if (next.slipping && !wasSlipping) {
-      record({ kind: 'slip', timeS: t, xM: state.positionXM, gripN: quantities(surfaceId, zone).gripLimitN });
+      record({
+        kind: 'slip', timeS: t, xM: state.positionXM, gripN: quantities(surfaceId, zone).gripLimitN,
+        massKg: rover.massKg, gravityMps2: gravityAt(zone), surfaceGrip: specs.get(surfaceId)!.grip, wheelGrip: rover.gripFactor,
+      });
     }
     wasSlipping = next.slipping;
     const aboveTop = next.drivingState === 'Coasting' && next.throttleLevel > 0;
-    if (aboveTop && !wasAboveTop) record({ kind: 'aboveTopSpeed', timeS: t, xM: state.positionXM, speedBeforeMps: state.speedMps });
+    if (aboveTop && !wasAboveTop) {
+      record({
+        kind: 'aboveTopSpeed', timeS: t, xM: state.positionXM, speedBeforeMps: state.speedMps,
+        frictionN: quantities(surfaceId, zone).rollingForceN, massKg: rover.massKg,
+      });
+    }
     wasAboveTop = aboveTop;
 
     // 8. Stuck: the motor at full strength, no brake, and still at rest: friction beats the motor (FR-8).
     if (state.speedMps === 0 && state.throttleLevel === 1 && state.brakeLevel === 0 && state.drivingState === 'Stopped') {
-      endZone(0);
+      endZone(0, 'stuck');
       closeOpenMud(0);
       ended = { cause: 'stuck', speedMps: 0, gravityKind: zone };
       record({ kind: 'stuck', timeS: t, xM: state.positionXM, speedBeforeMps: 0, speedAfterMps: 0 });
@@ -363,6 +417,7 @@ export function createRunSession(options: RunSessionOptions) {
       stats = emptyStats();
       currentSurfaceId = 'asphalt';
       currentZone = undefined;
+      zoneEntryState = state;
       wasSlipping = false;
       wasAboveTop = false;
     },

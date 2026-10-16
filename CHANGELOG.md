@@ -6,6 +6,21 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (demo polish, part 1: the teaching; DECISIONS 2026-10-16)
+- Worked formulas: `workedLine` in `src/game/run/feedback.ts` fills each formula with the run's own numbers (friction, boost, both sandbag hits, weight, grip, above top speed). First-time captions show it under the main line; every report effect shows the first such event's. Run events now carry the numbers behind them (`RunEvent`), and `RunStats.firstEvents` keeps the first of each kind.
+- Tunnel comparison: `src/game/run/tunnelCompare.ts` drives the other lane straight from the same entry state with `step()` and that lane's g. The report shows both lanes (`You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s`, or `stuck`). A test shows it equals a real run down the other lane (four entry cases and two stuck cases). The tunnel signs ask "Which lane keeps you faster?" (`tunnelQuestion` in `runText.json`).
+- Try-this rules: *pick a lane before the tunnel* (crash on the divider; `BarrierHit.atDivider`) and *dodge the cannon's line* (hits biggest, Heavy chassis locked).
+- `course.gravityZonesAt(x)`.
+
+### Changed
+- Captions: the first-time second line is the worked formula (the tidbit moved to the report and the field log); merged hits show the total (`6 hits · 16.00 → 0.91 m/s`); every caption line is one line.
+- Force panel: weight and ground push are two separate arrows with a number each; labels no longer clip; arrows start clear of the icon; "Balanced: constant speed" only while v > 0.
+- `runText.json`: momentum wording (you hand part of your momentum to the bag; the total stays the same), the mud formula in the garage's words (no k_r), shorter gravity line, new tunnel question and two try-this lines (still `placeholder: true`).
+- DESIGN.md, DEMO_BUILD_PLAN A7, A8 and A11 match.
+
+### Fixed
+- `runSession`: the course is now generated before the first step looks up the surface and gravity, so a session that starts mid-course (tests) uses the right g on its first step. No effect on a normal run, which starts at x = 0 on empty asphalt.
+
 ### Changed
 - Demo OI-15: a kicker cannon now wakes when the rover's rear edge is 3 m past it (`sandbag.kickerWakeRearOffsetM` in `run.json`, an engineering number), not when the front is 2 m past it, so the first bag can no longer hit a rover faster than the bags. DEMO_BUILD_PLAN A4 and A10 updated.
 

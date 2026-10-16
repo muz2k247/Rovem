@@ -167,8 +167,10 @@ These are textbook formulas. Each function gets a comment naming its formula, an
 **Captions** (right edge):
 - **Layout:** at most 3 at once, newest on top.
 - **Main line:** what happened · the number that changed. Speeds to 2 decimals, forces as whole numbers.
-- **Time on screen:** 4 s, or 8 s the first time that event kind is ever seen (remembered in saved data). The first time, a one-line tidbit sits under the main line.
-- **Merging:** the same kind within 3 s merges into one caption with "×n" and the latest numbers.
+- **Time on screen:** 4 s, or 8 s the first time that event kind is ever seen (remembered in saved data).
+- **First time (changed 2026-10-16):** under the main line sits one line, the **worked formula**: the formula filled in with the real numbers of that event, from pure functions in `feedback.ts` (`workedLine`). It replaces the old tidbit, which now lives in the report and the field log. Speeds in a worked formula are always m/s (the formulas only hold in m/s); in km/h mode the line says "(formulas use m/s)".
+- **One line each:** a caption's main line and its formula are each a single line, never wrapped. Longer text goes to the report and the field log.
+- **Merging:** the same kind within 3 s merges into one caption with "×n" and the latest numbers. **Hits** (sandbag and kicker) merge into the total instead: `6 hits · 16.00 → 0.91 m/s`, from the speed before the first hit to the speed after the last. The worked formula stays the first hit's.
 - **Never:** pauses, slow-motion or modal dialogs.
 
 | Event | Main line example |
@@ -179,7 +181,21 @@ These are textbook formulas. Each function gets a comment naming its formula, an
 | Kicker hit | `Kicker hit · 16.00 → 18.25 m/s` |
 | Enter a gravity zone | `Gravity ×2 · weight 4096 N` |
 | Wheels start slipping | `Wheels slipping · grip 512 N` |
-| Going above top speed | `Above top speed · motor can't push` |
+| Above top speed | `Above top speed · motor can't push` |
+
+**Worked formulas** (second line of a first-time caption, and the report). All values are the run's own; these use the starting build (m = 209 kg, g = 9.8):
+
+| Event | Worked line |
+|---|---|
+| Mud, sand, ice | `Friction = 0.6 × 1 × 209 × 9.8 = 1229 N` (surface friction × the wheels' rolling × mass × g; the same words as the garage, no k_r) |
+| Boost | `Δv = 1200 ÷ 209 = 5.74 m/s` |
+| Head-on hit | `209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s` |
+| Kicker hit | `209 × 16.00 + 40 × 30 = 249 × v  →  v = 18.25 m/s` |
+| Gravity zone | `Weight = 209 × 19.6 = 4096 N` |
+| Wheels slipping | `Grip = 0.5 × 1 × 209 × 4.9 = 512 N` |
+| Above top speed | `a = −friction ÷ mass = −41 ÷ 209 = −0.20 m/s²` |
+
+The signed speed along the heading is used, so a hit seen from a rover in reverse shows `(−2.00)`, and a hit that pushes the rover into reverse shows a negative v. The heading's cosine is already in the bag's speed and the boost's J.
 
 **Force panel** (bottom-left corner, small, semi-transparent; switchable off in settings):
 - **Frame:** a tiny rover icon facing the direction of travel.
@@ -189,9 +205,10 @@ These are textbook formulas. Each function gets a comment naming its formula, an
   - `Coasting`: 0.
   - `Stopped`: the drive force.
 - **Backward arrow, "Friction":** F_r. While `Stopped` it shows min(F_r, drive force), so the arrows balance. While `Braking`, the label reads "Brake + friction" and the value is F_b + F_r.
-- **Down arrow "Weight" and up arrow "Ground push":** both mg.
+- **Down arrow "Weight" and up arrow "Ground push":** both mg. They are drawn as two separate arrows in their own columns under the icon (weight pointing down from the icon, ground push pointing up into it), each with its own label and number (changed 2026-10-16).
+- **Layout (changed 2026-10-16):** every arrow starts clear of the icon, every label sits above or below its own arrow, and no label is clipped.
 - **Scale:** arrow length is proportional to newtons, capped (horizontal scale 3000 N, vertical 6000 N).
-- **Label:** "Balanced: constant speed" when the forward and backward values are equal.
+- **Label:** "Balanced: constant speed" only when v > 0 and the forward and backward values are equal. At rest with equal arrows (stuck in mud) it does not show (changed 2026-10-16).
 - The panel's numbers come from a pure function in `src/game/run/forcePanel.ts`.
 
 **Gravity look:**
@@ -208,13 +225,16 @@ These are textbook formulas. Each function gets a comment naming its formula, an
   - kicker hits: total gain
   - gravity zones: the first two used, with the speed in and out of each, then "and n more"
 
-  Each effect gets one formula line from content text.
-- **One "Try this" line,** chosen by rules over the run's stats and the unlocked parts, in this order of preference:
+  Each effect gets its **worked formula** (changed 2026-10-16): the formula filled in with the numbers of the first such event in the run (the first hit, the first patch), then the longer explanation (the old tidbit) in small type.
+- **Tunnel comparison (new rule, 2026-10-16).** When the rover leaves a gravity lane (out of the far end, stuck in it, or crashed in it), the game simulates the other lane with the same build and the same entry state, straight down the middle of that lane, through that lane's zone and mud, using `step()` with that lane's g (`tunnelCompare.ts`). The gravity effect lists the first two tunnels, one line each: `You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s` (or `stuck`, or `crashed at`), then "and n more". A test shows that the comparison equals a real run down the other lane from the same entry state. It is a straight-line what-if: bags and other objects outside the tunnel chunk are not simulated. The tunnel signs carry the question "Which lane keeps you faster?" (`tunnelQuestion` in `runText.json`).
+- **One "Try this" line,** chosen by rules over the run's stats and the unlocked parts, in this order of preference (changed 2026-10-16: new rules 2 and 5):
   1. stuck in high gravity → try the low-gravity tunnel
-  2. mud was the biggest effect, and Smooth wheels are unlocked but not fitted → try Smooth wheels
-  3. hits were the biggest effect, and Heavy chassis is unlocked but not fitted → try Heavy chassis
-  4. crashed above 20 m/s → steer earlier
-  5. otherwise → take the boost pads
+  2. crashed on the divider between the tunnel lanes → pick a lane before the tunnel
+  3. mud was the biggest effect, and Smooth wheels are unlocked but not fitted → try Smooth wheels
+  4. hits were the biggest effect, and Heavy chassis is unlocked but not fitted → try Heavy chassis
+  5. hits were the biggest effect, and Heavy chassis is still locked → dodge the cannon's line
+  6. crashed above 20 m/s → steer earlier
+  7. otherwise → take the boost pads
 - **Buttons:** Run again (new course) · Replay this course · Garage.
 
 **Briefing card** (2.5 s, any key skips):
@@ -235,7 +255,7 @@ These are textbook formulas. Each function gets a comment naming its formula, an
   - boost pad: +Δv
   - sandbag hit: v_max → v′
   - weight in low and high gravity
-- **Field log:** each event kind the student has met, with its tidbit and formula. The tidbits and formulas come from content text.
+- **Field log:** each event kind the student has met, with its tidbit and its general formula in words. The tidbits and formulas come from content text. (The worked formulas with the student's own numbers are in the captions and the report.)
 - **Buttons:** Start run · Replay last course (only if a seed is saved) · Settings: speed unit (m/s or km/h, with the note "km/h = m/s × 3.6, e.g. 16 m/s × 3.6 = 57.6 km/h"), force panel on/off, sound on/off.
 - **A small footer link, "Developer: M5a test course",** opens the old Build screen and test drive. k._muz still needs it for the M5a fps and reverse checks.
 
@@ -309,13 +329,13 @@ CLAUDE.md says explanations come from k._muz. So every tidbit, formula line, "tr
 
 | Event | Tidbit |
 |---|---|
-| Mud | "Friction F = μR. In mud it can beat your motor, and then you slow down." |
+| Mud | "Friction pushes against you. In mud it can beat your motor, and then you slow down." |
 | Sand | "Sand's friction is lower than your motor's force, so at top speed you hold your speed." |
 | Ice | "Ice has very little friction and very little grip." |
 | Boost | "An impulse changes momentum: Δv = J ÷ m. Lighter rovers gain more." |
-| Head-on hit | "Momentum is shared, not lost: m₁u₁ + m₂u₂ = (m₁ + m₂)v." |
-| Kicker hit | "A faster bag from behind shares its momentum with you." |
-| Gravity | "Gravity pulls down, not back. But it presses you into the ground, and friction grows with it. Your mass stays the same; your weight changes." |
+| Head-on hit | "You hand part of your momentum to the bag. The total stays the same, so you slow down." |
+| Kicker hit | "The bag from behind hands you some of its momentum. The total stays the same, so you speed up." |
+| Gravity | "Gravity presses you into the ground, so friction grows with it. Your mass stays the same; your weight changes." |
 | Slip | "Your motor pushes harder than the tyres can grip." |
 | Above top speed | "Nothing pushes you now. Only friction slows you: Newton's first law." |
 

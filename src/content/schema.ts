@@ -420,6 +420,7 @@ function runText(raw: unknown): RunText {
     briefing: { headline: str(b, 'headline', `${p}.briefing`), hazards: hazards as string[] },
     tidbits: textMap(o.tidbits, `${p}.tidbits`, EVENT_KINDS),
     formulas: textMap(o.formulas, `${p}.formulas`, FORMULA_KINDS),
+    tunnelQuestion: str(o, 'tunnelQuestion', p),
     tryThis: textMap(o.tryThis, `${p}.tryThis`, TRY_THIS_KEYS),
   };
 }

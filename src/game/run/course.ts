@@ -40,6 +40,8 @@ export interface CourseChunk {
 
 export interface BarrierHit {
   kind: 'barrier' | 'wall';
+  /** A barrier of a tunnel chunk that straddles z = 0: the wall between the two lanes. */
+  atDivider?: boolean;
 }
 
 const contains = (r: RectM, xM: number, zM: number) => xM >= r.xM[0] && xM <= r.xM[1] && zM >= r.zM[0] && zM <= r.zM[1];
@@ -150,6 +152,10 @@ export function createRunCourse(content: Content, seed: number) {
       for (let i = c.gravityZones.length - 1; i >= 0; i--) if (contains(c.gravityZones[i]!, xM, zM)) return c.gravityZones[i]!.kind;
       return undefined;
     },
+    /** Every gravity zone of the chunk that covers x (a tunnel has two, one per lane). */
+    gravityZonesAt(xM: number): readonly WorldZone[] {
+      return chunkAt(xM)?.gravityZones ?? [];
+    },
     /** A canyon wall (a footprint corner past the corridor) or a barrier box under the footprint. Touching is safe. */
     barrierHit(frontXM: number, frontZM: number, headingRad: number, lengthM: number, widthM: number): BarrierHit | undefined {
       for (const corner of footprintCorners(frontXM, frontZM, headingRad, lengthM, widthM)) {
@@ -157,7 +163,9 @@ export function createRunCourse(content: Content, seed: number) {
       }
       for (const c of chunksInRange(frontXM - lengthM - 1, frontXM + lengthM + 1)) {
         for (const b of c.barriers) {
-          if (footprintOverlapsBox(frontXM, frontZM, headingRad, lengthM, widthM, b)) return { kind: 'barrier' };
+          if (footprintOverlapsBox(frontXM, frontZM, headingRad, lengthM, widthM, b)) {
+            return { kind: 'barrier', atDivider: c.kind === 'tunnel' && b.zM[0] < 0 && b.zM[1] > 0 };
+          }
         }
       }
       return undefined;

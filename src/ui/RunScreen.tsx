@@ -37,43 +37,67 @@ interface Hud {
   reverse: boolean;
 }
 
-/** The force panel: small, semi-transparent, bottom-left (A7). Arrow length is proportional to newtons, capped. */
+/**
+ * The force panel: small, semi-transparent, bottom-left (A7). Arrow length is proportional to newtons, capped.
+ * Layout: motor ahead of the icon and friction behind it, each with a gap so the heads clear the icon and its label
+ * sits above its own arrow; weight and ground push are two separate arrows under the icon, each with its own label.
+ */
+const PANEL_W = 280;
+const PANEL_H = 150;
+const ICON_X = 140; // centre of the rover icon
+const ICON_Y = 46;
+const ICON_HALF_W = 22;
+const NOSE = 6;
+const ARROW_GAP = 12; // clear space between the icon and an arrow tail
+const LONGEST_H = 88; // longest horizontal arrow, px
+const LONGEST_V = 40; // longest vertical arrow, px
+const HEAD = 9; // arrow head length, px
+const COLOURS = { motor: '#28d8e8', friction: '#ffb347', weight: '#c9d0e8', push: '#8fe0a0' };
+
 function ForcePanelView({ panel }: { panel: ForcePanel }) {
-  const H = 76; // longest horizontal arrow, px
-  const V = 40; // longest vertical arrow, px
-  const cx = 100;
-  const cy = 50;
-  const arrow = (x1: number, y1: number, x2: number, y2: number, color: string) => (
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={4} strokeLinecap="round" markerEnd={`url(#head-${color.slice(1)})`} />
+  // A visible arrow is never shorter than its head.
+  const length = (fraction: number, longest: number) => (fraction > 0 ? Math.max(HEAD + 2, longest * fraction) : 0);
+  const arrow = (x1: number, y1: number, x2: number, y2: number, colour: keyof typeof COLOURS) => (
+    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLOURS[colour]} strokeWidth={4} strokeLinecap="butt" markerEnd={`url(#head-${colour})`} />
   );
+  const label = (name: string, valueN: number, x: number, y: number, anchor: 'start' | 'middle' | 'end', colour: keyof typeof COLOURS) => (
+    <text x={x} y={y} fill={COLOURS[colour]} fontSize="11" textAnchor={anchor}>
+      <tspan x={x}>{name}</tspan>
+      <tspan x={x} dy="13" fontWeight="bold">
+        {valueN.toFixed(0)} N
+      </tspan>
+    </text>
+  );
+  const motorLen = length(panel.motor.lengthFraction, LONGEST_H);
+  const frictionLen = length(panel.friction.lengthFraction, LONGEST_H);
+  const weightLen = length(panel.weight.lengthFraction, LONGEST_V);
+  const pushLen = length(panel.groundPush.lengthFraction, LONGEST_V);
+  const tailFront = ICON_X + ICON_HALF_W + NOSE + ARROW_GAP;
+  const tailBack = ICON_X - ICON_HALF_W - ARROW_GAP;
+  const underY = ICON_Y + 16; // just below the icon
+  const weightX = ICON_X - 34;
+  const pushX = ICON_X + 34;
+  const labelsY = underY + LONGEST_V + 14;
   return (
     <div className="force-panel" aria-label="Forces on the rover">
-      <svg width={200} height={150} viewBox="0 0 200 150">
+      <svg width={PANEL_W} height={PANEL_H} viewBox={`0 0 ${PANEL_W} ${PANEL_H}`}>
         <defs>
-          {['#28d8e8', '#ffb347', '#c9d0e8'].map((c) => (
-            <marker key={c} id={`head-${c.slice(1)}`} markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 z" fill={c} />
+          {(Object.keys(COLOURS) as (keyof typeof COLOURS)[]).map((c) => (
+            <marker key={c} id={`head-${c}`} markerUnits="userSpaceOnUse" markerWidth={HEAD} markerHeight={HEAD + 2} refX={HEAD} refY={(HEAD + 2) / 2} orient="auto">
+              <path d={`M0,0 L${HEAD},${(HEAD + 2) / 2} L0,${HEAD + 2} z`} fill={COLOURS[c]} />
             </marker>
           ))}
         </defs>
-        <rect x={cx - 22} y={cy - 8} width={44} height={16} rx={4} fill="#e0703c" />
-        <polygon points={`${cx + 22},${cy - 5} ${cx + 28},${cy} ${cx + 22},${cy + 5}`} fill="#e0703c" />
-        {panel.motor.lengthFraction > 0 && arrow(cx + 32, cy, cx + 32 + H * panel.motor.lengthFraction, cy, '#28d8e8')}
-        {panel.friction.lengthFraction > 0 && arrow(cx - 32, cy, cx - 32 - H * panel.friction.lengthFraction, cy, '#ffb347')}
-        {arrow(cx - 8, cy + 12, cx - 8, cy + 12 + V * panel.weight.lengthFraction, '#c9d0e8')}
-        {arrow(cx + 8, cy + 12 + V * panel.groundPush.lengthFraction, cx + 8, cy + 12, '#c9d0e8')}
-        <text x={cx + 32} y={cy - 8} fill="#28d8e8" fontSize="11">
-          {panel.motor.label} {panel.motor.valueN.toFixed(0)} N
-        </text>
-        <text x={cx - 32} y={cy - 8} fill="#ffb347" fontSize="11" textAnchor="end">
-          {panel.friction.label} {panel.friction.valueN.toFixed(0)} N
-        </text>
-        <text x={cx - 6} y={140} fill="#c9d0e8" fontSize="11" textAnchor="end">
-          {panel.weight.label} {panel.weight.valueN.toFixed(0)} N
-        </text>
-        <text x={cx + 18} y={140} fill="#c9d0e8" fontSize="11">
-          {panel.groundPush.label}
-        </text>
+        <rect x={ICON_X - ICON_HALF_W} y={ICON_Y - 8} width={ICON_HALF_W * 2} height={16} rx={4} fill="#e0703c" />
+        <polygon points={`${ICON_X + ICON_HALF_W},${ICON_Y - 5} ${ICON_X + ICON_HALF_W + NOSE},${ICON_Y} ${ICON_X + ICON_HALF_W},${ICON_Y + 5}`} fill="#e0703c" />
+        {motorLen > 0 && arrow(tailFront, ICON_Y, tailFront + motorLen, ICON_Y, 'motor')}
+        {frictionLen > 0 && arrow(tailBack, ICON_Y, tailBack - frictionLen, ICON_Y, 'friction')}
+        {label(panel.motor.label, panel.motor.valueN, tailFront, ICON_Y - 26, 'start', 'motor')}
+        {label(panel.friction.label, panel.friction.valueN, tailBack, ICON_Y - 26, 'end', 'friction')}
+        {weightLen > 0 && arrow(weightX, underY, weightX, underY + weightLen, 'weight')}
+        {pushLen > 0 && arrow(pushX, underY + pushLen, pushX, underY, 'push')}
+        {label(panel.weight.label, panel.weight.valueN, weightX, labelsY, 'middle', 'weight')}
+        {label(panel.groundPush.label, panel.groundPush.valueN, pushX, labelsY, 'middle', 'push')}
       </svg>
       {panel.balancedLabel && <div className="balanced">{panel.balancedLabel}</div>}
     </div>
@@ -121,7 +145,13 @@ function ReportOverlay({
             {report.effects.map((e) => (
               <li key={e.kind}>
                 <strong>{e.label}</strong>
-                <em>{e.formula}</em>
+                {e.detail.map((line) => (
+                  <span key={line} className="detail">
+                    {line}
+                  </span>
+                ))}
+                {e.worked && <em>{e.worked}</em>}
+                <small>{e.why}</small>
               </li>
             ))}
           </ul>
@@ -268,7 +298,7 @@ export function RunScreen({
 
       for (; eventsHandled < session.events.length; eventsHandled++) {
         const event = session.events[eventsHandled]!;
-        const pushed = pushCaption(feed, event, event.timeS, { seenKinds, text: content.runText, unit: unitRef.current });
+        const pushed = pushCaption(feed, event, event.timeS, { seenKinds, unit: unitRef.current });
         feed = pushed.feed;
         if (pushed.firstTime) seenKinds.add(event.kind as EventKind);
       }
@@ -339,7 +369,7 @@ export function RunScreen({
           {hud.captions.map((c) => (
             <div key={c.id} className="caption">
               <strong>{c.label}</strong>
-              {c.tidbit && <span>{c.tidbit}</span>}
+              {c.worked && <span>{c.worked}</span>}
             </div>
           ))}
         </div>

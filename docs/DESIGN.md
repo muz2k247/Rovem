@@ -23,9 +23,9 @@ The run ends when the rover hits a barrier or the canyon wall (crash), or gets s
 ### How the learning works
 
 Learning by play, with no questions: the game shows the student's own numbers at the moment something happens.
-- **Captions** at the right edge name the event and the number that changed (e.g. `Boost · 16.00 → 21.74 m/s`). The first time an event kind is seen, a one-line tidbit explains it.
-- **Force panel** (bottom-left): arrows for motor, friction, weight and ground push, with a "Balanced: constant speed" label at top speed.
-- **Run report** when the run ends: the cause, up to 3 effects ranked by size, a formula line for each, and one "Try this" tip.
+- **Captions** at the right edge name the event and the number that changed (e.g. `Boost · 16.00 → 21.74 m/s`). Every caption line is one line. The first time an event kind is seen, a second line shows the formula worked with the student's own numbers (e.g. `209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s`). Hits that come close together merge into one caption with the total (`6 hits · 16.00 → 0.91 m/s`). (Worked formulas: DECISIONS 2026-10-16.)
+- **Force panel** (bottom-left): arrows for motor, friction, weight and ground push (two separate arrows, each with its number), with a "Balanced: constant speed" label only while the rover is moving and the forces balance.
+- **Run report** when the run ends: the cause, up to 3 effects ranked by size, each with its formula worked with the numbers of the first such event in the run, and one "Try this" tip. After a gravity tunnel the report shows both lanes: the lane the student took, and the other lane driven straight with the same build and entry state (e.g. `You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s`). The tunnel signs ask "Which lane keeps you faster?". (Tunnel comparison: DECISIONS 2026-10-16.)
 - **Garage** (the first screen): three slots (Body, Wheels, Motor) and a panel showing, with the physics functions' own numbers, what the rover will do in mud, on a boost pad, under a sandbag hit and in each gravity. A field log keeps the tidbits.
 
 ### New physics (all textbook formulas, in `src/physics/`)

@@ -85,23 +85,25 @@ function boxAt(material: THREE.Material, x: readonly [number, number], z: readon
   return mesh;
 }
 
-function bannerTexture(text: string, colour: string): THREE.Texture | undefined {
+function bannerTexture(text: string, question: string, colour: string): THREE.Texture | undefined {
   if (typeof document === 'undefined') return undefined; // Node tests have no canvas
   const canvas = document.createElement('canvas');
   canvas.width = 512;
-  canvas.height = 128;
+  canvas.height = 192;
   const g = canvas.getContext('2d');
   if (!g) return undefined;
   g.fillStyle = colour;
-  g.fillRect(0, 0, 512, 128);
+  g.fillRect(0, 0, 512, 192);
   g.strokeStyle = '#f1f1ec';
   g.lineWidth = 6;
-  g.strokeRect(6, 6, 500, 116);
+  g.strokeRect(6, 6, 500, 180);
   g.fillStyle = '#f1f1ec';
   g.font = 'bold 54px system-ui, sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(text, 256, 68);
+  g.fillText(text, 256, 66);
+  g.font = 'bold 40px system-ui, sans-serif';
+  g.fillText(question, 256, 134);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -219,16 +221,18 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
       const low = zone.kind === 'low';
       group.add(boxAt(low ? materials.roofLow : materials.roofHigh, zone.xM, zone.zM, ROOF_HEIGHT_M, 0.3, 'roof'));
       const text = `${low ? 'LOW' : 'HIGH'} GRAVITY ×${run.gravityMultipliers[zone.kind]}`;
-      const texture = bannerTexture(text, low ? '#2d5f9a' : '#a8501c');
+      const question = content.runText.tunnelQuestion;
+      const texture = bannerTexture(text, question, low ? '#2d5f9a' : '#a8501c');
       if (texture) textures.push(texture);
       const sign = new THREE.Mesh(
-        new THREE.PlaneGeometry(5, 1.25),
+        new THREE.PlaneGeometry(5, 1.875),
         new THREE.MeshBasicMaterial({ color: texture ? 0xffffff : low ? 0x2d5f9a : 0xa8501c, map: texture ?? null, side: THREE.DoubleSide }),
       );
       sign.name = 'banner';
       sign.userData.text = text;
+      sign.userData.question = question;
       sign.rotation.y = -Math.PI / 2; // faces the rover coming from −x
-      sign.position.set(zone.xM[0] + 0.5, ROOF_HEIGHT_M - 0.9, -(zone.zM[0] + zone.zM[1]) / 2);
+      sign.position.set(zone.xM[0] + 0.5, ROOF_HEIGHT_M - 1.2, -(zone.zM[0] + zone.zM[1]) / 2);
       group.add(sign);
     }
     ownedTextures.set(c.index, textures);

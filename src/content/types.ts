@@ -234,7 +234,7 @@ export type EventKind = (typeof EVENT_KINDS)[number];
 export const FORMULA_KINDS = ['mud', 'boost', 'headOnHit', 'kickerHit', 'gravity'] as const;
 export type FormulaKind = (typeof FORMULA_KINDS)[number];
 
-export const TRY_THIS_KEYS = ['stuckInHighGravity', 'smoothWheels', 'heavyChassis', 'steerEarlier', 'takeBoosts'] as const;
+export const TRY_THIS_KEYS = ['pickLane', 'stuckInHighGravity', 'smoothWheels', 'heavyChassis', 'dodgeCannon', 'steerEarlier', 'takeBoosts'] as const;
 export type TryThisKey = (typeof TRY_THIS_KEYS)[number];
 
 /** In `runText.json`. Placeholder text until k._muz reviews it (CLAUDE.md, Questions). */
@@ -243,5 +243,7 @@ export interface RunText {
   briefing: { headline: string; hazards: string[] };
   tidbits: Record<EventKind, string>;
   formulas: Record<FormulaKind, string>;
+  /** The question on the tunnel signs. */
+  tunnelQuestion: string;
   tryThis: Record<TryThisKey, string>;
 }

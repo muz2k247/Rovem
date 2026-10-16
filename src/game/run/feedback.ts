@@ -1,6 +1,6 @@
-import type { Content, EventKind, FormulaKind, RunText } from '../../content/index.ts';
+import type { Content, EventKind, FormulaKind, GravityKind, RunText } from '../../content/index.ts';
 import { newlyUnlocked, unlockedPartIds } from './unlocks.ts';
-import type { RunEnd, RunEvent, RunStats } from './runSession.ts';
+import type { GravityZoneUse, RunEnd, RunEvent, RunStats } from './runSession.ts';
 
 // What the student reads while and after driving (docs/DEMO_BUILD_PLAN.md A7). Pure: time is passed in.
 
@@ -44,6 +44,62 @@ export function captionMain(event: RunEvent, unit: SpeedUnit): string | undefine
   }
 }
 
+// ---- Worked formulas: the formula filled in with the student's own numbers (DECISIONS 2026-10-16) ----
+
+/** A coefficient or g as the player knows it: 0.6, 1, 9.8, 19.6. */
+const plain = (n: number) => String(Number(n.toFixed(3)));
+const whole = (n: number) => String(Math.round(n));
+/** 2 decimals, with a proper minus sign and no "−0.00". */
+const two = (n: number) => {
+  const s = n.toFixed(2);
+  return s === '-0.00' ? '0.00' : s.replace('-', '−');
+};
+
+/**
+ * One line with the real numbers of an event, e.g. "209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s".
+ * Speeds in the formula stay in m/s, because the formulas only hold in m/s; km/h mode says so.
+ * Undefined for events that end a run, and for an event that lacks the numbers.
+ */
+export function workedLine(event: RunEvent, unit: SpeedUnit = 'mps'): string | undefined {
+  const e = event;
+  const note = unit === 'kmh' ? '  (formulas use m/s)' : '';
+  switch (e.kind) {
+    case 'mud':
+    case 'sand':
+    case 'ice':
+      if (e.surfaceRolling === undefined || e.wheelRolling === undefined || e.massKg === undefined || e.gravityMps2 === undefined || e.frictionN === undefined) return undefined;
+      // Friction = the surface's friction × the wheels' rolling × mass × g
+      return `Friction = ${plain(e.surfaceRolling)} × ${plain(e.wheelRolling)} × ${whole(e.massKg)} × ${plain(e.gravityMps2)} = ${whole(e.frictionN)} N`;
+    case 'boost':
+      if (e.impulseNs === undefined || e.massKg === undefined) return undefined;
+      // u′ = u + J/m, so Δv = J ÷ m
+      return `Δv = ${whole(e.impulseNs)} ÷ ${whole(e.massKg)} = ${two(e.impulseNs / e.massKg)} m/s${note}`;
+    case 'headOnHit':
+    case 'kickerHit': {
+      if (e.massKg === undefined || e.otherMassKg === undefined || e.roverVelocityMps === undefined || e.otherVelocityMps === undefined || e.resultVelocityMps === undefined) return undefined;
+      // m₁u₁ + m₂u₂ = (m₁ + m₂)v
+      const u1 = e.roverVelocityMps < 0 ? `(${two(e.roverVelocityMps)})` : two(e.roverVelocityMps);
+      const sign = e.otherVelocityMps < 0 ? '−' : '+';
+      const total = e.massKg + e.otherMassKg;
+      return `${whole(e.massKg)} × ${u1} ${sign} ${whole(e.otherMassKg)} × ${plain(Math.abs(e.otherVelocityMps))} = ${whole(total)} × v  →  v = ${two(e.resultVelocityMps)} m/s${note}`;
+    }
+    case 'gravity':
+      if (e.massKg === undefined || e.gravityMps2 === undefined || e.weightN === undefined) return undefined;
+      // W = m g
+      return `Weight = ${whole(e.massKg)} × ${plain(e.gravityMps2)} = ${whole(e.weightN)} N`;
+    case 'slip':
+      if (e.surfaceGrip === undefined || e.wheelGrip === undefined || e.massKg === undefined || e.gravityMps2 === undefined || e.gripN === undefined) return undefined;
+      // F_lim = grip of the surface × grip of the wheels × m g
+      return `Grip = ${plain(e.surfaceGrip)} × ${plain(e.wheelGrip)} × ${whole(e.massKg)} × ${plain(e.gravityMps2)} = ${whole(e.gripN)} N`;
+    case 'aboveTopSpeed':
+      if (e.frictionN === undefined || e.massKg === undefined) return undefined;
+      // a = −F_r / m
+      return `a = −friction ÷ mass = −${whole(e.frictionN)} ÷ ${whole(e.massKg)} = −${two(e.frictionN / e.massKg)} m/s²`;
+    default:
+      return undefined;
+  }
+}
+
 export interface Caption {
   id: number;
   kind: EventKind;
@@ -53,8 +109,10 @@ export interface Caption {
   count: number;
   /** Main line with the count, ready to show. */
   label: string;
-  /** Only the first time this kind of event is ever seen. */
-  tidbit: string | undefined;
+  /** The worked formula, only the first time this kind of event is ever seen (the first hit's, when hits merge). */
+  worked: string | undefined;
+  /** The speed before the first event of this caption: merged hits show the total from here. */
+  firstBeforeMps: number;
   startedS: number;
   lastS: number;
   expiresS: number;
@@ -77,11 +135,11 @@ export const MAX_VISIBLE_CAPTIONS = 3;
 export interface PushOptions {
   /** Event kinds the student has seen in any run (saved data). */
   seenKinds: ReadonlySet<EventKind>;
-  text: RunText;
   unit: SpeedUnit;
 }
 
 const labelOf = (main: string, count: number) => (count > 1 ? `${main} ×${count}` : main);
+const isHit = (kind: EventKind) => kind === 'headOnHit' || kind === 'kickerHit';
 
 /**
  * Adds an event. The same kind within 3 s merges into one caption with "×n" and the latest numbers.
@@ -100,13 +158,18 @@ export function pushCaption(
   const same = live.find((c) => c.kind === kind && nowS - c.lastS <= MERGE_WITHIN_S);
   if (same) {
     const count = same.count + 1;
-    const merged: Caption = { ...same, main, count, label: labelOf(main, count), lastS: nowS, expiresS: nowS + same.durationS };
+    // Merged hits show the total: "6 hits · 16.00 → 7.33 m/s".
+    const total = `${count} hits · ${speedChange(same.firstBeforeMps, event.speedAfterMps ?? 0, options.unit)}`;
+    const merged: Caption = isHit(kind)
+      ? { ...same, main: total, count, label: total, lastS: nowS, expiresS: nowS + same.durationS }
+      : { ...same, main, count, label: labelOf(main, count), lastS: nowS, expiresS: nowS + same.durationS };
     return { feed: { captions: live.map((c) => (c === same ? merged : c)), nextId: feed.nextId }, firstTime: false };
   }
   const firstTime = !options.seenKinds.has(kind);
   const durationS = firstTime ? FIRST_CAPTION_SECONDS : CAPTION_SECONDS;
   const caption: Caption = {
-    id: feed.nextId, kind, main, count: 1, label: main, tidbit: firstTime ? options.text.tidbits[kind] : undefined,
+    id: feed.nextId, kind, main, count: 1, label: main, worked: firstTime ? workedLine(event, options.unit) : undefined,
+    firstBeforeMps: event.speedBeforeMps ?? 0,
     startedS: nowS, lastS: nowS, expiresS: nowS + durationS, durationS,
   };
   return { feed: { captions: [...live, caption], nextId: feed.nextId + 1 }, firstTime };
@@ -127,8 +190,12 @@ export interface ReportEffect {
   label: string;
   /** Total size of the speed change in m/s, used to rank. */
   sizeMps: number;
-  /** One formula line from content text. */
-  formula: string;
+  /** The formula worked with the numbers of the first such event in the run; undefined if the run lacks them. */
+  worked: string | undefined;
+  /** The longer explanation (content text); too long for a caption. */
+  why: string;
+  /** Extra lines under the label: the tunnel comparison. */
+  detail: string[];
 }
 
 export interface RunReport {
@@ -159,36 +226,50 @@ export interface ReportInput {
   unit: SpeedUnit;
 }
 
+const laneName = (kind: GravityKind) => (kind === 'low' ? 'low gravity' : 'high gravity');
+
+/** "You: low gravity, out at 15.80 m/s · High gravity: out at 12.31 m/s" (or "stuck", or "crashed at"). */
+export function laneComparison(zone: GravityZoneUse, unit: SpeedUnit): string {
+  const you =
+    zone.outcome === 'stuck' ? 'stuck' : zone.outcome === 'crash' ? `crashed at ${speedText(zone.speedOutMps, unit)}` : `out at ${speedText(zone.speedOutMps, unit)}`;
+  const mine = `You: ${laneName(zone.kind)}, ${you}`;
+  if (!zone.other) return mine;
+  const name = laneName(zone.other.kind);
+  const theirs = zone.other.outcome === 'stuck' ? 'stuck' : `out at ${speedText(zone.other.speedOutMps, unit)}`;
+  return `${mine} · ${name[0]!.toUpperCase()}${name.slice(1)}: ${theirs}`;
+}
+
 /** Every effect that happened, largest first (before the cut to 3). */
 export function reportEffects(stats: RunStats, text: RunText, unit: SpeedUnit): ReportEffect[] {
-  const k = unit === 'kmh' ? 3.6 : 1;
   const amount = (mps: number) => speedText(Math.abs(mps), unit);
   const effects: ReportEffect[] = [];
+  const explain = (kind: FormulaKind) => {
+    const first = stats.firstEvents[kind];
+    return { worked: first && workedLine(first, unit), why: text.tidbits[kind], detail: [] as string[] };
+  };
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   if (stats.mudPatches > 0) {
     effects.push({
-      kind: 'mud', sizeMps: Math.abs(stats.mudLossMps), formula: text.formulas.mud,
+      kind: 'mud', sizeMps: Math.abs(stats.mudLossMps), ...explain('mud'),
       label: `Mud · ${stats.mudLossMps >= 0 ? 'lost' : 'gained'} ${amount(stats.mudLossMps)} over ${plural(stats.mudPatches, 'patch', 'patches')}`,
     });
   }
   if (stats.boosts > 0) {
-    effects.push({ kind: 'boost', sizeMps: Math.abs(stats.boostGainMps), formula: text.formulas.boost, label: `Boosts · gained ${amount(stats.boostGainMps)} from ${plural(stats.boosts, 'pad', 'pads')}` });
+    effects.push({ kind: 'boost', sizeMps: Math.abs(stats.boostGainMps), ...explain('boost'), label: `Boosts · gained ${amount(stats.boostGainMps)} from ${plural(stats.boosts, 'pad', 'pads')}` });
   }
   if (stats.headOnHits > 0) {
-    effects.push({ kind: 'headOnHit', sizeMps: Math.abs(stats.headOnLossMps), formula: text.formulas.headOnHit, label: `Sandbag hits · lost ${amount(stats.headOnLossMps)} in ${plural(stats.headOnHits, 'hit', 'hits')}` });
+    effects.push({ kind: 'headOnHit', sizeMps: Math.abs(stats.headOnLossMps), ...explain('headOnHit'), label: `Sandbag hits · lost ${amount(stats.headOnLossMps)} in ${plural(stats.headOnHits, 'hit', 'hits')}` });
   }
   if (stats.kickerHits > 0) {
-    effects.push({ kind: 'kickerHit', sizeMps: Math.abs(stats.kickerGainMps), formula: text.formulas.kickerHit, label: `Kicker hits · gained ${amount(stats.kickerGainMps)} in ${plural(stats.kickerHits, 'hit', 'hits')}` });
+    effects.push({ kind: 'kickerHit', sizeMps: Math.abs(stats.kickerGainMps), ...explain('kickerHit'), label: `Kicker hits · gained ${amount(stats.kickerGainMps)} in ${plural(stats.kickerHits, 'hit', 'hits')}` });
   }
   if (stats.gravityZones.length > 0) {
-    const MAX_SHOWN = 2; // a long run passes many tunnels; the label lists the first few
+    const MAX_SHOWN = 2; // a long run passes many tunnels; the report lists the first few
     const shown = stats.gravityZones.slice(0, MAX_SHOWN);
     const more = stats.gravityZones.length - shown.length;
-    const used = shown
-      .map((z) => `${z.kind === 'low' ? 'Low' : 'High'} gravity ${(z.speedInMps * k).toFixed(2)} → ${speedText(z.speedOutMps, unit)}`)
-      .join(', ');
     effects.push({
-      kind: 'gravity', formula: text.formulas.gravity, label: `Gravity zones · ${used}${more > 0 ? ` and ${more} more` : ''}`,
+      kind: 'gravity', ...explain('gravity'), label: `Gravity · ${plural(stats.gravityZones.length, 'tunnel', 'tunnels')}`,
+      detail: [...shown.map((z) => laneComparison(z, unit)), ...(more > 0 ? [`and ${more} more`] : [])],
       sizeMps: stats.gravityZones.reduce((sum, z) => sum + Math.abs(z.speedOutMps - z.speedInMps), 0),
     });
   }
@@ -205,10 +286,12 @@ export function tryThisLine(
 ): string {
   const biggest = effectsRanked[0]?.kind;
   if (ended.cause === 'stuck' && ended.gravityKind === 'high') return text.tryThis.stuckInHighGravity;
+  if (ended.atDivider) return text.tryThis.pickLane;
   if (biggest === 'mud' && unlockedIds.includes('wheels-smooth') && fitted.wheelsId !== 'wheels-smooth') return text.tryThis.smoothWheels;
   if ((biggest === 'headOnHit' || biggest === 'kickerHit') && unlockedIds.includes('chassis-heavy') && fitted.chassisId !== 'chassis-heavy') {
     return text.tryThis.heavyChassis;
   }
+  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !unlockedIds.includes('chassis-heavy')) return text.tryThis.dodgeCannon;
   if (ended.cause === 'crash' && ended.speedMps > 20) return text.tryThis.steerEarlier;
   return text.tryThis.takeBoosts;
 }
