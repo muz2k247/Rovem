@@ -1,0 +1,48 @@
+{
+  "crater": { "depthM": 5, "wallAngleDeg": 25, "rampAngleDeg": 12 },
+  "hills": { "maxHeightM": 4, "minLengthM": 60, "minCrestRadiusM": 50 },
+  "ringRoad": { "radiiM": [12, 25, 30, 40], "widthM": 10, "ringRadiusM": 30, "ringArcDeg": 270, "laps": 2 },
+  "water": {
+    "densityKgPerM3": 1000,
+    "roverVolumeM3": 0.2,
+    "submersionHeightM": 1.0,
+    "dragNsPerM": 150,
+    "depthsM": [0.3, 0.5, 1.0],
+    "channelWidthM": 10
+  },
+  "magnet": {
+    "maxForceN": 1600,
+    "fullWithinM": 5,
+    "cutoffM": 25,
+    "cycleOnS": 3,
+    "cycleOffS": 2,
+    "sidewaysCutoffMps": 0.5,
+    "startPole": "S"
+  },
+  "track": { "widthM": 10, "runoffWidthM": 4 },
+  "pacing": { "levelLengthMinS": 90, "levelLengthMaxS": 150, "checkpointSpacingS": 30 },
+  "par": { "factor": 1.15, "roundUpToS": 5 },
+  "captions": { "minShowS": 2.5, "maxLines": 2 },
+  "forceLine": { "minAccelMps2": 0.1, "minDurationS": 0.3, "balancedShowS": 2 },
+  "arrows": {
+    "baseLengthM": 0.5,
+    "perForceM": 2.5,
+    "referenceForceN": 2000,
+    "maxLengthM": 3,
+    "hideBelowN": 20,
+    "flashS": 0.6,
+    "colours": {
+      "push": "#E8743B",
+      "brake": "#E8743B",
+      "impulse": "#E8743B",
+      "friction": "#63C7E6",
+      "drag": "#63C7E6",
+      "weight": "#B49CFF",
+      "slope": "#B49CFF",
+      "upthrust": "#6FD08C",
+      "turning": "#F2C14E",
+      "magnet": "#F2C14E"
+    }
+  },
+  "developerUnlockQuery": "unlock=all"
+}

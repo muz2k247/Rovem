@@ -1,14 +1,45 @@
 # Rovem — Game design
 
-This file holds two designs. **Demo v3** (the endless canyon run) is the current work. **Game design v2** (from the heading "Game design v2 (paused 2026-10-14, not superseded)" down) is paused, not superseded.
+This file holds three designs. **Game v4: concept levels** is the current work. **Demo v3** (the endless canyon run) is built and kept as the game's Endless Canyon mode. **Game design v2** (from the heading "Game design v2 (superseded 2026-10-17)" down) is superseded; its text and reasoning are kept.
 
-## Demo v3: endless canyon run (approved 2026-10-14)
+## Game v4: concept levels (approved 2026-10-17)
+
+**Status: approved by k._muz in chat on 2026-10-17** (DECISIONS 2026-10-17). The full design, every number and the session prompts are in [`docs/LEVELS_BUILD_PLAN.md`](LEVELS_BUILD_PLAN.md); where they differ, that file governs. Screens: wireframes v2, https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh. All new values are *provisional*.
+
+**Why.** The advisor saw Demo v3 and asked for clearer, less cluttered UI; levels that each introduce one concept; a proper rover whose parts show; craters and hills, magnetism, circular motion, water, varied atmosphere; and the "two paths" choice he remembered from Part 1.
+
+**The game.** Home → Levels → a level (intro card, drive, report) → the next level. Eight levels of 90–150 s, each teaching one idea; level names, never chapter names:
+
+| # | Level | Idea | What the student does |
+|---|---|---|---|
+| 1 | First Tracks | speed, acceleration, braking, F = ma | go, coast, stop inside a box, steer, reverse |
+| 2 | Fork in the Road | friction, choosing a route | from a stop line, pick the long asphalt road or a short sand, ice or mud road; the game then shows the other road's time for the same build |
+| 3 | Push & Shove | momentum, impulse | boost pads and sandbag cannons |
+| 4 | Ring Road | circular motion | a circuit with bends of 12, 25 and 40 m and a 30 m ring; too fast and the tyres can't hold the turn |
+| 5 | Gravity Wells | mass and weight | low- and high-gravity lanes |
+| 6 | Crater Field | slopes, kinetic and potential energy | coast over hills, climb out of craters, roll back if too slow |
+| 7 | The Crossing | density, upthrust, pressure | ford rivers; light rovers float and lose grip |
+| 8 | Polar Pass | magnetism, electromagnets | flip the rover's pole (Space) to be pulled or pushed by pylons |
+
+Plus **Endless Canyon** (Demo v3, the high-score mode) and a locked **Dust Storm** card (wind, next round). Levels open in order; a hidden developer link opens everything for demos. All parts are open everywhere. Each level has 3 stars (finish, par time, its challenge) and checkpoints; a crash returns the rover to the last checkpoint.
+
+**How the learning works now.** On screen only what teaches something at that moment: force arrows on the rover for the level's forces only, one short caption at a time with the student's number, and an F = ma line only while the speed changes. The worked formulas move to the report, behind "Show the maths", next to a speed–time graph with the moments that mattered. The force panel is gone.
+
+**New physics** (textbook formulas; T1–T10 and the balance counts unchanged): ground push R = mg cos θ − U; slope pull mg sin θ and rolling back; water upthrust ρ g V and drag; magnet forces (framed as super electromagnets; only the Grade 9 rules are shown in the game); the turning limit uses R. Circular motion already follows from the drifting rule.
+
+**Not this round:** wind, flying off crests, new elements in Endless, questions and Knowledge (still paused), accounts.
+
+---
+
+## Demo v3: endless canyon run (approved 2026-10-14; built; kept as the Endless Canyon mode of Game v4)
+
+*Changed 2026-10-17 by Game v4:* the force panel is replaced by force arrows and the new HUD and report; the best-distance unlock ladder is dropped (all parts are open). The physics and the course are unchanged.
 
 **Status: approved by k._muz in chat on 2026-10-14** (DECISIONS, 2026-10-14). The full detail, with every number, the chunk layouts and the session prompts, is in [`docs/DEMO_BUILD_PLAN.md`](DEMO_BUILD_PLAN.md), Part A. This section is the summary; where they differ, Part A governs. All demo values are *provisional* (see DECISIONS for which k._muz approved and which Claude chose).
 
 **Why it exists.** The student's advisor ruled out multiple-choice questions: students must learn by playing. He asked for a playable demo of the idea, on even one topic, and the direction after the demo is decided once he has seen it. So the demo is not the MVP. It is one game mode that shows the idea: physics is the thing you play with, and the game shows you your own numbers.
 
-**Relationship to design v2.** Design v2 is **paused, not superseded**. Nothing in it is withdrawn, and all its sections and reasoning stay below. Whether v2 resumes, changes or is dropped is decided after the advisor has seen the demo. Until then the milestones M5b–M14 and Q1–Q3 are paused (`docs/ROADMAP.md`).
+**Relationship to design v2.** *(Superseded 2026-10-17: v2 is now superseded by Game v4; the text below is as written on 2026-10-14.)* Design v2 is **paused, not superseded**. Nothing in it is withdrawn, and all its sections and reasoning stay below. Whether v2 resumes, changes or is dropped is decided after the advisor has seen the demo. Until then the milestones M5b–M14 and Q1–Q3 are paused (`docs/ROADMAP.md`).
 
 ### The game
 
@@ -55,7 +86,11 @@ A run plays from the garage to the report and back; each object behaves as speci
 
 ---
 
-# Game design v2 (paused 2026-10-14, not superseded)
+# Game design v2 (superseded 2026-10-17)
+
+*Superseded 2026-10-17 by Game v4 (DECISIONS 2026-10-17).* Why: the advisor ruled out multiple-choice questions (2026-10-14), then, after seeing Demo v3, asked for levels that each introduce a concept. Missions, medals, Knowledge, the hub and the questions are not being built. What carries over: the two-roads choice of Mission 1 (now Fork in the Road, same 100 m / 85 m values), the parts, the controls, reverse and rocks. All text and reasoning below are kept as written.
+
+(Earlier heading: "Game design v2 (paused 2026-10-14, not superseded)".)
 
 **Status: approved by k._muz on 2026-10-13** (DECISIONS, 2026-10-13, "Game design v2"). Until the spec edits in `docs/PENDING_SPEC_EDITS.md` (E10–E25) are made, this file and `docs/DECISIONS.md` override the source documents wherever they differ. Values marked *provisional* are set but get tuned in playtesting. Items marked *open* must be decided by k._muz before the milestone named.
 

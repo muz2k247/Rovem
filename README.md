@@ -1,16 +1,35 @@
 # Rovem
 
-A browser-based 3D game that teaches Grade 9 Kinematics and Dynamics. Students build a rover, predict how it will behave, drive it through missions, and see the physics explained using the numbers from their own run.
+A browser-based 3D game that teaches Grade 9 physics (the newest Punjab Textbook Board book). Students build a rover, drive levels that each introduce one idea, and see the physics explained using the numbers from their own run.
 
 **Predict → Experiment → Observe → Explain → Retry**
 
-**Status:** build phase. Current milestone: see [`docs/ROADMAP.md`](docs/ROADMAP.md). Changes: see [`CHANGELOG.md`](CHANGELOG.md).
+**Status:** build phase. Current work: see [`docs/ROADMAP.md`](docs/ROADMAP.md). Changes: see [`CHANGELOG.md`](CHANGELOG.md).
 
-## Current focus: the demo
+## Current focus: Game v4, concept levels
 
-The advisor ruled out multiple-choice questions and asked for a playable demo first, so the work now is **Demo v3: an endless canyon run** where the student steers and learns by playing (mud, boost pads, sandbag cannons, gravity tunnels). The game shows the student's own numbers. The full design is in [`docs/DEMO_BUILD_PLAN.md`](docs/DEMO_BUILD_PLAN.md) and [`docs/DESIGN.md`](docs/DESIGN.md). The mission design below (game design v2) is paused, not dropped, until the direction after the demo is decided.
+After the advisor saw the demo (an endless canyon run), the game became **eight short levels, each teaching one idea, plus the Endless Canyon** as a high-score mode (approved 2026-10-17). Design and plan: [`docs/LEVELS_BUILD_PLAN.md`](docs/LEVELS_BUILD_PLAN.md); summary in [`docs/DESIGN.md`](docs/DESIGN.md).
 
-## What the MVP includes
+| Level | What it teaches |
+|---|---|
+| First Tracks | speed, acceleration, braking, F = ma |
+| Fork in the Road | friction; choosing the faster route |
+| Push & Shove | momentum and impulse |
+| Ring Road | circular motion: every bend has a safe speed |
+| Gravity Wells | mass and weight |
+| Crater Field | slopes; kinetic and potential energy |
+| The Crossing | density, upthrust, pressure |
+| Polar Pass | magnetic poles and electromagnets |
+
+- Levels open in order and last 90–150 s, with checkpoints and up to three stars each.
+- All parts (chassis, wheels, motor; three each) are open; the garage shows what each change does.
+- On screen, only what teaches something: force arrows for the level's forces, one short caption with the student's number, and the F = ma line while the speed changes. The report shows a speed–time graph and the moments that mattered, with the worked maths on request.
+- Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole and R returns to the last checkpoint.
+- Played as a guest; progress stays on the device. Questions, Knowledge and accounts are future work.
+
+## Earlier design (game design v2, superseded 2026-10-17)
+
+Kept for the record; not being built. Its reasoning is in [`docs/DESIGN.md`](docs/DESIGN.md).
 
 - **One world, three missions and a free-roam hub** (game design v2, [`docs/DESIGN.md`](docs/DESIGN.md)). The world is the Ares Proving Ground, a Mars test base. Each mission is a short job with an untimed approach and one judged trial, and earns a bronze, silver or gold medal.
   1. **Canyon Dash**: drive out through a canyon, pick a power-up, stop on the start grid. Then, from rest, reach the tower within 9 s by a 100 m road on asphalt or an 85 m shortcut across sand. Distance, time, speed, acceleration, F = ma.
@@ -27,22 +46,22 @@ All values except Knowledge rewards and unlock costs are provisional and will be
 
 ## Physics
 
-Textbook formulas, not a physics engine. g = 9.8 m/s². The simulation advances in fixed 1/120 s steps, independent of the frame rate, with no random values. The Build screen preview and the actual run use the same code. Automated tests compare the results with hand calculations and with all 135 values in the Component Values sheet's Simulation sheet.
+Textbook formulas, not a physics engine. g = 9.8 m/s². The simulation advances in fixed 1/120 s steps, independent of the frame rate, with no random values. The garage and the actual run use the same code. Automated tests compare the results with hand calculations and with all 135 values in the Component Values sheet's Simulation sheet. Game v4 adds slopes and rolling back, water (upthrust and drag), magnets, momentum events and gravity zones; every simplification is stated in the build plan (A11).
 
 ## Art
 
-Original low-poly models built in code: a Mars-like proving ground with a paved track, sand and ice, and a rover whose parts are visibly separate. The images in the wireframes are mood references only and are not used in the game. Any outside asset is listed with its licence in `docs/ASSETS.md`.
+Original low-poly models built in code: a Mars-like world with a paved track, sand, ice, mud, water, craters and magnet pylons, and a rover whose chassis, wheels and motor are visibly separate. Screens follow the wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). The images in the Mission 1 wireframes PDF are mood references only and are not used in the game. Outside assets (so far only the two OFL fonts, Space Grotesk and IBM Plex Sans) are listed with their licences in `docs/ASSETS.md`.
 
 ## Tech stack (provisional)
 
 | Area | Choice |
 |---|---|
 | Language and build | TypeScript, Vite |
-| Screens | React |
+| Screens | React; fonts Space Grotesk and IBM Plex Sans (OFL, bundled) |
 | 3D scene | three.js, used directly |
 | Physics | Own TypeScript module, no engine |
 | Tests | Vitest; run on every push with GitHub Actions |
-| Accounts and saving | Supabase: PostgreSQL, Auth, row-level security, one Edge Function |
+| Accounts and saving | Local storage now; Supabase (PostgreSQL, Auth, row-level security, one Edge Function) later |
 | Hosting | Static build served by Nginx on a Linux cloud server |
 
 ## Getting started
@@ -59,7 +78,9 @@ npm run balance    # simulate all 27 builds against the mission limits (needs No
 npm run preview    # serve the built dist/ (run npm run build first)
 ```
 
-Accounts (milestone M12) need a `.env` file; copy `.env.example`. Only the Supabase URL and public anon key go in it. The service-role key never goes in the browser build.
+Open the game with `?unlock=all` added to the address to open every level (for demos; nothing is saved).
+
+Accounts (milestone M12, later) will need a `.env` file; copy `.env.example`. Only the Supabase URL and public anon key go in it. The service-role key never goes in the browser build.
 
 ## Project structure
 
@@ -68,16 +89,16 @@ Accounts (milestone M12) need a `.env` file; copy `.env.example`. Only the Supab
 docs/        roadmap, decisions, pending spec edits, source documents
 src/
   physics/   build quantities, controls, driving states, fixed-step simulation
-  content/   parts, surfaces, missions, power-ups, questions, levels (data)
-  game/      attempt flow, rules, Knowledge, unlocks; run/ holds the demo course, run rules, feedback and garage numbers
-  render/    three.js scene and rover model; engine sound
-  ui/        React screens and dialogs
-  save/      progress storage (demo save: demoProgress.ts)
+  content/   parts, surfaces, levels and their values, the endless course, game text (data)
+  game/      rules and the HUD/report models; level/ the level engine; run/ the Endless Canyon
+  render/    three.js scenes, terrain, water, pylons, force arrows, rover model; sounds
+  ui/        React screens; hud/ and report/ components
+  save/      progress and settings storage on the device
 tests/       shared test fixtures and helpers, and the sheet regression test (T10)
 scripts/     balance report
 ```
 
-`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The demo adds the garage, run screen and run scene (D5–D6) and the demo save (D4). The other folders are created as the milestones need them.
+`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The demo added the garage, run screen and run scene (D5–D6) and the demo save (D4). Game v4 adds `src/game/level/`, `src/ui/hud/` and `src/ui/report/` (LEVELS_BUILD_PLAN B3). Other folders are created as the work needs them.
 
 ## Documentation
 
@@ -89,11 +110,12 @@ scripts/     balance report
 | `docs/specs/Rovem_Component_Values.xlsx` | Part, surface, mission and power-up values; simulation results |
 | `docs/specs/Rovem_Tech_Stack_and_Mission_1_Plan.pdf` | Stack and prototype milestones |
 | `docs/specs/Rovem_Architecture_Diagram.pdf` | System overview |
-| `docs/specs/Rovem_Wireframes_Mission_1.pdf` | Mission 1 screens and art direction |
+| `docs/specs/Rovem_Wireframes_Mission_1.pdf` | Art direction (screens superseded by wireframes v2) |
 | `docs/specs/extracted/` | Plain-text copies of the above, for search |
 | `docs/ROADMAP.md` | Milestones, status, open issues |
 | `docs/DECISIONS.md` | Confirmed decisions |
-| `docs/DESIGN.md` | Approved design: Demo v3 (top section) and game design v2 (paused) |
+| `docs/DESIGN.md` | Approved design: Game v4 (top), Demo v3 (kept as Endless), game design v2 (superseded) |
+| `docs/LEVELS_BUILD_PLAN.md` | Game v4: design, values, worktree rules and session prompts |
 | `docs/DEMO_BUILD_PLAN.md` | Demo v3 design and session prompts |
 | `docs/ASSETS.md` | Licences of any outside assets |
 | `docs/PENDING_SPEC_EDITS.md` | Text changes waiting to be made in the source documents |

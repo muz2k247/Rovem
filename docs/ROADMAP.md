@@ -2,42 +2,58 @@
 
 Every milestone ends with something that can be run or tested. A milestone is done only when every "Done when" item is true and all tests pass.
 
-M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions.
+M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions. *(Superseded 2026-10-17: the game is now Game v4, eight concept levels plus Endless; see below.)*
 
-**2026-10-14: M5b–M14 and Q1–Q3 are paused** while the demo is built (see "Demo v3" below and DECISIONS 2026-10-14). Their text is unchanged.
+**2026-10-14: M5b–M14 and Q1–Q3 were paused** while the demo was built (DECISIONS 2026-10-14). **2026-10-17: they are superseded by Game v4: concept levels** (DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`). Their text below is kept unchanged as the record of the earlier plan.
 
-Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused (until the post-demo direction is decided, DECISIONS 2026-10-14)
+Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔ Superseded (2026-10-17, by Game v4)
 
 ## Status
 
 | # | Milestone | Status | Needs |
 |---|---|---|---|
+| v4 | **Game v4: concept levels** (`docs/LEVELS_BUILD_PLAN.md`) | 🟨 Planned 2026-10-17 | Demo |
+| P0 | Contracts, shared values, fonts, screen slots (main) | ✅ 2026-10-17 | — |
+| A1 | Track A: Home, Levels, Intro, Pause, Settings; new HUD and force arrows | ⬜ | P0 |
+| A2 | Track A: new rover and garage | ⬜ | A1 |
+| A3 | Track A: report | ⬜ | A2 |
+| B1 | Track B: physics: ground push, slopes, rolling back, water, magnets | ⬜ | P0 |
+| B2 | Track B: level engine | ⬜ | B1 |
+| B3 | Track B: level scene | ⬜ | B2 |
+| B4 | Track B: the eight levels, in priority order | ⬜ | B3 |
+| I1 | Integration on main, par times, play-check | ⬜ | A3, B4 merged |
 | M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ✅ | M1 |
 | M3 | Build screen | ✅ | M2 |
 | M4 | Driving scene | ✅ | M2 |
 | M5a | Driving upgrades and level format | 🟨 | M4 |
-| Demo | **Demo v3: endless canyon run** (`docs/DEMO_BUILD_PLAN.md`) | 🟨 | M5a |
+| Demo | **Demo v3: endless canyon run** (`docs/DEMO_BUILD_PLAN.md`) | ✅ Kept as Endless Canyon in v4 | M5a |
 | D1 | Physics additions: above-top-speed rule, `shareMomentum`, `applyImpulse` | ✅ | Session 0 |
 | D2 | Content: mud, `run.json`, `runChunks.json`, `runText.json`, validation | ✅ | D1 |
 | D3 | Course generator: seeded rng, `footprintOverlapsBox`, endless course | ✅ | D2 |
 | D4 | Run session, unlocks, force panel, feedback, demo save | ✅ | D1, D3 |
 | D5 | 3D run scene | ✅ | D3 |
 | D6 | Screens: garage, run screen, report | ✅ | D4, D5 |
-| D7 | Polish, `preview` script, review | 🟨 Polish part 2 and reverse and drifting done 2026-10-16; waits for k._muz's fps check and text review (recording dropped: k._muz shows the demo in person) | D6 |
-| M5b | Mission 1: Canyon Dash | ⏸ Paused | M5a |
-| M6 | Questions, prediction and results | ⏸ Paused | M3, M5b, Q1 |
-| M7 | Guest saving, Knowledge and unlocks | ⏸ Paused | M6 |
-| M8 | Deployment | ⏸ Paused | M7 |
-| — | **Mission 1 prototype complete** | ⏸ Paused | M1–M8 |
-| Q1 | Mission 1 questions (3 required, 2 power-up, 2 unlock; each with a variant) | ⏸ Paused | Runs alongside M2–M5b |
-| M9 | Proving Ground hub, unlock questions and Concepts cleared | ⏸ Paused | M7 |
-| M10 | Mission 2: Frozen Lake | ⏸ Paused | M7, Q2 |
-| M11 | Mission 3: Landing Pad | ⏸ Paused | M10, Q3 |
-| Q2, Q3 | Mission 2 and Mission 3 questions | ⏸ Paused | Runs alongside M8–M10 |
-| M12 | Accounts and cloud sync | ⏸ Paused | M7 |
-| M13 | Playtesting and tuning | ⏸ Paused | M11 |
-| M14 | Supervisor pitch | ⏸ Paused | M13 |
+| D7 | Polish, `preview` script, review | ✅ Shown to the advisor in person (2026-10-17). The `runText.json` review folds into the v4 text review; CHANGELOG entries moved under `demo-0.1.0` in P0 | D6 |
+| M5b | Mission 1: Canyon Dash | ⛔ Superseded | M5a |
+| M6 | Questions, prediction and results | ⛔ Superseded | M3, M5b, Q1 |
+| M7 | Guest saving, Knowledge and unlocks | ⛔ Superseded | M6 |
+| M8 | Deployment | ⏸ Paused: still needed, scheduled after Game v4 | M7 |
+| — | **Mission 1 prototype complete** | ⛔ Superseded | M1–M8 |
+| Q1 | Mission 1 questions (3 required, 2 power-up, 2 unlock; each with a variant) | ⛔ Superseded | Runs alongside M2–M5b |
+| M9 | Proving Ground hub, unlock questions and Concepts cleared | ⛔ Superseded | M7 |
+| M10 | Mission 2: Frozen Lake | ⛔ Superseded | M7, Q2 |
+| M11 | Mission 3: Landing Pad | ⛔ Superseded | M10, Q3 |
+| Q2, Q3 | Mission 2 and Mission 3 questions | ⛔ Superseded | Runs alongside M8–M10 |
+| M12 | Accounts and cloud sync | ⏸ Paused: still future scope, after Game v4 | M7 |
+| M13 | Playtesting and tuning | ⛔ Superseded | M11 |
+| M14 | Supervisor pitch | ⛔ Superseded | M13 |
+
+## Game v4: concept levels
+
+Planned 2026-10-17 (DECISIONS 2026-10-17). Design, values, file ownership, merge rules and prompts: `docs/LEVELS_BUILD_PLAN.md`. Screens: wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). Two tracks run in parallel git worktrees after P0: Track A (`levels/a-ui`: A1–A3) and Track B (`levels/b-levels`: B1–B4); then the merges of LEVELS_BUILD_PLAN B5 and the integration session I1 on main. Every session ends with typecheck, test, balance (20/9/23/17, unchanged) and build passing, a CHANGELOG entry and a push. Levels land in the build-priority order of LEVELS_BUILD_PLAN A2.
+
+**Done when:** LEVELS_BUILD_PLAN A14 is all true.
 
 ## Demo v3: endless canyon run
 

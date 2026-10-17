@@ -4,7 +4,7 @@ Exact text changes for the source documents in `docs/specs/`, which can't be edi
 
 Entry format: an ID, the document and section, the exact current text, and the exact replacement text.
 
-E1–E3 were made and exported on 2026-10-12. E4–E30 below block no milestone; `docs/DECISIONS.md` governs until they are made.
+E1–E3 were made and exported on 2026-10-12. E4–E43 below block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ### E4: Physics Model Specification, "Driving states and acceleration" table, column "When"
 Source: DECISIONS OI-1.
@@ -150,7 +150,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Drive HUD: add km/h beside m/s, a reverse indicator ("R"), and "Blocked" while touching a rock.
 - Results: add the medal.
 
-### E26: SRS Draft 0.5, sections affected by the advisor's ruling — **waiting for the post-demo direction decision**
+### E26: SRS Draft 0.5, sections affected by the advisor's ruling — **resolved 2026-10-17: replaced by E37 and E43** (kept for the reasoning)
 Source: DECISIONS 2026-10-14 (advisor's ruling: no multiple-choice questions; learning by play; demo first).
 - No text is changed yet. The ruling affects these sections, and what they say stays in force for the MVP (design v2) until k._muz decides the direction after the advisor has seen the demo:
   - FR-17–FR-19, FR-21: question format (three required scenario questions per mission, reasoning questions, pre-written answers, wrong-answer explanation and variant).
@@ -182,3 +182,74 @@ Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.3.
 Source: DECISIONS 2026-10-14 (mud).
 - Add a row after Ice: "Mud | 0.6 | 0.5" (rolling friction μ_r, grip μ_g; provisional).
 - Hand check for the starting build (209 kg) at g = 9.8: F_r = 1228.92 N, which is more than the Medium motor's 1000 N, so the rover slows at 1.095311 m/s² from top speed.
+
+## Game v4: concept levels (E31–E43)
+
+Source for all: DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`. Values are provisional (A10). None blocks a session; DECISIONS and the build plan govern until they are made.
+
+### E31: Physics Model Specification, "Build quantities" and new section "Slopes"
+- Current: "R = mg"
+- Replacement: "R = m g cos θ − U, never below 0, where θ is the slope angle along the motion (0 on flat ground) and U the upthrust (0 out of water). F_r = μ_r × k_r × R and F_lim = μ_g × k_g × R use this R. On flat dry ground R = mg."
+- Add a section "Slopes": "On a slope the weight has a part along the ground, m g sin θ, pointing downhill; θ is measured along the direction of motion and is positive uphill. The game layer finds θ from the terrain under the rover's centre and passes it to the step. The rover follows the ground: its horizontal move is d cos θ for a step distance d, and the distance along the path stays d. The ground's sideways tilt is ignored, and the rover never leaves the ground (crests are shaped with a radius of at least 50 m)."
+- Add to Automated tests: "Standard build on a 12° ramp at full throttle: a = (1000 − 2048.2 sin 12° − 0.02 × 2048.2 cos 12°) ÷ 209 = 2.5554 m/s². On flat ground every result equals the result without slopes (T1–T10 unchanged)."
+
+### E32: Physics Model Specification, "Reverse", new rule "Rolling back"
+- Add after the reverse rules: "The direction (forward or reverse) is the gear: it decides which key drives and which brakes. A rover can also move opposite to its gear, rolling back, when a slope or an outside push drives it backward. Pushing forces act along the gear whatever the motion: the drive force, the slope part of the weight, and outside pushes such as a magnet. Resisting forces always oppose the motion and never reverse it: the brake, rolling friction and water drag; a step in which they would take the speed past 0 stops at 0, as before. At rest at the start of a step, after the control and gear rules, let N be the sum of the pushing forces along the gear. If |N| ≤ F_r the rover stays at rest. If N > F_r it moves along its gear with a = (N − F_r) ÷ m. If N < −F_r it rolls back with a = (|N| − F_r) ÷ m. While rolling back, the keys keep their meaning. The above-top-speed rule applies only to motion along the gear."
+- Add to Automated tests: "Standard build at rest on a 25° slope, no keys: it rolls back with a = (2048.2 sin 25° − 0.02 × 2048.2 cos 25°) ÷ 209 = 3.9640 m/s²."
+
+### E33: Physics Model Specification, new section "Water"
+- Add: "In water of depth h, the rover is pushed up by the upthrust U = ρ_water × g × V_sub (Archimedes' principle), with ρ_water = 1000 kg/m³ and V_sub = V_rover × min(h ÷ H, 1); V_rover = 0.20 m³ and H = 1.0 m for every build (provisional). U lowers the ground push R (E31), so grip and rolling friction fall. Water drag F_w = b × v acts against the motion, with b = 150 N·s/m × min(h ÷ H, 1) (provisional; a stated simplification, since real drag grows faster with speed). If U ≥ m g the rover floats: R = 0, so there is no grip, no drive force and no turning; only drag slows it. Pressure at depth, P = ρ g h, is shown to the student but not simulated."
+- Add to Automated tests: "Standard build, depth 0.50 m, 4.00 m/s, sand bed, full throttle: U = 980 N, R = 1068.2 N, F_d = F_lim = 534.1 N (slipping), F_r = 128.18 N, F_w = 300 N, a = 0.50677 m/s². A Light-chassis build in 1.0 m of water floats."
+
+### E34: Physics Model Specification, new section "Magnets and sideways forces"; the turning limit
+- Add: "Magnet pylons (game layer; called super electromagnets in the game, a stated exaggeration) push or pull the rover along the line from the pylon to the rover's centre: like poles repel, unlike poles attract. Size: 1600 N within 5 m, 1600 × (5 ÷ d)² N beyond, 0 beyond 25 m (provisional; the falloff is a game rule and is not shown to students). The part along the gear is the step's outside push. The sideways part F⊥ bends the direction of travel by F⊥ ÷ (m v) per second, and is ignored below 0.5 m/s."
+- Turning (drifting): "The direction of travel turns toward the way the rover is driving by at most μ_g × k_g × R ÷ (m v) per second (equal to μ_g × k_g × g ÷ v on flat dry ground)."
+- Add: "Circular motion: a bend of radius r needs m v² ÷ r towards its centre, and the tyres give at most μ_g × k_g × R, so the safe speed on flat ground is √(μ_g × k_g × g × r). Mass cancels."
+
+### E35: SRS Draft 0.5, 1.1 Purpose, 1.2 Scope, 1.3 Learning objectives
+- 1.1, current: "teaches Grade 9 Kinematics and Dynamics through building and driving a rover." Replacement: "teaches Grade 9 physics (the newest Punjab Textbook Board book) through building and driving a rover."
+- 1.2, current from "The MVP has one terrain, three missions" to "and Knowledge to unlock parts and missions." Replacement: "The game has eight levels, each introducing one idea, and an endless mode that mixes them. A student plays as a guest on one device. Questions, Knowledge and accounts are future work (section 6)."
+- 1.3, add after "Combine these ideas to solve a practical problem.":
+  - "Explain how momentum is shared in a collision and how an impulse changes velocity."
+  - "Explain the difference between mass and weight using different gravity."
+  - "Explain why a bend has a safe speed (centripetal force, m v² ÷ r) and why mass does not change it."
+  - "Explain how a slope pulls a rover back and how speed is traded for height (kinetic and potential energy)."
+  - "Explain upthrust, floating and sinking using density, and pressure in a liquid."
+  - "Describe how magnetic poles attract and repel, and how an electromagnet depends on current."
+- 1.3, current: "checked against the Grade 9 Kinematics and Dynamics chapters by a Grade 9 physics teacher." Replacement: "checked against the Grade 9 physics book by a Grade 9 physics teacher (the objectives added for Game v4 are to be re-checked)."
+
+### E36: SRS Draft 0.5, 2.2 Constraints
+- Add: "The interface uses two bundled fonts, Space Grotesk and IBM Plex Sans (SIL Open Font Licence 1.1). They are bundled with the game rather than loaded from a font service, so the game needs no outside connection to show text. The licence allows free use, including commercial use, and bundling with software, with no fee; its only conditions are that the fonts are not sold on their own and that a modified font is renamed. Rovem does neither."
+
+### E37: SRS Draft 0.5, section 3 (resolves E26)
+- Mark FR-4, FR-12, FR-13, FR-17 to FR-23, FR-26, FR-30 to FR-40, FR-43 and FR-44 "Superseded by Game v4 (DECISIONS 2026-10-17)", keeping their text.
+- Replace 3.1 with: "FR-45 The student moves Home → Levels → a level (intro, drive, report) → the next level. Levels open in order; the endless mode opens after the first level. FR-46 Each level introduces one idea, lasts about 90–150 s, has checkpoints, and ends at a finish line; a crash returns the rover to the last checkpoint. FR-47 Each level awards up to three stars: finishing, beating the par time, and the level's challenge. The best stars and time are saved on the device."
+- Replace FR-14 to FR-16 in 3.6 with: "FR-48 During a run, the game shows only what teaches something at that moment: force arrows for the level's forces, one short caption with the student's number, and the net-force line while the speed changes. FR-49 After a run, the game shows a speed–time graph, up to three moments that mattered with the student's numbers and an optional worked formula, and one suggestion that can be tried at once."
+- Keep 3.2 (FR-1 to FR-3; all parts available), 3.3 and 3.4, and add to 3.4: "FR-50 The physics also covers slopes, rolling back, water (upthrust and drag), magnets, momentum events and gravity zones, as in the Physics Model Specification."
+
+### E38: Wireframes, Mission 1
+- Add a note on the first page: "Screen layouts superseded 2026-10-17 by wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh): Home, Levels, Garage, Level intro, Driving, Pause, Settings, Report. The images remain mood references only." E25 is superseded with it.
+
+### E39: Architecture Diagram
+- Screens, current: "sign-in or guest play, mission select, build rover with part effects, question and prediction dialogs, driving view showing speed and direction, results with explanation, concepts cleared". Replacement: "home, level select, garage with part effects, level intro, driving view with force arrows and captions, pause and settings, report with a speed–time graph". Requirements: FR-1, FR-2, FR-27, FR-45, FR-48, FR-49.
+- Game flow and rules, replacement: "Runs a level (checkpoints and respawn, finish, stars and par, level unlocking) and the endless run, and turns each step into the HUD and report data." Requirements: FR-5, FR-45 to FR-49.
+- Physics model: add "slopes, rolling back, water, magnets, momentum events and gravity zones" (FR-50).
+- Content data: replace "missions, questions with explanations and variants, power-ups and Knowledge values" with "levels, the endless course chunks and the level text".
+- Local copy of progress: replace its text with "Keeps the best stars and time per level, the opened levels, the best endless distance and the settings in the browser's local storage."
+- Account and sync and the Supabase panel: mark "future (after Game v4)" and draw them dashed.
+- "How to read it", second paragraph: replace "questions, prediction, the run, then results" with "the level intro, the run, then the report".
+
+### E40: Tech Stack and Mission 1 Plan
+- Milestones: add "M5b to M8 superseded 2026-10-17 by Game v4 (sessions P0, A1–A3, B1–B4, I1; `docs/ROADMAP.md`). Deployment (M8) and accounts (M12) stay as later work."
+- Libraries: add "Fonts: @fontsource/space-grotesk and @fontsource/ibm-plex-sans (OFL 1.1), bundled."
+
+### E41: Component Values sheet, new sheet "Levels"
+- Add a sheet with the LEVELS_BUILD_PLAN A10 table (value, number, set by, status) and the check values of E31–E34.
+- The Pass check and Simulation sheets stay unchanged: they remain the physics regression (balance 20/9/23/17).
+
+### E42: Data Model, waiting for the accounts milestone
+- The question, Knowledge and mission tables are not used by Game v4. When accounts return (M12), replace them with a level-progress table (level id, best stars, best time, opened) and an endless table (best distance). No text changes until then.
+
+### E43: SRS Draft 0.5, section 6 Future Work
+- Remove "Momentum and impulse…", "Weight vs. mass through different gravity…" and "More components, terrains and missions." (all now in the game).
+- Add: "Scenario questions and Knowledge (the former 3.7 and 3.8), if a form other than multiple choice is agreed with the advisor." "Wind (the Dust Storm level): a sideways force." "Accounts and cloud sync (the former FR-25, FR-41 to FR-44)."

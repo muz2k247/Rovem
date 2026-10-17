@@ -5,7 +5,16 @@ body,
   height: 100%;
   background: #0b0f1a;
   color: #e6e9f2;
-  font-family: system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+/* Headings and numbers use Space Grotesk with tabular figures (LEVELS_BUILD_PLAN A3, A12). */
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Space Grotesk', 'IBM Plex Sans', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 .placeholder {
