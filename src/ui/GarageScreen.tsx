@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { content, type EventKind, type Part, type Slot } from '../content/index.ts';
 import { roverFromParts } from '../game/buildFromParts.ts';
 import { garageNumbers } from '../game/run/garageNumbers.ts';
-import { compareRows, fieldLogEntries, garageRows } from '../game/run/garageView.ts';
-import { displayPartName, newPartIds, nextUnlock, unlockedPartIds, unlockProgress, unlockText } from '../game/run/unlocks.ts';
+import { compareRows, displayPartName, fieldLogEntries, garageRows } from '../game/run/garageView.ts';
 import type { DemoBuild, DemoProgress } from '../save/demoProgress.ts';
 
 const SLOTS: { slot: Slot; title: string; key: keyof DemoBuild; note?: string }[] = [
@@ -31,45 +30,28 @@ function partDetail(part: Part): string {
   return `${part.massKg} kg · ${part.driveForceMaxN} N · top speed ${part.topSpeedMps} m/s`;
 }
 
-/** "350 / 400 m" with a thin bar, on a locked part. */
-function UnlockBar({ partId, bestDistanceM }: { partId: string; bestDistanceM: number }) {
-  const progress = unlockProgress(content, partId, bestDistanceM);
-  if (!progress) return null;
-  return (
-    <span className="unlock-progress">
-      {progress.text}
-      <span className="bar" aria-hidden="true">
-        <span style={{ width: `${(progress.fraction * 100).toFixed(1)}%` }} />
-      </span>
-    </span>
-  );
-}
-
 export function GarageScreen({
   progress,
   onProgressChange,
+  backLabel,
+  onBack,
   onStart,
   onReplay,
   onDeveloper,
 }: {
   progress: DemoProgress;
   onProgressChange: (progress: DemoProgress) => void;
-  onStart: () => void;
-  onReplay: () => void;
+  /** Where Back goes, e.g. "Home" or "Back to level". */
+  backLabel: string;
+  onBack: () => void;
+  /** Start an Endless run from here; left out when the garage was opened from a level. */
+  onStart?: () => void;
+  onReplay?: () => void;
   onDeveloper: () => void;
 }) {
-  const unlocked = new Set(unlockedPartIds(content, progress.bestDistanceM));
   const rover = roverFromParts(content, progress.build);
   const unit = progress.speedUnit;
-  const next = nextUnlock(content, progress.bestDistanceM);
   const log = fieldLogEntries(progress.seenEvents, content.runText);
-
-  // Parts opened since the last visit wear a NEW badge for this whole visit; they are marked as seen on arrival.
-  const [fresh] = useState(() => newPartIds(content, progress.bestDistanceM, progress.partsSeen));
-  useEffect(() => {
-    if (fresh.length > 0) onProgressChange({ ...progress, partsSeen: [...new Set([...progress.partsSeen, ...fresh])] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Hovering (or focusing) a part shows the numbers with that part fitted: before → after.
   const [preview, setPreview] = useState<{ key: keyof DemoBuild; id: string } | null>(null);
@@ -82,6 +64,9 @@ export function GarageScreen({
   return (
     <main className="garage">
       <header className="build-header">
+        <button type="button" className="btn small" onClick={onBack}>
+          ← {backLabel}
+        </button>
         <span className="brand">ROVEM</span>
         <span>Garage</span>
         <span className="garage-best">
@@ -102,18 +87,16 @@ export function GarageScreen({
                 {content.parts
                   .filter((p) => p.slot === slot)
                   .map((part) => {
-                    const open = unlocked.has(part.id);
                     const selected = progress.build[key] === part.id;
                     return (
                       <div
                         key={part.id}
-                        className={`part${selected ? ' selected' : ''}${open ? '' : ' locked'}`}
+                        className={`part${selected ? ' selected' : ''}`}
                         onMouseEnter={() => setPreview({ key, id: part.id })}
                         onMouseLeave={() => setPreview(null)}
                       >
                         <button
                           type="button"
-                          disabled={!open}
                           aria-pressed={selected}
                           onFocus={() => setPreview({ key, id: part.id })}
                           onBlur={() => setPreview(null)}
@@ -121,11 +104,8 @@ export function GarageScreen({
                         >
                           <strong>
                             {displayPartName(part.name)}
-                            {fresh.includes(part.id) && <em className="new-badge">NEW</em>}
                           </strong>
                           <span>{partDetail(part)}</span>
-                          {!open && <span className="lock">{unlockText(content, part.id)}</span>}
-                          {!open && <UnlockBar partId={part.id} bestDistanceM={progress.bestDistanceM} />}
                         </button>
                       </div>
                     );
@@ -133,7 +113,7 @@ export function GarageScreen({
               </div>
             </div>
           ))}
-          <p className="note">{next ? `Next part at ${next.atBestDistanceM} m best distance.` : 'Every part is unlocked.'}</p>
+          <p className="note">Every part is open. Try them all.</p>
         </section>
 
         <section aria-label="Your rover in the canyon">
@@ -175,17 +155,21 @@ export function GarageScreen({
         </section>
 
         <section aria-label="Start">
-          <h2>Go</h2>
-          <button type="button" className="primary" onClick={onStart}>
-            Start run
-          </button>
-          {progress.lastSeed !== null && (
+          {onStart && (
+            <>
+              <h2>Go</h2>
+              <button type="button" className="primary" onClick={onStart}>
+                Start run
+              </button>
+            </>
+          )}
+          {onReplay && progress.lastSeed !== null && (
             <button type="button" className="secondary" onClick={onReplay}>
               Replay last course
             </button>
           )}
 
-          <h2>Settings</h2>
+          <h2>Units</h2>
           <div className="settings">
             <label>
               Speed unit
@@ -198,22 +182,6 @@ export function GarageScreen({
               </select>
             </label>
             <small>km/h = m/s × 3.6, e.g. 16 m/s × 3.6 = 57.6 km/h</small>
-            <label>
-              <input
-                type="checkbox"
-                checked={progress.showForces}
-                onChange={(e) => onProgressChange({ ...progress, showForces: e.target.checked })}
-              />
-              Force panel
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={progress.soundOn}
-                onChange={(e) => onProgressChange({ ...progress, soundOn: e.target.checked })}
-              />
-              Sound
-            </label>
           </div>
         </section>
       </div>

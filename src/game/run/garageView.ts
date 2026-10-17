@@ -61,3 +61,8 @@ export function fieldLogEntries(seenEvents: readonly EventKind[], text: Content[
     return entry;
   });
 }
+
+/** Display only: "chassis" is shown as "body" (A8 of the demo plan). `parts.json` keeps its names. */
+export function displayPartName(name: string): string {
+  return name.replace(/chassis/gi, (m) => (m[0] === 'C' ? 'Body' : 'body'));
+}

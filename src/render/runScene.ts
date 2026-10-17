@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import type { Content, GravityKind } from '../content/index.ts';
+import type { ForceArrow } from '../game/contracts.ts';
 import type { CourseChunk } from '../game/run/course.ts';
+import type { Graphics } from '../save/settings.ts';
+import { createForceArrows } from './forceArrows.ts';
 import { GENERATE_AHEAD_M, type RunSession } from '../game/run/runSession.ts';
 import { createDust } from './driveScene.ts';
 import { createSkidMarks } from './skidMarks.ts';
@@ -187,6 +190,12 @@ export interface RunScene {
   loadedChunkIndices(): number[];
   /** Camera shake for the crash moment: the amplitude in metres (0 = none). The camera stays inside the walls. */
   setShake(amplitudeM: number): void;
+  /** Force arrows drawn on the rover (A4); pass [] to hide them. Arrows under 20 N are skipped. */
+  setForceArrows(arrows: readonly ForceArrow[]): void;
+  /** Graphics Low turns off the dust particles (A8). */
+  setGraphics(graphics: Graphics): void;
+  /** The rover's force arrows group, for tests. */
+  readonly arrowsGroup: THREE.Group;
   /** Skid marks currently on the ground (they fade away). */
   readonly skidMarkCount: number;
   /** Moves the rover, the chunks, the bags and the camera to the session. `frameS` drives the effects only. */
@@ -357,6 +366,11 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   const model = createRoverModel(roverLengthM, roverWidthM, wheelStyle);
   const rover = model.root;
   scene.add(rover);
+  // Force arrows start at the middle of the rover, at about the height of its deck, and stay in world axes.
+  const arrows = createForceArrows();
+  arrows.group.name = 'forceArrows';
+  scene.add(arrows.group);
+  const ARROWS_HEIGHT_M = 0.9;
   const camera = new THREE.PerspectiveCamera(FOV_AT_REST_DEG, 1, 0.1, 400);
   const dust = createDust(scene);
   const dustPoints = scene.getObjectByName('dust') as THREE.Points | undefined;
@@ -386,6 +400,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
 
     rover.position.set(x, 0, -z);
     rover.rotation.y = state.headingRad;
+    arrows.group.position.set(x - fx * (roverLengthM / 2), ARROWS_HEIGHT_M, -(z - fz * (roverLengthM / 2)));
     gravityKind = s.gravityKind;
     const targetSag =
       gravityKind === 'high' ? -HIGH_GRAVITY_SAG_M : gravityKind === 'low' ? LOW_GRAVITY_BOB_M * (0.5 + 0.5 * Math.sin(clockS * 2.4)) : 0;
@@ -485,9 +500,17 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     setShake(amplitudeM) {
       shakeM = Math.max(0, amplitudeM);
     },
+    setForceArrows(list) {
+      arrows.update(list);
+    },
+    setGraphics(graphics) {
+      if (dustPoints) dustPoints.visible = graphics === 'high';
+    },
+    arrowsGroup: arrows.group,
     loadedChunkIndices: () => [...chunkGroups.keys()].sort((a, b) => a - b),
     update,
     dispose() {
+      arrows.dispose();
       skid.dispose();
       for (const index of [...chunkGroups.keys()]) removeChunk(index);
     },

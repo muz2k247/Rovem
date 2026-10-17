@@ -1,5 +1,4 @@
 import type { Content, EventKind, FormulaKind, GravityKind, RunText } from '../../content/index.ts';
-import { newlyUnlocked, unlockedPartIds } from './unlocks.ts';
 import type { GravityZoneUse, RunEnd, RunEvent, RunStats } from './runSession.ts';
 
 // What the student reads while and after driving (docs/DEMO_BUILD_PLAN.md A7). Pure: time is passed in.
@@ -219,8 +218,6 @@ export interface RunReport {
   bestScore: number;
   newBestDistance: boolean;
   newBestScore: boolean;
-  /** Part ids opened by this run. */
-  unlocked: string[];
   /** Up to 3, largest first. */
   effects: ReportEffect[];
   tryThis: string;
@@ -289,11 +286,10 @@ export function reportEffects(stats: RunStats, text: RunText, unit: SpeedUnit): 
   return effects.sort((a, b) => b.sizeMps - a.sizeMps);
 }
 
-/** One "Try this" line, by rules over the run's stats and the unlocked parts, in order of preference (A7). */
+/** One "Try this" line, by rules over the run's stats and the fitted parts, in order of preference. Every part is open (LEVELS_BUILD_PLAN A2). */
 export function tryThisLine(
   ended: RunEnd,
   effectsRanked: readonly ReportEffect[],
-  unlockedIds: readonly string[],
   fitted: ReportInput['fitted'],
   text: RunText,
   brakeUsed: boolean,
@@ -302,13 +298,12 @@ export function tryThisLine(
   if (ended.cause === 'stuck' && ended.gravityKind === 'high') return text.tryThis.stuckInHighGravity;
   if (ended.atDivider) return text.tryThis.pickLane;
   if (ended.sliding) return text.tryThis.brakeBeforeCorner;
-  if (biggest === 'mud' && unlockedIds.includes('wheels-smooth') && fitted.wheelsId !== 'wheels-smooth') return text.tryThis.smoothWheels;
+  if (biggest === 'mud' && fitted.wheelsId !== 'wheels-smooth') return text.tryThis.smoothWheels;
   // The student drives now, so a hit-heavy run in which the brake was never touched gets the free advice first.
   if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !brakeUsed) return text.tryThis.brakeFirst;
-  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && unlockedIds.includes('chassis-heavy') && fitted.chassisId !== 'chassis-heavy') {
-    return text.tryThis.heavyChassis;
-  }
-  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !unlockedIds.includes('chassis-heavy')) return text.tryThis.dodgeCannon;
+  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && fitted.chassisId !== 'chassis-heavy') return text.tryThis.heavyChassis;
+  // The Heavy chassis is already fitted: the only advice left is to stay out of the cannon's line.
+  if (biggest === 'headOnHit' || biggest === 'kickerHit') return text.tryThis.dodgeCannon;
   if (ended.cause === 'crash' && ended.speedMps > 20) return text.tryThis.steerEarlier;
   return text.tryThis.takeBoosts;
 }
@@ -327,8 +322,7 @@ export function buildReport(input: ReportInput): RunReport {
     bestScore,
     newBestDistance: input.distanceM > previousBestDistanceM,
     newBestScore: score > previousBestScore,
-    unlocked: newlyUnlocked(content, previousBestDistanceM, bestDistanceM),
     effects: ranked.slice(0, 3),
-    tryThis: tryThisLine(ended, ranked, unlockedPartIds(content, bestDistanceM), input.fitted, content.runText, stats.brakeUsed),
+    tryThis: tryThisLine(ended, ranked, input.fitted, content.runText, stats.brakeUsed),
   };
 }

@@ -1,34 +1,70 @@
 import { useState } from 'react';
+import { levelCards } from '../content/levelCards.ts';
 import { STARTING_BUILD, type BuildSelection } from '../game/buildFromParts.ts';
-import { loadDemoProgress, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
+import { continueTarget, developerUnlockFromSearch, isEndlessUnlocked, levelSummaries } from '../game/levelUnlock.ts';
+import { loadDemoProgress, resetDemoProgress, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
+import { emptyLevelProgress, loadLevelProgress, saveLevelProgress, type LevelProgress } from '../save/levelProgress.ts';
+import { loadSettings, saveSettings, type Settings } from '../save/settings.ts';
 import { BuildScreen } from './BuildScreen.tsx';
 import { DriveScreen } from './DriveScreen.tsx';
 import { GarageScreen } from './GarageScreen.tsx';
+import { HomeScreen } from './HomeScreen.tsx';
+import { LevelIntroScreen } from './LevelIntroScreen.tsx';
 import { LevelScreen } from './LevelScreen.tsx';
+import { LevelsScreen } from './LevelsScreen.tsx';
 import { PlaceholderScreen } from './PlaceholderScreen.tsx';
 import { RunScreen } from './RunScreen.tsx';
-import { PLACEHOLDER_SCREENS, screenFromHash, type PlaceholderScreen as PlaceholderScreenName } from './screens.ts';
+import { SettingsScreen } from './SettingsScreen.tsx';
+import { screenFromHash, type HashScreen, type PlaceholderScreen as PlaceholderScreenName } from './screens.ts';
+
+/** Where the garage was opened from, so its Back button returns there. */
+type GarageFrom = { kind: 'home' } | { kind: 'intro'; levelId: string } | { kind: 'endless' };
 
 type Screen =
-  | { name: 'garage' }
+  | { name: 'home' }
+  | { name: 'levels' }
+  | { name: 'levelIntro'; levelId: string }
+  | { name: 'settings' }
+  | { name: 'garage'; from: GarageFrom }
   | { name: 'run'; seed: number; runId: number }
+  | { name: 'level'; levelId: string } // Track B's driving screen
+  | { name: PlaceholderScreenName } // still a placeholder: the report (A3)
   | { name: 'devBuild' }
-  | { name: 'devDrive' }
-  | { name: PlaceholderScreenName } // Game v4 screens Track A fills in (LEVELS_BUILD_PLAN A3)
-  | { name: 'level'; levelId: string }; // Track B's driving screen
+  | { name: 'devDrive' };
 
 /** A new course seed. Chosen here, in the UI, never inside the physics (DEMO_BUILD_PLAN A3). */
 const newSeed = () => Math.floor(Math.random() * 0x7fffffff);
 
-// The demo opens on the garage (DEMO_BUILD_PLAN A8). The old Build screen and test drive stay reachable from the
-// developer link, because the M5a fps and reverse checks still need them.
+const levelIds = levelCards.levels.map((l) => l.id);
+const firstLevelId = levelIds[0]!;
+
+/** The screen for a name from the hash (or the placeholder's buttons); null or home gives Home. */
+function screenNamed(name: HashScreen | null): Screen {
+  switch (name) {
+    case 'levels':
+      return { name: 'levels' };
+    case 'levelIntro':
+      return { name: 'levelIntro', levelId: firstLevelId };
+    case 'settings':
+      return { name: 'settings' };
+    case 'report':
+      return { name: 'report' };
+    default:
+      return { name: 'home' };
+  }
+}
+
+const firstScreen = (): Screen => screenNamed(screenFromHash(window.location.hash));
+
+// The game opens on Home (LEVELS_BUILD_PLAN A3). The old Build screen and test drive stay reachable from the
+// developer link in the garage, because the M5a fps and reverse checks still need them.
 export function App() {
   const [progress, setProgress] = useState<DemoProgress>(() => loadDemoProgress());
-  // The garage stays the first screen until Home is built; a placeholder opens from its hash (e.g. #home).
-  const [screen, setScreen] = useState<Screen>(() => {
-    const hashed = screenFromHash(window.location.hash);
-    return hashed ? { name: hashed } : { name: 'garage' };
-  });
+  const [levelProgress, setLevelProgress] = useState<LevelProgress>(() => loadLevelProgress());
+  const [settings, setSettings] = useState<Settings>(() => loadSettings());
+  // The developer link (`?unlock=all`) opens every level. It is read once from the address and never saved.
+  const [developerUnlock] = useState(() => developerUnlockFromSearch(window.location.search));
+  const [screen, setScreen] = useState<Screen>(firstScreen);
   const [devBuild, setDevBuild] = useState<BuildSelection>(STARTING_BUILD);
   const [runCount, setRunCount] = useState(0);
 
@@ -36,24 +72,91 @@ export function App() {
     setProgress(next);
     saveDemoProgress(next);
   };
+  const changeSettings = (next: Settings) => {
+    setSettings(next);
+    saveSettings(next);
+  };
+  const replayTutorial = () => update({ ...progress, briefingSeen: false });
+  const resetProgress = () => {
+    update(resetDemoProgress(progress));
+    const empty = emptyLevelProgress();
+    setLevelProgress(empty);
+    saveLevelProgress(empty);
+  };
   const startRun = (seed: number) => {
     setRunCount((n) => n + 1);
     setScreen({ name: 'run', seed, runId: runCount + 1 });
   };
-
-  if ((PLACEHOLDER_SCREENS as readonly string[]).includes(screen.name)) {
-    return (
-      <PlaceholderScreen
-        name={screen.name as PlaceholderScreenName}
-        onNavigate={(to) => setScreen({ name: to })}
-        onBack={() => setScreen({ name: 'garage' })}
-      />
-    );
-  }
+  const endlessUnlocked = isEndlessUnlocked(levelIds, levelProgress, developerUnlock);
+  const toHome = () => setScreen({ name: 'home' });
+  const toLevels = () => setScreen({ name: 'levels' });
+  const toGarage = (from: GarageFrom) => setScreen({ name: 'garage', from });
+  const settingsProps = {
+    settings,
+    onChange: changeSettings,
+    onReplayTutorial: replayTutorial,
+    onResetProgress: resetProgress,
+  };
 
   switch (screen.name) {
+    case 'home': {
+      const next = continueTarget(levelIds, levelProgress);
+      return (
+        <HomeScreen
+          continueCard={levelCards.levels.find((l) => l.id === next) ?? null}
+          endlessUnlocked={endlessUnlocked}
+          onContinue={() => next && setScreen({ name: 'levelIntro', levelId: next })}
+          onLevels={toLevels}
+          onEndless={() => startRun(newSeed())}
+          onGarage={() => toGarage({ kind: 'home' })}
+          onSettings={() => setScreen({ name: 'settings' })}
+        />
+      );
+    }
+    case 'levels':
+      return (
+        <LevelsScreen
+          levels={levelSummaries(levelCards.levels, levelProgress, developerUnlock)}
+          nextId={continueTarget(levelIds, levelProgress)}
+          endless={{ ...levelCards.endless, locked: !endlessUnlocked, bestDistanceM: progress.bestDistanceM }}
+          dustStorm={levelCards.dustStorm}
+          onOpenLevel={(levelId) => setScreen({ name: 'levelIntro', levelId })}
+          onEndless={() => startRun(newSeed())}
+          onBack={toHome}
+        />
+      );
+    case 'levelIntro': {
+      // An unknown id (only possible from a hand-typed address) falls back to the first level.
+      const index = Math.max(0, levelCards.levels.findIndex((l) => l.id === screen.levelId));
+      const card = levelCards.levels[index]!;
+      return (
+        <LevelIntroScreen
+          card={card}
+          number={index + 1}
+          onBack={toLevels}
+          onChangeRover={() => toGarage({ kind: 'intro', levelId: card.id })}
+          onStart={() => setScreen({ name: 'level', levelId: card.id })}
+        />
+      );
+    }
+    case 'settings':
+      return <SettingsScreen {...settingsProps} onBack={toHome} />;
+    case 'garage': {
+      const from = screen.from;
+      return (
+        <GarageScreen
+          progress={progress}
+          onProgressChange={update}
+          backLabel={from.kind === 'intro' ? 'Back to level' : 'Home'}
+          onBack={() => (from.kind === 'intro' ? setScreen({ name: 'levelIntro', levelId: from.levelId }) : toHome())}
+          onStart={from.kind === 'endless' ? () => startRun(newSeed()) : undefined}
+          onReplay={from.kind === 'endless' && progress.lastSeed !== null ? () => startRun(progress.lastSeed!) : undefined}
+          onDeveloper={() => setScreen({ name: 'devBuild' })}
+        />
+      );
+    }
     case 'level':
-      return <LevelScreen levelId={screen.levelId} onBack={() => setScreen({ name: 'garage' })} />;
+      return <LevelScreen levelId={screen.levelId} onBack={() => setScreen({ name: 'levelIntro', levelId: screen.levelId })} />;
     case 'run':
       return (
         <RunScreen
@@ -61,9 +164,15 @@ export function App() {
           seed={screen.seed}
           progress={progress}
           onProgressChange={setProgress}
+          settings={settings}
+          onSettingsChange={changeSettings}
+          onReplayTutorial={replayTutorial}
+          onResetProgress={resetProgress}
           onAgain={() => startRun(newSeed())}
           onReplay={() => startRun(screen.seed)}
-          onGarage={() => setScreen({ name: 'garage' })}
+          onGarage={() => toGarage({ kind: 'endless' })}
+          onLevels={toLevels}
+          onHome={toHome}
         />
       );
     case 'devBuild':
@@ -72,20 +181,12 @@ export function App() {
           selection={devBuild}
           onSelectionChange={setDevBuild}
           onTestDrive={() => setScreen({ name: 'devDrive' })}
-          onExit={() => setScreen({ name: 'garage' })}
+          onExit={toHome}
         />
       );
     case 'devDrive':
       return <DriveScreen build={devBuild} onBack={() => setScreen({ name: 'devBuild' })} />;
-    default:
-      return (
-        <GarageScreen
-          progress={progress}
-          onProgressChange={update}
-          onStart={() => startRun(newSeed())}
-          onReplay={() => progress.lastSeed !== null && startRun(progress.lastSeed)}
-          onDeveloper={() => setScreen({ name: 'devBuild' })}
-        />
-      );
+    case 'report':
+      return <PlaceholderScreen name={screen.name} onNavigate={(to) => setScreen(screenNamed(to))} onBack={toHome} />;
   }
 }

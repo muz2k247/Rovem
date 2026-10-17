@@ -1,10 +1,26 @@
+@import "./screens.css";
+
+:root {
+  /* Game v4 palette (LEVELS_BUILD_PLAN A3) */
+  --bg: #0d1117;
+  --panel: #161b23;
+  --border: #2b3340;
+  --text: #ece8e1;
+  --muted: #9aa3b2;
+  --orange: #e8743b;
+  --cyan: #63c7e6;
+  --gold: #f2c14e;
+  --violet: #b49cff;
+  --green: #6fd08c;
+}
+
 html,
 body,
 #root {
   margin: 0;
   height: 100%;
-  background: #0b0f1a;
-  color: #e6e9f2;
+  background: var(--bg);
+  color: var(--text);
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
 }
 
@@ -468,63 +484,6 @@ h4 {
   background: radial-gradient(ellipse at center, rgba(255, 110, 40, 0.05) 40%, rgba(255, 90, 30, 0.38) 100%);
 }
 
-.captions {
-  position: absolute;
-  top: 7rem;
-  right: 1.5rem;
-  width: min(30rem, 44vw);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  pointer-events: none;
-}
-
-.caption {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.5rem 0.7rem;
-  border-left: 3px solid #e0703c;
-  border-radius: 6px;
-  background: rgba(11, 15, 26, 0.72);
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Every caption line is one line: it is never wrapped (the double spaces in a worked formula are kept). */
-.caption strong,
-.caption span {
-  white-space: pre;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.caption span {
-  font-size: 0.78rem;
-  color: #c9d0e8;
-}
-
-.force-panel {
-  position: absolute;
-  left: 1.5rem;
-  bottom: 3rem;
-  padding: 0.4rem 0.6rem 0.5rem;
-  border-radius: 8px;
-  background: rgba(11, 15, 26, 0.55);
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
-}
-
-.force-panel svg {
-  display: block;
-}
-
-.balanced {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #28d8e8;
-}
-
 .briefing {
   position: absolute;
   left: 50%;
@@ -757,24 +716,4 @@ h4 {
   100% {
     opacity: 0;
   }
-}
-
-.pause-card {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  transform: translate(-50%, -50%);
-  padding: 1rem 2rem;
-  border: 1px solid #243052;
-  border-radius: 10px;
-  background: rgba(11, 15, 26, 0.88);
-  text-align: center;
-}
-
-.pause-card h2 {
-  margin: 0 0 0.4rem;
-}
-
-.pause-card small {
-  color: #9aa4c4;
 }

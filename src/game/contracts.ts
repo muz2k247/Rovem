@@ -49,6 +49,8 @@ export interface HudModel {
   progressText: string;
   /** 0 to 1. */
   progressFraction: number;
+  /** Optional extra line under the progress, e.g. the Endless score (added in A1). */
+  scoreText?: string;
   timeS: number;
   /** One caption at a time (A4); null when none is showing. */
   caption: HudCaption | null;

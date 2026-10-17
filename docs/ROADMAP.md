@@ -14,7 +14,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 |---|---|---|---|
 | v4 | **Game v4: concept levels** (`docs/LEVELS_BUILD_PLAN.md`) | 🟨 Planned 2026-10-17 | Demo |
 | P0 | Contracts, shared values, fonts, screen slots (main) | ✅ 2026-10-17 | — |
-| A1 | Track A: Home, Levels, Intro, Pause, Settings; new HUD and force arrows | ⬜ | P0 |
+| A1 | Track A: Home, Levels, Intro, Pause, Settings; new HUD and force arrows | ✅ 2026-10-17 (branch `levels/a-ui`) | P0 |
 | A2 | Track A: new rover and garage | ⬜ | A1 |
 | A3 | Track A: report | ⬜ | A2 |
 | B1 | Track B: physics: ground push, slopes, rolling back, water, magnets | ⬜ | P0 |

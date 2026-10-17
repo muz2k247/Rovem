@@ -6,6 +6,25 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels A1: screens and HUD)
+- Screens (LEVELS_BUILD_PLAN A3): Home (Continue, Levels, Endless Canyon, Garage, Settings, controls line), Levels (4-column cards, NEXT badge, locks, stars, best time, Endless card with best distance, locked Dust Storm card), Level intro (goal, New here, sketch, three star rules, controls, Back / Change rover / Start with Enter), Settings (Master / Engine / Effects volume and Mute, Force arrows, Show the maths, Camera shake, Graphics Low/High, controls list, Replay tutorial, Reset progress pressed twice) and the Pause menu as an overlay. The game now opens on Home.
+- `src/save/settings.ts` (key `rovem.settings.v1`) and `src/save/levelProgress.ts` (key `rovem.levels.v1`; only the best stars and best time per level). Both fall back to defaults if storage fails.
+- `src/game/levelUnlock.ts`: levels open in order, Endless opens after the first level, the hidden `?unlock=all` link opens everything and is never saved; Continue picks the next unfinished level.
+- `src/content/levelCards.json` (+ `levelCards.ts`): names, hooks, goals, New here text and challenge stars for the Levels and intro screens; placeholder text until k._muz reviews it.
+- `src/ui/hud/Hud.tsx`: the new driving HUD (speed in m/s with km/h, badges, level name and progress bar, time and pause button, one caption, the F = ma line, controls hint for the first 10 s). `src/game/captionQueue.ts` (one caption at a time, each at least 2.5 s), `src/game/forceLine.ts` (F = ma line rule and the "Balanced: constant speed" message), `src/game/forces.ts` (push or brake, and friction, from the physics numbers), `src/game/run/endlessHud.ts`.
+- Force arrows in the Endless scene (`runScene.setForceArrows`); Graphics Low hides the dust; engine and effect sounds take a volume.
+- Optional field `HudModel.scoreText` (the Endless score line).
+
+### Changed (Levels A1)
+- The Endless Canyon uses the new HUD and pause menu; Esc opens the pause menu and Esc or Resume closes it (before, any key resumed).
+- The garage shows every part as open, has a Back button, and no longer holds the force-panel and sound settings (they moved to Settings); Start run shows only when the garage is opened from the Endless run.
+- The report's "Try this" no longer depends on unlocked parts: every part is open, so with the Heavy body already fitted a hit-heavy run gets the dodge-the-cannon line.
+- `DemoProgress` lost `showForces`, `soundOn` and `partsSeen`; old saves still load (the extra fields are ignored). The page uses the A3 palette (dark ground #0D1117, panels #161B23, orange, cyan and gold accents) as CSS variables.
+
+### Removed (Levels A1)
+- The Endless distance ladder in code (`unlocks.ts`, the NEW badge and unlock bars): all parts are open (DECISIONS 2026-10-17). The `unlocks` list stays in `run.json` and its schema until I1 (`schema.ts` is Track B's).
+- The force panel (`forcePanel.ts`, `ForcePanelView`), the old captions stack and the score/distance HUD row.
+
 ### Added (Levels P0: contracts, fonts, slots)
 - Fonts `@fontsource/space-grotesk` (500, 700) and `@fontsource/ibm-plex-sans` (400, 500, 600), bundled and loaded app-wide in `src/main.tsx`; headings use Space Grotesk with tabular figures, text uses IBM Plex Sans (`styles.css`).
 - `src/content/levels.json` with every A6/A10 shared value, and `src/content/levelsConfig.ts` (validator `validateLevelsConfig`, loaded `levelsConfig`), tests in `levelsConfig.test.ts`. Kept apart from `schema.ts` so Track B can extend the level-file schema.

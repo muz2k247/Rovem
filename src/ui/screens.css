@@ -1,0 +1,630 @@
+/* Game v4 screens and HUD (LEVELS_BUILD_PLAN A3, A4). Colours are the tokens on :root in styles.css. */
+
+.screen {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.screen h1,
+.screen h2 {
+  margin: 0;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+.screen h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0.05em 0.45em;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--text);
+  font: 600 0.8em 'Space Grotesk', system-ui, sans-serif;
+  text-align: center;
+}
+
+/* Buttons: real buttons, at least 44 px tall, keyboard focus visible */
+.btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 44px;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: 500 1rem 'IBM Plex Sans', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.btn small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--cyan);
+}
+
+.btn:focus-visible,
+.level-card:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.btn.cta {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #1a1008;
+  font-weight: 600;
+}
+
+.btn.cta small {
+  color: #3a1d0c;
+}
+
+.btn.small {
+  flex-direction: row;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.btn.danger.armed {
+  border-color: #e5484d;
+  color: #ff8a8e;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Home */
+.home {
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  text-align: center;
+}
+
+.wordmark {
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  color: var(--text);
+}
+
+.tagline {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+}
+
+.home-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(20rem, 100%);
+}
+
+.controls-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.5rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Levels */
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.level-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 11rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.level-card:hover:not(:disabled):not(.dust) {
+  border-color: var(--cyan);
+}
+
+.level-card.next {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px var(--orange);
+}
+
+.level-card.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.level-card strong {
+  font: 700 1.15rem 'Space Grotesk', system-ui, sans-serif;
+}
+
+.level-number {
+  font: 700 1.6rem 'Space Grotesk', system-ui, sans-serif;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.level-card .hook {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.card-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.best {
+  color: var(--muted);
+  font: 500 0.85rem 'Space Grotesk', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  font: 700 0.7rem 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.next-badge {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #1a1008;
+}
+
+.stars {
+  letter-spacing: 0.1em;
+  font-size: 1.1rem;
+}
+
+.star {
+  color: var(--muted);
+}
+
+.star.on {
+  color: var(--gold);
+}
+
+/* Level intro */
+.intro-body {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+  flex: 1;
+}
+
+.intro h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.goal {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 1.15rem;
+}
+
+.new-here,
+.star-rules,
+.control-list {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.new-here li {
+  padding-left: 1rem;
+  border-left: 3px solid var(--cyan);
+  line-height: 1.45;
+}
+
+.intro-side section {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.intro-side .new-here,
+.intro-side .star-rules,
+.intro-side .control-list {
+  margin-bottom: 0;
+}
+
+.level-diagram {
+  display: block;
+  width: 240px;
+  height: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.intro-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.intro-buttons .btn {
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+/* Settings */
+.settings-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 2.5rem;
+  max-width: 56rem;
+}
+
+.settings-panel section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 5rem 1fr 3rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.slider output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.slider input {
+  accent-color: var(--orange);
+  min-height: 44px;
+}
+
+.check,
+.radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-height: 44px;
+  align-items: center;
+}
+
+.check input,
+.radio input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--orange);
+}
+
+.check small,
+.choice small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.choice {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+
+.choice legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+}
+
+.settings-panel .btn {
+  align-self: flex-start;
+}
+
+/* Overlays: the pause menu and Settings over the game */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: rgba(13, 17, 23, 0.82);
+}
+
+.pause-menu,
+.settings-overlay {
+  padding: 1.5rem 2rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.pause-menu {
+  width: min(22rem, 90vw);
+  text-align: center;
+}
+
+.pause-menu h2 {
+  font-size: 1.1rem;
+  color: var(--text);
+  letter-spacing: 0.1em;
+}
+
+.pause-menu ul {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pause-menu .btn {
+  width: 100%;
+}
+
+.pause-menu .hint {
+  color: var(--muted);
+}
+
+.settings-overlay {
+  width: min(52rem, 94vw);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+/* Driving HUD (A3): the force panel is gone; the forces are arrows in the scene */
+.hud2 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px #000;
+}
+
+.hud2 > * {
+  position: absolute;
+}
+
+.hud2-top {
+  position: absolute;
+  inset: 1rem 1.5rem auto;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 1rem;
+}
+
+.hud2-top > * {
+  position: static;
+}
+
+.hud2-speed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+}
+
+.speed-big,
+.time-big {
+  font: 700 2.4rem 'Space Grotesk', system-ui, sans-serif;
+}
+
+.speed-unit {
+  color: var(--muted);
+  font: 500 1rem 'Space Grotesk', system-ui, sans-serif;
+}
+
+.speed-kmh {
+  flex-basis: 100%;
+  color: var(--muted);
+}
+
+.badges {
+  display: flex;
+  gap: 0.4rem;
+  flex-basis: 100%;
+}
+
+.badges .badge {
+  pointer-events: none;
+  text-shadow: none;
+  color: var(--text);
+}
+
+.badge.slip {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #1a1008;
+}
+
+.badge.reverse {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #1a1008;
+}
+
+.badge.pole-N {
+  background: #e5484d;
+  border-color: #e5484d;
+  color: #fff;
+}
+
+.badge.pole-S {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.hud2-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 14rem;
+}
+
+.level-name {
+  font: 700 1.1rem 'Space Grotesk', system-ui, sans-serif;
+}
+
+.progress-text,
+.score-text {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+}
+
+.hud2-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.pause-button {
+  pointer-events: auto;
+  text-shadow: none;
+  background: rgba(22, 27, 35, 0.8);
+}
+
+.hud2-caption {
+  top: 8rem;
+  right: 1.5rem;
+  width: min(26rem, 44vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid var(--cyan);
+  border-radius: 6px;
+  background: rgba(22, 27, 35, 0.85);
+  text-shadow: none;
+}
+
+.hud2-caption strong {
+  font: 600 0.95rem 'Space Grotesk', system-ui, sans-serif;
+}
+
+.hud2-caption span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.hud2-forceline {
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  max-width: 94vw;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(22, 27, 35, 0.85);
+  font: 600 1rem 'Space Grotesk', system-ui, sans-serif;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
+.hud2-hint {
+  left: 1.5rem;
+  bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .level-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .intro-body,
+  .settings-panel {
+    grid-template-columns: 1fr;
+  }
+}

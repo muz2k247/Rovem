@@ -266,3 +266,42 @@ describe('skid marks also follow a slide (angle of 5° or more)', () => {
     expect(straight.view.skidMarkCount).toBe(0);
   });
 });
+
+describe('run scene: force arrows and graphics (LEVELS_BUILD_PLAN A4, A8)', () => {
+  const push = (forceN: number) => ({ kind: 'push' as const, forceN, directionWorld: { x: 1, y: 0, z: 0 } });
+  const shown = (group: THREE.Group) => group.children.filter((o) => o instanceof THREE.ArrowHelper && o.visible).length;
+
+  it('draws the arrows it is given on the rover, and hides them all when given none', () => {
+    const { view } = make(7);
+    view.setForceArrows([push(1000), { ...push(41), kind: 'friction' as const }]);
+    expect(shown(view.arrowsGroup)).toBe(2);
+    view.setForceArrows([]);
+    expect(shown(view.arrowsGroup)).toBe(0);
+  });
+
+  it('skips forces under 20 N', () => {
+    const { view } = make(7);
+    view.setForceArrows([push(19), push(20)]);
+    expect(shown(view.arrowsGroup)).toBe(1);
+  });
+
+  it('keeps the arrows at the middle of the rover as it moves and turns', () => {
+    const { session, view } = make(7, { positionXM: 50, positionZM: 3, headingRad: Math.PI / 2 });
+    view.update(session);
+    const half = content.constants.roverLengthM / 2;
+    // heading +z (physics): the middle is half a length behind the front, i.e. at physics z = 3 − half; scene z is flipped
+    expect(view.arrowsGroup.position.x).toBeCloseTo(50, 9);
+    expect(view.arrowsGroup.position.z).toBeCloseTo(-(3 - half), 9);
+    expect(view.arrowsGroup.position.y).toBeGreaterThan(0);
+  });
+
+  it('Graphics Low hides the dust particles and High shows them again', () => {
+    const { view } = make(7);
+    const dust = view.scene.getObjectByName('dust');
+    expect(dust).toBeDefined();
+    view.setGraphics('low');
+    expect(dust!.visible).toBe(false);
+    view.setGraphics('high');
+    expect(dust!.visible).toBe(true);
+  });
+});

@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
 import { roverFromParts } from '../buildFromParts.ts';
-import { compareRows, fieldLogEntries, garageRows } from './garageView.ts';
+import { compareRows, displayPartName, fieldLogEntries, garageRows } from './garageView.ts';
 import { garageNumbers } from './garageNumbers.ts';
-import { newPartIds, unlockProgress } from './unlocks.ts';
 
 const build = { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' };
 const rows = (b: typeof build) => garageRows(garageNumbers(content, roverFromParts(content, b)), 'mps');
@@ -42,16 +41,10 @@ describe('field log', () => {
   });
 });
 
-describe('NEW badge and progress', () => {
-  it('a part opened since the last visit is new once; starting parts never are', () => {
-    expect(newPartIds(content, 0, [])).toEqual([]);
-    expect(newPartIds(content, 450, []).sort()).toEqual(['chassis-heavy', 'wheels-smooth']);
-    expect(newPartIds(content, 450, ['wheels-smooth'])).toEqual(['chassis-heavy']);
-    expect(newPartIds(content, 450, ['wheels-smooth', 'chassis-heavy'])).toEqual([]);
-  });
-  it('locked parts show "350 / 400 m"', () => {
-    expect(unlockProgress(content, 'chassis-heavy', 350)).toEqual({ text: '350 / 400 m', fraction: 0.875 });
-    expect(unlockProgress(content, 'chassis-heavy', 350.9)!.text).toBe('350 / 400 m'); // never rounds up past what was reached
-    expect(unlockProgress(content, 'chassis-standard', 0)).toBeUndefined();
+describe('part names', () => {
+  it('shows "chassis" as "body", and leaves other names alone', () => {
+    expect(displayPartName('Heavy chassis')).toBe('Heavy body');
+    expect(displayPartName('Chassis')).toBe('Body');
+    expect(displayPartName('Smooth wheels')).toBe('Smooth wheels');
   });
 });

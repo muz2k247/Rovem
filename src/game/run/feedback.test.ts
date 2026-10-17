@@ -291,50 +291,48 @@ describe('try this (A7 order)', () => {
     stats(kind === 'mud' ? { mudLossMps: 5, mudPatches: 1 } : kind === 'headOnHit' ? { headOnLossMps: 5, headOnHits: 1 } : { boostGainMps: 5, boosts: 1 }),
     text, 'mps',
   );
-  const all = ['chassis-standard', 'wheels-all-terrain', 'motor-medium', 'wheels-smooth', 'chassis-heavy'];
-  const start = ['chassis-standard', 'wheels-all-terrain', 'motor-medium'];
   const divider: RunEnd = { cause: 'crash', speedMps: 12, obstacle: 'barrier', atDivider: true };
 
   it('1. stuck in high gravity → the low-gravity tunnel, before anything else', () => {
-    expect(tryThisLine(stuck('high'), ranked('mud'), all, FITTED, text, true)).toBe(text.tryThis.stuckInHighGravity);
-    expect(tryThisLine(stuck('low'), ranked('mud'), all, FITTED, text, true)).toBe(text.tryThis.smoothWheels);
+    expect(tryThisLine(stuck('high'), ranked('mud'), FITTED, text, true)).toBe(text.tryThis.stuckInHighGravity);
+    expect(tryThisLine(stuck('low'), ranked('mud'), FITTED, text, true)).toBe(text.tryThis.smoothWheels);
   });
   it('2. crashed on the divider → pick a lane before the tunnel', () => {
-    expect(tryThisLine(divider, ranked('boost'), start, FITTED, text, true)).toBe(text.tryThis.pickLane);
-    expect(tryThisLine(divider, ranked('mud'), all, FITTED, text, true)).toBe(text.tryThis.pickLane); // before the mud advice
-    expect(tryThisLine(divider, ranked('headOnHit'), all, FITTED, text, true)).toBe(text.tryThis.pickLane); // before the hit advice
-    expect(tryThisLine({ ...divider, speedMps: 25 }, [], start, FITTED, text, true)).toBe(text.tryThis.pickLane); // before "steer earlier"
-    expect(tryThisLine(crash(12), ranked('boost'), start, FITTED, text, true)).toBe(text.tryThis.takeBoosts); // a barrier that is not the divider
-    expect(tryThisLine(stuck('high'), ranked('mud'), all, FITTED, text, true)).toBe(text.tryThis.stuckInHighGravity); // stuck still wins
+    expect(tryThisLine(divider, ranked('boost'), FITTED, text, true)).toBe(text.tryThis.pickLane);
+    expect(tryThisLine(divider, ranked('mud'), FITTED, text, true)).toBe(text.tryThis.pickLane); // before the mud advice
+    expect(tryThisLine(divider, ranked('headOnHit'), FITTED, text, true)).toBe(text.tryThis.pickLane); // before the hit advice
+    expect(tryThisLine({ ...divider, speedMps: 25 }, [], FITTED, text, true)).toBe(text.tryThis.pickLane); // before "steer earlier"
+    expect(tryThisLine(crash(12), ranked('boost'), FITTED, text, true)).toBe(text.tryThis.takeBoosts); // a barrier that is not the divider
+    expect(tryThisLine(stuck('high'), ranked('mud'), FITTED, text, true)).toBe(text.tryThis.stuckInHighGravity); // stuck still wins
   });
-  it('3. mud biggest, Smooth wheels unlocked and not fitted → Smooth wheels', () => {
-    expect(tryThisLine(crash(10), ranked('mud'), all, FITTED, text, true)).toBe(text.tryThis.smoothWheels);
-    expect(tryThisLine(crash(10), ranked('mud'), all, { ...FITTED, wheelsId: 'wheels-smooth' }, text, true)).toBe(text.tryThis.takeBoosts);
-    expect(tryThisLine(crash(10), ranked('mud'), start, FITTED, text, true)).toBe(text.tryThis.takeBoosts);
+  it('3. mud biggest, Smooth wheels not fitted → Smooth wheels (every part is open)', () => {
+    expect(tryThisLine(crash(10), ranked('mud'), FITTED, text, true)).toBe(text.tryThis.smoothWheels);
+    expect(tryThisLine(crash(10), ranked('mud'), { ...FITTED, wheelsId: 'wheels-smooth' }, text, true)).toBe(text.tryThis.takeBoosts);
   });
-  it('4. hits biggest, Heavy chassis unlocked and not fitted → Heavy chassis', () => {
-    expect(tryThisLine(crash(10), ranked('headOnHit'), all, FITTED, text, true)).toBe(text.tryThis.heavyChassis);
-    expect(tryThisLine(crash(10), ranked('headOnHit'), all, { ...FITTED, chassisId: 'chassis-heavy' }, text, true)).toBe(text.tryThis.takeBoosts);
+  it('4. hits biggest, Heavy chassis not fitted → Heavy chassis', () => {
+    expect(tryThisLine(crash(10), ranked('headOnHit'), FITTED, text, true)).toBe(text.tryThis.heavyChassis);
+    expect(tryThisLine(crash(10), ranked('headOnHit'), { ...FITTED, chassisId: 'chassis-heavy' }, text, true)).toBe(text.tryThis.dodgeCannon);
   });
-  it("5. hits biggest and the Heavy chassis still locked → dodge the cannon's line", () => {
-    expect(tryThisLine(crash(10), ranked('headOnHit'), start, FITTED, text, true)).toBe(text.tryThis.dodgeCannon);
-    expect(tryThisLine(stuck(), ranked('headOnHit'), start, FITTED, text, true)).toBe(text.tryThis.dodgeCannon);
-    expect(tryThisLine(crash(25), ranked('headOnHit'), start, FITTED, text, true)).toBe(text.tryThis.dodgeCannon); // before "steer earlier"
-    expect(tryThisLine(crash(10), ranked('mud'), start, FITTED, text, true)).toBe(text.tryThis.takeBoosts); // only for hits
+  it("5. hits biggest and the Heavy chassis already fitted → dodge the cannon's line", () => {
+    const heavy = { ...FITTED, chassisId: 'chassis-heavy' };
+    expect(tryThisLine(crash(10), ranked('headOnHit'), heavy, text, true)).toBe(text.tryThis.dodgeCannon);
+    expect(tryThisLine(stuck(), ranked('headOnHit'), heavy, text, true)).toBe(text.tryThis.dodgeCannon);
+    expect(tryThisLine(crash(25), ranked('headOnHit'), heavy, text, true)).toBe(text.tryThis.dodgeCannon); // before "steer earlier"
+    expect(tryThisLine(crash(10), ranked('boost'), heavy, text, true)).toBe(text.tryThis.takeBoosts); // only for hits
   });
   it('6. crashed above 20 m/s → steer earlier; exactly 20 is not above', () => {
-    expect(tryThisLine(crash(20.01), ranked('boost'), start, FITTED, text, true)).toBe(text.tryThis.steerEarlier);
-    expect(tryThisLine(crash(20), ranked('boost'), start, FITTED, text, true)).toBe(text.tryThis.takeBoosts);
+    expect(tryThisLine(crash(20.01), ranked('boost'), FITTED, text, true)).toBe(text.tryThis.steerEarlier);
+    expect(tryThisLine(crash(20), ranked('boost'), FITTED, text, true)).toBe(text.tryThis.takeBoosts);
   });
   it('7. otherwise → take the boost pads', () => {
-    expect(tryThisLine(stuck(), [], start, FITTED, text, true)).toBe(text.tryThis.takeBoosts);
+    expect(tryThisLine(stuck(), [], FITTED, text, true)).toBe(text.tryThis.takeBoosts);
   });
 });
 
 describe('buildReport', () => {
   const base = { content, stats: stats(), distanceM: 450.5, score: 812.4, previousBestDistanceM: 150, previousBestScore: 900, fitted: FITTED, unit: 'mps' as const };
 
-  it('names the cause, rounds the score, and reports new bests and the parts this run opened', () => {
+  it('names the cause, rounds the score, and reports new bests', () => {
     const r = buildReport({ ...base, ended: { cause: 'crash', speedMps: 18.31, obstacle: 'barrier' } });
     expect(r.headline).toBe('Crashed at 18.31 m/s');
     expect(r.score).toBe(812);
@@ -342,7 +340,6 @@ describe('buildReport', () => {
     expect(r.newBestScore).toBe(false);
     expect(r.bestDistanceM).toBe(450.5);
     expect(r.bestScore).toBe(900);
-    expect(r.unlocked).toEqual(['wheels-smooth', 'chassis-heavy']);
   });
 
   it('"Stuck in mud" and at most 3 effects', () => {
@@ -403,36 +400,33 @@ describe("try this: brake before the cannon's line (DECISIONS 2026-10-16)", () =
     ),
     text, 'mps',
   );
-  const all2 = ['chassis-standard', 'wheels-all-terrain', 'motor-medium', 'wheels-smooth', 'chassis-heavy'];
-  const start2 = ['chassis-standard', 'wheels-all-terrain', 'motor-medium'];
   it('hits were the biggest effect and the brake was never used → brake first', () => {
-    expect(tryThisLine(crash(10), ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.brakeFirst);
-    expect(tryThisLine(crash(10), ranked('kickerHit'), start2, FITTED, text, false)).toBe(text.tryThis.brakeFirst);
-    expect(tryThisLine(crash(10), ranked('headOnHit'), all2, FITTED, text, false)).toBe(text.tryThis.brakeFirst); // before the Heavy chassis advice
-    expect(tryThisLine(crash(25), ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.brakeFirst); // before "steer earlier"
+    expect(tryThisLine(crash(10), ranked('headOnHit'), FITTED, text, false)).toBe(text.tryThis.brakeFirst);
+    expect(tryThisLine(crash(10), ranked('kickerHit'), FITTED, text, false)).toBe(text.tryThis.brakeFirst);
+    expect(tryThisLine(crash(10), ranked('headOnHit'), FITTED, text, false)).toBe(text.tryThis.brakeFirst); // before the Heavy chassis advice
+    expect(tryThisLine(crash(25), ranked('headOnHit'), FITTED, text, false)).toBe(text.tryThis.brakeFirst); // before "steer earlier"
   });
   it('is not given once the brake was used, or when hits were not the biggest effect', () => {
-    expect(tryThisLine(crash(10), ranked('headOnHit'), start2, FITTED, text, true)).toBe(text.tryThis.dodgeCannon);
-    expect(tryThisLine(crash(10), ranked('headOnHit'), all2, FITTED, text, true)).toBe(text.tryThis.heavyChassis);
-    expect(tryThisLine(crash(10), ranked('boost'), start2, FITTED, text, false)).toBe(text.tryThis.takeBoosts);
-    expect(tryThisLine(crash(10), ranked('mud'), all2, FITTED, text, false)).toBe(text.tryThis.smoothWheels); // the mud rule comes first
+    expect(tryThisLine(crash(10), ranked('headOnHit'), FITTED, text, true)).toBe(text.tryThis.heavyChassis);
+    expect(tryThisLine(crash(10), ranked('boost'), FITTED, text, false)).toBe(text.tryThis.takeBoosts);
+    expect(tryThisLine(crash(10), ranked('mud'), FITTED, text, false)).toBe(text.tryThis.smoothWheels); // the mud rule comes first
   });
   it('a slide caused the crash → brake before the corner (after stuck-in-high-gravity and the divider, before the rest)', () => {
     const slid = (over: Partial<RunEnd> = {}): RunEnd => ({ ...crash(10), sliding: true, ...over });
-    expect(tryThisLine(slid(), ranked('boost'), start2, FITTED, text, true)).toBe(text.tryThis.brakeBeforeCorner);
-    expect(tryThisLine(slid(), ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.brakeBeforeCorner);
-    expect(tryThisLine(slid({ speedMps: 25 }), ranked('mud'), all2, FITTED, text, true)).toBe(text.tryThis.brakeBeforeCorner);
-    expect(tryThisLine(slid({ atDivider: true }), ranked('boost'), start2, FITTED, text, true)).toBe(text.tryThis.pickLane);
-    expect(tryThisLine(crash(10), ranked('boost'), start2, FITTED, text, true)).toBe(text.tryThis.takeBoosts); // no slide, no advice
+    expect(tryThisLine(slid(), ranked('boost'), FITTED, text, true)).toBe(text.tryThis.brakeBeforeCorner);
+    expect(tryThisLine(slid(), ranked('headOnHit'), FITTED, text, false)).toBe(text.tryThis.brakeBeforeCorner);
+    expect(tryThisLine(slid({ speedMps: 25 }), ranked('mud'), FITTED, text, true)).toBe(text.tryThis.brakeBeforeCorner);
+    expect(tryThisLine(slid({ atDivider: true }), ranked('boost'), FITTED, text, true)).toBe(text.tryThis.pickLane);
+    expect(tryThisLine(crash(10), ranked('boost'), FITTED, text, true)).toBe(text.tryThis.takeBoosts); // no slide, no advice
   });
   it('the earlier rules still win: stuck in high gravity, and the divider', () => {
-    expect(tryThisLine(stuck('high'), ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.stuckInHighGravity);
-    expect(tryThisLine({ ...crash(10), atDivider: true }, ranked('headOnHit'), start2, FITTED, text, false)).toBe(text.tryThis.pickLane);
+    expect(tryThisLine(stuck('high'), ranked('headOnHit'), FITTED, text, false)).toBe(text.tryThis.stuckInHighGravity);
+    expect(tryThisLine({ ...crash(10), atDivider: true }, ranked('headOnHit'), FITTED, text, false)).toBe(text.tryThis.pickLane);
   });
   it('buildReport reads the brake from the run stats', () => {
     const base = { content, ended: crash(10), distanceM: 300, score: 100, previousBestDistanceM: 0, previousBestScore: 0, fitted: FITTED, unit: 'mps' as const };
     const hits = { headOnLossMps: 5, headOnHits: 1 };
     expect(buildReport({ ...base, stats: stats({ ...hits, brakeUsed: false }) }).tryThis).toBe(text.tryThis.brakeFirst);
-    expect(buildReport({ ...base, stats: stats({ ...hits, brakeUsed: true }) }).tryThis).toBe(text.tryThis.dodgeCannon);
+    expect(buildReport({ ...base, stats: stats({ ...hits, brakeUsed: true }) }).tryThis).toBe(text.tryThis.heavyChassis);
   });
 });
