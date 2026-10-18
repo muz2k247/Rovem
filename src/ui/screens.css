@@ -628,3 +628,139 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* Garage (LEVELS_BUILD_PLAN A5): parts on the left, the turntable in the middle, the five numbers on the right */
+.garage .garage-body {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.garage .garage-parts .part-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.garage .garage-parts .part button {
+  min-height: 4.2rem;
+}
+
+.garage-stage {
+  position: relative;
+}
+
+.garage-preview {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: radial-gradient(ellipse at 50% 70%, #1d2a44 0%, var(--panel) 62%);
+  cursor: grab;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.garage-preview canvas {
+  display: block;
+}
+
+.garage-preview:active {
+  cursor: grabbing;
+}
+
+.garage-hint {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.9rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+.change-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 3.4rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  font-size: 0.85rem;
+}
+
+.change-banner.on {
+  border-color: var(--cyan);
+  background: rgba(99, 199, 230, 0.08);
+  animation: banner-in 0.3s ease-out;
+}
+
+.change-banner strong {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.change-banner span {
+  color: var(--muted);
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.garage .garage-side {
+  overflow-y: auto;
+  padding-right: 0.3rem;
+}
+
+.garage .numbers th {
+  width: 46%;
+  color: var(--muted);
+}
+
+.numbers td {
+  font-variant-numeric: tabular-nums;
+}
+
+.delta {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--cyan);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.garage-go {
+  width: 100%;
+  margin-top: 0.8rem;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.garage-units {
+  margin-top: 0.8rem;
+}
+
+.garage .garage-body > .garage-side .field-log {
+  flex: none;
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .change-banner.on {
+    animation: none;
+  }
+}

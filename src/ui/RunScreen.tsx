@@ -16,7 +16,7 @@ import { SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createRunSession } from '../game/run/runSession.ts';
 import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
-import { wheelStyleFor } from '../render/roverModel.ts';
+import { roverLookFor } from '../render/roverModel.ts';
 import { createRunScene } from '../render/runScene.ts';
 import { recordRun, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
@@ -169,7 +169,7 @@ export function RunScreen({
         return { throttleHeld, brakeHeld };
       },
     });
-    const view = createRunScene(session, content, wheelStyleFor(start.build.wheelsId));
+    const view = createRunScene(session, content, roverLookFor(start.build));
     const engine = createEngineSound();
     const effects = createEffectSounds();
     const driver = createPausableRun(session);

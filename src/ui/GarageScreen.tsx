@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { content, type EventKind, type Part, type Slot } from '../content/index.ts';
 import { roverFromParts } from '../game/buildFromParts.ts';
 import { garageNumbers } from '../game/run/garageNumbers.ts';
-import { compareRows, displayPartName, fieldLogEntries, garageRows } from '../game/run/garageView.ts';
+import { changeBanner, changeRows, compareRows, displayPartName, fieldLogEntries, garageRows } from '../game/run/garageView.ts';
+import { roverLookFor } from '../render/roverModel.ts';
 import type { DemoBuild, DemoProgress } from '../save/demoProgress.ts';
+import { GaragePreview } from './GaragePreview.tsx';
 
 const SLOTS: { slot: Slot; title: string; key: keyof DemoBuild; note?: string }[] = [
   { slot: 'chassis', title: 'Body', key: 'chassisId', note: 'also called the chassis: the rover’s frame' },
@@ -49,17 +51,29 @@ export function GarageScreen({
   onReplay?: () => void;
   onDeveloper: () => void;
 }) {
-  const rover = roverFromParts(content, progress.build);
   const unit = progress.speedUnit;
   const log = fieldLogEntries(progress.seenEvents, content.runText);
+  const numbersFor = (build: DemoBuild) => garageNumbers(content, roverFromParts(content, build));
 
+  // The build before the latest swap: the ▲/▼ changes and the banner compare against it.
+  const [before, setBefore] = useState<DemoBuild | null>(null);
   // Hovering (or focusing) a part shows the numbers with that part fitted: before → after.
   const [preview, setPreview] = useState<{ key: keyof DemoBuild; id: string } | null>(null);
+
+  const banner = before ? changeBanner(content, before, progress.build) : null;
+  const fitted = numbersFor(progress.build);
+  const fittedRows = before && banner ? changeRows(numbersFor(before), fitted, unit) : garageRows(fitted, unit);
   const previewed =
     preview && progress.build[preview.key] !== preview.id
-      ? garageRows(garageNumbers(content, roverFromParts(content, { ...progress.build, [preview.key]: preview.id })), unit)
+      ? garageRows(numbersFor({ ...progress.build, [preview.key]: preview.id }), unit)
       : undefined;
-  const rows = compareRows(garageRows(garageNumbers(content, rover), unit), previewed);
+  const rows = compareRows(fittedRows, previewed);
+
+  const choose = (key: keyof DemoBuild, id: string) => {
+    if (progress.build[key] === id) return;
+    setBefore(progress.build);
+    onProgressChange({ ...progress, build: { ...progress.build, [key]: id } });
+  };
 
   return (
     <main className="garage">
@@ -75,7 +89,7 @@ export function GarageScreen({
       </header>
 
       <div className="garage-body">
-        <section aria-label="Parts">
+        <section aria-label="Parts" className="garage-parts">
           <h2>Build your rover</h2>
           {SLOTS.map(({ slot, title, key, note }) => (
             <div key={slot} className="slot">
@@ -100,11 +114,9 @@ export function GarageScreen({
                           aria-pressed={selected}
                           onFocus={() => setPreview({ key, id: part.id })}
                           onBlur={() => setPreview(null)}
-                          onClick={() => onProgressChange({ ...progress, build: { ...progress.build, [key]: part.id } })}
+                          onClick={() => choose(key, part.id)}
                         >
-                          <strong>
-                            {displayPartName(part.name)}
-                          </strong>
+                          <strong>{displayPartName(part.name)}</strong>
                           <span>{partDetail(part)}</span>
                         </button>
                       </div>
@@ -116,12 +128,25 @@ export function GarageScreen({
           <p className="note">Every part is open. Try them all.</p>
         </section>
 
-        <section aria-label="Your rover in the canyon">
-          <h2>Your rover in the canyon</h2>
+        <section aria-label="Your rover" className="garage-stage">
+          <GaragePreview look={roverLookFor(progress.build)} />
+          <p className="garage-hint">Drag to turn the rover.</p>
+          <div className={`change-banner${banner ? ' on' : ''}`} role="status" aria-live="polite">
+            {banner && (
+              <>
+                <strong>{banner.title}</strong>
+                <span>{banner.why}</span>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section aria-label="Your rover in numbers" className="garage-side">
+          <h2>Your rover in numbers</h2>
           <table className="numbers">
             <tbody>
               {rows.map((row) => (
-                <tr key={row.label}>
+                <tr key={row.id}>
                   <th scope="row">{row.label}</th>
                   <td>
                     {row.after === undefined ? (
@@ -131,46 +156,31 @@ export function GarageScreen({
                         <span className="before">{row.value}</span> → <b className="after">{row.after}</b>
                       </>
                     )}
+                    {row.change && (
+                      <span className={`delta ${row.change.direction}`}>
+                        <span aria-hidden="true">{row.change.direction === 'up' ? '▲' : '▼'}</span>
+                        <span className="sr-only">{row.change.direction === 'up' ? 'up' : 'down'}</span> {row.change.text}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="note">These come from the same physics the run uses. Point at a part to see what it changes.</p>
+          <p className="note">These come from the same physics the levels use. Point at a part to see what it would change.</p>
 
-          <h2>Field log</h2>
-          {log.length === 0 ? (
-            <p className="note">Things you meet in the canyon are written down here.</p>
-          ) : (
-            <ul className="field-log">
-              {log.map((entry) => (
-                <li key={entry.kind}>
-                  <strong>{EVENT_TITLES[entry.kind]}</strong>
-                  <span>{entry.tidbit}</span>
-                  {entry.formula && <em>{entry.formula}</em>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section aria-label="Start">
           {onStart && (
-            <>
-              <h2>Go</h2>
-              <button type="button" className="primary" onClick={onStart}>
-                Start run
-              </button>
-            </>
+            <button type="button" className="btn cta garage-go" onClick={onStart}>
+              Start run
+            </button>
           )}
           {onReplay && progress.lastSeed !== null && (
-            <button type="button" className="secondary" onClick={onReplay}>
+            <button type="button" className="btn small" onClick={onReplay}>
               Replay last course
             </button>
           )}
 
-          <h2>Units</h2>
-          <div className="settings">
+          <div className="settings garage-units">
             <label>
               Speed unit
               <select
@@ -183,6 +193,21 @@ export function GarageScreen({
             </label>
             <small>km/h = m/s × 3.6, e.g. 16 m/s × 3.6 = 57.6 km/h</small>
           </div>
+
+          {log.length > 0 && (
+            <>
+              <h2>Field log</h2>
+              <ul className="field-log">
+                {log.map((entry) => (
+                  <li key={entry.kind}>
+                    <strong>{EVENT_TITLES[entry.kind]}</strong>
+                    <span>{entry.tidbit}</span>
+                    {entry.formula && <em>{entry.formula}</em>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       </div>
 

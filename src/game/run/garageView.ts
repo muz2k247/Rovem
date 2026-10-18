@@ -1,29 +1,93 @@
+import { garageText } from '../../content/garage.ts';
 import type { Content, EventKind } from '../../content/index.ts';
 import { EVENT_KINDS, FORMULA_KINDS } from '../../content/types.ts';
+import type { BuildSelection } from '../buildFromParts.ts';
 import type { GarageNumbers } from './garageNumbers.ts';
 import { speedText, type SpeedUnit } from './feedback.ts';
-import { formatForce, formatMass } from '../partEffects.ts';
+import { formatMass } from '../partEffects.ts';
 
-// What the garage shows, as plain data so it can be tested (docs/DEMO_BUILD_PLAN.md A8). No React.
+// What the garage shows, as plain data so it can be tested (LEVELS_BUILD_PLAN A5). No React.
 
-export interface GarageRow {
-  label: string;
-  value: string;
+export type GarageRowId = 'mass' | 'topSpeed' | 'acceleration' | 'cornerSpeed' | 'water';
+
+/** How a number moved when a part was swapped: ▲ up or ▼ down, with the size of the change. */
+export interface GarageChange {
+  direction: 'up' | 'down';
+  text: string;
 }
 
-/** The rows of "Your rover in the canyon". Same numbers, same order, for the fitted rover and for a previewed part. */
+export interface GarageRow {
+  id: GarageRowId;
+  label: string;
+  value: string;
+  change?: GarageChange;
+}
+
+const kmhFactor = (unit: SpeedUnit) => (unit === 'kmh' ? 3.6 : 1);
+
+/** The five rows of the garage. Same numbers, same order, for the fitted rover and for a previewed part. */
 export function garageRows(n: GarageNumbers, unit: SpeedUnit): GarageRow[] {
-  const k = unit === 'kmh' ? 3.6 : 1;
   return [
-    { label: 'Mass', value: formatMass(n.massKg) },
-    { label: 'Motor force', value: formatForce(n.motorForceN) },
-    { label: 'Top speed', value: speedText(n.topSpeedMps, unit) },
-    { label: 'In mud', value: `friction ${formatForce(n.mud.frictionN)} vs motor ${formatForce(n.mud.motorN)}: ${n.mud.verdict}` },
-    { label: 'Boost pad', value: `+${speedText(n.boostGainMps, unit)}` },
-    { label: 'Sandbag hit', value: `${(n.sandbag.fromMps * k).toFixed(2)} → ${speedText(n.sandbag.toMps, unit)}` },
-    { label: 'Weight, low gravity', value: formatForce(n.weightLowN) },
-    { label: 'Weight, high gravity', value: formatForce(n.weightHighN) },
+    { id: 'mass', label: 'Mass', value: formatMass(n.massKg) },
+    { id: 'topSpeed', label: 'Top speed', value: speedText(n.topSpeedMps, unit) },
+    { id: 'acceleration', label: 'Acceleration on asphalt', value: `${n.accelerationMps2.toFixed(2)} m/s²` },
+    { id: 'cornerSpeed', label: `Safe speed in a ${n.cornerRadiusM} m corner`, value: speedText(n.cornerSpeedMps, unit) },
+    {
+      id: 'water',
+      label: 'Deep water',
+      value: `${n.water.floats ? 'Floats' : 'Sinks'} · ${Math.round(n.water.densityKgPerM3)} kg/m³`,
+    },
   ];
+}
+
+/** A signed change, or none when the shown values are equal. The minus sign is the real one (−). */
+function change(before: number, after: number, decimals: number, unitText: string): GarageChange | undefined {
+  const d = Number((after - before).toFixed(decimals));
+  if (d === 0) return undefined;
+  const size = Math.abs(d).toFixed(decimals);
+  return { direction: d > 0 ? 'up' : 'down', text: `${d > 0 ? '+' : '−'}${size} ${unitText}` };
+}
+
+/** The rows for `after`, each with its ▲/▼ against `before` (the build before the swap). */
+export function changeRows(before: GarageNumbers, after: GarageNumbers, unit: SpeedUnit): GarageRow[] {
+  const k = kmhFactor(unit);
+  const speedUnit = unit === 'kmh' ? 'km/h' : 'm/s';
+  const changes: Record<GarageRowId, GarageChange | undefined> = {
+    mass: change(before.massKg, after.massKg, 0, 'kg'),
+    topSpeed: change(before.topSpeedMps * k, after.topSpeedMps * k, 2, speedUnit),
+    acceleration: change(before.accelerationMps2, after.accelerationMps2, 2, 'm/s²'),
+    cornerSpeed: change(before.cornerSpeedMps * k, after.cornerSpeedMps * k, 2, speedUnit),
+    water: change(Math.round(before.water.densityKgPerM3), Math.round(after.water.densityKgPerM3), 0, 'kg/m³'),
+  };
+  return garageRows(after, unit).map((row) => {
+    const c = changes[row.id];
+    return c ? { ...row, change: c } : row;
+  });
+}
+
+export interface ChangeBanner {
+  /** E.g. `Heavy body fitted · mass 209 → 269 kg`. */
+  title: string;
+  /** One plain sentence on why the part matters. */
+  why: string;
+}
+
+const SLOT_KEYS = ['chassisId', 'wheelsId', 'motorId'] as const;
+
+/** The banner for a swap, or null when nothing changed. The masses are the sums of the parts' masses. */
+export function changeBanner(content: Content, before: BuildSelection, after: BuildSelection): ChangeBanner | null {
+  const part = (id: string) => content.parts.find((p) => p.id === id);
+  const mass = (b: BuildSelection) => SLOT_KEYS.reduce((sum, key) => sum + (part(b[key])?.massKg ?? 0), 0);
+  for (const key of SLOT_KEYS) {
+    if (before[key] === after[key]) continue;
+    const fitted = part(after[key]);
+    if (!fitted) return null;
+    return {
+      title: `${displayPartName(fitted.name)} fitted · mass ${mass(before)} → ${mass(after)} kg`,
+      why: garageText.why[fitted.id] ?? '',
+    };
+  }
+  return null;
 }
 
 export interface CompareRow extends GarageRow {

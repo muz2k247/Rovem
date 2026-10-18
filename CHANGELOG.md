@@ -6,6 +6,17 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels A2: rover and garage)
+- A new code-built rover (`src/render/roverModel.ts`, LEVELS_BUILD_PLAN A5): a bevelled body, a deck with a solar panel, a mast with a two-lens camera, an antenna dish, rocker suspension arms from a central pivot to each wheel pair, a rear motor pod with cooling fins and a headlight. Each of the nine parts looks different: Light is an open tube frame, Standard a plated body, Heavy an armoured body with side plates, rivets and a hazard bumper; the motors differ in housing size and fins (3, 4, 6); the three wheel looks are kept and refined (hub caps). The footprint (1.7 m wide, 2 m long) is unchanged, and a test checks it for all 27 builds.
+- The front wheels steer, the wheels turn the right way in reverse, and the body leans a little outward in turns (`src/render/roverAttitude.ts`); `setAttitude` also pitches the body for the level scene. Presentation only.
+- The garage (LEVELS_BUILD_PLAN A5): a turntable preview you can drag (`garageScene.ts`, `GaragePreview.tsx`), a swapped part pops in over 0.3 s, a banner names the change (`Heavy body fitted · mass 209 → 269 kg`) with one sentence on why it matters, and the five numbers (mass, top speed, acceleration on asphalt, safe speed in a 25 m corner, deep water: floats or sinks with density) show ▲/▼ changes against the build before the swap. The numbers come from `buildQuantities` (`garageNumbers.ts`); pointing at a part still previews before → after.
+- `src/content/garage.json` (+ `garage.ts`): the corner radius (25 m) and the nine "why it matters" sentences, placeholder text until k._muz has reviewed it.
+- Screenshots of all nine part looks: `docs/captures/a2-garage/`.
+
+### Changed (Levels A2)
+- The garage's numbers changed from the Endless set (mud, boost pad, sandbag hit, weight in low and high gravity, motor force) to the five of A5. The field log, speed unit and Start run stay.
+- `createRunScene` and `createRoverModel` take a whole look (`RoverLook`: chassis, wheels, motor); a plain wheel style still works and gives the starting body and motor.
+
 ### Added (Levels A1: screens and HUD)
 - Screens (LEVELS_BUILD_PLAN A3): Home (Continue, Levels, Endless Canyon, Garage, Settings, controls line), Levels (4-column cards, NEXT badge, locks, stars, best time, Endless card with best distance, locked Dust Storm card), Level intro (goal, New here, sketch, three star rules, controls, Back / Change rover / Start with Enter), Settings (Master / Engine / Effects volume and Mute, Force arrows, Show the maths, Camera shake, Graphics Low/High, controls list, Replay tutorial, Reset progress pressed twice) and the Pause menu as an overlay. The game now opens on Home.
 - `src/save/settings.ts` (key `rovem.settings.v1`) and `src/save/levelProgress.ts` (key `rovem.levels.v1`; only the best stars and best time per level). Both fall back to defaults if storage fails.
