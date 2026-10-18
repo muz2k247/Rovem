@@ -1,5 +1,94 @@
 {
   "placeholder": true,
+  "levels": [
+    {
+      "id": "first-tracks",
+      "name": "First Tracks",
+      "hook": "Two roads at every fork. Which is faster for your rover?",
+      "goal": "Reach the relay beacon at the end of the canyon.",
+      "newHere": [
+        "Friction always pushes back against your motion, so a rover you let go of slows down.",
+        "Different ground grips differently: asphalt, sand, ice and mud.",
+        "A shorter road is not always the faster road. After each fork you see the time the other road would have taken."
+      ],
+      "diagram": "fork"
+    },
+    {
+      "id": "push-and-shove",
+      "name": "Push & Shove",
+      "hook": "Boost pads and cannons change your speed in an instant.",
+      "goal": "Run the cannon range to the next beacon.",
+      "newHere": [
+        "A sudden push, called an impulse, changes your speed by the impulse divided by your mass.",
+        "When two things collide, their total momentum (mass times velocity) stays the same.",
+        "A heavier rover changes speed less in the same hit."
+      ],
+      "diagram": "pads"
+    },
+    {
+      "id": "crater-field",
+      "name": "Crater Field",
+      "hook": "Roll down, climb out. Height and speed trade places.",
+      "goal": "Cross the crater field to the next beacon.",
+      "newHere": [
+        "Going down a slope trades height for speed. Going up trades speed for height.",
+        "A slope pulls you downhill, so a steep wall needs more push than a gentle ramp.",
+        "Every crater has a steep wall and a gentle ramp as the two ways out."
+      ],
+      "diagram": "crater"
+    },
+    {
+      "id": "gravity-wells",
+      "name": "Gravity Wells",
+      "hook": "Same rover, different gravity. What changes?",
+      "goal": "Cross the gravity fields to the next beacon.",
+      "newHere": [
+        "In a gravity field your weight changes, but your mass does not.",
+        "Less weight means less grip and less friction. More weight means more of both.",
+        "A cannon hits just as hard in any field, because your mass did not change."
+      ],
+      "diagram": "lanes"
+    },
+    {
+      "id": "ring-road",
+      "name": "Ring Road",
+      "hook": "How fast can you take a bend before you slide?",
+      "goal": "Race down the canyon road to the beacon.",
+      "newHere": [
+        "To go round a bend, your tyres must push you sideways towards the centre.",
+        "Tyres can give only so much sideways push, so each bend has a safe speed.",
+        "Signs show each bend's radius and the safe speed for your rover."
+      ],
+      "diagram": "ring"
+    },
+    {
+      "id": "the-crossing",
+      "name": "The Crossing",
+      "hook": "Wade, float or sink. Cross the water.",
+      "goal": "Cross the flooded valley to the beacon.",
+      "newHere": [
+        "Water pushes up on anything in it, with a force equal to the weight of the water pushed aside.",
+        "If the water pushes up harder than your weight, you float, and a floating rover cannot drive or steer. It only coasts.",
+        "Water also drags you back, more the faster you go."
+      ],
+      "diagram": "river"
+    },
+    {
+      "id": "polar-pass",
+      "name": "Polar Pass",
+      "hook": "Pull and push with a super electromagnet.",
+      "goal": "Reach the polar lander.",
+      "newHere": [
+        "Like poles repel and unlike poles attract.",
+        "The pull gets weaker the further away you are.",
+        "An electromagnet works only while its current is on."
+      ],
+      "diagram": "pylons",
+      "extraControls": ["Space: flip your magnet's pole"]
+    }
+  ],
+  "endless": { "name": "Endless Canyon", "hook": "How far can you go? Mud, gravity, boosts and cannons." },
+  "dustStorm": { "name": "Dust Storm", "hook": "Coming soon: wind." },
   "captions": {
     "surface-mud": { "title": "Mud", "line": "Friction here: {frictionN} N. On asphalt: {asphaltN} N." },
     "surface-sand": { "title": "Sand", "line": "Friction here: {frictionN} N. On asphalt: {asphaltN} N." },

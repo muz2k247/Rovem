@@ -40,8 +40,13 @@ export function nextLevelId(ids: readonly string[], id: string): string | null {
   return i >= 0 && i + 1 < ids.length ? ids[i + 1]! : null;
 }
 
-/** The rows of the Levels screen. */
-export function levelSummaries(levels: readonly LevelCard[], progress: LevelProgress, developerUnlock: boolean): LevelSummary[] {
+/** The rows of the Levels screen. A level whose id is not in `built` (when given) is marked "coming soon". */
+export function levelSummaries(
+  levels: readonly LevelCard[],
+  progress: LevelProgress,
+  developerUnlock: boolean,
+  built?: ReadonlySet<string>,
+): LevelSummary[] {
   const ids = levels.map((l) => l.id);
   return levels.map((l, i) => ({
     id: l.id,
@@ -51,5 +56,6 @@ export function levelSummaries(levels: readonly LevelCard[], progress: LevelProg
     stars: starsOf(progress, l.id),
     bestTimeS: progress.levels[l.id]?.bestTimeS ?? null,
     locked: !isLevelUnlocked(ids, i, progress, developerUnlock),
+    ...(built && !built.has(l.id) ? { comingSoon: true } : {}),
   }));
 }

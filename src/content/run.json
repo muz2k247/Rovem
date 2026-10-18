@@ -19,13 +19,5 @@
     "kickerShots": 3,
     "kickerWakeRearOffsetM": 3,
     "rangeM": 150
-  },
-  "unlocks": [
-    { "partId": "wheels-smooth", "atBestDistanceM": 200 },
-    { "partId": "chassis-heavy", "atBestDistanceM": 400 },
-    { "partId": "chassis-light", "atBestDistanceM": 700 },
-    { "partId": "motor-large", "atBestDistanceM": 1000 },
-    { "partId": "wheels-spiked", "atBestDistanceM": 1500 },
-    { "partId": "motor-small", "atBestDistanceM": 2000 }
-  ]
+  }
 }

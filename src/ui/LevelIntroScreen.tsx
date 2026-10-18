@@ -62,19 +62,19 @@ export function LevelIntroScreen({
                 <span className="star on" aria-hidden="true">
                   ★
                 </span>{' '}
-                Reach the finish
+                Reach the beacon
+              </li>
+              <li>
+                <span className="star on" aria-hidden="true">
+                  ★
+                </span>{' '}
+                Collect all 3 samples
               </li>
               <li>
                 <span className="star on" aria-hidden="true">
                   ★
                 </span>{' '}
                 Beat the par time{parS ? ` (${parS} s)` : ''}
-              </li>
-              <li>
-                <span className="star on" aria-hidden="true">
-                  ★
-                </span>{' '}
-                {card.challenge}
               </li>
             </ul>
           </section>

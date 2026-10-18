@@ -21,8 +21,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | B2 | Track B: level engine | ✅ 2026-10-18 | B1 |
 | B3 | Track B: level scene | ✅ 2026-10-18 | B2 |
 | B4 | Track B: the seven levels, in play order (revised 2026-10-18; was eight, in priority order) | ✅ 2026-10-19 | B3 |
-| I1 | Integration on main, par times, play-check | ⬜ | A3, B4 merged |
-| A2b | Track A: rover polish (only if k._muz is still unhappy with A2) | ⬜ | A2 |
+| I1 | Integration on main, par times, play-check | ✅ 2026-10-19 (DECISIONS 2026-10-19 I1; captures in `docs/captures/i1/`) | A3, B4 merged |
+| A2b | Track A: rover polish (only if k._muz is still unhappy with A2) | ✅ 2026-10-18 (commit 10f90d8, merged; k._muz's verdict on the look is open) | A2 |
 | E1 | Endless Canyon on the level engine, with every element (approved 2026-10-18) | ⬜ | I1 |
 | M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ✅ | M1 |
@@ -56,6 +56,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 Planned 2026-10-17 (DECISIONS 2026-10-17). Design, values, file ownership, merge rules and prompts: `docs/LEVELS_BUILD_PLAN.md`. Screens: wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). Two tracks run in parallel git worktrees after P0: Track A (`levels/a-ui`: A1–A3) and Track B (`levels/b-levels`: B1–B4); then the merges of LEVELS_BUILD_PLAN B5 and the integration session I1 on main. Every session ends with typecheck, test, balance (20/9/23/17, unchanged) and build passing, a CHANGELOG entry and a push. Levels land in the build-priority order of LEVELS_BUILD_PLAN A2.
 
 **Done when:** LEVELS_BUILD_PLAN A14 is all true.
+
+**Still open after I1 (2026-10-19):** (1) 30+ fps on Intel UHD Graphics with Graphics Low, including the force-arrow labels (needs k._muz's laptop; Part E item 7). (2) k._muz reviews `levelText.json` (placeholder text, now including the level cards). (3) The par times come from a scripted driver, not a person: retune after k._muz plays. (4) k._muz's verdict on the rover's look after A2b is open. (5) Two physics-checker notes for k._muz to rule on (DECISIONS 2026-10-19 I1, item 5). (6) E1: Endless on the level engine with every element.
 
 ## Demo v3: endless canyon run
 
@@ -334,3 +336,4 @@ Record a short clip or screenshot at the end of each milestone, for M14.
 | M1 | [Spinning-cube placeholder screen](captures/m1-placeholder.png) | 2026-10-13 |
 | M2 | `npm run balance` output (27-build table and counts), saved as `docs/captures/m2-balance.txt` | 2026-10-13 |
 | M4 | [Driving scene at 60 fps](captures/m4-drive-60fps.png) | 2026-10-13 |
+| I1 | [All seven levels played in Chrome: intro, three drive frames and report each, plus Home, Levels, pause, settings and garage](captures/i1/) | 2026-10-19 |

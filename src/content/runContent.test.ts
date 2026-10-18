@@ -43,7 +43,6 @@ describe('demo run content (D2)', () => {
     expect(content.run.boostImpulseNs).toBe(1200);
     expect(content.run.gravityMultipliers).toEqual({ low: 0.5, high: 2 });
     expect(content.run.sandbag.massKg).toBe(40);
-    expect(content.run.unlocks.map((u) => u.atBestDistanceM)).toEqual([200, 400, 700, 1000, 1500, 2000]);
   });
 
   it('loads 8 field chunks of 100 m and the 50 m tunnel, so a tunnel comes every 250 m', () => {
@@ -86,11 +85,6 @@ describe('demo run content (D2)', () => {
     expect(bad((r) => delete r.run.drift)).toThrow(/run.drift/);
     expect(bad((r) => delete r.runText.tidbits.slide)).toThrow(/runText.tidbits/);
     expect(bad((r) => delete r.runText.tryThis.brakeBeforeCorner)).toThrow(/runText.tryThis/);
-  });
-
-  it('names the bad path: unlock part ids must exist and must not be starting parts', () => {
-    expect(bad((r) => (r.run.unlocks[0].partId = 'wheels-golden'))).toThrow(/run\.unlocks\[0\]\.partId.*wheels-golden/);
-    expect(bad((r) => (r.run.unlocks[1].partId = 'motor-medium'))).toThrow(/run\.unlocks\[1\]\.partId.*starting/);
   });
 
   it('names the bad path: a rectangle whose from is not below to', () => {

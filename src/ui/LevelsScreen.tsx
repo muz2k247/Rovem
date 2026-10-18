@@ -41,21 +41,22 @@ export function LevelsScreen({
       <div className="level-grid">
         {levels.map((l) => {
           const isNext = l.id === nextId;
+          const closed = l.locked || l.comingSoon === true;
           return (
             <button
               key={l.id}
               type="button"
-              className={`level-card${l.locked ? ' locked' : ''}${isNext ? ' next' : ''}`}
-              disabled={l.locked}
+              className={`level-card${closed ? ' locked' : ''}${isNext ? ' next' : ''}`}
+              disabled={closed}
               onClick={() => onOpenLevel(l.id)}
-              aria-label={`Level ${l.number}, ${l.name}${l.locked ? ', locked' : ''}`}
+              aria-label={`Level ${l.number}, ${l.name}${l.comingSoon ? ', coming soon' : l.locked ? ', locked' : ''}`}
             >
               <span className="level-number">{l.number}</span>
               {isNext && <span className="badge next-badge">NEXT</span>}
               <strong>{l.name}</strong>
-              <span className="hook">{l.locked ? 'Finish the previous level' : l.hook}</span>
+              <span className="hook">{l.comingSoon ? 'Coming soon' : l.locked ? 'Finish the previous level' : l.hook}</span>
               <span className="card-foot">
-                {l.locked ? (
+                {closed ? (
                   <span className="lock" aria-hidden="true">
                     🔒
                   </span>

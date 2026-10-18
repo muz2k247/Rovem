@@ -23,7 +23,6 @@ import type {
   RunChunks,
   RunParams,
   RunText,
-  RunUnlock,
   SegmentLineKind,
   Slot,
   Surface,
@@ -286,7 +285,7 @@ function range(raw: unknown, path: string): [number, number] {
   return [list[0] as number, list[1] as number];
 }
 
-function run(raw: unknown, partList: readonly Part[]): RunParams {
+function run(raw: unknown): RunParams {
   const p = 'run';
   const o = obj(raw, p);
   const s = obj(o.sandbag, `${p}.sandbag`);
@@ -300,16 +299,6 @@ function run(raw: unknown, partList: readonly Part[]): RunParams {
   if (d1 < 0 || !(d1 < d2 && d2 < d3)) fail(`${p}.difficultyStartsM`, 'must start at 0 or more and rise: difficulty 1, then 2, then 3');
   const between = num(o, 'fieldChunksBetweenTunnels', p, { positive: true });
   if (!Number.isInteger(between)) fail(`${p}.fieldChunksBetweenTunnels`, 'must be a whole number');
-  const unlocks = arr(o.unlocks, `${p}.unlocks`).map((item, i): RunUnlock => {
-    const up = `${p}.unlocks[${i}]`;
-    const u = obj(item, up);
-    const partId = str(u, 'partId', up);
-    const part = partList.find((x) => x.id === partId);
-    if (!part) fail(`${up}.partId`, `unknown part "${partId}"`);
-    if (part.startsUnlocked) fail(`${up}.partId`, `"${partId}" is a starting part and is always open`);
-    return { partId, atBestDistanceM: num(u, 'atBestDistanceM', up, { positive: true }) };
-  });
-  noDuplicates(unlocks.map((u) => ({ id: u.partId })), `${p}.unlocks`);
   return {
     corridorHalfWidthM: num(o, 'corridorHalfWidthM', p, { positive: true }),
     warmUpLengthM: num(o, 'warmUpLengthM', p, { min: 0 }),
@@ -335,7 +324,6 @@ function run(raw: unknown, partList: readonly Part[]): RunParams {
       kickerWakeRearOffsetM: num(s, 'kickerWakeRearOffsetM', sp, { positive: true }),
       rangeM: num(s, 'rangeM', sp, { positive: true }),
     },
-    unlocks,
   };
 }
 
@@ -438,7 +426,7 @@ export function validateContent(raw: unknown): Content {
   noDuplicates(checkedSurfaces, 'surfaces');
   noDuplicates(checkedPowerUps, 'powerUps');
   const checkedParts = parts(o.parts);
-  const checkedRun = run(o.run, checkedParts);
+  const checkedRun = run(o.run);
   const content: Content = {
     constants: constants(o.constants),
     surfaces: checkedSurfaces,

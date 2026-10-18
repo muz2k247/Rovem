@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { content } from '../content/index.ts';
 import { levelCards } from '../content/levelCards.ts';
 import { STARTING_BUILD, type BuildSelection } from '../game/buildFromParts.ts';
+import type { StarCount } from '../game/contracts.ts';
+import { builtLevelIds, levelParS } from '../game/level/levels.ts';
 import { buildWithPart } from '../game/run/reportModel.ts';
-import { continueTarget, developerUnlockFromSearch, isEndlessUnlocked, levelSummaries } from '../game/levelUnlock.ts';
+import { continueTarget, developerUnlockFromSearch, isEndlessUnlocked, levelSummaries, nextLevelId } from '../game/levelUnlock.ts';
 import { loadDemoProgress, resetDemoProgress, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
-import { emptyLevelProgress, loadLevelProgress, saveLevelProgress, type LevelProgress } from '../save/levelProgress.ts';
+import { emptyLevelProgress, loadLevelProgress, recordLevelResult, saveLevelProgress, type LevelProgress } from '../save/levelProgress.ts';
 import { loadSettings, saveSettings, type Settings } from '../save/settings.ts';
 import { BuildScreen } from './BuildScreen.tsx';
 import { DriveScreen } from './DriveScreen.tsx';
@@ -35,7 +37,9 @@ type Screen =
 /** A new course seed. Chosen here, in the UI, never inside the physics (DEMO_BUILD_PLAN A3). */
 const newSeed = () => Math.floor(Math.random() * 0x7fffffff);
 
-const levelIds = levelCards.levels.map((l) => l.id);
+// Only levels with a file can be played; a card without one says "Coming soon" (LEVELS_BUILD_PLAN A2).
+const builtIds: ReadonlySet<string> = new Set(builtLevelIds());
+const levelIds = levelCards.levels.map((l) => l.id).filter((id) => builtIds.has(id));
 const firstLevelId = levelIds[0]!;
 
 /** The screen for a name from the hash (or the placeholder's buttons); null or home gives Home. */
@@ -89,6 +93,12 @@ export function App() {
   const toHome = () => setScreen({ name: 'home' });
   const toLevels = () => setScreen({ name: 'levels' });
   const toGarage = (from: GarageFrom) => setScreen({ name: 'garage', from });
+  // The best stars and time of a finished level are saved the moment the rover reaches the beacon.
+  const finishLevel = (levelId: string, result: { stars: StarCount; timeS: number }) => {
+    const next = recordLevelResult(levelProgress, levelId, result);
+    setLevelProgress(next);
+    saveLevelProgress(next);
+  };
   const settingsProps = {
     settings,
     onChange: changeSettings,
@@ -114,7 +124,7 @@ export function App() {
     case 'levels':
       return (
         <LevelsScreen
-          levels={levelSummaries(levelCards.levels, levelProgress, developerUnlock)}
+          levels={levelSummaries(levelCards.levels, levelProgress, developerUnlock, builtIds)}
           nextId={continueTarget(levelIds, levelProgress)}
           endless={{ ...levelCards.endless, locked: !endlessUnlocked, bestDistanceM: progress.bestDistanceM }}
           dustStorm={levelCards.dustStorm}
@@ -131,6 +141,7 @@ export function App() {
         <LevelIntroScreen
           card={card}
           number={index + 1}
+          parS={levelParS(card.id)}
           onBack={toLevels}
           onChangeRover={() => toGarage({ kind: 'intro', levelId: card.id })}
           onStart={() => setScreen({ name: 'level', levelId: card.id })}
@@ -153,8 +164,30 @@ export function App() {
         />
       );
     }
-    case 'level':
-      return <LevelScreen levelId={screen.levelId} onBack={() => setScreen({ name: 'levelIntro', levelId: screen.levelId })} />;
+    case 'level': {
+      const levelId = screen.levelId;
+      const next = nextLevelId(levelIds, levelId);
+      return (
+        <LevelScreen
+          levelId={levelId}
+          build={progress.build}
+          settings={settings}
+          onSettingsChange={changeSettings}
+          onReplayTutorial={replayTutorial}
+          onResetProgress={resetProgress}
+          speedUnit={progress.speedUnit}
+          nextLevelId={next}
+          onFinished={(r) => finishLevel(r.levelId, r)}
+          onNext={() => next && setScreen({ name: 'levelIntro', levelId: next })}
+          onLevels={toLevels}
+          onHome={toHome}
+          onGarage={(partId) => {
+            if (partId) update({ ...progress, build: buildWithPart(content, progress.build, partId) });
+            toGarage({ kind: 'intro', levelId });
+          }}
+        />
+      );
+    }
     case 'run':
       return (
         <RunScreen

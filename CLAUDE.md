@@ -140,10 +140,10 @@ docs/
 src/
   physics/            build quantities, controls, states, step(); tests beside each file
   content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a;
-                      demo: run.json, runChunks.json, runText.json (D2); v4: levels.json, levelCards.json (A1: names, hooks and intro text), garage.json (A2: corner radius, part sentences), levelText.json, levels/*.json
+                      demo: run.json, runChunks.json, runText.json (D2); v4: levels.json, garage.json (A2: corner radius, part sentences), levelText.json (the level cards' names, hooks and intro text, plus the in-level captions, hints and report text; merged in I1), levels/*.json
   game/               rules; contracts.ts (HudModel, ReportModel, ForceArrow; v4 P0); v4 A1: levelUnlock, captionQueue, forceLine, forces, pauseMenu, resetConfirm, controlsText
     run/              Endless Canyon (D3–D6): rng, course, runSession, feedback, endlessHud, garageNumbers (the garage's five numbers), garageView, drift
-    level/            v4 level engine (B2)
+    level/            v4 level engine (B2): session, world, report, arrows; levels.ts loads the seven level files; testPilot/levelPlans/levelChecks are test-only (B4)
   render/             three.js scenes (run, level, garage), terrain, water, pylons, track, force arrows, rover model (nine part looks, A2); sounds (Web Audio)
   ui/                 React screens and dialogs; hud/ and report/ components (v4 A1, A3)
   save/               progress storage; demoProgress.ts (key rovem.demo.v1); settings.ts (rovem.settings.v1); levelProgress.ts (rovem.levels.v1)

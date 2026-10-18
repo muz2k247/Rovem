@@ -166,6 +166,8 @@ export interface PilotOptions {
   maxS?: number;
   /** Stop as soon as this is true (checked every step). */
   until?: (s: LevelSession) => boolean;
+  /** Filled with what the pilot pressed, per step, so a browser run can replay it (I1 play-check). `inputs[k]` is the input of step k + 1; `flips` are the steps a pole flip came just before. */
+  record?: { inputs: LevelInput[]; flips: number[] };
 }
 
 /** Drives a level with a plan and reports how it went. */
@@ -224,12 +226,14 @@ export function runPilot(o: PilotOptions): PilotResult {
       if (current.poles && session.clockS - lastFlipS > 0.25) {
         if (poleAt[index] !== session.pole) {
           session.flipPole();
+          o.record?.flips.push(o.record.inputs.length);
           lastFlipS = session.clockS;
         }
       }
     } else {
       input = { throttleHeld: false, brakeHeld: false, steer: 0 };
     }
+    o.record?.inputs.push(input);
     session.stepOnce();
     for (; seen < session.events.length; seen++) {
       const e = session.events[seen]!;
