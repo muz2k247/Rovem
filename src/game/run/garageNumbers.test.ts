@@ -5,28 +5,55 @@ import { garageNumbers } from './garageNumbers.ts';
 
 const close = (actual: number, expected: number) => expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThan(1e-9);
 
-describe('garage numbers (hand-checked, starting build: 209 kg, 1000 N, 16 m/s)', () => {
+describe('garage numbers (hand-checked, starting build: 209 kg, 1000 N, 16 m/s, asphalt)', () => {
   const n = garageNumbers(content, rover());
 
-  it('mass, motor force and top speed', () => {
-    expect([n.massKg, n.motorForceN, n.topSpeedMps]).toEqual([209, 1000, 16]);
+  it('mass and top speed', () => {
+    expect([n.massKg, n.topSpeedMps]).toEqual([209, 16]);
   });
-  it('in mud the friction beats the motor', () => {
-    close(n.mud.frictionN, 1228.92); // 0.6 × 1 × 209 × 9.8
-    expect(n.mud.motorN).toBe(1000);
-    expect(n.mud.verdict).toBe('you slow down');
+  it('acceleration on asphalt: (1000 − 0.02 × 209 × 9.8) ÷ 209 = 4.5900 m/s²', () => {
+    close(n.accelerationMps2, (1000 - 0.02 * 209 * 9.8) / 209);
+    expect(n.accelerationMps2.toFixed(2)).toBe('4.59');
   });
-  it('boost gains J/m', () => close(n.boostGainMps, 1200 / 209));
-  it('a head-on sandbag takes the rover from 16 to 11.823293 m/s', () => {
-    expect(n.sandbag.fromMps).toBe(16);
-    close(n.sandbag.toMps, (209 * 16 - 40 * 10) / 249);
+  it('safe speed in a 25 m corner: √(μ_g k_g g r) = √(0.8 × 9.8 × 25) = 14.0 m/s', () => {
+    close(n.cornerSpeedMps, Math.sqrt(0.8 * 9.8 * 25));
+    expect(n.cornerRadiusM).toBe(25);
   });
-  it('weight in low and high gravity', () => {
-    close(n.weightLowN, 209 * 9.8 * 0.5);
-    close(n.weightHighN, 209 * 9.8 * 2);
+  it('deep water: 209 kg in 0.2 m³ is 1045 kg/m³, denser than water, so it sinks', () => {
+    close(n.water.densityKgPerM3, 1045);
+    expect(n.water.floats).toBe(false);
   });
-  it('the Light/Smooth/Small build pushes through mud (A5: it does not slow)', () => {
+});
+
+describe('every part moves the numbers the way the physics says', () => {
+  const std = { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' };
+  it('the Heavy body adds mass and slows the acceleration, but the safe corner speed stays the same (grip grows with weight)', () => {
+    const base = garageNumbers(content, roverOf(std));
+    const heavy = garageNumbers(content, roverOf({ ...std, chassisId: 'chassis-heavy' }));
+    expect(heavy.massKg).toBe(269);
+    expect(heavy.accelerationMps2).toBeLessThan(base.accelerationMps2);
+    close(heavy.cornerSpeedMps, base.cornerSpeedMps); // m cancels: v = √(μ_g k_g g r)
+    expect(heavy.water.floats).toBe(false);
+  });
+  it('Spiked wheels (grip ×1.4) corner at √1.4 times the speed of All-terrain', () => {
+    const base = garageNumbers(content, roverOf(std));
+    const spiked = garageNumbers(content, roverOf({ ...std, wheelsId: 'wheels-spiked' }));
+    close(spiked.cornerSpeedMps, base.cornerSpeedMps * Math.sqrt(1.4));
+  });
+  it('Smooth wheels corner slower: grip ×0.8', () => {
+    const base = garageNumbers(content, roverOf(std));
+    const smooth = garageNumbers(content, roverOf({ ...std, wheelsId: 'wheels-smooth' }));
+    close(smooth.cornerSpeedMps, base.cornerSpeedMps * Math.sqrt(0.8));
+  });
+  it('the Light body with Smooth wheels and the Small motor (151 kg, 755 kg/m³) floats', () => {
     const light = garageNumbers(content, roverOf({ chassisId: 'chassis-light', wheelsId: 'wheels-smooth', motorId: 'motor-small' }));
-    expect(light.mud.verdict).toBe('you push through');
+    expect(light.massKg).toBe(151);
+    close(light.water.densityKgPerM3, 755);
+    expect(light.water.floats).toBe(true);
+  });
+  it('199 kg is 995 kg/m³, just under the 1000 of water, so it floats', () => {
+    const small = garageNumbers(content, roverOf({ ...std, motorId: 'motor-small' }));
+    expect(small.massKg).toBe(199);
+    expect(small.water.floats).toBe(true);
   });
 });

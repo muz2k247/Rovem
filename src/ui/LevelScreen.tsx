@@ -16,6 +16,7 @@ import { createEngineSound } from '../render/engineSound.ts';
 import { createLevelScene } from '../render/levelScene.ts';
 import { wheelStyleFor } from '../render/roverModel.ts';
 import { loadDemoProgress } from '../save/demoProgress.ts';
+import { loadSettings } from '../save/settings.ts';
 import { StubHud, StubReport } from './levelHudStub.tsx';
 import { crashShakeM, shouldRefreshHud } from './levelScreenLogic.ts';
 
@@ -88,9 +89,10 @@ export function LevelScreen(props: LevelScreenProps) {
     if (!host || !levelDef) return;
     const p = propsRef.current;
     const saved = loadDemoProgress();
+    const settings = loadSettings();
     const build = p.build ?? saved.build ?? STARTING_BUILD;
-    const quality = p.graphics ?? 'high';
-    const soundOn = p.soundOn ?? saved.soundOn;
+    const quality = p.graphics ?? settings.graphics;
+    const soundOn = p.soundOn ?? !settings.muted;
     setReport(null);
     setHud(null);
     setPaused(false);
@@ -99,7 +101,7 @@ export function LevelScreen(props: LevelScreenProps) {
     const rover = roverFromParts(content, build);
     const keys = createKeyTracker();
     const session = createLevelSession({ content, def: levelDef, rover, constants: physicsConstants(content), drive: () => keys.read() });
-    const view = createLevelScene(session, content, { wheelStyle: wheelStyleFor(build.wheelsId), quality, showForces: p.showForces ?? saved.showForces });
+    const view = createLevelScene(session, content, { wheelStyle: wheelStyleFor(build.wheelsId), quality, showForces: p.showForces ?? settings.forceArrows });
     const driver = createPausableRun(session);
     const engine = createEngineSound();
     const effects = createEffectSounds();

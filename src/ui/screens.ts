@@ -1,10 +1,11 @@
-// The new Game v4 screens that Track A fills in (LEVELS_BUILD_PLAN A3). Until then each shows a plain
-// placeholder, so both tracks have a slot in `App.tsx`. The Level screen is Track B's (`LevelScreen.tsx`).
-export const PLACEHOLDER_SCREENS = ['home', 'levels', 'levelIntro', 'pause', 'settings', 'report'] as const;
-export type PlaceholderScreen = (typeof PLACEHOLDER_SCREENS)[number];
+// The Game v4 screens (LEVELS_BUILD_PLAN A3). Home, Levels, Level intro and Settings have an address of their own; Pause is
+// an overlay (`PauseMenu`) and the Report is shown by the run or level that just ended (it needs that run's data), so
+// neither has one. The Level screen is Track B's (`LevelScreen.tsx`).
+export const HASH_SCREENS = ['home', 'levels', 'levelIntro', 'settings'] as const;
+export type HashScreen = (typeof HASH_SCREENS)[number];
 
-/** The placeholder named by a URL hash like `#home`, or null. The game still opens on the garage without one. */
-export function screenFromHash(hash: string): PlaceholderScreen | null {
+/** The screen named by a URL hash like `#levels`, or null. The game opens on Home without one. */
+export function screenFromHash(hash: string): HashScreen | null {
   const name = hash.replace(/^#/, '');
-  return PLACEHOLDER_SCREENS.find((s) => s === name) ?? null;
+  return HASH_SCREENS.find((s) => s === name) ?? null;
 }

@@ -78,6 +78,8 @@ export interface EffectSounds {
   /** Tyre hiss: on while the wheels slip or the rover slides. Silent when muted. */
   setSqueal(slipping: boolean, speedShare: number): void;
   setMuted(muted: boolean): void;
+  /** 0 to 1, from the settings (master × effects). */
+  setVolume(volume: number): void;
   dispose(): void;
 }
 
@@ -85,6 +87,7 @@ export function createEffectSounds(): EffectSounds {
   let ctx: AudioContext | null = null;
   let noiseBuffer: AudioBuffer | null = null;
   let muted = false;
+  let level = 1;
   let squealBand: BiquadFilterNode | null = null;
   let squealGain: GainNode | null = null;
 
@@ -120,10 +123,10 @@ export function createEffectSounds(): EffectSounds {
       const tone = squealTone(speedShare);
       const now = ctx.currentTime;
       squealBand?.frequency.setTargetAtTime(tone.frequencyHz, now, 0.05);
-      squealGain.gain.setTargetAtTime(slipping && !muted ? tone.gain : 0, now, 0.03);
+      squealGain.gain.setTargetAtTime(slipping && !muted ? tone.gain * level : 0, now, 0.03);
     },
     play(kind) {
-      if (!ctx || muted) return;
+      if (!ctx || muted || level === 0) return;
       const recipe = effectRecipe(kind);
       const now = ctx.currentTime;
       for (const t of recipe.tones) {
@@ -132,7 +135,7 @@ export function createEffectSounds(): EffectSounds {
         osc.type = t.type;
         osc.frequency.setValueAtTime(t.fromHz, now + t.startS);
         osc.frequency.exponentialRampToValueAtTime(t.toHz, now + t.startS + t.durationS);
-        gain.gain.setValueAtTime(t.gain, now + t.startS);
+        gain.gain.setValueAtTime(t.gain * level, now + t.startS);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + t.startS + t.durationS);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -147,7 +150,7 @@ export function createEffectSounds(): EffectSounds {
         filter.type = 'lowpass';
         filter.frequency.value = n.filterHz;
         const gain = ctx.createGain();
-        gain.gain.setValueAtTime(n.gain, now + n.startS);
+        gain.gain.setValueAtTime(n.gain * level, now + n.startS);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + n.startS + n.durationS);
         src.connect(filter);
         filter.connect(gain);
@@ -157,6 +160,9 @@ export function createEffectSounds(): EffectSounds {
     },
     setMuted(value) {
       muted = value;
+    },
+    setVolume(value) {
+      level = Math.min(1, Math.max(0, value));
     },
     dispose() {
       if (ctx) void ctx.close();

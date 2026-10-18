@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEMO_STORAGE_KEY, defaultProgress, loadDemoProgress, recordRun, saveDemoProgress, type StorageLike,
+  DEMO_STORAGE_KEY, defaultProgress, loadDemoProgress, recordRun, resetDemoProgress, saveDemoProgress, type StorageLike,
 } from './demoProgress.ts';
 
 function fakeStorage(initial?: string): StorageLike & { data: Map<string, string> } {
@@ -22,16 +22,13 @@ describe('demo progress', () => {
     expect(DEMO_STORAGE_KEY).toBe('rovem.demo.v1');
   });
 
-  it('starts with defaults: the starting build, m/s, forces and sound on', () => {
+  it('starts with defaults: the starting build and m/s', () => {
     const p = loadDemoProgress(fakeStorage());
     expect(p).toEqual(defaultProgress());
     expect(p.build).toEqual({ chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' });
     expect(p.lastSeed).toBeNull();
     expect(p.speedUnit).toBe('mps');
-    expect(p.showForces).toBe(true);
-    expect(p.soundOn).toBe(true);
     expect(p.briefingSeen).toBe(false); // the first run ever waits at the briefing
-    expect(p.partsSeen).toEqual([]);
   });
 
   it('round-trips everything', () => {
@@ -39,7 +36,7 @@ describe('demo progress', () => {
     const p = {
       bestDistanceM: 812.5, bestScore: 4210, lastSeed: 987654, seenEvents: ['mud', 'boost'] as const,
       build: { chassisId: 'chassis-heavy', wheelsId: 'wheels-smooth', motorId: 'motor-medium' },
-      speedUnit: 'kmh' as const, showForces: false, soundOn: false, briefingSeen: true, partsSeen: ['wheels-smooth'],
+      speedUnit: 'kmh' as const, briefingSeen: true,
     };
     expect(saveDemoProgress({ ...p, seenEvents: [...p.seenEvents] }, storage)).toBe(true);
     expect(loadDemoProgress(storage)).toEqual({ ...p, seenEvents: [...p.seenEvents] });
@@ -57,7 +54,7 @@ describe('demo progress', () => {
     expect(loadDemoProgress(fakeStorage('[1,2]'))).toEqual(defaultProgress());
     const p = loadDemoProgress(fakeStorage(JSON.stringify({
       bestDistanceM: -5, bestScore: 300, lastSeed: 1.5, build: { chassisId: 3 }, seenEvents: ['mud', 'nonsense', 'ice'],
-      speedUnit: 'mph', showForces: 'yes', soundOn: false, briefingSeen: 'yes', partsSeen: ['wheels-smooth', 4, ''],
+      speedUnit: 'mph', briefingSeen: 'yes',
     })));
     expect(p.bestDistanceM).toBe(0);
     expect(p.bestScore).toBe(300);
@@ -65,10 +62,7 @@ describe('demo progress', () => {
     expect(p.build).toEqual(defaultProgress().build);
     expect(p.seenEvents).toEqual(['mud', 'ice']);
     expect(p.speedUnit).toBe('mps');
-    expect(p.showForces).toBe(true);
-    expect(p.soundOn).toBe(false);
     expect(p.briefingSeen).toBe(false);
-    expect(p.partsSeen).toEqual(['wheels-smooth']);
   });
 
   it('recordRun keeps the better bests, stores the seed and merges the seen kinds without duplicates', () => {
@@ -83,8 +77,19 @@ describe('demo progress', () => {
     expect(better.bestScore).toBe(2501);
     expect(better.lastSeed).toBe(8);
     expect(p0.bestDistanceM).toBe(500); // the input is not changed
-    expect(recordRun({ ...p0, briefingSeen: true, partsSeen: ['wheels-smooth'] }, { distanceM: 1, score: 1, seed: 1, eventKinds: [] })).toMatchObject({
-      briefingSeen: true, partsSeen: ['wheels-smooth'],
-    });
+    expect(recordRun({ ...p0, briefingSeen: true }, { distanceM: 1, score: 1, seed: 1, eventKinds: [] })).toMatchObject({ briefingSeen: true });
+  });
+
+  it('ignores the fields of the old demo (force panel, sound, parts seen) when it loads them', () => {
+    const p = loadDemoProgress(fakeStorage(JSON.stringify({ bestScore: 10, showForces: false, soundOn: false, partsSeen: ['wheels-smooth'] })));
+    expect(p).toEqual({ ...defaultProgress(), bestScore: 10 });
+  });
+
+  it('reset clears the bests and what was met, and keeps the chosen parts and the speed unit', () => {
+    const p = {
+      ...defaultProgress(), bestDistanceM: 900, bestScore: 3000, lastSeed: 5, seenEvents: ['mud' as const], briefingSeen: true,
+      speedUnit: 'kmh' as const, build: { chassisId: 'chassis-heavy', wheelsId: 'wheels-smooth', motorId: 'motor-large' },
+    };
+    expect(resetDemoProgress(p)).toEqual({ ...defaultProgress(), speedUnit: 'kmh', build: p.build });
   });
 });

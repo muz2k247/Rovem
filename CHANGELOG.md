@@ -40,6 +40,48 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 ### Changed (Levels B1)
 - The M4 step-trace test also sets aside `rollingBack` (always false there). T1–T10, all other tests and the balance counts (20/9/23/17) are unchanged.
 - DECISIONS 2026-10-18: how the new rules are applied, with the judgment calls A6 leaves open.
+### Added (Levels A3: report)
+- The report screen (`src/ui/report/`), built from `ReportModel`: result (stars, time and par for a level; distance for Endless), a speed–time graph with numbered markers (`graph.ts` does the scaling, tested), up to 3 What happened cards with a Show the maths toggle, one Try this with a button that acts (opens the garage with the part fitted, or retries) and the buttons. Endless uses it now, with the top 3 picked as before; the old `ReportOverlay` is gone. `src/game/run/reportModel.ts`: the 10 Hz speed trace recorder, `endlessReportModel`, `tryThisAction`, `buildWithPart`. `feedback.ts`: `ReportEffect.markerTimeS`, `RunReport.tryThisKey` and `tryThisKey()` (`tryThisLine` is unchanged in what it returns).
+
+### Removed (Levels A3)
+- The `report` placeholder screen and its `#report` address (the report needs the data of the run that just ended).
+
+### Changed (Levels A2b: rover polish)
+- The rover is redrawn after k._muz's feedback on the A2 screenshots: a lower, wider stance on bigger wheels (radius 0.42 m, was 0.35 m); a body with real bevels on every edge, a sloped hood and tail, nose grille, tail lights, skirts and a stripe; a short mast on a base plate with a collar, a sun visor and two bezelled lenses (it was a long bare stick); the motor is now a drum on its side with ringed cooling fins, a colour band, an end bell, a shaft and a cradle, in a different colour for Small, Medium and Large.
+- The All-terrain and Spiked wheels are round tyres: ten raised tread blocks, or sixteen steel studs, on a round tyre, with a dark rim and a hub cap (they read as gear cogs before). The footprint is unchanged (1.7 m wide, 2 m long; the tyres stay inside the length) and all nine part-look tests still pass.
+- The garage camera is placed so the rover fills the turntable view at every turn angle (a test checks it fills at least half the frame and stays inside it, at two canvas shapes); the turntable is smaller to match.
+- The "Developer: M5a test course" link in the garage shows only with `?unlock=all`.
+- Screenshots of all nine part swaps: `docs/captures/a2b/`.
+
+### Added (Levels A2: rover and garage)
+- A new code-built rover (`src/render/roverModel.ts`, LEVELS_BUILD_PLAN A5): a bevelled body, a deck with a solar panel, a mast with a two-lens camera, an antenna dish, rocker suspension arms from a central pivot to each wheel pair, a rear motor pod with cooling fins and a headlight. Each of the nine parts looks different: Light is an open tube frame, Standard a plated body, Heavy an armoured body with side plates, rivets and a hazard bumper; the motors differ in housing size and fins (3, 4, 6); the three wheel looks are kept and refined (hub caps). The footprint (1.7 m wide, 2 m long) is unchanged, and a test checks it for all 27 builds.
+- The front wheels steer, the wheels turn the right way in reverse, and the body leans a little outward in turns (`src/render/roverAttitude.ts`); `setAttitude` also pitches the body for the level scene. Presentation only.
+- The garage (LEVELS_BUILD_PLAN A5): a turntable preview you can drag (`garageScene.ts`, `GaragePreview.tsx`), a swapped part pops in over 0.3 s, a banner names the change (`Heavy body fitted · mass 209 → 269 kg`) with one sentence on why it matters, and the five numbers (mass, top speed, acceleration on asphalt, safe speed in a 25 m corner, deep water: floats or sinks with density) show ▲/▼ changes against the build before the swap. The numbers come from `buildQuantities` (`garageNumbers.ts`); pointing at a part still previews before → after.
+- `src/content/garage.json` (+ `garage.ts`): the corner radius (25 m) and the nine "why it matters" sentences, placeholder text until k._muz has reviewed it.
+- Screenshots of all nine part looks: `docs/captures/a2-garage/`.
+
+### Changed (Levels A2)
+- The garage's numbers changed from the Endless set (mud, boost pad, sandbag hit, weight in low and high gravity, motor force) to the five of A5. The field log, speed unit and Start run stay.
+- `createRunScene` and `createRoverModel` take a whole look (`RoverLook`: chassis, wheels, motor); a plain wheel style still works and gives the starting body and motor.
+
+### Added (Levels A1: screens and HUD)
+- Screens (LEVELS_BUILD_PLAN A3): Home (Continue, Levels, Endless Canyon, Garage, Settings, controls line), Levels (4-column cards, NEXT badge, locks, stars, best time, Endless card with best distance, locked Dust Storm card), Level intro (goal, New here, sketch, three star rules, controls, Back / Change rover / Start with Enter), Settings (Master / Engine / Effects volume and Mute, Force arrows, Show the maths, Camera shake, Graphics Low/High, controls list, Replay tutorial, Reset progress pressed twice) and the Pause menu as an overlay. The game now opens on Home.
+- `src/save/settings.ts` (key `rovem.settings.v1`) and `src/save/levelProgress.ts` (key `rovem.levels.v1`; only the best stars and best time per level). Both fall back to defaults if storage fails.
+- `src/game/levelUnlock.ts`: levels open in order, Endless opens after the first level, the hidden `?unlock=all` link opens everything and is never saved; Continue picks the next unfinished level.
+- `src/content/levelCards.json` (+ `levelCards.ts`): names, hooks, goals, New here text and challenge stars for the Levels and intro screens; placeholder text until k._muz reviews it.
+- `src/ui/hud/Hud.tsx`: the new driving HUD (speed in m/s with km/h, badges, level name and progress bar, time and pause button, one caption, the F = ma line, controls hint for the first 10 s). `src/game/captionQueue.ts` (one caption at a time, each at least 2.5 s), `src/game/forceLine.ts` (F = ma line rule and the "Balanced: constant speed" message), `src/game/forces.ts` (push or brake, and friction, from the physics numbers), `src/game/run/endlessHud.ts`.
+- Force arrows in the Endless scene (`runScene.setForceArrows`); Graphics Low hides the dust; engine and effect sounds take a volume.
+- Optional field `HudModel.scoreText` (the Endless score line).
+
+### Changed (Levels A1)
+- The Endless Canyon uses the new HUD and pause menu; Esc opens the pause menu and Esc or Resume closes it (before, any key resumed).
+- The garage shows every part as open, has a Back button, and no longer holds the force-panel and sound settings (they moved to Settings); Start run shows only when the garage is opened from the Endless run.
+- The report's "Try this" no longer depends on unlocked parts: every part is open, so with the Heavy body already fitted a hit-heavy run gets the dodge-the-cannon line.
+- `DemoProgress` lost `showForces`, `soundOn` and `partsSeen`; old saves still load (the extra fields are ignored). The page uses the A3 palette (dark ground #0D1117, panels #161B23, orange, cyan and gold accents) as CSS variables.
+
+### Removed (Levels A1)
+- The Endless distance ladder in code (`unlocks.ts`, the NEW badge and unlock bars): all parts are open (DECISIONS 2026-10-17). The `unlocks` list stays in `run.json` and its schema until I1 (`schema.ts` is Track B's).
+- The force panel (`forcePanel.ts`, `ForcePanelView`), the old captions stack and the score/distance HUD row.
 
 ### Docs (Game v4 levels revised, 2026-10-18)
 - `docs/LEVELS_BUILD_PLAN.md`: 7 cumulative levels (First Tracks absorbs Fork in the Road; Ring Road has no laps), rules for every level (goal, forks, visible failure, samples), stars now beacon · 3 samples · par, arrows shown only while their force acts, build order 1 → 7, new prompts A2b (rover polish) and E1 (Endless with every element), revised B2/B4/I1 prompts, Part E handover list for I1. The first 8-level list is kept as superseded.

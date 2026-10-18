@@ -1,0 +1,112 @@
+{
+  "placeholder": true,
+  "levels": [
+    {
+      "id": "first-tracks",
+      "name": "First Tracks",
+      "hook": "Drive, coast, stop and reverse. See what a push does.",
+      "goal": "Drive the five short parts of the canyon to the finish line.",
+      "newHere": [
+        "A bigger push makes you speed up faster.",
+        "Friction always pushes back against your motion, so a rover you let go of slows down.",
+        "The net force is the push minus the friction, and it sets how fast your speed changes."
+      ],
+      "challenge": "Stop inside the box on your first try.",
+      "diagram": "straight"
+    },
+    {
+      "id": "fork-in-the-road",
+      "name": "Fork in the Road",
+      "hook": "Two roads, one choice. Which is faster for your rover?",
+      "goal": "Pick a road at each of three forks and reach the finish.",
+      "newHere": [
+        "Different ground grips differently: asphalt, sand, ice and mud.",
+        "A shorter road is not always the faster road.",
+        "After each fork you see the time the other road would have taken."
+      ],
+      "challenge": "Take the faster road at every fork.",
+      "diagram": "fork"
+    },
+    {
+      "id": "push-and-shove",
+      "name": "Push & Shove",
+      "hook": "Boost pads and cannons change your speed in an instant.",
+      "goal": "Get through the boost pads, cannons and kickers to the finish.",
+      "newHere": [
+        "A sudden push, called an impulse, changes your speed by the impulse divided by your mass.",
+        "When two things collide, their total momentum (mass times velocity) stays the same.",
+        "A heavier rover changes speed less in the same hit."
+      ],
+      "challenge": "Dodge every head-on sandbag.",
+      "diagram": "pads"
+    },
+    {
+      "id": "ring-road",
+      "name": "Ring Road",
+      "hook": "How fast can you take a bend before you slide?",
+      "goal": "Drive two laps of the circuit.",
+      "newHere": [
+        "To go round a bend, your tyres must push you sideways towards the centre.",
+        "Tyres can give only so much sideways push, so each bend has a safe speed.",
+        "Signs show each bend's radius and the safe speed for your rover."
+      ],
+      "challenge": "Finish without a slide of 10° or more.",
+      "diagram": "ring"
+    },
+    {
+      "id": "gravity-wells",
+      "name": "Gravity Wells",
+      "hook": "Same rover, different gravity. What changes?",
+      "goal": "Cross the three gravity tunnels to the finish.",
+      "newHere": [
+        "Your mass stays the same everywhere, but your weight changes with gravity.",
+        "More weight means more grip, and more friction too.",
+        "A boost pad adds the same speed in either lane, because mass did not change."
+      ],
+      "challenge": "Take the faster lane at every split.",
+      "diagram": "lanes"
+    },
+    {
+      "id": "crater-field",
+      "name": "Crater Field",
+      "hook": "Roll down, climb out. Height and speed trade places.",
+      "goal": "Cross the hills and craters to the finish.",
+      "newHere": [
+        "Going down a slope trades height for speed. Going up trades speed for height.",
+        "A slope pulls you downhill, so a steep wall needs more push than a gentle ramp.",
+        "Every crater has a steep wall and a gentle ramp as the two ways out."
+      ],
+      "challenge": "Climb out of the big crater by its steep wall.",
+      "diagram": "crater"
+    },
+    {
+      "id": "the-crossing",
+      "name": "The Crossing",
+      "hook": "Wade, float or sink. Cross the water.",
+      "goal": "Cross the fords, the river and the deep channels to the finish.",
+      "newHere": [
+        "Water pushes up on anything in it, with a force equal to the weight of the water pushed aside.",
+        "A rover less dense than water floats, and a floating rover has no grip.",
+        "Water also drags you back, more the faster you go."
+      ],
+      "challenge": "Cross every channel without floating.",
+      "diagram": "river"
+    },
+    {
+      "id": "polar-pass",
+      "name": "Polar Pass",
+      "hook": "Pull and push with a super electromagnet.",
+      "goal": "Get through the pylon pass to the finish.",
+      "newHere": [
+        "Like poles repel and unlike poles attract.",
+        "The pull gets weaker the further away you are.",
+        "An electromagnet works only while its current is on."
+      ],
+      "challenge": "Gain speed at all three slingshots.",
+      "diagram": "pylons",
+      "extraControls": ["Space: flip your magnet's pole"]
+    }
+  ],
+  "endless": { "name": "Endless Canyon", "hook": "How far can you go? Mud, gravity, boosts and cannons." },
+  "dustStorm": { "name": "Dust Storm", "hook": "Coming soon: wind." }
+}

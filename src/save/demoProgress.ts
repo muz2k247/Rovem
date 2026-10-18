@@ -1,7 +1,7 @@
 import type { EventKind } from '../content/index.ts';
 import { EVENT_KINDS } from '../content/types.ts';
 
-// Demo-only saving (docs/DEMO_BUILD_PLAN.md A9). Not the Data Model: no Knowledge, no question progress.
+// Endless Canyon saving (docs/DEMO_BUILD_PLAN.md A9). Not the Data Model: no Knowledge, no question progress.
 // Replaced if the project direction changes. Every read and write is wrapped in try/catch; if storage fails,
 // the game works with defaults.
 
@@ -22,12 +22,8 @@ export interface DemoProgress {
   /** Event kinds the student has met (captions show their tidbit the first time). */
   seenEvents: EventKind[];
   speedUnit: 'mps' | 'kmh';
-  showForces: boolean;
-  soundOn: boolean;
   /** The first run ever waits for a key at the briefing; once it has been seen, later runs close it after 2.5 s. */
   briefingSeen: boolean;
-  /** Unlockable parts the garage has already shown as open, so a part opened since the last visit gets a NEW badge. */
-  partsSeen: string[];
 }
 
 /** The starting build is free (CLAUDE.md, Key terms). */
@@ -45,10 +41,7 @@ export function defaultProgress(): DemoProgress {
     build: { ...DEFAULT_BUILD },
     seenEvents: [],
     speedUnit: 'mps',
-    showForces: true,
-    soundOn: true,
     briefingSeen: false,
-    partsSeen: [],
   };
 }
 
@@ -92,10 +85,7 @@ export function loadDemoProgress(storage: StorageLike | undefined = defaultStora
       out.seenEvents = o.seenEvents.filter((k): k is EventKind => (EVENT_KINDS as readonly unknown[]).includes(k));
     }
     if (o.speedUnit === 'mps' || o.speedUnit === 'kmh') out.speedUnit = o.speedUnit;
-    if (typeof o.showForces === 'boolean') out.showForces = o.showForces;
-    if (typeof o.soundOn === 'boolean') out.soundOn = o.soundOn;
     if (typeof o.briefingSeen === 'boolean') out.briefingSeen = o.briefingSeen;
-    if (Array.isArray(o.partsSeen)) out.partsSeen = o.partsSeen.filter(isString);
   } catch {
     return defaultProgress();
   }
@@ -127,4 +117,9 @@ export function recordRun(
     lastSeed: run.seed,
     seenEvents: EVENT_KINDS.filter((k) => seen.has(k)),
   };
+}
+
+/** Reset progress (Settings, A3): the bests, the last seed, what was met and the tutorial go; the chosen parts and the speed unit stay. */
+export function resetDemoProgress(progress: DemoProgress): DemoProgress {
+  return { ...defaultProgress(), build: progress.build, speedUnit: progress.speedUnit };
 }

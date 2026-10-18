@@ -3,211 +3,84 @@ import * as THREE from 'three';
 import { content, type EventKind, type GravityKind } from '../content/index.ts';
 import { EVENT_KINDS } from '../content/types.ts';
 import { physicsConstants, roverFromParts, surfaceSpec } from '../game/buildFromParts.ts';
+import { currentCaption, emptyQueue, enqueueCaption, tickCaptions, type CaptionQueue } from '../game/captionQueue.ts';
+import type { HudModel, ReportModel, TryThisAction } from '../game/contracts.ts';
 import { createKeyTracker } from '../game/controls.ts';
-import {
-  buildReport,
-  emptyFeed,
-  pushCaption,
-  speedText,
-  visibleCaptions,
-  type Caption,
-  type CaptionFeed,
-  type RunReport,
-} from '../game/run/feedback.ts';
-import { forcePanel, type ForcePanel } from '../game/run/forcePanel.ts';
+import { createForceLine } from '../game/forceLine.ts';
+import { pathArrows, pathForces } from '../game/forces.ts';
+import type { PauseAction } from '../game/pauseMenu.ts';
+import { buildEndlessHud, captionForEvent, controlsHintVisible } from '../game/run/endlessHud.ts';
+import { buildReport, emptyFeed, type CaptionFeed, type RunReport } from '../game/run/feedback.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
 import { SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createRunSession } from '../game/run/runSession.ts';
-import { displayPartName, nextUnlock } from '../game/run/unlocks.ts';
+import { createTraceRecorder, endlessReportModel } from '../game/run/reportModel.ts';
 import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
-import { wheelStyleFor } from '../render/roverModel.ts';
+import { roverLookFor } from '../render/roverModel.ts';
 import { createRunScene } from '../render/runScene.ts';
 import { recordRun, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
+import { effectiveVolume, type Settings } from '../save/settings.ts';
+import { Hud } from './hud/Hud.tsx';
+import { ReportScreen } from './report/ReportScreen.tsx';
+import { PauseMenu } from './PauseMenu.tsx';
+import { SettingsPanel } from './SettingsPanel.tsx';
 
 const BRIEFING_S = 2.5;
 /** The crash moment before the report: shake, flash and a thud (DECISIONS 2026-10-16). Presentation values. */
 const CRASH_MOMENT_S = 0.5;
 const CRASH_SHAKE_M = 0.35;
+/** Force arrow labels are rebuilt when their number changes, so the arrows update every few frames, not every frame. */
+const ARROW_EVERY_N_FRAMES = 4;
 
 /** The sound that goes with an event, if any. */
 const EVENT_SOUNDS: Partial<Record<string, EffectKind>> = { boost: 'boost', headOnHit: 'sandbagHit', kickerHit: 'kickerHit' };
 
-interface Hud {
-  speedMps: number;
-  distanceM: number;
-  score: number;
-  multiplier: number;
-  captions: Caption[];
-  panel: ForcePanel;
-  gravityKind: GravityKind | undefined;
-  /** The rover faces forward (for the force panel icon). */
-  reverse: boolean;
-}
-
 /**
- * The force panel: small, semi-transparent, bottom-left (A7). Arrow length is proportional to newtons, capped.
- * Layout: motor ahead of the icon and friction behind it, each with a gap so the heads clear the icon and its label
- * sits above its own arrow; weight and ground push are two separate arrows under the icon, each with its own label.
- */
-const PANEL_W = 280;
-const PANEL_H = 150;
-const ICON_X = 140; // centre of the rover icon
-const ICON_Y = 46;
-const ICON_HALF_W = 22;
-const NOSE = 6;
-const ARROW_GAP = 12; // clear space between the icon and an arrow tail
-const LONGEST_H = 88; // longest horizontal arrow, px
-const LONGEST_V = 40; // longest vertical arrow, px
-const HEAD = 9; // arrow head length, px
-const COLOURS = { motor: '#28d8e8', friction: '#ffb347', weight: '#c9d0e8', push: '#8fe0a0' };
-
-export function ForcePanelView({ panel }: { panel: ForcePanel }) {
-  // A visible arrow is never shorter than its head.
-  const length = (fraction: number, longest: number) => (fraction > 0 ? Math.max(HEAD + 2, longest * fraction) : 0);
-  const arrow = (x1: number, y1: number, x2: number, y2: number, colour: keyof typeof COLOURS) => (
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={COLOURS[colour]} strokeWidth={4} strokeLinecap="butt" markerEnd={`url(#head-${colour})`} />
-  );
-  const label = (name: string, valueN: number, x: number, y: number, anchor: 'start' | 'middle' | 'end', colour: keyof typeof COLOURS) => (
-    <text x={x} y={y} fill={COLOURS[colour]} fontSize="11" textAnchor={anchor}>
-      <tspan x={x}>{name}</tspan>
-      <tspan x={x} dy="13" fontWeight="bold">
-        {valueN.toFixed(0)} N
-      </tspan>
-    </text>
-  );
-  const motorLen = length(panel.motor.lengthFraction, LONGEST_H);
-  const frictionLen = length(panel.friction.lengthFraction, LONGEST_H);
-  const weightLen = length(panel.weight.lengthFraction, LONGEST_V);
-  const pushLen = length(panel.groundPush.lengthFraction, LONGEST_V);
-  const tailFront = ICON_X + ICON_HALF_W + NOSE + ARROW_GAP;
-  const tailBack = ICON_X - ICON_HALF_W - ARROW_GAP;
-  const underY = ICON_Y + 16; // just below the icon
-  const weightX = ICON_X - 34;
-  const pushX = ICON_X + 34;
-  const labelsY = underY + LONGEST_V + 14;
-  return (
-    <div className="force-panel" aria-label="Forces on the rover">
-      <svg width={PANEL_W} height={PANEL_H} viewBox={`0 0 ${PANEL_W} ${PANEL_H}`}>
-        <defs>
-          {(Object.keys(COLOURS) as (keyof typeof COLOURS)[]).map((c) => (
-            <marker key={c} id={`head-${c}`} markerUnits="userSpaceOnUse" markerWidth={HEAD} markerHeight={HEAD + 2} refX={HEAD} refY={(HEAD + 2) / 2} orient="auto">
-              <path d={`M0,0 L${HEAD},${(HEAD + 2) / 2} L0,${HEAD + 2} z`} fill={COLOURS[c]} />
-            </marker>
-          ))}
-        </defs>
-        <rect x={ICON_X - ICON_HALF_W} y={ICON_Y - 8} width={ICON_HALF_W * 2} height={16} rx={4} fill="#e0703c" />
-        <polygon points={`${ICON_X + ICON_HALF_W},${ICON_Y - 5} ${ICON_X + ICON_HALF_W + NOSE},${ICON_Y} ${ICON_X + ICON_HALF_W},${ICON_Y + 5}`} fill="#e0703c" />
-        {motorLen > 0 && arrow(tailFront, ICON_Y, tailFront + motorLen, ICON_Y, 'motor')}
-        {frictionLen > 0 && arrow(tailBack, ICON_Y, tailBack - frictionLen, ICON_Y, 'friction')}
-        {label(panel.motor.label, panel.motor.valueN, tailFront, ICON_Y - 26, 'start', 'motor')}
-        {label(panel.friction.label, panel.friction.valueN, tailBack, ICON_Y - 26, 'end', 'friction')}
-        {weightLen > 0 && arrow(weightX, underY, weightX, underY + weightLen, 'weight')}
-        {pushLen > 0 && arrow(pushX, underY + pushLen, pushX, underY, 'push')}
-        {label(panel.weight.label, panel.weight.valueN, weightX, labelsY, 'middle', 'weight')}
-        {label(panel.groundPush.label, panel.groundPush.valueN, pushX, labelsY, 'middle', 'push')}
-      </svg>
-      {panel.balancedLabel && <div className="balanced">{panel.balancedLabel}</div>}
-    </div>
-  );
-}
-
-function ReportOverlay({
-  report,
-  onAgain,
-  onReplay,
-  onGarage,
-}: {
-  report: RunReport;
-  onAgain: () => void;
-  onReplay: () => void;
-  onGarage: () => void;
-}) {
-  return (
-    <div className="report-backdrop">
-      <div className="report" role="dialog" aria-label="Run report">
-        <h2>{report.headline}</h2>
-        <p className="report-numbers">
-          <span>
-            Distance <strong>{report.distanceM.toFixed(0)} m</strong>
-            {report.newBestDistance && <em> new best!</em>}
-          </span>
-          <span>
-            Score <strong>{report.score}</strong>
-            {report.newBestScore && <em> new best!</em>}
-          </span>
-          <span>
-            Best {report.bestDistanceM.toFixed(0)} m · {report.bestScore}
-          </span>
-        </p>
-        {report.unlocked.length > 0 && (
-          <p className="unlocked">
-            Unlocked:{' '}
-            {report.unlocked
-              .map((id) => displayPartName(content.parts.find((p) => p.id === id)?.name ?? id))
-              .join(', ')}
-          </p>
-        )}
-        {report.effects.length > 0 && (
-          <ul className="effects">
-            {report.effects.map((e) => (
-              <li key={e.kind}>
-                <strong>{e.label}</strong>
-                {e.detail.map((line) => (
-                  <span key={line} className="detail">
-                    {line}
-                  </span>
-                ))}
-                {e.worked && <em>{e.worked}</em>}
-                <small>{e.why}</small>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="try-this">{report.tryThis}</p>
-        <div className="report-buttons">
-          <button type="button" className="primary" onClick={onAgain}>
-            Run again (new course)
-          </button>
-          <button type="button" className="secondary" onClick={onReplay}>
-            Replay this course
-          </button>
-          <button type="button" className="secondary" onClick={onGarage}>
-            Garage
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * One run of the endless canyon: briefing, the game loop driving the run session, the HUD, captions, the force panel
- * and the report. The game loop (not React) runs the physics; React only shows the numbers it is handed each frame.
+ * One run of the endless canyon: briefing, the game loop driving the run session, the HUD (one caption at a time,
+ * the F = ma line, force arrows in the scene), the pause menu and the report. The game loop (not React) runs the
+ * physics; React only shows the numbers it is handed each frame.
  */
 export function RunScreen({
   seed,
   progress,
   onProgressChange,
+  settings,
+  onSettingsChange,
+  onReplayTutorial,
+  onResetProgress,
   onAgain,
   onReplay,
   onGarage,
+  onLevels,
+  onHome,
+  onTryThis,
 }: {
   seed: number;
   progress: DemoProgress;
   onProgressChange: (progress: DemoProgress) => void;
+  settings: Settings;
+  onSettingsChange: (settings: Settings) => void;
+  onReplayTutorial: () => void;
+  onResetProgress: () => void;
   onAgain: () => void;
   onReplay: () => void;
   onGarage: () => void;
+  onLevels: () => void;
+  onHome: () => void;
+  /** The Try this button of the report: open the garage on a part, or run again. */
+  onTryThis: (action: TryThisAction) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [briefing, setBriefing] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [crashMoment, setCrashMoment] = useState(false);
   // The first run ever waits for a key at the briefing; later runs close it after BRIEFING_S.
   const firstBriefing = useRef(!progress.briefingSeen);
-  const [hud, setHud] = useState<Hud | null>(null);
-  const [report, setReport] = useState<RunReport | null>(null);
+  const [hud, setHud] = useState<HudModel | null>(null);
+  const [gravityKind, setGravityKind] = useState<GravityKind | undefined>(undefined);
+  const [report, setReport] = useState<{ run: RunReport; model: ReportModel } | null>(null);
   // This screen is mounted afresh for every run (key = run id), so what the run starts with is read once.
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -217,8 +90,12 @@ export function RunScreen({
   const unit = progress.speedUnit;
   const unitRef = useRef(unit);
   unitRef.current = unit;
-  const soundRef = useRef(progress.soundOn);
-  soundRef.current = progress.soundOn;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const showSettingsRef = useRef(false);
+  showSettingsRef.current = showSettings;
+  // The loop's pause and resume, for the pause button and the menu.
+  const controls = useRef<{ pause: () => void; resume: () => void }>({ pause: () => {}, resume: () => {} });
 
   useEffect(() => {
     const host = hostRef.current;
@@ -236,10 +113,12 @@ export function RunScreen({
         return { throttleHeld, brakeHeld };
       },
     });
-    const view = createRunScene(session, content, wheelStyleFor(start.build.wheelsId));
+    const view = createRunScene(session, content, roverLookFor(start.build));
     const engine = createEngineSound();
     const effects = createEffectSounds();
     const driver = createPausableRun(session);
+    const forceLine = createForceLine();
+    const trace = createTraceRecorder();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     host.appendChild(renderer.domElement);
@@ -265,7 +144,7 @@ export function RunScreen({
         onChangeRef.current(seen);
       }
     };
-    // Pause (Esc, or the window losing focus): no steps run. Any key resumes.
+    // Pause (Esc, the pause button, or the window losing focus): no steps run, and the clock stops with them.
     const pause = () => {
       if (phase !== 'running' || driver.paused) return;
       driver.pause();
@@ -275,18 +154,22 @@ export function RunScreen({
     const resume = () => {
       driver.resume();
       setPaused(false);
+      setShowSettings(false);
     };
+    controls.current = { pause, resume };
     const onKeyDown = (e: KeyboardEvent) => {
       engine.start(); // audio may only start after a user gesture
       effects.start();
-      const wasPaused = driver.paused;
-      const wasBriefing = phase === 'briefing';
-      if (wasPaused) resume();
-      skipBriefing();
       if (e.code === 'Escape') {
-        if (!wasPaused && !wasBriefing) pause(); // Esc at the briefing only skips it
+        if (phase === 'briefing') skipBriefing(); // Esc at the briefing only skips it
+        else if (driver.paused) {
+          if (showSettingsRef.current) setShowSettings(false); // Esc in Settings goes back to the pause menu
+          else resume();
+        } else pause();
         return;
       }
+      if (driver.paused) return; // the pause menu is driven by its buttons
+      skipBriefing();
       if (!keys.handles(e.code)) return;
       e.preventDefault(); // arrow keys must not scroll the page
       keys.down(e.code);
@@ -297,6 +180,7 @@ export function RunScreen({
     window.addEventListener('blur', pause);
 
     let feed: CaptionFeed = emptyFeed;
+    let queue: CaptionQueue = emptyQueue;
     const seenKinds = new Set<EventKind>(start.seenEvents);
     let eventsHandled = 0;
     let frame = 0;
@@ -319,18 +203,21 @@ export function RunScreen({
       const saved = recordRun(progressRef.current, { distanceM: session.progressM, score: session.score, seed, eventKinds: kinds });
       saveDemoProgress(saved);
       onChangeRef.current(saved);
-      setReport(built);
+      trace.finish(session.state.timeS, session.state.speedMps);
+      setReport({ run: built, model: endlessReportModel(built, trace.samples()) });
     };
 
     renderer.setAnimationLoop((nowMs) => {
       const frameS = Math.min((nowMs - lastMs) / 1000, MAX_FRAME_S);
       lastMs = nowMs;
+      const s = settingsRef.current;
       if (phase === 'briefing' && !firstBriefing.current) {
         briefingLeftS -= frameS;
         if (briefingLeftS <= 0) skipBriefing();
       }
       if (phase === 'running') {
         driver.advance(frameS);
+        trace.record(session.state.timeS, session.state.speedMps);
         if (session.ended) {
           keys.clear();
           if (session.ended.cause === 'crash') {
@@ -345,7 +232,7 @@ export function RunScreen({
         }
       } else if (phase === 'crashing') {
         crashLeftS -= frameS;
-        view.setShake(CRASH_SHAKE_M * Math.max(0, crashLeftS / CRASH_MOMENT_S));
+        view.setShake(s.cameraShake ? CRASH_SHAKE_M * Math.max(0, crashLeftS / CRASH_MOMENT_S) : 0);
         if (crashLeftS <= 0) {
           view.setShake(0);
           phase = 'ended';
@@ -354,10 +241,13 @@ export function RunScreen({
         }
       }
       const state = session.state;
+      view.setGraphics(s.graphics);
       view.update(session, driver.paused ? 0 : frameS);
       renderer.render(view.scene, view.camera);
-      engine.setMuted(!soundRef.current || phase === 'crashing' || phase === 'ended' || driver.paused);
-      effects.setMuted(!soundRef.current);
+      engine.setVolume(effectiveVolume(s, 'engine'));
+      effects.setVolume(effectiveVolume(s, 'effects'));
+      engine.setMuted(s.muted || phase === 'crashing' || phase === 'ended' || driver.paused);
+      effects.setMuted(s.muted);
       // Tyre squeal whenever the physics reports wheel slip (a hard brake or a hard start on a slippery surface), and
       // while the rover slides sideways (slide angle of 5° or more).
       const squealing = state.slipping || session.slideAngleRad >= SLIDE_SOUND_RAD;
@@ -368,25 +258,39 @@ export function RunScreen({
         const event = session.events[eventsHandled]!;
         const sound = EVENT_SOUNDS[event.kind];
         if (sound) effects.play(sound);
-        const pushed = pushCaption(feed, event, event.timeS, { seenKinds, unit: unitRef.current });
-        feed = pushed.feed;
-        if (pushed.firstTime) seenKinds.add(event.kind as EventKind);
+        const made = captionForEvent(feed, event, event.timeS, { seenKinds, unit: unitRef.current }, s.showMaths);
+        feed = made.feed;
+        if (made.caption) queue = enqueueCaption(queue, made.caption, event.timeS);
+        if (made.firstTime) seenKinds.add(event.kind as EventKind);
       }
 
-      if (frame++ % 2 === 0 || phase === 'ended') {
-        const gravityKind = session.gravityKind;
+      const hudFrame = frame % 2 === 0 || phase === 'ended';
+      const arrowFrame = frame % ARROW_EVERY_N_FRAMES === 0 || phase === 'ended';
+      frame++;
+      if (hudFrame || arrowFrame) {
+        const kind = session.gravityKind;
         const surfaceId = session.course.surfaceIdAt(state.positionXM, state.positionZM);
-        const g = constants.gravityMps2 * (gravityKind ? content.run.gravityMultipliers[gravityKind] : 1);
-        setHud({
-          speedMps: state.speedMps,
-          distanceM: session.progressM,
-          score: session.score,
-          multiplier: session.multiplier,
-          captions: phase === 'ended' ? [] : visibleCaptions(feed, state.timeS),
-          panel: forcePanel(state, rover, surfaceSpec(content, surfaceId), g),
-          gravityKind,
-          reverse: state.direction === 'reverse',
-        });
+        const g = constants.gravityMps2 * (kind ? content.run.gravityMultipliers[kind] : 1);
+        const forces = pathForces(state, rover, surfaceSpec(content, surfaceId), g);
+        const arrows = phase === 'running' || phase === 'crashing' ? pathArrows(forces, state) : [];
+        if (arrowFrame) view.setForceArrows(s.forceArrows ? arrows : []);
+        if (hudFrame) {
+          queue = tickCaptions(queue, state.timeS);
+          const line = forceLine.update({ ...forces, timeS: state.timeS, massKg: rover.massKg });
+          setGravityKind(kind);
+          setHud(
+            buildEndlessHud({
+              state,
+              distanceM: session.progressM,
+              bestDistanceM: Math.max(start.bestDistanceM, session.progressM),
+              score: session.score,
+              multiplier: session.multiplier,
+              caption: phase === 'ended' ? null : currentCaption(queue),
+              forceLine: s.showMaths && phase === 'running' ? line : null,
+              forces: arrows,
+            }),
+          );
+        }
       }
     });
 
@@ -404,60 +308,50 @@ export function RunScreen({
     };
   }, [seed]);
 
-  const best = Math.max(progress.bestDistanceM, hud?.distanceM ?? 0);
-  const next = nextUnlock(content, report ? progress.bestDistanceM : best);
+  const onPauseAction = (action: PauseAction) => {
+    switch (action) {
+      case 'resume':
+        controls.current.resume();
+        break;
+      case 'restart':
+        onAgain();
+        break;
+      case 'garage':
+        onGarage();
+        break;
+      case 'settings':
+        setShowSettings(true);
+        break;
+      case 'levels':
+        onLevels();
+        break;
+      case 'home':
+        onHome();
+        break;
+      case 'checkpoint':
+        break; // Endless has no checkpoints; the menu does not offer it
+    }
+  };
   const text = content.runText.briefing;
 
   return (
     <main className="drive run">
       <div className="drive-canvas" ref={hostRef} />
-      {hud?.gravityKind && <div className={`tint tint-${hud.gravityKind}`} aria-hidden="true" />}
-      {hud && (
-        <div className="hud">
-          <div className="hud-top">
-            <div>
-              <small>DISTANCE</small>
-              <strong>{hud.distanceM.toFixed(0)} m</strong>
-              <small>best {best.toFixed(0)} m</small>
-            </div>
-            <div className="hud-direction">
-              <small>SPEED</small>
-              <strong>
-                {speedText(hud.speedMps, unit)}
-                {hud.reverse && (
-                  <span className="reverse-badge" aria-label="Reverse">
-                    R
-                  </span>
-                )}
-              </strong>
-            </div>
-            <div className="hud-score">
-              <small>SCORE</small>
-              <strong>{Math.round(hud.score)}</strong>
-              <small>×{hud.multiplier.toFixed(2)}</small>
-            </div>
-          </div>
-          <div className="hud-bottom">
-            <small>{next ? `Next part at ${next.atBestDistanceM} m` : 'Every part unlocked'}</small>
-          </div>
-        </div>
-      )}
-      {hud && !report && (
-        <div className="captions" aria-live="polite">
-          {hud.captions.map((c) => (
-            <div key={c.id} className="caption">
-              <strong>{c.label}</strong>
-              {c.worked && <span>{c.worked}</span>}
-            </div>
-          ))}
-        </div>
-      )}
-      {hud && progress.showForces && <ForcePanelView panel={hud.panel} />}
+      {gravityKind && <div className={`tint tint-${gravityKind}`} aria-hidden="true" />}
+      {hud && !briefing && <Hud model={hud} showControlsHint={controlsHintVisible(hud.timeS)} onPause={() => controls.current.pause()} />}
       {crashMoment && <div className="crash-flash" aria-hidden="true" />}
-      {paused && (
-        <div className="pause-card" role="status">
-          <h2>Paused</h2>
-          <small>Press any key to continue</small>
+      {paused && !showSettings && <PauseMenu mode="endless" onAction={onPauseAction} />}
+      {paused && showSettings && (
+        <div className="overlay" role="dialog" aria-modal="true" aria-label="Settings">
+          <div className="settings-overlay">
+            <header className="screen-header">
+              <button type="button" className="btn small" onClick={() => setShowSettings(false)} autoFocus>
+                ← Back
+              </button>
+              <h2>Settings</h2>
+            </header>
+            <SettingsPanel settings={settings} onChange={onSettingsChange} onReplayTutorial={onReplayTutorial} onResetProgress={onResetProgress} />
+          </div>
         </div>
       )}
       {briefing && (
@@ -471,7 +365,32 @@ export function RunScreen({
           <small>{firstBriefing.current ? 'Press any key to start' : 'Starting… (any key to skip)'}</small>
         </div>
       )}
-      {report && <ReportOverlay report={report} onAgain={onAgain} onReplay={onReplay} onGarage={onGarage} />}
+      {report && (
+        <ReportScreen
+          model={report.model}
+          title={report.run.headline}
+          unit={unit}
+          extra={
+            <>
+              <span>
+                Score <strong>{report.run.score}</strong>
+                {report.run.newBestScore && <em> new best!</em>}
+              </span>
+              {report.run.newBestDistance && <em>New best distance!</em>}
+              <span>
+                Best {report.run.bestDistanceM.toFixed(0)} m · {report.run.bestScore}
+              </span>
+            </>
+          }
+          actions={[
+            { label: 'Run again (new course)', onClick: onAgain, primary: true },
+            { label: 'Replay this course', onClick: onReplay },
+            { label: 'Garage', onClick: onGarage },
+            { label: 'Levels', onClick: onLevels },
+          ]}
+          onTryThis={onTryThis}
+        />
+      )}
     </main>
   );
 }

@@ -19,6 +19,8 @@ export interface EngineSound {
   start(): void;
   update(speedShare: number, throttleLevel: number): void;
   setMuted(muted: boolean): void;
+  /** 0 to 1, from the settings (master × engine). */
+  setVolume(volume: number): void;
   dispose(): void;
 }
 
@@ -29,6 +31,7 @@ export function createEngineSound(): EngineSound {
   let filter: BiquadFilterNode | null = null;
   let volume: GainNode | null = null;
   let muted = false;
+  let level = 1;
   let lastGain = 0;
 
   return {
@@ -61,12 +64,15 @@ export function createEngineSound(): EngineSound {
       main.frequency.setTargetAtTime(tone.frequencyHz, now, 0.05);
       sub.frequency.setTargetAtTime(tone.frequencyHz * 0.5 * 1.01, now, 0.05);
       filter.frequency.setTargetAtTime(tone.filterHz, now, 0.05);
-      const gain = muted ? 0 : tone.gain;
+      const gain = muted ? 0 : tone.gain * level;
       if (gain !== lastGain) volume.gain.setTargetAtTime(gain, now, 0.08);
       lastGain = gain;
     },
     setMuted(value) {
       muted = value;
+    },
+    setVolume(value) {
+      level = Math.min(1, Math.max(0, value));
     },
     dispose() {
       if (ctx) void ctx.close();

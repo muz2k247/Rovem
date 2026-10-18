@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import type { Content, GravityKind } from '../content/index.ts';
+import type { ForceArrow } from '../game/contracts.ts';
 import type { CourseChunk } from '../game/run/course.ts';
+import type { Graphics } from '../save/settings.ts';
+import { createForceArrows } from './forceArrows.ts';
 import { GENERATE_AHEAD_M, type RunSession } from '../game/run/runSession.ts';
 import { createDust } from './driveScene.ts';
 import { createSkidMarks } from './skidMarks.ts';
 import { SLIDE_MARK_RAD, wrapAngle } from '../game/run/drift.ts';
-import { createRoverModel, ROVER_WHEEL_RADIUS_M, type WheelStyle } from './roverModel.ts';
+import { leanRad, steerAngleRad } from './roverAttitude.ts';
+import { createRoverModel, ROVER_WHEEL_RADIUS_M, type RoverLook, type WheelStyle } from './roverModel.ts';
 
 // The 3D view of the endless canyon (docs/DEMO_BUILD_PLAN.md A3, A4, A7). Original low-poly shapes; no outside assets.
 // Axes as in driveScene: physics x is three x, physics z is three −z, y is up.
@@ -34,6 +38,11 @@ const SHAKE_UP_SHARE = 0.6; // the shake is smaller up and down than sideways
 
 /** When the travel direction jumps (a flip into or out of reverse) the camera swings round over this long (DECISIONS 2026-10-16). */
 export const CAMERA_BLEND_S = 0.5;
+/** How fast the front wheels and the lean follow the steering, per second. */
+const ATTITUDE_EASE_PER_S = 10;
+/** A heading change bigger than this between two frames is a jump (a reset), not a turn. */
+const MAX_TURN_PER_FRAME_RAD = 0.5;
+
 /** A change of direction bigger than this between two frames counts as a jump; smaller ones (steering, a slide) are followed at once. */
 const CAMERA_JUMP_RAD = 1;
 
@@ -187,6 +196,12 @@ export interface RunScene {
   loadedChunkIndices(): number[];
   /** Camera shake for the crash moment: the amplitude in metres (0 = none). The camera stays inside the walls. */
   setShake(amplitudeM: number): void;
+  /** Force arrows drawn on the rover (A4); pass [] to hide them. Arrows under 20 N are skipped. */
+  setForceArrows(arrows: readonly ForceArrow[]): void;
+  /** Graphics Low turns off the dust particles (A8). */
+  setGraphics(graphics: Graphics): void;
+  /** The rover's force arrows group, for tests. */
+  readonly arrowsGroup: THREE.Group;
   /** Skid marks currently on the ground (they fade away). */
   readonly skidMarkCount: number;
   /** Moves the rover, the chunks, the bags and the camera to the session. `frameS` drives the effects only. */
@@ -194,7 +209,7 @@ export interface RunScene {
   dispose(): void;
 }
 
-export function createRunScene(session: RunSession, content: Content, wheelStyle: WheelStyle): RunScene {
+export function createRunScene(session: RunSession, content: Content, look: RoverLook | WheelStyle): RunScene {
   const { course } = session;
   const run = content.run;
   const WALL_INNER_M = run.corridorHalfWidthM;
@@ -354,9 +369,14 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   const bagGeometry = new THREE.SphereGeometry(run.sandbag.radiusM, 10, 8);
   const bagMeshes = new Map<string, THREE.Mesh>();
 
-  const model = createRoverModel(roverLengthM, roverWidthM, wheelStyle);
+  const model = createRoverModel(roverLengthM, roverWidthM, look);
   const rover = model.root;
   scene.add(rover);
+  // Force arrows start at the middle of the rover, at about the height of its deck, and stay in world axes.
+  const arrows = createForceArrows();
+  arrows.group.name = 'forceArrows';
+  scene.add(arrows.group);
+  const ARROWS_HEIGHT_M = 0.9;
   const camera = new THREE.PerspectiveCamera(FOV_AT_REST_DEG, 1, 0.1, 400);
   const dust = createDust(scene);
   const dustPoints = scene.getObjectByName('dust') as THREE.Points | undefined;
@@ -364,6 +384,9 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
   const dustColour = new THREE.Color();
   let lastDistanceM = 0;
   let wheelAngle = 0;
+  let steerEased = 0;
+  let leanEased = 0;
+  let lastHeadingRad = 0;
   let clockS = 0;
   let sagM = 0;
   let gravityKind: GravityKind | undefined;
@@ -386,6 +409,7 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
 
     rover.position.set(x, 0, -z);
     rover.rotation.y = state.headingRad;
+    arrows.group.position.set(x - fx * (roverLengthM / 2), ARROWS_HEIGHT_M, -(z - fz * (roverLengthM / 2)));
     gravityKind = s.gravityKind;
     const targetSag =
       gravityKind === 'high' ? -HIGH_GRAVITY_SAG_M : gravityKind === 'low' ? LOW_GRAVITY_BOB_M * (0.5 + 0.5 * Math.sin(clockS * 2.4)) : 0;
@@ -394,8 +418,19 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
 
     const movedM = state.distanceM >= lastDistanceM ? state.distanceM - lastDistanceM : 0; // 0 after a reset
     lastDistanceM = state.distanceM;
-    wheelAngle -= movedM / ROVER_WHEEL_RADIUS_M;
+    wheelAngle -= ((state.direction === 'reverse' ? -1 : 1) * movedM) / ROVER_WHEEL_RADIUS_M;
     for (const w of model.wheels) w.rotation.z = wheelAngle;
+
+    // The front wheels turn with the steer input and the body leans a little outward in turns (presentation only).
+    const steerInput = s.steerSent[s.steerSent.length - 1] ?? 0;
+    const ease = frameS > 0 ? Math.min(1, ATTITUDE_EASE_PER_S * frameS) : 1;
+    steerEased += (steerAngleRad(steerInput, state.direction) - steerEased) * ease;
+    model.setSteer(steerEased);
+    const turnedRad = state.headingRad - lastHeadingRad;
+    lastHeadingRad = state.headingRad;
+    const turnRate = frameS > 0 && Math.abs(turnedRad) < MAX_TURN_PER_FRAME_RAD ? turnedRad / frameS : 0;
+    leanEased += (leanRad(state.speedMps, turnRate) - leanEased) * ease;
+    model.setAttitude({ pitchRad: 0, leanRad: leanEased });
 
     // Bags: brown spheres dropping from barrel height to the ground over the first few metres.
     const live = new Set<string>();
@@ -485,9 +520,17 @@ export function createRunScene(session: RunSession, content: Content, wheelStyle
     setShake(amplitudeM) {
       shakeM = Math.max(0, amplitudeM);
     },
+    setForceArrows(list) {
+      arrows.update(list);
+    },
+    setGraphics(graphics) {
+      if (dustPoints) dustPoints.visible = graphics === 'high';
+    },
+    arrowsGroup: arrows.group,
     loadedChunkIndices: () => [...chunkGroups.keys()].sort((a, b) => a - b),
     update,
     dispose() {
+      arrows.dispose();
       skid.dispose();
       for (const index of [...chunkGroups.keys()]) removeChunk(index);
     },

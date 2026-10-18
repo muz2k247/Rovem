@@ -1,0 +1,15 @@
+{
+  "placeholder": true,
+  "cornerRadiusM": 25,
+  "why": {
+    "chassis-light": "A lighter body needs less force to speed up, and it floats more easily.",
+    "chassis-standard": "The middle choice: not too heavy to accelerate, not too light to push through a crowd.",
+    "chassis-heavy": "A heavier body is harder to push around and to speed up, but harder for a hit to shove.",
+    "wheels-smooth": "Smooth wheels roll easily, but they grip the least when turning.",
+    "wheels-all-terrain": "All-terrain wheels are the middle choice: fair rolling and fair grip.",
+    "wheels-spiked": "Spiked wheels grip the most when turning, but they roll harder and add mass.",
+    "motor-small": "A small motor is light and fast at the top, but it pushes with less force.",
+    "motor-medium": "The medium motor balances push and top speed.",
+    "motor-large": "A large motor pushes hardest, but it is heavier and tops out slower."
+  }
+}
