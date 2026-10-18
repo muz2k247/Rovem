@@ -4,7 +4,7 @@ import { content, type EventKind, type GravityKind } from '../content/index.ts';
 import { EVENT_KINDS } from '../content/types.ts';
 import { physicsConstants, roverFromParts, surfaceSpec } from '../game/buildFromParts.ts';
 import { currentCaption, emptyQueue, enqueueCaption, tickCaptions, type CaptionQueue } from '../game/captionQueue.ts';
-import type { HudModel } from '../game/contracts.ts';
+import type { HudModel, ReportModel, TryThisAction } from '../game/contracts.ts';
 import { createKeyTracker } from '../game/controls.ts';
 import { createForceLine } from '../game/forceLine.ts';
 import { pathArrows, pathForces } from '../game/forces.ts';
@@ -14,6 +14,7 @@ import { buildReport, emptyFeed, type CaptionFeed, type RunReport } from '../gam
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
 import { SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createRunSession } from '../game/run/runSession.ts';
+import { createTraceRecorder, endlessReportModel } from '../game/run/reportModel.ts';
 import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { roverLookFor } from '../render/roverModel.ts';
@@ -21,6 +22,7 @@ import { createRunScene } from '../render/runScene.ts';
 import { recordRun, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
 import { Hud } from './hud/Hud.tsx';
+import { ReportScreen } from './report/ReportScreen.tsx';
 import { PauseMenu } from './PauseMenu.tsx';
 import { SettingsPanel } from './SettingsPanel.tsx';
 
@@ -33,67 +35,6 @@ const ARROW_EVERY_N_FRAMES = 4;
 
 /** The sound that goes with an event, if any. */
 const EVENT_SOUNDS: Partial<Record<string, EffectKind>> = { boost: 'boost', headOnHit: 'sandbagHit', kickerHit: 'kickerHit' };
-
-function ReportOverlay({
-  report,
-  onAgain,
-  onReplay,
-  onGarage,
-}: {
-  report: RunReport;
-  onAgain: () => void;
-  onReplay: () => void;
-  onGarage: () => void;
-}) {
-  return (
-    <div className="report-backdrop">
-      <div className="report" role="dialog" aria-label="Run report">
-        <h2>{report.headline}</h2>
-        <p className="report-numbers">
-          <span>
-            Distance <strong>{report.distanceM.toFixed(0)} m</strong>
-            {report.newBestDistance && <em> new best!</em>}
-          </span>
-          <span>
-            Score <strong>{report.score}</strong>
-            {report.newBestScore && <em> new best!</em>}
-          </span>
-          <span>
-            Best {report.bestDistanceM.toFixed(0)} m · {report.bestScore}
-          </span>
-        </p>
-        {report.effects.length > 0 && (
-          <ul className="effects">
-            {report.effects.map((e) => (
-              <li key={e.kind}>
-                <strong>{e.label}</strong>
-                {e.detail.map((line) => (
-                  <span key={line} className="detail">
-                    {line}
-                  </span>
-                ))}
-                {e.worked && <em>{e.worked}</em>}
-                <small>{e.why}</small>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="try-this">{report.tryThis}</p>
-        <div className="report-buttons">
-          <button type="button" className="primary" onClick={onAgain}>
-            Run again (new course)
-          </button>
-          <button type="button" className="secondary" onClick={onReplay}>
-            Replay this course
-          </button>
-          <button type="button" className="secondary" onClick={onGarage}>
-            Garage
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * One run of the endless canyon: briefing, the game loop driving the run session, the HUD (one caption at a time,
@@ -113,6 +54,7 @@ export function RunScreen({
   onGarage,
   onLevels,
   onHome,
+  onTryThis,
 }: {
   seed: number;
   progress: DemoProgress;
@@ -126,6 +68,8 @@ export function RunScreen({
   onGarage: () => void;
   onLevels: () => void;
   onHome: () => void;
+  /** The Try this button of the report: open the garage on a part, or run again. */
+  onTryThis: (action: TryThisAction) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [briefing, setBriefing] = useState(true);
@@ -136,7 +80,7 @@ export function RunScreen({
   const firstBriefing = useRef(!progress.briefingSeen);
   const [hud, setHud] = useState<HudModel | null>(null);
   const [gravityKind, setGravityKind] = useState<GravityKind | undefined>(undefined);
-  const [report, setReport] = useState<RunReport | null>(null);
+  const [report, setReport] = useState<{ run: RunReport; model: ReportModel } | null>(null);
   // This screen is mounted afresh for every run (key = run id), so what the run starts with is read once.
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -174,6 +118,7 @@ export function RunScreen({
     const effects = createEffectSounds();
     const driver = createPausableRun(session);
     const forceLine = createForceLine();
+    const trace = createTraceRecorder();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     host.appendChild(renderer.domElement);
@@ -258,7 +203,8 @@ export function RunScreen({
       const saved = recordRun(progressRef.current, { distanceM: session.progressM, score: session.score, seed, eventKinds: kinds });
       saveDemoProgress(saved);
       onChangeRef.current(saved);
-      setReport(built);
+      trace.finish(session.state.timeS, session.state.speedMps);
+      setReport({ run: built, model: endlessReportModel(built, trace.samples()) });
     };
 
     renderer.setAnimationLoop((nowMs) => {
@@ -271,6 +217,7 @@ export function RunScreen({
       }
       if (phase === 'running') {
         driver.advance(frameS);
+        trace.record(session.state.timeS, session.state.speedMps);
         if (session.ended) {
           keys.clear();
           if (session.ended.cause === 'crash') {
@@ -418,7 +365,32 @@ export function RunScreen({
           <small>{firstBriefing.current ? 'Press any key to start' : 'Starting… (any key to skip)'}</small>
         </div>
       )}
-      {report && <ReportOverlay report={report} onAgain={onAgain} onReplay={onReplay} onGarage={onGarage} />}
+      {report && (
+        <ReportScreen
+          model={report.model}
+          title={report.run.headline}
+          unit={unit}
+          extra={
+            <>
+              <span>
+                Score <strong>{report.run.score}</strong>
+                {report.run.newBestScore && <em> new best!</em>}
+              </span>
+              {report.run.newBestDistance && <em>New best distance!</em>}
+              <span>
+                Best {report.run.bestDistanceM.toFixed(0)} m · {report.run.bestScore}
+              </span>
+            </>
+          }
+          actions={[
+            { label: 'Run again (new course)', onClick: onAgain, primary: true },
+            { label: 'Replay this course', onClick: onReplay },
+            { label: 'Garage', onClick: onGarage },
+            { label: 'Levels', onClick: onLevels },
+          ]}
+          onTryThis={onTryThis}
+        />
+      )}
     </main>
   );
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { content } from '../content/index.ts';
 import { levelCards } from '../content/levelCards.ts';
 import { STARTING_BUILD, type BuildSelection } from '../game/buildFromParts.ts';
+import { buildWithPart } from '../game/run/reportModel.ts';
 import { continueTarget, developerUnlockFromSearch, isEndlessUnlocked, levelSummaries } from '../game/levelUnlock.ts';
 import { loadDemoProgress, resetDemoProgress, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
 import { emptyLevelProgress, loadLevelProgress, saveLevelProgress, type LevelProgress } from '../save/levelProgress.ts';
@@ -12,10 +14,9 @@ import { HomeScreen } from './HomeScreen.tsx';
 import { LevelIntroScreen } from './LevelIntroScreen.tsx';
 import { LevelScreen } from './LevelScreen.tsx';
 import { LevelsScreen } from './LevelsScreen.tsx';
-import { PlaceholderScreen } from './PlaceholderScreen.tsx';
 import { RunScreen } from './RunScreen.tsx';
 import { SettingsScreen } from './SettingsScreen.tsx';
-import { screenFromHash, type HashScreen, type PlaceholderScreen as PlaceholderScreenName } from './screens.ts';
+import { screenFromHash, type HashScreen } from './screens.ts';
 
 /** Where the garage was opened from, so its Back button returns there. */
 type GarageFrom = { kind: 'home' } | { kind: 'intro'; levelId: string } | { kind: 'endless' };
@@ -28,7 +29,6 @@ type Screen =
   | { name: 'garage'; from: GarageFrom }
   | { name: 'run'; seed: number; runId: number }
   | { name: 'level'; levelId: string } // Track B's driving screen
-  | { name: PlaceholderScreenName } // still a placeholder: the report (A3)
   | { name: 'devBuild' }
   | { name: 'devDrive' };
 
@@ -47,8 +47,6 @@ function screenNamed(name: HashScreen | null): Screen {
       return { name: 'levelIntro', levelId: firstLevelId };
     case 'settings':
       return { name: 'settings' };
-    case 'report':
-      return { name: 'report' };
     default:
       return { name: 'home' };
   }
@@ -173,6 +171,11 @@ export function App() {
           onGarage={() => toGarage({ kind: 'endless' })}
           onLevels={toLevels}
           onHome={toHome}
+          onTryThis={(action) => {
+            if (action.kind === 'retry') return startRun(newSeed());
+            update({ ...progress, build: buildWithPart(content, progress.build, action.partId) });
+            toGarage({ kind: 'endless' });
+          }}
         />
       );
     case 'devBuild':
@@ -186,7 +189,5 @@ export function App() {
       );
     case 'devDrive':
       return <DriveScreen build={devBuild} onBack={() => setScreen({ name: 'devBuild' })} />;
-    case 'report':
-      return <PlaceholderScreen name={screen.name} onNavigate={(to) => setScreen(screenNamed(to))} onBack={toHome} />;
   }
 }

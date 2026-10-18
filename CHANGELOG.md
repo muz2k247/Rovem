@@ -6,6 +6,12 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels A3: report)
+- The report screen (`src/ui/report/`), built from `ReportModel`: result (stars, time and par for a level; distance for Endless), a speed–time graph with numbered markers (`graph.ts` does the scaling, tested), up to 3 What happened cards with a Show the maths toggle, one Try this with a button that acts (opens the garage with the part fitted, or retries) and the buttons. Endless uses it now, with the top 3 picked as before; the old `ReportOverlay` is gone. `src/game/run/reportModel.ts`: the 10 Hz speed trace recorder, `endlessReportModel`, `tryThisAction`, `buildWithPart`. `feedback.ts`: `ReportEffect.markerTimeS`, `RunReport.tryThisKey` and `tryThisKey()` (`tryThisLine` is unchanged in what it returns).
+
+### Removed (Levels A3)
+- The `report` placeholder screen and its `#report` address (the report needs the data of the run that just ended).
+
 ### Changed (Levels A2b: rover polish)
 - The rover is redrawn after k._muz's feedback on the A2 screenshots: a lower, wider stance on bigger wheels (radius 0.42 m, was 0.35 m); a body with real bevels on every edge, a sloped hood and tail, nose grille, tail lights, skirts and a stripe; a short mast on a base plate with a collar, a sun visor and two bezelled lenses (it was a long bare stick); the motor is now a drum on its side with ringed cooling fins, a colour band, an end bell, a shaft and a cradle, in a different colour for Small, Medium and Large.
 - The All-terrain and Spiked wheels are round tyres: ten raised tread blocks, or sixteen steel studs, on a round tyre, with a dark rim and a hub cap (they read as gear cogs before). The footprint is unchanged (1.7 m wide, 2 m long; the tyres stay inside the length) and all nine part-look tests still pass.

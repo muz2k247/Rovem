@@ -1,4 +1,4 @@
-import type { Content, EventKind, FormulaKind, GravityKind, RunText } from '../../content/index.ts';
+import type { Content, EventKind, FormulaKind, GravityKind, RunText, TryThisKey } from '../../content/index.ts';
 import type { GravityZoneUse, RunEnd, RunEvent, RunStats } from './runSession.ts';
 
 // What the student reads while and after driving (docs/DEMO_BUILD_PLAN.md A7). Pure: time is passed in.
@@ -207,6 +207,8 @@ export interface ReportEffect {
   why: string;
   /** Extra lines under the label: the tunnel comparison. */
   detail: string[];
+  /** When the first such event happened, for the numbered marker on the report's speed graph. 0 if the run lacks it. */
+  markerTimeS: number;
 }
 
 export interface RunReport {
@@ -221,6 +223,8 @@ export interface RunReport {
   /** Up to 3, largest first. */
   effects: ReportEffect[];
   tryThis: string;
+  /** Which advice `tryThis` is, so the report can offer a button that acts. */
+  tryThisKey: TryThisKey;
 }
 
 export interface ReportInput {
@@ -255,7 +259,7 @@ export function reportEffects(stats: RunStats, text: RunText, unit: SpeedUnit): 
   const effects: ReportEffect[] = [];
   const explain = (kind: FormulaKind) => {
     const first = stats.firstEvents[kind];
-    return { worked: first && workedLine(first, unit), why: text.tidbits[kind], detail: [] as string[] };
+    return { worked: first && workedLine(first, unit), why: text.tidbits[kind], detail: [] as string[], markerTimeS: first?.timeS ?? 0 };
   };
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   if (stats.mudPatches > 0) {
@@ -286,7 +290,28 @@ export function reportEffects(stats: RunStats, text: RunText, unit: SpeedUnit): 
   return effects.sort((a, b) => b.sizeMps - a.sizeMps);
 }
 
-/** One "Try this" line, by rules over the run's stats and the fitted parts, in order of preference. Every part is open (LEVELS_BUILD_PLAN A2). */
+/** Which "Try this" advice applies, by rules over the run's stats and the fitted parts, in order of preference. Every part is open (LEVELS_BUILD_PLAN A2). */
+export function tryThisKey(
+  ended: RunEnd,
+  effectsRanked: readonly ReportEffect[],
+  fitted: ReportInput['fitted'],
+  brakeUsed: boolean,
+): TryThisKey {
+  const biggest = effectsRanked[0]?.kind;
+  if (ended.cause === 'stuck' && ended.gravityKind === 'high') return 'stuckInHighGravity';
+  if (ended.atDivider) return 'pickLane';
+  if (ended.sliding) return 'brakeBeforeCorner';
+  if (biggest === 'mud' && fitted.wheelsId !== 'wheels-smooth') return 'smoothWheels';
+  // The student drives now, so a hit-heavy run in which the brake was never touched gets the free advice first.
+  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !brakeUsed) return 'brakeFirst';
+  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && fitted.chassisId !== 'chassis-heavy') return 'heavyChassis';
+  // The Heavy chassis is already fitted: the only advice left is to stay out of the cannon's line.
+  if (biggest === 'headOnHit' || biggest === 'kickerHit') return 'dodgeCannon';
+  if (ended.cause === 'crash' && ended.speedMps > 20) return 'steerEarlier';
+  return 'takeBoosts';
+}
+
+/** One "Try this" line (see `tryThisKey`). */
 export function tryThisLine(
   ended: RunEnd,
   effectsRanked: readonly ReportEffect[],
@@ -294,18 +319,7 @@ export function tryThisLine(
   text: RunText,
   brakeUsed: boolean,
 ): string {
-  const biggest = effectsRanked[0]?.kind;
-  if (ended.cause === 'stuck' && ended.gravityKind === 'high') return text.tryThis.stuckInHighGravity;
-  if (ended.atDivider) return text.tryThis.pickLane;
-  if (ended.sliding) return text.tryThis.brakeBeforeCorner;
-  if (biggest === 'mud' && fitted.wheelsId !== 'wheels-smooth') return text.tryThis.smoothWheels;
-  // The student drives now, so a hit-heavy run in which the brake was never touched gets the free advice first.
-  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && !brakeUsed) return text.tryThis.brakeFirst;
-  if ((biggest === 'headOnHit' || biggest === 'kickerHit') && fitted.chassisId !== 'chassis-heavy') return text.tryThis.heavyChassis;
-  // The Heavy chassis is already fitted: the only advice left is to stay out of the cannon's line.
-  if (biggest === 'headOnHit' || biggest === 'kickerHit') return text.tryThis.dodgeCannon;
-  if (ended.cause === 'crash' && ended.speedMps > 20) return text.tryThis.steerEarlier;
-  return text.tryThis.takeBoosts;
+  return text.tryThis[tryThisKey(ended, effectsRanked, fitted, brakeUsed)];
 }
 
 export function buildReport(input: ReportInput): RunReport {
@@ -314,6 +328,7 @@ export function buildReport(input: ReportInput): RunReport {
   const bestDistanceM = Math.max(previousBestDistanceM, input.distanceM);
   const bestScore = Math.max(previousBestScore, score);
   const ranked = reportEffects(stats, content.runText, unit);
+  const key = tryThisKey(ended, ranked, input.fitted, stats.brakeUsed);
   return {
     headline: ended.cause === 'crash' ? `Crashed at ${speedText(ended.speedMps, unit)}` : 'Stuck in mud',
     distanceM: input.distanceM,
@@ -323,6 +338,7 @@ export function buildReport(input: ReportInput): RunReport {
     newBestDistance: input.distanceM > previousBestDistanceM,
     newBestScore: score > previousBestScore,
     effects: ranked.slice(0, 3),
-    tryThis: tryThisLine(ended, ranked, input.fitted, content.runText, stats.brakeUsed),
+    tryThis: content.runText.tryThis[key],
+    tryThisKey: key,
   };
 }
