@@ -126,25 +126,25 @@
         {
           "kind": "arc",
           "radiusM": 40,
-          "angleDeg": 47.80231190084682
+          "angleDeg": 64.24096839289014
         },
         {
           "kind": "straight",
-          "lengthM": 45.75538138119631
+          "lengthM": 41.30268694995656
         },
         {
           "kind": "arc",
           "radiusM": 40,
-          "angleDeg": -95.60462380169363
+          "angleDeg": -128.48193678578028
         },
         {
           "kind": "straight",
-          "lengthM": 45.75538138119631
+          "lengthM": 41.30268694995656
         },
         {
           "kind": "arc",
           "radiusM": 40,
-          "angleDeg": 47.80231190084682
+          "angleDeg": 64.24096839289014
         }
       ]
     },

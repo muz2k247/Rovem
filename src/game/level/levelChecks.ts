@@ -110,6 +110,10 @@ export function checkLevelFile(id: LevelId): void {
       expect(r.timeS).toBeGreaterThan(75);
       expect(r.timeS).toBeLessThan(150);
       expect(r.starFlags).toEqual([true, true, true]);
+      // The par time follows the A10 rule for this scripted drive: × 1.15, up to the next 5 s (provisional until I1 plays the levels).
+      const { factor, roundUpToS } = levelsConfig.par;
+      expect(def.parS).toBeGreaterThanOrEqual(r.timeS * factor);
+      expect(def.parS).toBeLessThan(r.timeS * factor + roundUpToS);
     });
 
     it('holding W along the middle of the road misses at least one star', () => {

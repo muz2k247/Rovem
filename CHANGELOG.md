@@ -6,6 +6,14 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels B4: the seven levels)
+- The seven level files in `src/content/levels/` (`first-tracks`, `push-and-shove`, `crater-field`, `gravity-wells`, `ring-road`, `the-crossing`, `polar-pass`), registered in `src/game/level/levels.ts`: roads with forks, stop lights, terrain, water, gravity zones, pylons, cannons, pads, signs, checkpoints and 3 samples each, with the A10 values and provisional par times. `levelText.json` already holds their words (`"placeholder": true`).
+- Tests: every level has a file (`levelFile.<id>.test.ts`) that checks it against the A7 rules with a scripted driver: at least two forks; the start, finish and samples on a road; checkpoints on dry, grippy, gentle ground away from every magnet; the starting build collects all 3 samples inside 75 to 150 s and beats the par time; holding W along the middle misses a star; all 27 builds finish the safe route and, from every checkpoint, the extreme builds do too; plus each level's own rules (A10 numbers, safe speeds on signs, rolling back, floating, slingshots, the pass and the gate). The driver is test-only: `game/level/testPilot.ts`, `levelPlans.ts`, `levelChecks.ts`.
+
+### Changed (Levels B4)
+- `createPolyline` (`game/level/world.ts`) cuts long straight segments into 16 m chunks before it indexes them: the same answers, about 15% faster.
+- DECISIONS 2026-10-19: the layout of each level and the judgment calls, with the numbers measured. No physics or content value changed; T1–T10, the old tests and the balance counts (20/9/23/17) are unchanged.
+
 ### Added (Levels B3: level scene)
 - `src/render/levelScene.ts` with its helpers: `terrain.ts` (tiled ground from the physics heights, coloured by surface), `water.ts` (flush surface, dug bed, rover riding half hidden, splashes), `track.ts` (canyon walls, centre dashes and reflector posts, instanced), `pylons.ts` (towers, glowing coils, field lines whose dots flow in for attract and out for repel), `landmarks.ts` (barriers, boost pads, cannons and sandbags, the 3 samples, checkpoint and finish arches, stop lights, bend signs, gravity-zone curtains), `atmosphere.ts` (the seven looks of A8: sky, fog, sun angle, stars, aurora, dust and mist) and `levelCamera.ts` (a chase camera that follows the ground and stays over the road). Force arrows come from the shared `forceArrows.ts`.
 - `src/ui/LevelScreen.tsx` hosts a level: game loop, keys (Space flips the pole, R returns to the checkpoint, Esc pauses), sounds, crash moment, and the HUD and report drawn from the P0 contracts. `ui/levelHudStub.tsx` stands in for Track A's HUD and report until I1.
