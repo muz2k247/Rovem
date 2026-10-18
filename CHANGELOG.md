@@ -15,6 +15,10 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 - The M4 step-trace test also sets aside `rollingBack` (always false there). T1–T10, all other tests and the balance counts (20/9/23/17) are unchanged.
 - DECISIONS 2026-10-18: how the new rules are applied, with the judgment calls A6 leaves open.
 
+### Docs (Game v4 levels revised, 2026-10-18)
+- `docs/LEVELS_BUILD_PLAN.md`: 7 cumulative levels (First Tracks absorbs Fork in the Road; Ring Road has no laps), rules for every level (goal, forks, visible failure, samples), stars now beacon · 3 samples · par, arrows shown only while their force acts, build order 1 → 7, new prompts A2b (rover polish) and E1 (Endless with every element), revised B2/B4/I1 prompts, Part E handover list for I1. The first 8-level list is kept as superseded.
+- DECISIONS row 2026-10-18; DESIGN, ROADMAP (A2b, E1 rows), CLAUDE.md, README and PENDING_SPEC_EDITS (SRS 1.2 text) updated to match.
+
 ### Added (Levels P0: contracts, fonts, slots)
 - Fonts `@fontsource/space-grotesk` (500, 700) and `@fontsource/ibm-plex-sans` (400, 500, 600), bundled and loaded app-wide in `src/main.tsx`; headings use Space Grotesk with tabular figures, text uses IBM Plex Sans (`styles.css`).
 - `src/content/levels.json` with every A6/A10 shared value, and `src/content/levelsConfig.ts` (validator `validateLevelsConfig`, loaded `levelsConfig`), tests in `levelsConfig.test.ts`. Kept apart from `schema.ts` so Track B can extend the level-file schema.

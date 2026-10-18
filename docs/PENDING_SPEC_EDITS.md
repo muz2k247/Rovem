@@ -208,7 +208,7 @@ Source for all: DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`. Values are pr
 
 ### E35: SRS Draft 0.5, 1.1 Purpose, 1.2 Scope, 1.3 Learning objectives
 - 1.1, current: "teaches Grade 9 Kinematics and Dynamics through building and driving a rover." Replacement: "teaches Grade 9 physics (the newest Punjab Textbook Board book) through building and driving a rover."
-- 1.2, current from "The MVP has one terrain, three missions" to "and Knowledge to unlock parts and missions." Replacement: "The game has eight levels, each introducing one idea, and an endless mode that mixes them. A student plays as a guest on one device. Questions, Knowledge and accounts are future work (section 6)."
+- 1.2, current from "The MVP has one terrain, three missions" to "and Knowledge to unlock parts and missions." Replacement (revised 2026-10-18): "The game has seven levels, each adding one new idea to those before it, and an endless mode that mixes them all. A student plays as a guest on one device. Questions, Knowledge and accounts are future work (section 6)."
 - 1.3, add after "Combine these ideas to solve a practical problem.":
   - "Explain how momentum is shared in a collision and how an impulse changes velocity."
   - "Explain the difference between mass and weight using different gravity."

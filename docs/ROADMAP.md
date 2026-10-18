@@ -2,7 +2,7 @@
 
 Every milestone ends with something that can be run or tested. A milestone is done only when every "Done when" item is true and all tests pass.
 
-M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions. *(Superseded 2026-10-17: the game is now Game v4, eight concept levels plus Endless; see below.)*
+M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions. *(Superseded 2026-10-17: the game is now Game v4, concept levels plus Endless (seven since 2026-10-18); see below.)*
 
 **2026-10-14: M5b–M14 and Q1–Q3 were paused** while the demo was built (DECISIONS 2026-10-14). **2026-10-17: they are superseded by Game v4: concept levels** (DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`). Their text below is kept unchanged as the record of the earlier plan.
 
@@ -20,8 +20,10 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | B1 | Track B: physics: ground push, slopes, rolling back, water, magnets | ✅ 2026-10-18 | P0 |
 | B2 | Track B: level engine | ⬜ | B1 |
 | B3 | Track B: level scene | ⬜ | B2 |
-| B4 | Track B: the eight levels, in priority order | ⬜ | B3 |
+| B4 | Track B: the seven levels, in play order (revised 2026-10-18; was eight, in priority order) | ⬜ | B3 |
 | I1 | Integration on main, par times, play-check | ⬜ | A3, B4 merged |
+| A2b | Track A: rover polish (only if k._muz is still unhappy with A2) | ⬜ | A2 |
+| E1 | Endless Canyon on the level engine, with every element (approved 2026-10-18) | ⬜ | I1 |
 | M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ✅ | M1 |
 | M3 | Build screen | ✅ | M2 |

@@ -8,20 +8,19 @@ A browser-based 3D game that teaches Grade 9 physics (the newest Punjab Textbook
 
 ## Current focus: Game v4, concept levels
 
-After the advisor saw the demo (an endless canyon run), the game became **eight short levels, each teaching one idea, plus the Endless Canyon** as a high-score mode (approved 2026-10-17). Design and plan: [`docs/LEVELS_BUILD_PLAN.md`](docs/LEVELS_BUILD_PLAN.md); summary in [`docs/DESIGN.md`](docs/DESIGN.md).
+After the advisor saw the demo (an endless canyon run), the game became **seven short levels, each adding one new element to those before it, plus the Endless Canyon** as a high-score mode (approved 2026-10-17; revised to seven cumulative levels 2026-10-18). Design and plan: [`docs/LEVELS_BUILD_PLAN.md`](docs/LEVELS_BUILD_PLAN.md); summary in [`docs/DESIGN.md`](docs/DESIGN.md).
 
 | Level | What it teaches |
 |---|---|
-| First Tracks | speed, acceleration, braking, F = ma |
-| Fork in the Road | friction; choosing the faster route |
+| First Tracks | friction and surfaces; the controls; choosing the faster route |
 | Push & Shove | momentum and impulse |
-| Ring Road | circular motion: every bend has a safe speed |
-| Gravity Wells | mass and weight |
 | Crater Field | slopes; kinetic and potential energy |
+| Gravity Wells | mass and weight |
+| Ring Road | circular motion: every bend has a safe speed |
 | The Crossing | density, upthrust, pressure |
 | Polar Pass | magnetic poles and electromagnets |
 
-- Levels open in order and last 90–150 s, with checkpoints and up to three stars each.
+- Levels open in order and last 90–150 s, with forks, checkpoints and up to three stars each (reach the beacon, collect 3 samples, beat par). After the levels, Endless gets every element.
 - All parts (chassis, wheels, motor; three each) are open; the garage shows what each change does.
 - On screen, only what teaches something: force arrows for the level's forces, one short caption with the student's number, and the F = ma line while the speed changes. The report shows a speed–time graph and the moments that mattered, with the worked maths on request.
 - Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole and R returns to the last checkpoint.
