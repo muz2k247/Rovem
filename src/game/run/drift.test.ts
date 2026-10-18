@@ -84,3 +84,40 @@ describe('the travel direction follows the way the rover points, at most as fast
     expect(turnTravelDirection(0, rad(120), Infinity, dt)).toBe(rad(120));
   });
 });
+
+// Game v4 (LEVELS_BUILD_PLAN A6): the grip limit uses the normal force R, and a magnet's sideways part bends the path.
+import { sidewaysBendRadPerS, travelTurnLimitFromNormalRadPerS } from './drift.ts';
+
+describe('turning limit with R: ω_max = μ_g k_g R ÷ (m v)', () => {
+  it('flat dry ground (R = m g) gives exactly the old limit', () => {
+    const today = travelTurnLimitRadPerS(0.8, 1, 9.8, 16);
+    expect(travelTurnLimitFromNormalRadPerS(0.8, 1, 209 * 9.8, 209, 16)).toBeCloseTo(today, 12);
+  });
+  it('a ramp presses less (cos 12°), and R = 0 cannot turn at all', () => {
+    const flat = travelTurnLimitFromNormalRadPerS(0.8, 1, 2048.2, 209, 16);
+    const ramp = travelTurnLimitFromNormalRadPerS(0.8, 1, 2003.44, 209, 16);
+    expect(ramp / flat).toBeCloseTo(2003.44 / 2048.2, 12);
+    expect(travelTurnLimitFromNormalRadPerS(0.8, 1, 0, 209, 16)).toBe(0);
+    expect(travelTurnLimitFromNormalRadPerS(0.8, 1, 0, 209, 0)).toBe(0);
+    expect(travelTurnLimitFromNormalRadPerS(0.8, 1, 2048.2, 209, 0)).toBe(Infinity);
+  });
+  it('Ring Road: at the safe speed √(μ_g k_g g r) the limit equals v ÷ r', () => {
+    for (const [r, safe] of [[12, 9.7], [25, 14.0], [30, 15.34], [40, 17.71]] as const) {
+      const v = Math.sqrt(0.8 * 9.8 * r);
+      expect(v).toBeCloseTo(safe, 1);
+      expect(travelTurnLimitFromNormalRadPerS(0.8, 1, 209 * 9.8, 209, v)).toBeCloseTo(v / r, 10);
+    }
+  });
+});
+
+describe('sideways force bends the path by ω = F⊥ ÷ (m v)', () => {
+  it('625 N on 209 kg at 10 m/s: 0.299 rad/s; the sign follows the force', () => {
+    expect(sidewaysBendRadPerS(625, 209, 10, 0.5)).toBeCloseTo(625 / 2090, 12);
+    expect(sidewaysBendRadPerS(-625, 209, 10, 0.5)).toBeCloseTo(-625 / 2090, 12);
+  });
+  it('is ignored below 0.5 m/s, so ω stays finite', () => {
+    expect(sidewaysBendRadPerS(1600, 209, 0.49, 0.5)).toBe(0);
+    expect(sidewaysBendRadPerS(1600, 209, 0, 0.5)).toBe(0);
+    expect(Number.isFinite(sidewaysBendRadPerS(1600, 209, 0.5, 0.5))).toBe(true);
+  });
+});

@@ -395,8 +395,9 @@ describe('external force hook (DESIGN §8)', () => {
     expect(stepTrace).toHaveLength(40);
     for (const states of [replay(), replay(0)]) {
       states.forEach((s, i) => {
-        const { direction, ...m4Fields } = s;
+        const { direction, rollingBack, ...m4Fields } = s;
         expect(direction).toBe('forward');
+        expect(rollingBack).toBe(false);
         expect(m4Fields).toStrictEqual(stepTrace[i]);
       });
     }

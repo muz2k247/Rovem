@@ -17,7 +17,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | A1 | Track A: Home, Levels, Intro, Pause, Settings; new HUD and force arrows | ⬜ | P0 |
 | A2 | Track A: new rover and garage | ⬜ | A1 |
 | A3 | Track A: report | ⬜ | A2 |
-| B1 | Track B: physics: ground push, slopes, rolling back, water, magnets | ⬜ | P0 |
+| B1 | Track B: physics: ground push, slopes, rolling back, water, magnets | ✅ 2026-10-18 | P0 |
 | B2 | Track B: level engine | ⬜ | B1 |
 | B3 | Track B: level scene | ⬜ | B2 |
 | B4 | Track B: the eight levels, in priority order | ⬜ | B3 |

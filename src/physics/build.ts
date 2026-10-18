@@ -1,9 +1,12 @@
+import { normalForceN, type GroundInput } from './ground.ts';
 import type { PhysicsConstants, RoverSpec, RoverVariable, SurfaceSpec } from './types.ts';
 
 export interface BuildQuantities {
   massKg: number;
-  /** R = m g */
+  /** W = m g (the weight; R equals it on flat dry ground) */
   weightN: number;
+  /** R = m g cos θ − U, never below 0 (Game v4; equals m g on flat dry ground) */
+  normalForceN: number;
   /** F_r = μ_r k_r R */
   rollingForceN: number;
   /** F_lim = μ_g k_g R */
@@ -15,19 +18,27 @@ export interface BuildQuantities {
   topSpeedMps: number;
 }
 
-/** The build quantities of the Physics Model Specification, for one rover on one surface (FR-2, FR-3). */
+/**
+ * The build quantities of the Physics Model Specification, for one rover on one surface (FR-2, FR-3).
+ * `ground` (Game v4) adds a slope and water upthrust; left out, R = m g exactly as before.
+ */
 export function buildQuantities(
   rover: RoverSpec,
   surface: SurfaceSpec,
   constants: Pick<PhysicsConstants, 'gravityMps2'>,
+  ground: GroundInput = {},
 ): BuildQuantities {
   const massKg = rover.massKg;
-  const weightN = massKg * constants.gravityMps2; // R = m g
-  const rollingForceN = surface.rollingFriction * rover.rollingFactor * weightN; // F_r = μ_r k_r R
-  const gripLimitN = surface.grip * rover.gripFactor * weightN; // F_lim = μ_g k_g R
+  const weightN = massKg * constants.gravityMps2; // W = m g
+  // R = m g cos θ − U, never below 0; the plain weight when there is no slope and no water.
+  const normalN =
+    ground.slopeRad || ground.upthrustN ? normalForceN(massKg, constants.gravityMps2, ground.slopeRad, ground.upthrustN) : weightN;
+  const rollingForceN = surface.rollingFriction * rover.rollingFactor * normalN; // F_r = μ_r k_r R
+  const gripLimitN = surface.grip * rover.gripFactor * normalN; // F_lim = μ_g k_g R
   return {
     massKg,
     weightN,
+    normalForceN: normalN,
     rollingForceN,
     gripLimitN,
     maxAccelerationMps2: (Math.min(rover.driveForceMaxN, gripLimitN) - rollingForceN) / massKg,

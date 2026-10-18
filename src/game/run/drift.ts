@@ -45,3 +45,32 @@ export const SLIDE_MARK_RAD = (SLIDE_MARK_DEG * Math.PI) / 180;
 /** The tyre hiss starts at this slide angle (DECISIONS 2026-10-16), or on brake/drive slip. Presentation threshold. */
 export const SLIDE_SOUND_DEG = 10;
 export const SLIDE_SOUND_RAD = (SLIDE_SOUND_DEG * Math.PI) / 180;
+
+// Game v4 additions (LEVELS_BUILD_PLAN A6).
+
+/**
+ * The fastest the tyres can bend the path with the ground push R: ω_max = μ_g k_g R ÷ (m v). On flat dry ground
+ * R = m g, which is `travelTurnLimitRadPerS`. R = 0 (a floating rover) gives 0: it cannot turn its path.
+ * At rest there is no limit, unless R is 0.
+ */
+export function travelTurnLimitFromNormalRadPerS(
+  surfaceGrip: number,
+  wheelGripFactor: number,
+  normalForceN: number,
+  massKg: number,
+  speedMps: number,
+): number {
+  if (normalForceN <= 0) return 0;
+  if (speedMps <= 0) return Infinity;
+  return (surfaceGrip * wheelGripFactor * normalForceN) / (massKg * speedMps);
+}
+
+/**
+ * A sideways force F⊥ bends the travel direction at ω = F⊥ ÷ (m v) (the same rule as circular motion: F = m v ω).
+ * The sign follows the force (positive is to the left). Below the cut-off speed it is ignored (engineering value,
+ * 0.5 m/s), so ω stays finite and a parked rover is not dragged sideways.
+ */
+export function sidewaysBendRadPerS(sidewaysForceN: number, massKg: number, speedMps: number, cutoffMps: number): number {
+  if (speedMps < cutoffMps || speedMps <= 0) return 0;
+  return sidewaysForceN / (massKg * speedMps);
+}

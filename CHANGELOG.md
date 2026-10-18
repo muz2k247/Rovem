@@ -6,6 +6,15 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels B1: slopes, water, magnets, rolling back)
+- `src/physics/ground.ts` (R = m g cos θ − U, slope pull m g sin θ), `water.ts` (submersion fraction, upthrust, drag coefficient, floats) and `magnet.ts` (force by distance; split along the gear and sideways), with tests in `levels.test.ts` using every A6 check value (12° ramp 2.5554 m/s², 25° wall roll-back 3.9640 m/s², Small-motor climb limit, water 0.50677 m/s², 18 m float coast, magnet 625 N at 8 m).
+- `step()` takes an optional `StepEnvironment` (`slopeRad`, `upthrustN`, `waterDragNsPerM`); `PhysicsState.rollingBack`; `motionSign()`; `buildQuantities()` takes an optional ground input and returns `normalForceN`. `externalForceN` now works at rest and acts along the gear.
+- `src/game/run/drift.ts`: `travelTurnLimitFromNormalRadPerS` (μ_g k_g R ÷ (m v)) and `sidewaysBendRadPerS` (F⊥ ÷ (m v), ignored below 0.5 m/s).
+
+### Changed (Levels B1)
+- The M4 step-trace test also sets aside `rollingBack` (always false there). T1–T10, all other tests and the balance counts (20/9/23/17) are unchanged.
+- DECISIONS 2026-10-18: how the new rules are applied, with the judgment calls A6 leaves open.
+
 ### Added (Levels P0: contracts, fonts, slots)
 - Fonts `@fontsource/space-grotesk` (500, 700) and `@fontsource/ibm-plex-sans` (400, 500, 600), bundled and loaded app-wide in `src/main.tsx`; headings use Space Grotesk with tabular figures, text uses IBM Plex Sans (`styles.css`).
 - `src/content/levels.json` with every A6/A10 shared value, and `src/content/levelsConfig.ts` (validator `validateLevelsConfig`, loaded `levelsConfig`), tests in `levelsConfig.test.ts`. Kept apart from `schema.ts` so Track B can extend the level-file schema.
