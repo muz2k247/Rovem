@@ -10,6 +10,8 @@ const DEG = Math.PI / 180;
 /** Roads are sampled at least this often along arcs, so a 12 m hairpin is still smooth. */
 const ARC_STEP_M = 1;
 const CHUNK_POINTS = 16;
+/** A chunk of a polyline is closed once it is this long (long straight segments are cut to this length first). */
+const CHUNK_M = 16;
 /** The ground height is differenced over this distance either side of the rover's centre to find the slope. */
 const SLOPE_PROBE_M = 0.5;
 
@@ -28,12 +30,41 @@ export function createPolyline(points: readonly PointM[]): Polyline {
   for (let i = 1; i < points.length; i++) {
     alongAt.push(alongAt[i - 1]! + Math.hypot(points[i]!.xM - points[i - 1]!.xM, points[i]!.zM - points[i - 1]!.zM));
   }
+  // The segments, with any long one cut into pieces of at most CHUNK_M, then grouped into chunks with bounding boxes.
+  interface Piece {
+    ax: number;
+    az: number;
+    ex: number;
+    ez: number;
+    len: number;
+    alongM: number;
+  }
+  const pieces: Piece[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i]!;
+    const b = points[i + 1]!;
+    const segLen = alongAt[i + 1]! - alongAt[i]!;
+    if (segLen === 0) continue;
+    const n = Math.max(1, Math.ceil(segLen / CHUNK_M));
+    for (let k = 0; k < n; k++) {
+      const t0 = k / n;
+      const t1 = (k + 1) / n;
+      const ax = a.xM + (b.xM - a.xM) * t0;
+      const az = a.zM + (b.zM - a.zM) * t0;
+      const bx = a.xM + (b.xM - a.xM) * t1;
+      const bz = a.zM + (b.zM - a.zM) * t1;
+      pieces.push({ ax, az, ex: bx - ax, ez: bz - az, len: Math.hypot(bx - ax, bz - az), alongM: alongAt[i]! + segLen * t0 });
+    }
+  }
   const chunks: { from: number; to: number; minX: number; maxX: number; minZ: number; maxZ: number }[] = [];
-  for (let from = 0; from < points.length - 1; from += CHUNK_POINTS) {
-    const to = Math.min(points.length - 1, from + CHUNK_POINTS);
-    const xs = points.slice(from, to + 1).map((p) => p.xM);
-    const zs = points.slice(from, to + 1).map((p) => p.zM);
+  for (let from = 0; from < pieces.length; ) {
+    let to = from;
+    let lengthM = 0;
+    while (to < pieces.length && to - from < CHUNK_POINTS && lengthM < CHUNK_M) lengthM += pieces[to++]!.len;
+    const xs = pieces.slice(from, to).flatMap((p) => [p.ax, p.ax + p.ex]);
+    const zs = pieces.slice(from, to).flatMap((p) => [p.az, p.az + p.ez]);
     chunks.push({ from, to, minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) });
+    from = to;
   }
   return {
     points,
@@ -45,21 +76,16 @@ export function createPolyline(points: readonly PointM[]): Polyline {
       for (const c of chunks) {
         if (maxDistM !== Infinity && (xM < c.minX - maxDistM || xM > c.maxX + maxDistM || zM < c.minZ - maxDistM || zM > c.maxZ + maxDistM)) continue;
         for (let i = c.from; i < c.to; i++) {
-          const a = points[i]!;
-          const b = points[i + 1]!;
-          const ex = b.xM - a.xM;
-          const ez = b.zM - a.zM;
-          const len = Math.hypot(ex, ez);
-          if (len === 0) continue;
-          const t = Math.max(0, Math.min(len, ((xM - a.xM) * ex + (zM - a.zM) * ez) / len));
-          const px = a.xM + (ex / len) * t;
-          const pz = a.zM + (ez / len) * t;
+          const p = pieces[i]!;
+          const t = Math.max(0, Math.min(p.len, ((xM - p.ax) * p.ex + (zM - p.az) * p.ez) / p.len));
+          const px = p.ax + (p.ex / p.len) * t;
+          const pz = p.az + (p.ez / p.len) * t;
           const sq = (xM - px) ** 2 + (zM - pz) ** 2;
           if (sq < bestSq) {
             bestSq = sq;
             const dist = Math.sqrt(sq);
-            const side = ex * (zM - a.zM) - ez * (xM - a.xM) >= 0 ? 1 : -1;
-            best = { alongM: alongAt[i]! + t, offsetM: side * dist, distM: dist };
+            const side = p.ex * (zM - p.az) - p.ez * (xM - p.ax) >= 0 ? 1 : -1;
+            best = { alongM: p.alongM + t, offsetM: side * dist, distM: dist };
           }
         }
       }

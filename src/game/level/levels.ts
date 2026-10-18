@@ -1,11 +1,14 @@
 import { content } from '../../content/index.ts';
+import firstTracks from '../../content/levels/first-tracks.json' with { type: 'json' };
 import { validateLevelDef } from './schema.ts';
 import { LEVEL_IDS, type LevelDef, type LevelId } from './types.ts';
 
 // The level files (LEVELS_BUILD_PLAN A9). Each level is one JSON file in `src/content/levels/`; B4 adds them here as it
 // writes them, in play order. A level with no file yet is "Coming soon" on the Levels screen.
 
-const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {};
+const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {
+  'first-tracks': firstTracks,
+};
 
 const surfaceIds = content.surfaces.map((s) => s.id);
 
