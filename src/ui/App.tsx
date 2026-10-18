@@ -151,7 +151,7 @@ export function App() {
           onBack={() => (from.kind === 'intro' ? setScreen({ name: 'levelIntro', levelId: from.levelId }) : toHome())}
           onStart={from.kind === 'endless' ? () => startRun(newSeed()) : undefined}
           onReplay={from.kind === 'endless' && progress.lastSeed !== null ? () => startRun(progress.lastSeed!) : undefined}
-          onDeveloper={() => setScreen({ name: 'devBuild' })}
+          onDeveloper={developerUnlock ? () => setScreen({ name: 'devBuild' }) : undefined}
         />
       );
     }

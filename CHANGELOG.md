@@ -6,6 +6,13 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Changed (Levels A2b: rover polish)
+- The rover is redrawn after k._muz's feedback on the A2 screenshots: a lower, wider stance on bigger wheels (radius 0.42 m, was 0.35 m); a body with real bevels on every edge, a sloped hood and tail, nose grille, tail lights, skirts and a stripe; a short mast on a base plate with a collar, a sun visor and two bezelled lenses (it was a long bare stick); the motor is now a drum on its side with ringed cooling fins, a colour band, an end bell, a shaft and a cradle, in a different colour for Small, Medium and Large.
+- The All-terrain and Spiked wheels are round tyres: ten raised tread blocks, or sixteen steel studs, on a round tyre, with a dark rim and a hub cap (they read as gear cogs before). The footprint is unchanged (1.7 m wide, 2 m long; the tyres stay inside the length) and all nine part-look tests still pass.
+- The garage camera is placed so the rover fills the turntable view at every turn angle (a test checks it fills at least half the frame and stays inside it, at two canvas shapes); the turntable is smaller to match.
+- The "Developer: M5a test course" link in the garage shows only with `?unlock=all`.
+- Screenshots of all nine part swaps: `docs/captures/a2b/`.
+
 ### Added (Levels A2: rover and garage)
 - A new code-built rover (`src/render/roverModel.ts`, LEVELS_BUILD_PLAN A5): a bevelled body, a deck with a solar panel, a mast with a two-lens camera, an antenna dish, rocker suspension arms from a central pivot to each wheel pair, a rear motor pod with cooling fins and a headlight. Each of the nine parts looks different: Light is an open tube frame, Standard a plated body, Heavy an armoured body with side plates, rivets and a hazard bumper; the motors differ in housing size and fins (3, 4, 6); the three wheel looks are kept and refined (hub caps). The footprint (1.7 m wide, 2 m long) is unchanged, and a test checks it for all 27 builds.
 - The front wheels steer, the wheels turn the right way in reverse, and the body leans a little outward in turns (`src/render/roverAttitude.ts`); `setAttitude` also pitches the body for the level scene. Presentation only.

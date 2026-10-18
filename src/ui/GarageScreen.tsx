@@ -49,7 +49,8 @@ export function GarageScreen({
   /** Start an Endless run from here; left out when the garage was opened from a level. */
   onStart?: () => void;
   onReplay?: () => void;
-  onDeveloper: () => void;
+  /** The M5a test course link; shown only with the developer link (?unlock=all). */
+  onDeveloper?: () => void;
 }) {
   const unit = progress.speedUnit;
   const log = fieldLogEntries(progress.seenEvents, content.runText);
@@ -211,11 +212,13 @@ export function GarageScreen({
         </section>
       </div>
 
-      <footer className="garage-footer">
-        <button type="button" className="link" onClick={onDeveloper}>
-          Developer: M5a test course
-        </button>
-      </footer>
+      {onDeveloper && (
+        <footer className="garage-footer">
+          <button type="button" className="link" onClick={onDeveloper}>
+            Developer: M5a test course
+          </button>
+        </footer>
+      )}
     </main>
   );
 }

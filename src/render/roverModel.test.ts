@@ -62,7 +62,7 @@ describe('the footprint does not change (1.7 m wide, 2 m long)', () => {
   );
   it('the wheels still sit on the ground', () => {
     const box = new THREE.Box3().setFromObject(createRoverModel(L, W, look('standard', 'all-terrain', 'medium')).root);
-    expect(Math.abs(box.min.y)).toBeLessThan(0.03); // tread blocks stand a hair below the tyre
+    expect(Math.abs(box.min.y)).toBeLessThan(0.03); // the tread blocks stand a hair below the tyre
   });
 });
 

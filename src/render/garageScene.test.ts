@@ -8,6 +8,33 @@ const L = content.constants.roverLengthM;
 const W = content.constants.roverWidthM;
 const std: RoverLook = { chassis: 'standard', wheels: 'all-terrain', motor: 'medium' };
 
+describe('framing', () => {
+  it.each([0.9, 1.5])('the rover fills at least half the frame and stays inside it (aspect %s, every turntable angle)', (aspect) => {
+    const view = createGarageScene(std, L, W);
+    view.setAspect(aspect);
+    for (const yaw of [0, 0.8, 1.6, 2.4, 3.2, 4.0, 4.8, 5.6]) {
+      view.rotateBy(yaw - view.yawRad);
+      view.scene.updateMatrixWorld(true);
+      view.camera.updateMatrixWorld(true);
+      const ndc: THREE.Vector3[] = [];
+      view.model.root.traverse((o) => {
+        if (!(o instanceof THREE.Mesh)) return;
+        const pos = o.geometry.getAttribute('position');
+        for (let i = 0; i < pos.count; i += 3) ndc.push(new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld).project(view.camera));
+      });
+      const xs = ndc.map((p) => p.x);
+      const ys = ndc.map((p) => p.y);
+      const widthShare = (Math.max(...xs) - Math.min(...xs)) / 2;
+      const heightShare = (Math.max(...ys) - Math.min(...ys)) / 2;
+      expect(Math.max(widthShare, heightShare)).toBeGreaterThanOrEqual(0.5);
+      for (const p of ndc) {
+        expect(Math.abs(p.x)).toBeLessThanOrEqual(1.02);
+        expect(Math.abs(p.y)).toBeLessThanOrEqual(1.02);
+      }
+    }
+  });
+});
+
 describe('garage scene', () => {
   it('holds one rover on a turntable, with lights, and centres the rover on the turntable', () => {
     const view = createGarageScene(std, L, W);
