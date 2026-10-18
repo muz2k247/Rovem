@@ -1,0 +1,435 @@
+{
+  "id": "the-crossing",
+  "name": "The Crossing",
+  "placeholder": true,
+  "atmosphere": "blue-mist",
+  "parS": 105,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Start",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 130
+        }
+      ]
+    },
+    {
+      "id": "b1",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 60,
+          "angleDeg": -40
+        }
+      ]
+    },
+    {
+      "id": "lead",
+      "after": "b1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 150
+        }
+      ]
+    },
+    {
+      "id": "mid",
+      "after": "lead",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 170
+        }
+      ]
+    },
+    {
+      "id": "to-ch1",
+      "after": "mid",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 70
+        }
+      ]
+    },
+    {
+      "id": "ch1",
+      "name": "Channel",
+      "after": "to-ch1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "bridge-1",
+      "name": "Bridge",
+      "after": "to-ch1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 43.32396507122404
+        },
+        {
+          "kind": "straight",
+          "lengthM": 62.00833315904969
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -86.64793014244808
+        },
+        {
+          "kind": "straight",
+          "lengthM": 62.00833315904969
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 43.32396507122404
+        }
+      ]
+    },
+    {
+      "id": "bar",
+      "after": "ch1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "name": "Channel",
+      "after": "bar",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "bridge-2",
+      "name": "Bridge",
+      "after": "bar",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 43.32396507122404
+        },
+        {
+          "kind": "straight",
+          "lengthM": 62.00833315904969
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -86.64793014244808
+        },
+        {
+          "kind": "straight",
+          "lengthM": 62.00833315904969
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 43.32396507122404
+        }
+      ]
+    },
+    {
+      "id": "far",
+      "after": "ch2",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 90
+        },
+        {
+          "kind": "arc",
+          "radiusM": 70,
+          "angleDeg": 35
+        },
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "b1",
+    "lead",
+    "mid",
+    "to-ch1",
+    "ch1",
+    "bar",
+    "ch2",
+    "far"
+  ],
+  "hills": [
+    {
+      "xM": 70,
+      "zM": 0,
+      "radiusM": 40,
+      "heightM": 4
+    }
+  ],
+  "water": [
+    {
+      "id": "water-1",
+      "polygon": [
+        {
+          "xM": 190.21,
+          "zM": -50.48
+        },
+        {
+          "xM": 200.94,
+          "zM": -59.48
+        },
+        {
+          "xM": 218.94,
+          "zM": -38.03
+        },
+        {
+          "xM": 208.21,
+          "zM": -29.03
+        }
+      ],
+      "depthM": 0.3
+    },
+    {
+      "id": "water-2",
+      "polygon": [
+        {
+          "xM": 297.45,
+          "zM": -140.47
+        },
+        {
+          "xM": 308.18,
+          "zM": -149.47
+        },
+        {
+          "xM": 326.17,
+          "zM": -128.02
+        },
+        {
+          "xM": 315.45,
+          "zM": -119.02
+        }
+      ],
+      "depthM": 0.3
+    },
+    {
+      "id": "water-3",
+      "polygon": [
+        {
+          "xM": 335.75,
+          "zM": -172.61
+        },
+        {
+          "xM": 360.27,
+          "zM": -193.18
+        },
+        {
+          "xM": 378.27,
+          "zM": -171.73
+        },
+        {
+          "xM": 353.75,
+          "zM": -151.16
+        }
+      ],
+      "depthM": 0.5
+    },
+    {
+      "id": "water-4",
+      "polygon": [
+        {
+          "xM": 511.94,
+          "zM": -320.44
+        },
+        {
+          "xM": 519.6,
+          "zM": -326.87
+        },
+        {
+          "xM": 537.6,
+          "zM": -305.42
+        },
+        {
+          "xM": 529.94,
+          "zM": -298.99
+        }
+      ],
+      "depthM": 1
+    },
+    {
+      "id": "water-5",
+      "polygon": [
+        {
+          "xM": 749.42,
+          "zM": -519.71
+        },
+        {
+          "xM": 757.08,
+          "zM": -526.14
+        },
+        {
+          "xM": 775.08,
+          "zM": -504.69
+        },
+        {
+          "xM": 767.42,
+          "zM": -498.26
+        }
+      ],
+      "depthM": 1
+    }
+  ],
+  "boosts": [
+    {
+      "id": "pad-start",
+      "xM": 118,
+      "zM": 0,
+      "radiusM": 2.5
+    },
+    {
+      "id": "pad-ch1",
+      "xM": 504.09,
+      "zM": -295.58,
+      "radiusM": 2.5
+    },
+    {
+      "id": "pad-ch2",
+      "xM": 741.57,
+      "zM": -494.84,
+      "radiusM": 2.5
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 229.85,
+      "zM": -65.46,
+      "headingDeg": -40
+    },
+    {
+      "id": "cp-2",
+      "xM": 386.89,
+      "zM": -197.23,
+      "headingDeg": -40
+    },
+    {
+      "id": "cp-3",
+      "xM": 666.5,
+      "zM": -431.85,
+      "headingDeg": -40
+    }
+  ],
+  "stopLines": [
+    {
+      "id": "stop-fork-1",
+      "xM": 467.32,
+      "zM": -264.72,
+      "headingDeg": -40,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-fork-2",
+      "xM": 704.8,
+      "zM": -463.99,
+      "headingDeg": -40,
+      "widthM": 12,
+      "redS": 2
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "stopLineId": "stop-fork-1",
+      "roadIds": [
+        "ch1",
+        "bridge-1"
+      ],
+      "mergeAt": {
+        "xM": 620.53,
+        "zM": -393.28,
+        "radiusM": 8
+      }
+    },
+    {
+      "id": "fork-2",
+      "stopLineId": "stop-fork-2",
+      "roadIds": [
+        "ch2",
+        "bridge-2"
+      ],
+      "mergeAt": {
+        "xM": 858.01,
+        "zM": -592.55,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-river",
+      "xM": 357.01,
+      "zM": -172.16
+    },
+    {
+      "id": "s-bar",
+      "xM": 664.59,
+      "zM": -426.34
+    },
+    {
+      "id": "s-bank",
+      "xM": 770.28,
+      "zM": -522.85
+    }
+  ],
+  "signs": [
+    {
+      "id": "sign-b1",
+      "xM": 112,
+      "zM": -4.6,
+      "radiusM": 60
+    },
+    {
+      "id": "sign-far",
+      "xM": 910.21,
+      "zM": -642.35,
+      "radiusM": 70
+    }
+  ],
+  "finish": {
+    "xM": 1065.46,
+    "zM": -675.22,
+    "radiusM": 6
+  }
+}

@@ -92,7 +92,14 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
       stars: { roads: roads('f1-hairpin', 'f2-tight'), via: [hairpin, lowg, ring] },
     };
   },
-  'the-crossing': undefined,
+  'the-crossing': (def) => {
+    const [river, bar, bank] = [samplePoint(def, 's-river'), samplePoint(def, 's-bar'), samplePoint(def, 's-bank')];
+    const roads = (c1: string, c2: string) => ['start', 'b1', 'lead', 'mid', 'to-ch1', c1, 'bar', c2, 'far'];
+    return {
+      safe: { roads: roads('bridge-1', 'bridge-2') },
+      stars: { roads: roads('ch1', 'ch2'), via: [river, bar, bank] },
+    };
+  },
   'polar-pass': undefined,
 };
 
