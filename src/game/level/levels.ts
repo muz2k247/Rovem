@@ -5,6 +5,7 @@ import craterField from '../../content/levels/crater-field.json' with { type: 'j
 import gravityWells from '../../content/levels/gravity-wells.json' with { type: 'json' };
 import ringRoad from '../../content/levels/ring-road.json' with { type: 'json' };
 import theCrossing from '../../content/levels/the-crossing.json' with { type: 'json' };
+import polarPass from '../../content/levels/polar-pass.json' with { type: 'json' };
 import { validateLevelDef } from './schema.ts';
 import { LEVEL_IDS, type LevelDef, type LevelId } from './types.ts';
 
@@ -18,6 +19,7 @@ const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {
   'gravity-wells': gravityWells,
   'ring-road': ringRoad,
   'the-crossing': theCrossing,
+  'polar-pass': polarPass,
 };
 
 const surfaceIds = content.surfaces.map((s) => s.id);

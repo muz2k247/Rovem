@@ -1,0 +1,490 @@
+{
+  "id": "polar-pass",
+  "name": "Polar Pass",
+  "placeholder": true,
+  "atmosphere": "aurora-night",
+  "parS": 125,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Start",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 130
+        }
+      ]
+    },
+    {
+      "id": "p1",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 150
+        }
+      ]
+    },
+    {
+      "id": "pass",
+      "name": "The pass",
+      "widthM": 5,
+      "runoffM": 1.5,
+      "after": "p1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    },
+    {
+      "id": "ice",
+      "name": "Ice shelf",
+      "after": "pass",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 130
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "name": "The gate",
+      "widthM": 5,
+      "runoffM": 1.5,
+      "after": "ice",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    },
+    {
+      "id": "lead-1",
+      "after": "gate",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 60
+        }
+      ]
+    },
+    {
+      "id": "channel",
+      "name": "Channel",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "name": "Bridge",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 43.32396507122404
+        },
+        {
+          "kind": "straight",
+          "lengthM": 62.00833315904969
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -86.64793014244808
+        },
+        {
+          "kind": "straight",
+          "lengthM": 62.00833315904969
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 43.32396507122404
+        }
+      ]
+    },
+    {
+      "id": "sling",
+      "name": "Slingshots",
+      "after": "channel",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 260
+        }
+      ]
+    },
+    {
+      "id": "lead-2",
+      "after": "sling",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 50
+        }
+      ]
+    },
+    {
+      "id": "crater",
+      "name": "Crater",
+      "after": "lead-2",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "ramp",
+      "name": "Ramp",
+      "after": "lead-2",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -72.60229570319736
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "after": "crater",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 70
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "p1",
+    "pass",
+    "ice",
+    "gate",
+    "lead-1",
+    "channel",
+    "sling",
+    "lead-2",
+    "crater",
+    "end"
+  ],
+  "craters": [
+    {
+      "xM": 1300,
+      "zM": 0,
+      "floorRadiusM": 9,
+      "depthM": 5,
+      "wallAngleDeg": 25,
+      "rampAngleDeg": 12,
+      "rampHeadingDeg": 180
+    }
+  ],
+  "water": [
+    {
+      "id": "channel-water",
+      "polygon": [
+        {
+          "xM": 760,
+          "zM": -14
+        },
+        {
+          "xM": 770,
+          "zM": -14
+        },
+        {
+          "xM": 770,
+          "zM": 14
+        },
+        {
+          "xM": 760,
+          "zM": 14
+        }
+      ],
+      "depthM": 1
+    }
+  ],
+  "surfaceZones": [
+    {
+      "surfaceId": "ice",
+      "polygon": [
+        {
+          "xM": 445,
+          "zM": -14
+        },
+        {
+          "xM": 485,
+          "zM": -14
+        },
+        {
+          "xM": 485,
+          "zM": 14
+        },
+        {
+          "xM": 445,
+          "zM": 14
+        }
+      ]
+    },
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 445,
+          "zM": -15.5
+        },
+        {
+          "xM": 485,
+          "zM": -15.5
+        },
+        {
+          "xM": 485,
+          "zM": -0.5
+        },
+        {
+          "xM": 445,
+          "zM": -0.5
+        }
+      ]
+    }
+  ],
+  "pylons": [
+    {
+      "id": "pyl-feel",
+      "xM": 210,
+      "zM": 8,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-pass-a",
+      "xM": 300,
+      "zM": 2.8,
+      "pole": "S"
+    },
+    {
+      "id": "pyl-pass-b",
+      "xM": 300,
+      "zM": -2.8,
+      "pole": "S"
+    },
+    {
+      "id": "pyl-mud",
+      "xM": 465,
+      "zM": -8,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-gate-a",
+      "xM": 540,
+      "zM": 2.8,
+      "pole": "S",
+      "switching": {
+        "phaseS": 0
+      }
+    },
+    {
+      "id": "pyl-gate-b",
+      "xM": 540,
+      "zM": -2.8,
+      "pole": "S",
+      "switching": {
+        "phaseS": 0
+      }
+    },
+    {
+      "id": "pyl-bank",
+      "xM": 782,
+      "zM": 4,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-sling-1",
+      "xM": 960,
+      "zM": 7,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-sling-2",
+      "xM": 1080,
+      "zM": -7,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-kick",
+      "xM": 1304.5,
+      "zM": -1.5,
+      "pole": "S"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 100,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-2",
+      "xM": 410,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-3",
+      "xM": 512,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-4",
+      "xM": 660,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-5",
+      "xM": 900,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-6",
+      "xM": 1180,
+      "zM": 0,
+      "headingDeg": 0
+    }
+  ],
+  "stopLines": [
+    {
+      "id": "stop-pass",
+      "xM": 286,
+      "zM": 0,
+      "headingDeg": 0,
+      "widthM": 8,
+      "redS": 1.5
+    },
+    {
+      "id": "stop-gate",
+      "xM": 526,
+      "zM": 0,
+      "headingDeg": 0,
+      "widthM": 8,
+      "redS": 1.5
+    },
+    {
+      "id": "stop-fork-1",
+      "xM": 690,
+      "zM": 0,
+      "headingDeg": 0,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-fork-2",
+      "xM": 1200,
+      "zM": 0,
+      "headingDeg": 0,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-wall",
+      "xM": 1308.5,
+      "zM": 0,
+      "headingDeg": 0,
+      "widthM": 12,
+      "redS": 1.5
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "stopLineId": "stop-fork-1",
+      "roadIds": [
+        "channel",
+        "bridge"
+      ],
+      "mergeAt": {
+        "xM": 890,
+        "zM": 0,
+        "radiusM": 8
+      }
+    },
+    {
+      "id": "fork-2",
+      "stopLineId": "stop-fork-2",
+      "roadIds": [
+        "crater",
+        "ramp"
+      ],
+      "mergeAt": {
+        "xM": 1400,
+        "zM": 0,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-pass",
+      "xM": 314,
+      "zM": -1.2
+    },
+    {
+      "id": "s-mud",
+      "xM": 495,
+      "zM": 3
+    },
+    {
+      "id": "s-top",
+      "xM": 1321.2,
+      "zM": 0
+    }
+  ],
+  "finish": {
+    "xM": 1462,
+    "zM": 0,
+    "radiusM": 6
+  }
+}

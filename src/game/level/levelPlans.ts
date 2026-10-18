@@ -100,7 +100,27 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
       stars: { roads: roads('ch1', 'ch2'), via: [river, bar, bank] },
     };
   },
-  'polar-pass': undefined,
+  'polar-pass': (def) => {
+    const [pass, mud, top] = [samplePoint(def, 's-pass'), samplePoint(def, 's-mud'), samplePoint(def, 's-top')];
+    const roads = (ch: string, cr: string) => ['start', 'p1', 'pass', 'ice', 'gate', 'lead-1', ch, 'sling', 'lead-2', cr, 'end'];
+    // The pole to carry from each point: unlike the pylons to be pulled through a gap, then like them to be pushed out of it.
+    const poles = [
+      { roadId: 'pass', fromM: 0, pole: 'N' as const },
+      { roadId: 'pass', fromM: 21, pole: 'S' as const },
+      { roadId: 'ice', fromM: 30, pole: 'N' as const },
+      { roadId: 'ice', fromM: 110, pole: 'S' as const },
+      { roadId: 'gate', fromM: 0, pole: 'N' as const },
+      { roadId: 'gate', fromM: 21, pole: 'S' as const },
+      { roadId: 'sling', fromM: 71, pole: 'N' as const },
+      { roadId: 'sling', fromM: 150, pole: 'S' as const },
+      { roadId: 'sling', fromM: 191, pole: 'N' as const },
+      { roadId: 'lead-2', fromM: 0, pole: 'S' as const },
+    ];
+    return {
+      safe: { roads: roads('bridge', 'ramp'), poles },
+      stars: { roads: roads('channel', 'crater'), via: [pass, mud, top], poles },
+    };
+  },
 };
 
 export function levelPlans(def: LevelDef, world: LevelWorld): LevelPlans {
