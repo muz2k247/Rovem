@@ -69,7 +69,21 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
       stars: { roads: roads('c1-through', 'c2-through', 'c3-through'), via: [hill, floor, wall] },
     };
   },
-  'gravity-wells': undefined,
+  'gravity-wells': (def, world) => {
+    const [top, brake, ice] = [samplePoint(def, 's-top'), samplePoint(def, 's-brake'), samplePoint(def, 's-ice')];
+    const gap = pastBarrier(def, world, 'well-barrier', 'w1-hill', 185, -1);
+    const roads = (w1: string, w2: string, w3: string) => ['start', 'lead-1', w1, 'm1', w2, 'm2', w3, 'end'];
+    return {
+      safe: { roads: roads('w1-round', 'w2-round', 'w3-round') },
+      stars: {
+        roads: roads('w1-hill', 'w2-ice', 'w3-round'),
+        via: [top, brake, gap, ice],
+        // Braking in low gravity takes nearly twice as far: slow down well before the barrier.
+        caps: [{ roadId: 'w1-hill', fromM: 160, toM: 200, speedMps: 8.5 }],
+        decelMps2: 2,
+      },
+    };
+  },
   'ring-road': undefined,
   'the-crossing': undefined,
   'polar-pass': undefined,
