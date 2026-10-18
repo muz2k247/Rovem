@@ -1,0 +1,506 @@
+{
+  "id": "crater-field",
+  "name": "Crater Field",
+  "placeholder": true,
+  "atmosphere": "low-sun",
+  "parS": 125,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Start",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 160
+        }
+      ]
+    },
+    {
+      "id": "lead-1",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 100
+        }
+      ]
+    },
+    {
+      "id": "c1-through",
+      "name": "Crater",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "c1-around",
+      "name": "Round the rim",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -72.60229570319736
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "after": "c1-through",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 60
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -30
+        },
+        {
+          "kind": "straight",
+          "lengthM": 60
+        }
+      ]
+    },
+    {
+      "id": "c2-through",
+      "name": "Crater",
+      "after": "m1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "c2-around",
+      "name": "Round the rim",
+      "after": "m1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -72.60229570319736
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "after": "c2-through",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 130
+        }
+      ]
+    },
+    {
+      "id": "c3-through",
+      "name": "Crater",
+      "after": "m2",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "c3-around",
+      "name": "Round the rim",
+      "after": "m2",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -72.60229570319736
+        },
+        {
+          "kind": "straight",
+          "lengthM": 65.31403581890697
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 36.30114785159868
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "after": "c3-through",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 140
+        },
+        {
+          "kind": "arc",
+          "radiusM": 120,
+          "angleDeg": 25
+        },
+        {
+          "kind": "straight",
+          "lengthM": 90
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "lead-1",
+    "c1-through",
+    "m1",
+    "c2-through",
+    "m2",
+    "c3-through",
+    "end"
+  ],
+  "hills": [
+    {
+      "xM": 110,
+      "zM": 0,
+      "radiusM": 40,
+      "heightM": 4
+    },
+    {
+      "xM": 558.94,
+      "zM": -7.9,
+      "radiusM": 40,
+      "heightM": 4
+    },
+    {
+      "xM": 847.13,
+      "zM": -173.4,
+      "radiusM": 40,
+      "heightM": 4
+    }
+  ],
+  "craters": [
+    {
+      "xM": 360,
+      "zM": 0,
+      "floorRadiusM": 9,
+      "depthM": 5,
+      "wallAngleDeg": 25,
+      "rampAngleDeg": 12,
+      "rampHeadingDeg": 180
+    },
+    {
+      "xM": 708.56,
+      "zM": -93.4,
+      "floorRadiusM": 16,
+      "depthM": 5,
+      "wallAngleDeg": 25,
+      "rampAngleDeg": 12,
+      "rampHeadingDeg": 150
+    },
+    {
+      "xM": 994.35,
+      "zM": -258.4,
+      "floorRadiusM": 9,
+      "depthM": 5,
+      "wallAngleDeg": 25,
+      "rampAngleDeg": 12,
+      "rampHeadingDeg": 150
+    }
+  ],
+  "surfaceZones": [
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 724.86,
+          "zM": -93.4
+        },
+        {
+          "xM": 724.3,
+          "zM": -89.18
+        },
+        {
+          "xM": 722.68,
+          "zM": -85.25
+        },
+        {
+          "xM": 720.09,
+          "zM": -81.87
+        },
+        {
+          "xM": 716.71,
+          "zM": -79.28
+        },
+        {
+          "xM": 712.78,
+          "zM": -77.66
+        },
+        {
+          "xM": 708.56,
+          "zM": -77.1
+        },
+        {
+          "xM": 704.34,
+          "zM": -77.66
+        },
+        {
+          "xM": 700.41,
+          "zM": -79.28
+        },
+        {
+          "xM": 697.03,
+          "zM": -81.87
+        },
+        {
+          "xM": 694.44,
+          "zM": -85.25
+        },
+        {
+          "xM": 692.82,
+          "zM": -89.18
+        },
+        {
+          "xM": 692.26,
+          "zM": -93.4
+        },
+        {
+          "xM": 692.82,
+          "zM": -97.62
+        },
+        {
+          "xM": 694.44,
+          "zM": -101.55
+        },
+        {
+          "xM": 697.03,
+          "zM": -104.93
+        },
+        {
+          "xM": 700.41,
+          "zM": -107.52
+        },
+        {
+          "xM": 704.34,
+          "zM": -109.14
+        },
+        {
+          "xM": 708.56,
+          "zM": -109.7
+        },
+        {
+          "xM": 712.78,
+          "zM": -109.14
+        },
+        {
+          "xM": 716.71,
+          "zM": -107.52
+        },
+        {
+          "xM": 720.09,
+          "zM": -104.93
+        },
+        {
+          "xM": 722.68,
+          "zM": -101.55
+        },
+        {
+          "xM": 724.3,
+          "zM": -97.62
+        }
+      ]
+    }
+  ],
+  "boosts": [
+    {
+      "id": "pad-wall",
+      "xM": 1003.1,
+      "zM": -263.45,
+      "radiusM": 2.5
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 220,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-2",
+      "xM": 604.33,
+      "zM": -33.22,
+      "headingDeg": -30
+    },
+    {
+      "id": "cp-3",
+      "xM": 892.16,
+      "zM": -199.4,
+      "headingDeg": -30
+    }
+  ],
+  "stopLines": [
+    {
+      "id": "stop-fork-1",
+      "xM": 260,
+      "zM": 0,
+      "headingDeg": 0,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-fork-2",
+      "xM": 621.96,
+      "zM": -43.4,
+      "headingDeg": -30,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-fork-3",
+      "xM": 907.75,
+      "zM": -208.4,
+      "headingDeg": -30,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-wall",
+      "xM": 1001.71,
+      "zM": -262.65,
+      "headingDeg": -30,
+      "widthM": 12,
+      "redS": 1.5
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "stopLineId": "stop-fork-1",
+      "roadIds": [
+        "c1-through",
+        "c1-around"
+      ],
+      "mergeAt": {
+        "xM": 460,
+        "zM": 0,
+        "radiusM": 8
+      }
+    },
+    {
+      "id": "fork-2",
+      "stopLineId": "stop-fork-2",
+      "roadIds": [
+        "c2-through",
+        "c2-around"
+      ],
+      "mergeAt": {
+        "xM": 795.17,
+        "zM": -143.4,
+        "radiusM": 8
+      }
+    },
+    {
+      "id": "fork-3",
+      "stopLineId": "stop-fork-3",
+      "roadIds": [
+        "c3-through",
+        "c3-around"
+      ],
+      "mergeAt": {
+        "xM": 1080.95,
+        "zM": -308.4,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-hill",
+      "xM": 110,
+      "zM": 3
+    },
+    {
+      "id": "s-floor",
+      "xM": 360,
+      "zM": 3
+    },
+    {
+      "id": "s-wall",
+      "xM": 1012.73,
+      "zM": -269.01
+    }
+  ],
+  "signs": [
+    {
+      "id": "sign-end",
+      "xM": 1180.85,
+      "zM": -371.38,
+      "radiusM": 120
+    }
+  ],
+  "finish": {
+    "xM": 1331.44,
+    "zM": -400.99,
+    "radiusM": 6
+  }
+}

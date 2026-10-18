@@ -61,7 +61,14 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
       stars: { roads: roads('f1-short', 'f2-pad'), via: [lane, mud, kick] },
     };
   },
-  'crater-field': undefined,
+  'crater-field': (def) => {
+    const [hill, floor, wall] = [samplePoint(def, 's-hill'), samplePoint(def, 's-floor'), samplePoint(def, 's-wall')];
+    const roads = (c1: string, c2: string, c3: string) => ['start', 'lead-1', c1, 'm1', c2, 'm2', c3, 'end'];
+    return {
+      safe: { roads: roads('c1-around', 'c2-around', 'c3-around') },
+      stars: { roads: roads('c1-through', 'c2-through', 'c3-through'), via: [hill, floor, wall] },
+    };
+  },
   'gravity-wells': undefined,
   'ring-road': undefined,
   'the-crossing': undefined,
