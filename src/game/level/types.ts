@@ -214,3 +214,7 @@ export interface LevelDef {
   hints: HintDef[];
   finish: FinishDef;
 }
+
+/** The looks a level can ask for (A8). Presentation only; `src/render/atmosphere.ts` has one preset for each. */
+export const ATMOSPHERE_IDS = ['clear-dusk', 'orange-haze', 'low-sun', 'starry', 'violet-evening', 'blue-mist', 'aurora-night'] as const;
+export type AtmosphereId = (typeof ATMOSPHERE_IDS)[number];

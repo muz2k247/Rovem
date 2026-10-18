@@ -4,6 +4,8 @@ export type {
   WhatIfOptions, WhatIfOutcome,
 } from './session.ts';
 export { builtLevelIds, loadLevelDef } from './levels.ts';
+export { LEVEL_KEYS, levelKeyAction } from './keys.ts';
+export type { LevelKeyAction } from './keys.ts';
 export { validateLevelDef } from './schema.ts';
 export { createLevelWorld } from './world.ts';
 export type { LevelWorld, RoadGeometry } from './world.ts';

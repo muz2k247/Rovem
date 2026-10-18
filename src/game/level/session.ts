@@ -988,6 +988,22 @@ export function createLevelSession(options: LevelSessionOptions) {
     get bags(): readonly Bag[] {
       return bags;
     },
+    /** For the scene: the water holds the rover up (upthrust ≥ weight), so it rides on the surface. */
+    get floating(): boolean {
+      return wasFloating;
+    },
+    /** For the scene: the stop line whose red light the rover is waiting at, if any. */
+    get heldStopLineId(): string | undefined {
+      return phase === 'held' ? holdingLine : undefined;
+    },
+    /** For the scene's bend signs: the radius and the safe speed √(μ_g k_g g r) for this build, on the surface and in the gravity under the sign. */
+    signInfo(signId: string): { radiusM: number; safeSpeedMps: number } {
+      const sign = def.signs.find((x) => x.id === signId);
+      if (!sign) throw new Error(`Unknown sign "${signId}"`);
+      const surface = specs.get(world.surfaceIdAt(sign.xM, sign.zM))!;
+      const g = constants.gravityMps2 * world.gravityMultiplierAt(sign.xM, sign.zM);
+      return { radiusM: sign.radiusM, safeSpeedMps: Math.sqrt(surface.grip * rover.gripFactor * g * sign.radiusM) };
+    },
     get hud(): HudModel {
       return hudModel();
     },

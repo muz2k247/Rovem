@@ -24,3 +24,10 @@ describe('level registry', () => {
     for (const id of builtLevelIds()) expect(() => loadLevelDef(id)).not.toThrow();
   });
 });
+
+describe('atmosphere', () => {
+  it('a level file may only ask for a known look (A8)', () => {
+    const raw = { ...testLevelRaw(), atmosphere: 'sunny-day' };
+    expect(() => loadLevelDef('first-tracks', { 'first-tracks': raw })).toThrow(/level\.atmosphere: unknown value "sunny-day"/);
+  });
+});

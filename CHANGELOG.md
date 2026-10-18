@@ -6,6 +6,15 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels B3: level scene)
+- `src/render/levelScene.ts` with its helpers: `terrain.ts` (tiled ground from the physics heights, coloured by surface), `water.ts` (flush surface, dug bed, rover riding half hidden, splashes), `track.ts` (canyon walls, centre dashes and reflector posts, instanced), `pylons.ts` (towers, glowing coils, field lines whose dots flow in for attract and out for repel), `landmarks.ts` (barriers, boost pads, cannons and sandbags, the 3 samples, checkpoint and finish arches, stop lights, bend signs, gravity-zone curtains), `atmosphere.ts` (the seven looks of A8: sky, fog, sun angle, stars, aurora, dust and mist) and `levelCamera.ts` (a chase camera that follows the ground and stays over the road). Force arrows come from the shared `forceArrows.ts`.
+- `src/ui/LevelScreen.tsx` hosts a level: game loop, keys (Space flips the pole, R returns to the checkpoint, Esc pauses), sounds, crash moment, and the HUD and report drawn from the P0 contracts. `ui/levelHudStub.tsx` stands in for Track A's HUD and report until I1.
+- `game/level/keys.ts` (level keys); the session gains `floating`, `heldStopLineId` and `signInfo()`; the level file's `atmosphere` is validated against the seven ids.
+- Tests: new ones for terrain, water, walls and marks, pylons, atmosphere, camera, landmarks, the assembled scene, keys and screen logic.
+
+### Changed (Levels B3)
+- DECISIONS 2026-10-18: how the level scene looks and is built, with the judgment calls. No physics or content value changed; T1–T10, the old tests and the balance counts (20/9/23/17) are unchanged.
+
 ### Added (Levels B2: level engine)
 - `src/game/level/`: the level file format and validator (`types.ts`, `schema.ts`: roads, terrain, water, surfaces, gravity zones, pylons, boosts, cannons, barriers, checkpoints, stop lines, forks, samples, signs, hints), the map (`world.ts`: roads and walls, ground height and slope, surfaces, water depth, gravity), the session (`session.ts`: timer, checkpoints and respawn incl. R, beacon, stars, samples, stop lines, forks with the other-road time, control hints, bend signs, water and floating, pylons with the Space flip and on/off cycle, boosts, cannons, gravity zones), captions (`captions.ts`), the F = ma line (`forceLine.ts`), force arrows (`arrows.ts`, at most 3 by A4's order), the report (`report.ts`) and the level registry (`levels.ts`; B4 adds the files). Produces `HudModel` and `ReportModel`.
 - `src/content/levelText.json`: captions, hints, report cards and try-this lines with the student's numbers (`"placeholder": true`). `levels.json` gets a `rules` section of engine values (optional addition to the frozen P0 file).

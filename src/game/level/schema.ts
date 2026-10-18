@@ -1,6 +1,6 @@
 import type { GravityKind, PointM } from '../../content/index.ts';
 import {
-  LEVEL_IDS,
+  ATMOSPHERE_IDS, LEVEL_IDS,
   type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef,
   type GravityZoneDef, type HillDef, type HintDef, type HintDone, type HintTrigger, type LevelDef, type LevelId, type PylonDef,
   type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type StopLineDef, type SurfaceZoneDef, type WaterDef,
@@ -46,6 +46,12 @@ function str(o: Obj, key: string, path: string): string {
   const v = o[key];
   if (typeof v !== 'string' || v === '') fail(`${path}.${key}`, 'expected a non-empty string');
   return v;
+}
+
+function oneOf<T extends string>(o: Obj, key: string, path: string, allowed: readonly T[]): T {
+  const v = str(o, key, path);
+  if (!(allowed as readonly string[]).includes(v)) fail(`${path}.${key}`, `unknown value "${v}" (expected one of ${allowed.join(', ')})`);
+  return v as T;
 }
 
 function optStr(o: Obj, key: string, path: string): string | undefined {
@@ -255,7 +261,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     id: id as LevelId,
     name: str(o, 'name', 'level'),
     placeholder: o.placeholder === true,
-    atmosphere: str(o, 'atmosphere', 'level'),
+    atmosphere: oneOf(o, 'atmosphere', 'level', ATMOSPHERE_IDS),
     parS: pos(o, 'parS', 'level'),
     start: pose(o.start, 'level.start'),
     defaultSurfaceId: optStr(o, 'defaultSurfaceId', 'level') ?? 'asphalt',
