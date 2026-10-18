@@ -8,7 +8,21 @@ This file holds three designs. **Game v4: concept levels** is the current work. 
 
 **Why.** The advisor saw Demo v3 and asked for clearer, less cluttered UI; levels that each introduce one concept; a proper rover whose parts show; craters and hills, magnetism, circular motion, water, varied atmosphere; and the "two paths" choice he remembered from Part 1.
 
-**The game.** Home → Levels → a level (intro card, drive, report) → the next level. Eight levels of 90–150 s, each teaching one idea; level names, never chapter names:
+**Revised 2026-10-18** (DECISIONS 2026-10-18; LEVELS_BUILD_PLAN A7 governs). The advisor's real ask, as k._muz clarified: keep the open world where physics decides what happens, add routes, and let **each level add one element to the current ones**; the clutter he named was the screens. So there are now **7 levels**, played in order, each a leg of one expedition to the polar lander, each with at least two forks and 3 samples to drive through:
+
+| # | Level | New element (added to all earlier ones) | Why it holds attention |
+|---|---|---|---|
+| 1 | First Tracks | friction and surfaces; the controls on the move | mud shortcut that bogs weak rovers; ice shortcut where you can't brake |
+| 2 | Push & Shove | momentum, impulse | short lane under cannon fire or long safe lane; boosts across mud |
+| 3 | Crater Field | slopes, kinetic and potential energy | steep crater walls: dive in fast or roll back |
+| 4 | Gravity Wells | mass and weight | marked zones: a hill you can only climb in low gravity; braking twice as long |
+| 5 | Ring Road | circular motion | a downhill time trial; each bend's safe speed on a sign; mud outside the bends |
+| 6 | The Crossing | density, upthrust, pressure | light rovers float and must coast across fast; heavy ones crawl the riverbed |
+| 7 | Polar Pass | magnetism, electromagnets | pylons that block a pass or drag you into mud unless you flip your pole; slingshot finale |
+
+Stars: reach the beacon · all 3 samples · beat par. Endless Canyon gets every element after the levels (E1). The 8-level table below is the first version, superseded 2026-10-18 and kept for the record.
+
+**The game (first version, superseded 2026-10-18).** Home → Levels → a level (intro card, drive, report) → the next level. Eight levels of 90–150 s, each teaching one idea; level names, never chapter names:
 
 | # | Level | Idea | What the student does |
 |---|---|---|---|
@@ -27,7 +41,7 @@ Plus **Endless Canyon** (Demo v3, the high-score mode) and a locked **Dust Storm
 
 **New physics** (textbook formulas; T1–T10 and the balance counts unchanged): ground push R = mg cos θ − U; slope pull mg sin θ and rolling back; water upthrust ρ g V and drag; magnet forces (framed as super electromagnets; only the Grade 9 rules are shown in the game); the turning limit uses R. Circular motion already follows from the drifting rule.
 
-**Not this round:** wind, flying off crests, new elements in Endless, questions and Knowledge (still paused), accounts.
+**Not this round:** wind, flying off crests, questions and Knowledge (still paused), accounts. (New elements in Endless moved into this round on 2026-10-18, after the levels.)
 
 ---
 

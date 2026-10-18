@@ -7,7 +7,7 @@ Working guide for Claude Code. At the start of every session, read this file, th
 Rovem is a desktop-browser 3D game that teaches Grade 9 physics (the newest Punjab Textbook Board book; Grade 9 topics from other boards are fine). A student builds a rover from parts, drives levels that each introduce one concept, and sees the physics explained using the numbers from their own run.
 
 - Learning loop: Predict → Experiment → Observe → Explain → Retry.
-- **Current focus: Game v4, concept levels** (`docs/LEVELS_BUILD_PLAN.md`, approved 2026-10-17; summary in `docs/DESIGN.md`; sessions P0, A1–A3, B1–B4, I1 in `docs/ROADMAP.md`; screens in wireframes v2, https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). Eight levels (First Tracks, Fork in the Road, Push & Shove, Ring Road, Gravity Wells, Crater Field, The Crossing, Polar Pass) plus the Endless Canyon. Read the whole build plan before any v4 work, and keep to its file-ownership table (B3) when working in a track worktree. The game never shows textbook chapter names.
+- **Current focus: Game v4, concept levels** (`docs/LEVELS_BUILD_PLAN.md`, approved 2026-10-17; summary in `docs/DESIGN.md`; sessions P0, A1–A3, B1–B4, I1, E1 in `docs/ROADMAP.md`; screens in wireframes v2, https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). Seven levels, revised 2026-10-18 (First Tracks, Push & Shove, Crater Field, Gravity Wells, Ring Road, The Crossing, Polar Pass), each adding one element to the earlier ones, with forks and 3 samples; plus the Endless Canyon, which gets every element after the levels (E1). Read the whole build plan before any v4 work, and keep to its file-ownership table (B3) when working in a track worktree. The game never shows textbook chapter names.
 - Demo v3, the endless canyon run (`docs/DEMO_BUILD_PLAN.md`, 2026-10-14), is built and kept as the Endless Canyon mode.
 - Game design v2 (missions, medals, hub, questions, Knowledge; 2026-10-13) is **superseded** (2026-10-17). Its text and reasoning stay in `docs/DESIGN.md`; do not build from it.
 - Sole developer: k._muz. Explain in plain language, briefly and directly.
@@ -35,10 +35,11 @@ Rules:
 
 ## Key terms
 
-- **Level** (v4): a 90–150 s course that introduces one concept and ends at a finish line. Levels open in order; `?unlock=all` in the address opens all of them for demos (never saved).
+- **Level** (v4): a 90–150 s course that adds one new element to those of the earlier levels and ends at a beacon. Levels open in order; `?unlock=all` in the address opens all of them for demos (never saved).
 - **Checkpoint**: a point on a level the rover returns to, at rest, after a crash, getting stuck or pressing R. The level clock keeps running.
-- **Stars**: 3 per level: finish, beat the par time, the level's challenge. Only the best stars and time per level are saved.
-- **Par time**: the target time for the second star (LEVELS_BUILD_PLAN A2).
+- **Stars**: 3 per level: reach the beacon, collect all 3 samples, beat the par time (revised 2026-10-18; the per-level challenges are gone). Only the best stars and time per level are saved.
+- **Par time**: the target time for the third star (LEVELS_BUILD_PLAN A2).
+- **Sample**: one of 3 canisters per level, collected by driving through it (never by stopping); it stays collected after a respawn.
 - **Gear**: `direction` in the physics state (forward or reverse); it decides which key drives and which brakes.
 - **Rolling back**: moving opposite to the gear because a slope or a magnet pushes the rover back (`rollingBack`).
 - **Knowledge** (paused: v4 and the demo have no questions and no Knowledge; all parts are open): in-game points. Earned by clearing questions; spent on unlocking parts and missions.
@@ -208,7 +209,7 @@ npm run preview     # serve the built dist/ (run npm run build first)
 
 - **Physics** (NFR-4): T1–T9 against hand calculations with relative error below 1e-9. T10 checks all 135 values in the Simulation sheet (`docs/specs/extracted/component_values_simulation.csv`) each within 0.0005 of the sheet's 3-decimal value. Write each test before its code.
 - **Balance**: the counts must match the Pass check sheet: 20/27 builds pass Mission 1, 9/27 Mission 2, 23/27 Mission 3, and 17 builds are faster on the shortcut. From M5b, Mission 1 medals must also match: 20/14/5 can reach bronze/silver/gold. The Mission 3 count of 23/27 is replaced in M11 by targets k._muz sets before M11 (DESIGN §5); until then it stays as the tow-model check. A mismatch is an Open issue. Do not tune a value to make it pass.
-- **Game rules** (v4): level unlocking in order and the developer link, stars and par, checkpoints and respawn, every challenge reachable as LEVELS_BUILD_PLAN A7 says, against hand-worked cases. (v2's Knowledge and merge rules are superseded.)
+- **Game rules** (v4): level unlocking in order and the developer link, stars and par, checkpoints and respawn, every sample reachable with the starting build and no build ever trapped, as LEVELS_BUILD_PLAN A7 says, against hand-worked cases. (v2's Knowledge and merge rules are superseded.)
 - **Questions**: every numerical answer checked by hand with g = 10 m/s².
 
 ## How to work a task
@@ -240,4 +241,4 @@ Do not edit a file that doesn't need it. A doc that is still accurate stays as i
 
 **In scope for Game v4 (DECISIONS 2026-10-17):** momentum and impulse, gravity zones, cannons, slopes and rolling back, water, magnets, circular motion through the drifting rule, per-level looks (atmosphere).
 
-Do not build: wind and the Dust Storm level (next round), the rover leaving the ground, the ground's sideways tilt, new elements in the Endless Canyon, questions and Knowledge, accounts and sync (M12, later), more rover models, brakes as a part slot, student-made levels, aliens or space weather, collision damage, other planets, mobile or touch controls, level sharing, AI helper, leaderboards, saving run results (except the best stars and time per level and the best endless distance).
+Do not build: wind and the Dust Storm level (next round), the rover leaving the ground, the ground's sideways tilt, new elements in the Endless Canyon before E1 (after the levels), questions and Knowledge, accounts and sync (M12, later), more rover models, brakes as a part slot, student-made levels, aliens or space weather, collision damage, other planets, mobile or touch controls, level sharing, AI helper, leaderboards, saving run results (except the best stars and time per level and the best endless distance).

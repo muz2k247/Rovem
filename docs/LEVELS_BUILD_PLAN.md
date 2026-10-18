@@ -16,17 +16,21 @@ The advisor saw Demo v3 (the endless canyon) and asked for:
 3. **A proper rover model**, and part changes that show properly.
 4. **Craters and hills**, **magnetism** (k._muz's friend: two nodes that attract or repel the rover), **circular motion** (a circular track where students must manage speed), **water**, **varied atmosphere**, and the **two-paths** idea from Part 1 that the advisor remembered.
 
+**Clarified by k._muz on 2026-10-18** (this changed A2 and A7): the advisor liked the open world and the three elements (friction, impulse, momentum) as k._muz showed them in it, for example a slow rover getting stuck in mud. He then said the multiple-routes idea could be added now, and asked that **each level add one more element to the current ones**. His "clutter" was about the screens: simplify the dashboard and show the rover and its parts visually (A1 and A2 do this). k._muz also judged several of the first 8 levels bland; for a demo to executives, every level's goal must be worth playing.
+
 The game is for Grade 9 students following the newest Punjab Textbook Board (PTB) physics book (2025–26: Physical Quantities, Kinematics, Dynamics, Turning Effects of Force, Work Energy and Power, Mechanical Properties of Matter, Thermal Properties, Magnetism, Nature of Science). Grade 9 topics from other boards are fine too. **Chapter names are never shown in the game** (k._muz: "slightly repulsive"); levels get names instead.
 
 ### A2. Structure
 
-- **8 levels + Endless Canyon.** Each level is 90–150 s long, introduces one idea, and ends at a finish line. Endless Canyon is today's run, kept as the score mode. A locked **Dust Storm** card ("coming soon: wind") shows what comes next.
+- **7 levels + Endless Canyon** (revised 2026-10-18; see A7). Each level is 90–150 s long, **adds one new element to everything the earlier levels had**, offers more than one route, and ends at a beacon. Endless Canyon is today's run, kept as the score mode; after the levels it gets every element (session E1). A locked **Dust Storm** card ("coming soon: wind") shows what comes next.
+- *Superseded 2026-10-18:* "8 levels, each introducing one idea on its own". Why: k._muz clarified that the advisor liked the open world where physics decides what happens (the rover stuck in mud), liked the multiple-routes idea, and asked that **each level add one element to the current ones**; his "clutter" critique was about the screens, not the gameplay. k._muz also judged several of the 8 levels bland (a tutorial checklist, forks that felt like guessing, gravity lanes that were obvious or random, laps). First Tracks and Fork in the Road became one level; Ring Road lost its laps.
 - **Unlocking.** Levels open in order: finishing a level opens the next. Endless opens after First Tracks. There is no skip button and no teacher mode (k._muz: not logical in a game). For demos, a **hidden developer link** (`?unlock=all` in the address) opens everything; it is never shown in the game and never saved to progress. *Considered and rejected 2026-10-17:* "finish First Tracks or skip it, and everything opens" (Claude's first proposal), because it removes the progression a game needs.
 - **Parts.** All parts are open everywhere: levels are for experimenting (water rewards Heavy, the ring rewards Spiked). **Endless's best-distance unlock ladder is dropped**: with every part already open in the levels it would unlock nothing new. Endless becomes a pure high-score mode. (The ladder's DECISIONS row of 2026-10-14 is marked superseded, its reasoning kept.)
-- **Build priority.** If time runs short, work lands in this order, and anything unfinished at the meeting shows as "Coming soon": screens, rover and report → First Tracks → Fork in the Road → Crater Field → Polar Pass → Ring Road → The Crossing → Push & Shove → Gravity Wells. (The advisor's asks first.)
-- **Stars, 3 per level:** ★ finish · ★ beat the par time · ★ the level's challenge (A7). Only the best result per level is saved: stars and best time.
+- **Build priority** (revised 2026-10-18). Levels build on each other, so they are built in play order: screens, rover and report → levels 1 → 7 → Endless with every element (E1). Anything unfinished at a meeting shows as "Coming soon". *Superseded:* the earlier order (advisor's asks first), because a level now needs the elements of the levels before it.
+- **Stars, 3 per level** (revised 2026-10-18): ★ reach the beacon · ★ collect all 3 samples · ★ beat the par time. Only the best result per level is saved: stars and best time.
+- **Samples.** Each level has 3 sample canisters, placed on the line where that level's idea is hardest (on the ice, at the top of the steep wall, in the deep channel, beside a pylon). They are **collected by driving through them, never by stopping** (k._muz: the momentum must not break). A collected sample stays collected after a respawn. Every sample is reachable with the starting build by good driving; a part change can make it easier but is never required (B4 tests this). *Considered and rejected 2026-10-18:* scan pads you must stop inside (Claude's first proposal), because stopping breaks the flow; and per-level challenges, because each needed its own rule to learn.
 - **Checkpoints** about every 30 s. A crash (wall, barrier) plays the existing 0.5 s crash moment, then the rover reappears **at the last checkpoint, at rest**, facing along the track; the clock keeps running. Getting stuck (the existing stuck rule) does the same. **R** returns to the last checkpoint at any time. Endless is unchanged: a crash ends the run.
-- **Par time:** the integration session's best clean drive with the starting build × 1.15, rounded up to the next 5 s. Provisional until k._muz has played.
+- **Par time:** the integration session's best clean drive with the starting build, collecting all 3 samples, × 1.15, rounded up to the next 5 s. Provisional until k._muz has played.
 
 ### A3. Screens and navigation (wireframes v2)
 
@@ -35,7 +39,7 @@ Flow: **Home** → Levels / Endless / Garage / Settings. **Levels** → Level in
 - **Home:** wordmark, Continue (next unfinished level), Levels, Endless Canyon, Garage, Settings. Controls line at the bottom.
 - **Levels:** a 4-column grid of cards: number, name, one-line hook, stars. The next level is highlighted ("NEXT"); later ones show a lock and "Finish the previous level". The Endless card shows the best distance. The Dust Storm card is locked.
 - **Level intro:** name, goal (one line), **New here** (2–3 short sentences, no formula), a small diagram, the three star rules, controls, and buttons Back / Change rover / Start (Enter).
-- **Driving (HUD).** Top left: speed (m/s large, km/h small) and any state badge (R, WHEELS SLIP, your magnet pole). Top centre: level name and progress (checkpoint or lap) with a bar. Top right: time and a pause button. Right: **one caption at a time** (A4). Bottom centre: the F = ma line (A4). Bottom left: the controls hint for the first 10 s only. **The force panel is removed.**
+- **Driving (HUD).** Top left: speed (m/s large, km/h small) and any state badge (R, WHEELS SLIP, your magnet pole). Top centre: level name, progress (checkpoint) with a bar, and samples collected (e.g. 2/3). Top right: time and a pause button. Right: **one caption at a time** (A4). Bottom centre: the F = ma line (A4). Bottom left: the controls hint for the first 10 s only. **The force panel is removed.**
 - **Pause, Settings:** as in the wireframes. Settings: Master / Engine / Effects volume and Mute; Force arrows on/off; Show the maths on/off; Camera shake on/off; Graphics Low/High; a controls list; Replay tutorial; Reset progress (press twice to confirm). Settings are saved in local storage under their own key.
 - **Report:** result (time and stars, or distance in Endless), a **speed–time graph** with numbered event markers, **What happened**: up to 3 cards (title, one plain sentence with the student's numbers, a **Show the maths** toggle with the worked formula), one **Try this** with a button that acts (opens the garage with the suggested part selected, or retries). Buttons: Levels, Retry, Next.
 
@@ -47,17 +51,17 @@ The rule for every on-screen element: **it appears only while it teaches somethi
 
 - **Captions:** one at a time, queued, each shown at least 2.5 s, at most two short lines: what happened and the student's number (e.g. `Corner: r = 25 m` / `Turning needs 209 × 13.62² ÷ 25 = 1551 N. Your tyres give up to 1638 N.`). The full worked formulas move to the report's Show the maths.
 - **F = ma line** (bottom centre, setting "Show the maths"): shown while the speed is changing (|a| ≥ 0.1 m/s² for at least 0.3 s), hidden otherwise. It lists the forces along the path by name, then the net force and a: `Push 1000 N − Friction 41 N = 959 N → a = 959 ÷ 209 = 4.59 m/s²`. On first reaching top speed it shows `Balanced: constant speed` for 2 s.
-- **Force arrows** (setting "Force arrows"): drawn in the 3D scene, on the rover, with a label (name and whole newtons). Length 0.5 m + 2.5 m × F ÷ 2000 N, at most 3 m; forces under 20 N are hidden. Only the forces the level is about:
+- **Force arrows** (setting "Force arrows"): drawn in the 3D scene, on the rover, with a label (name and whole newtons). Length 0.5 m + 2.5 m × F ÷ 2000 N, at most 3 m; forces under 20 N are hidden. Revised 2026-10-18 for cumulative levels: **an arrow shows only while its force acts**, and at most 3 show at once (plus the impulse flash); when more act, the force of the current level's new element wins, then push (or brake), then friction.
 
-| Level | Arrows |
+| Force | Shown while |
 |---|---|
-| First Tracks, Fork in the Road, Endless | push (or brake), friction |
-| Push & Shove | push, friction; a 0.6 s flash arrow for each impulse (boost, hit) with its Δv |
-| Ring Road | the turning force needed (m v² ÷ r, pointing to the centre of the bend), labelled with the grip limit |
-| Gravity Wells | weight (down), friction |
-| Crater Field | push, slope pull (down the slope), friction |
-| The Crossing | push, upthrust (up), friction + water drag (back) |
-| Polar Pass | magnet force (towards or away from the pylon), friction |
+| push (or brake), friction | always (in every level and Endless) |
+| impulse | a 0.6 s flash with its Δv at each boost or hit |
+| slope pull (down the slope) | on a slope |
+| weight (down) | inside a gravity zone |
+| turning force needed (m v² ÷ r, towards the centre), labelled with the grip limit | turning at speed |
+| upthrust (up), water drag (back) | in water |
+| magnet force (towards or away from the pylon) | within a pylon's range while it is on |
 
 Colours: push orange #E8743B, friction and drag cyan #63C7E6, weight and slope violet #B49CFF, upthrust green #6FD08C, turning force and magnet gold #F2C14E. Labels always name the force, so colour is never the only cue.
 
@@ -68,6 +72,7 @@ Colours: push orange #E8743B, friction and drag cyan #63C7E6, weight and slope v
 - **Chassis:** Light = open tube frame with struts; Standard = plated body; Heavy = armoured body with side plates and rivets.
 - **Motor:** Small, Medium, Large differ clearly in housing size, with cooling fins.
 - **Wheels:** the three existing looks, kept and refined.
+- **If the look still disappoints** (2026-10-18): first A2b, a polish session in code (Part C). If k._muz is still unhappy after that, the next route is **Blender driven by Claude** through a free Blender connector (an MCP server): Claude builds the model in Blender with each part as its own named piece and exports one `.glb` file the game loads. It is our own model, so no licence issue (recorded in ASSETS as own work). It needs Blender installed and about one session; the connector's setup is unverified as of 2026-10-18. *Rejected:* AI "3D from a picture" generators, because they produce one fused mesh (parts cannot be swapped) and their licence terms vary.
 - The footprint used by the physics (width 1.7 m, length 2 m) does not change.
 - **Garage:** a turntable preview (drag to rotate); the changed part animates in (0.3 s); a banner names the change (`Heavy chassis fitted · mass 209 → 269 kg`) with one sentence on why it matters; five numbers with ▲/▼ changes, computed by the physics functions: mass, top speed, acceleration on asphalt, safe speed in a 25 m corner, and deep water (floats or sinks, with density).
 
@@ -116,7 +121,63 @@ All in `src/physics/` unless marked *game layer*. Textbook formulas only. Every 
 
 ### A7. The levels
 
-Each level has its own JSON file in `src/content/levels/` (A9) and its words in `src/content/levelText.json` (`"placeholder": true` until k._muz reviews). Track width 10 m unless stated, with 4 m of sand run-off before the walls. Lengths are targets for 90–150 s with the starting build.
+Revised 2026-10-18 (approved by k._muz in chat; why: A2). Each level has its own JSON file in `src/content/levels/` (A9) and its words in `src/content/levelText.json` (`"placeholder": true` until k._muz reviews). Track width 10 m unless stated, with 4 m of sand run-off before the walls. Lengths are targets for 90–150 s with the starting build.
+
+**Rules for every level.** These are what make a level worth playing, not a lesson to sit through.
+- **A goal, not a checklist.** The levels are the legs of one expedition across Mars to the polar lander. Each level's goal is one line: reach the next beacon. The intro says it; nothing else is required to finish.
+- **Each level adds one element** to everything the levels before it had (the "Carries over" lines). The new element appears alone first, then mixed with the old ones.
+- **Routes.** Every level has at least two forks. Each fork is decided by a rule the student has already met (surface signs, gravity signs, bend signs with the safe speed, visible water depth), so the choice is a prediction, not a guess. After a fork, a caption gives the other road's time for the same build, worked out by the physics from the same start (as the tunnel comparison does). A wrong first choice is part of the loop: Predict → Experiment → Observe → Explain → Retry.
+- **Failure you can see.** The physics decides, visibly: bogged in mud, sliding off ice, rolling back down a wall, floating to a stop, pushed off the road by a pylon. Then the rover respawns at the last checkpoint (A2). No build is ever trapped.
+- **Samples** (A2): 3 per level, on the line where the new idea is hardest. Listed per level below.
+- **Throttle alone is never enough** for all three stars: each level has at least one place where holding W the whole way fails (a bend, an ice run-out, a pylon, a channel).
+
+1. **First Tracks** (id `first-tracks`; friction and surfaces; the controls). *Goal:* reach the relay beacon at the end of the canyon. *Absorbs* the old First Tracks and Fork in the Road.
+   - The first 20 s teach the controls **on the move**: short hints appear only when they are needed (`Hold W` at the start, `Let go: friction slows you` on the first coast, `A/D to steer` before the first bend, `S to brake` before the first barrier) and vanish once done. No checklist, no boxes.
+   - Three forks, each from a **stop line** (a short red light, then go), so acceleration matters:
+     - asphalt 100 m or sand 85 m (v2 Mission 1 values; 17 of 27 builds are faster on the sand);
+     - asphalt 100 m or ice 70 m. The ice road ends at a bend in front of a barrier: on ice you can neither brake nor turn hard, so let go of W early;
+     - asphalt 100 m or mud 40 m: the demo moment. Rovers with high rolling friction bog down.
+   - Samples: on the sand road, on the ice road before the bend, at the entry to the mud.
+   - Arrows: push (or brake), friction.
+2. **Push & Shove** (id `push-and-shove`; momentum and impulse). *Goal:* run the cannon range to the next beacon. *Carries over:* surfaces.
+   - A short lane under head-on cannons or a longer protected lane. A heavier rover loses less speed per hit (m₁u₁ + m₂u₂ = (m₁ + m₂)u′), so the build changes which lane is better.
+   - Kickers (from behind) on the short lane push you forward; a boost pad before a mud patch carries you across it (impulse against friction).
+   - Samples: in the cannon lane, across a mud patch after a boost pad, just ahead of a kicker.
+3. **Crater Field** (id `crater-field`; slopes; kinetic and potential energy). *Goal:* cross the crater field. *Carries over:* surfaces, boosts, cannons.
+   - Rolling hills up to 4 m high and at least 60 m long: coasting over a 4 m hill needs about √(2 × 9.8 × 4) = 8.85 m/s, ignoring friction.
+   - Three craters 5 m deep, each with a steep 25° wall (the shortcut) and a gentle 12° ramp (always works). Weak motors roll back down the wall unless they come in fast: diving in from the opposite rim turns height into speed. One crater floor is mud, another has a boost pad.
+   - Captions show height and speed trading places (`Down 5 m: you gained speed`, with the mgh numbers in the report).
+   - Samples: on a hill crest (needs speed), on a crater floor, at the top of the steep wall.
+4. **Gravity Wells** (id `gravity-wells`; mass and weight). *Goal:* cross the gravity fields. *Carries over:* surfaces, boosts, cannons, slopes.
+   - Zones are clearly marked with their gravity (`g = 4.9 m/s²`, `g = 19.6 m/s²`), so every choice follows one rule the intro states: **in a zone your weight changes; your mass does not.** That makes it predictable:
+     - a 30° asphalt hill inside a low-gravity zone is the shortcut: most builds cannot climb it in normal gravity (the starting build manages about 28°), but in half gravity the downhill pull halves;
+     - braking in low gravity takes nearly twice as far (the tyres grip half as hard), so brake early before the barrier;
+     - a cannon inside a zone: the sandbag hits just as hard (mass unchanged);
+     - a high-gravity lane across ice (grip doubles: take it) and one across mud (friction doubles: avoid it).
+   - Samples: at the top of the low-gravity hill, inside a low-gravity zone just before a barrier, on the high-gravity ice lane.
+5. **Ring Road** (id `ring-road`; circular motion). *Goal:* race down the canyon road to the beacon. *Carries over:* surfaces, boosts, slopes, gravity zones. **Point to point, no laps.**
+   - Bends of r = 40 m (two), 25 m (two), a 12 m hairpin, and **the Ring**: a 270° loop of r = 30 m (safe 15.34 m/s, just under the starting build's top speed: hold the throttle and you drift wide).
+   - Every bend has a sign with its radius and its safe speed for the current build (√(μ_g k_g g r)). The outside of each bend is mud run-off: slide wide and you bog down.
+   - One bend sits inside a low-gravity zone, so its sign shows a lower safe speed (× 0.71). One bend is at the foot of a downhill, so you arrive faster than you think: brake before it.
+   - Samples: on the inside line of the Ring, in the low-gravity bend, just after the hairpin.
+6. **The Crossing** (id `the-crossing`; density, upthrust, pressure). *Goal:* cross the flooded valley. *Carries over:* surfaces, boosts, slopes, bends.
+   - Shallow fords (0.3 m), a wide 0.5 m river, then two deep channels (1.0 m, 10 m wide). Each deep channel has a long way round over a bridge.
+   - The rule the intro states: **if the water pushes up harder than your weight, you float, and a floating rover cannot drive or steer; it only coasts.** A Light build floats: it must hit the channel fast (a boost pad sits before each) and coast across; it reaches the far bank from about 9 m/s (it coasts m v₀ ÷ b: 169 × 9 ÷ 150 = 10.1 m). Slower, it floats to a stop and respawns. Standard and Heavy builds sink and drive the riverbed slowly against the water drag.
+   - Pressure is shown, not simulated (A6).
+   - Samples: in the middle of the 0.5 m river, on the sandbar between the channels, near the far bank of the second channel.
+7. **Polar Pass** (id `polar-pass`; magnetism; electromagnets). *Goal:* reach the polar lander (the finale). *Carries over:* everything.
+   - In order: an attracting pylon beside the road (feel the pull); a **repelling pylon at a narrow pass** that pushes you back (you roll back) until you flip your pole; an **attracting pylon beside a mud field** that drags you off the road unless you flip; switching electromagnets (3 s on / 2 s off) at a gate you must time; **slingshots**: approach on attract, flip to repel as you pass (about +3.5 m/s).
+   - The finale: the polar crater's steep exit wall. The slingshot's speed carries you up it; the ramp is the long way round. If B1's rules allow it (floating rover, `externalForceN` along the gear), a deep channel where a pylon on the far bank pulls a floating rover across.
+   - Holding W the whole way fails: the pass and the mud pylon need a flip.
+   - Samples: in the repelling pass, beyond the mud pylon, at the top of the slingshot climb.
+
+**Endless Canyon:** until E1, physics and course unchanged; no parts ladder (A2). It has the new HUD (no force panel), captions, arrows, pause menu and report. **After the levels (E1, approved 2026-10-18):** it runs on the level engine and its course generator mixes every element (slopes, water, magnets, bends, gravity, cannons, surfaces). A crash still ends the run. *Superseded:* "no new elements in Endless" (A13 of 2026-10-17), because k._muz wants the open world the advisor liked to hold everything.
+
+**Dust Storm:** locked card only. Wind would be a sideways force like the magnet's; built after this round.
+
+#### Superseded 2026-10-18: the first eight levels (kept for the record; why: A2)
+
+The first version. Each level has its own JSON file in `src/content/levels/` (A9) and its words in `src/content/levelText.json` (`"placeholder": true` until k._muz reviews). Track width 10 m unless stated, with 4 m of sand run-off before the walls. Lengths are targets for 90–150 s with the starting build.
 
 1. **First Tracks** (controls; speed, acceleration, F = ma). A straight canyon in five short parts, each with a prompt: hold W to the 100 m marker; let go and coast (friction slows you); brake and **stop inside a 10 m box**; steer through a slalom of barriers; reverse into a bay (hold S at rest). Challenge ★: stop inside the box at the first try. Arrows: push, friction (brake while braking).
 2. **Fork in the Road** (friction and route choice; the advisor's "two paths"). Three forks, each starting from a **stop line** (a short red light, then go), so acceleration matters as in v2 Mission 1:
@@ -134,11 +195,9 @@ Each level has its own JSON file in `src/content/levels/` (A9) and its words in 
 
 **Endless Canyon:** physics and course unchanged; no parts ladder (A2). It gets the new HUD (no force panel), captions, arrows, pause menu and report.
 
-**Dust Storm:** locked card only. Wind would be a sideways force like the magnet's; built after this round.
-
 ### A8. Atmosphere (looks only)
 
-Each level sets a preset: sky colours, fog density, dust particles and light angle. No physics. First Tracks: clear dusk. Fork in the Road: pale midday. Push & Shove: dusty orange haze. Ring Road: violet evening. Gravity Wells: dark sky with stars. Crater Field: low sun, long shadows. The Crossing: cool blue-grey with mist over the water. Polar Pass: night with a faint aurora. Endless: as now. Graphics Low turns off fog particles and shadows.
+Each level sets a preset: sky colours, fog density, dust particles and light angle. No physics. First Tracks: clear dusk. Push & Shove: dusty orange haze. Ring Road: violet evening. Gravity Wells: dark sky with stars. Crater Field: low sun, long shadows. The Crossing: cool blue-grey with mist over the water. Polar Pass: night with a faint aurora. Endless: as now. (Fork in the Road's pale midday went with that level, 2026-10-18.) Graphics Low turns off fog particles and shadows.
 
 ### A9. Level data
 
@@ -149,7 +208,9 @@ Extend the existing `Level` format (`src/content/levels/`, validated on load, NF
 - `magnets`: pylons (position, pole, `onS`/`offS` or always on).
 - `boosts`, `cannons`, `gravityZones` in the run's existing formats.
 - `checkpoints`, `finish`, `stopLines`, `forks` (the two roads per fork), `signs`.
-- `stars`: `parS` and the challenge id.
+- `samples`: three positions (A2).
+- `stars`: `parS`. *(The challenge id was dropped 2026-10-18 with the per-level challenges.)*
+- `hints`: First Tracks' on-the-move control hints (trigger point, text id).
 - `atmosphere`: the preset id.
 
 `hazards` and `modifiers` stay reserved. Every number lives in the level files or in `src/content/levels.json` (the shared values of A6 and A10); logic never hard-codes a value.
@@ -160,7 +221,9 @@ Extend the existing `Level` format (`src/content/levels/`, validated on load, NF
 |---|---|---|---|
 | Crater depth, wall, ramp | 5 m, 25°, 12° | Claude | provisional |
 | Hills | ≤ 4 m high, ≥ 60 m long, crest radius ≥ 50 m | Claude | provisional |
-| Ring Road radii | 12, 25, 30 (Ring), 40 m; width 10 m | Claude | provisional |
+| Ring Road radii | 12, 25, 30 (Ring), 40 m; width 10 m; point to point, no laps | Claude | provisional |
+| Samples | 3 per level; collected when the footprint touches a 1.5 m radius around the canister | Claude | provisional |
+| Gravity Wells hill | 30°, asphalt, inside a × 0.5 zone | Claude | provisional |
 | Water density | 1000 kg/m³ | textbook | confirmed |
 | Rover volume, submersion height | 0.20 m³, 1.0 m | Claude | provisional |
 | Water drag | 150 N·s/m × depth fraction | Claude | provisional |
@@ -169,7 +232,7 @@ Extend the existing `Level` format (`src/content/levels/`, validated on load, NF
 | Magnet force | 1600 N max, full within 5 m, 1/d², 0 beyond 25 m | Claude | provisional |
 | Magnet cycle, pole key | 3 s on / 2 s off; Space | Claude | provisional |
 | Level length, checkpoint spacing | 90–150 s, about 30 s | Claude | provisional |
-| Par time | best clean drive × 1.15, up to next 5 s | Claude | provisional |
+| Par time | best clean drive with all 3 samples × 1.15, up to next 5 s | Claude | provisional |
 | Respawn key | R | Claude | provisional |
 | Developer unlock | `?unlock=all` in the address, not saved | Claude | engineering |
 | Sideways-force cut-off | 0.5 m/s | Claude | engineering |
@@ -192,11 +255,12 @@ Space Grotesk and IBM Plex Sans, both under the SIL Open Font Licence 1.1, insta
 
 ### A13. Not in this round
 
-Dust Storm (wind), flying off crests, the ground's sideways tilt, new elements in Endless, mobile, questions and Knowledge (still paused), accounts.
+Dust Storm (wind), flying off crests, the ground's sideways tilt, mobile, questions and Knowledge (still paused), accounts. (*"New elements in Endless" left this list 2026-10-18: Endless gets every element in E1, after the levels.*)
 
 ### A14. Done when
 
-- Home → Levels → every level plays from intro to report and back; Endless plays as before with the new HUD and report.
+- Home → Levels → every level plays from intro to report and back; Endless plays with the new HUD and report (and, after E1, every element).
+- Every level has at least two forks and 3 samples; each sample is reachable with the starting build; holding W the whole way does not earn all three stars.
 - Each level's new mechanic behaves as A6 and A7 say, with its arrows and captions, and every A6 check value is tested.
 - Back, Pause, Settings and Reset work everywhere; settings and stars survive a reload.
 - The garage shows the new rover; every part looks different; a swap shows the banner and the changes.
@@ -215,7 +279,7 @@ P0 (main, one session)  →  Track A (UI)  ─┐
                           Track B (levels) ─┴→  merge A, then B  →  I1 (main: integrate, par times, polish)  →  k._muz plays
 ```
 
-Track A: A1 screens → A2 rover and garage → A3 report. Track B: B1 physics → B2 level engine → B3 level scene → B4 the 8 levels. Each track runs its sessions in order; the two tracks run at the same time. Inside B2–B4, mechanics and levels are built in the A2 build-priority order, and B4 commits after each level, so whatever is done by the meeting is complete. Frame rate is measured as soon as B3 shows a first level (Graphics Low, Intel UHD), not at the end.
+Track A: A1 screens → A2 rover and garage → A3 report. Track B: B1 physics → B2 level engine → B3 level scene → B4 the 7 levels (revised 2026-10-18). After the merges and I1: E1, Endless on the level engine with every element. Each track runs its sessions in order; the two tracks run at the same time. Inside B2–B4, mechanics and levels are built in play order (A2), and B4 commits after each level, so whatever is done by the meeting is complete. Frame rate is measured as soon as B3 shows a first level (Graphics Low, Intel UHD), not at the end.
 
 ### B2. Worktrees
 
@@ -261,6 +325,7 @@ A track edits only the files it owns. If it needs a change in the other track's 
 2. When Track B has finished B4: on `levels/b-levels`, `git merge main` (now with A). Resolve conflicts with these rules, then run all checks and merge into `main`:
    - `CHANGELOG.md`, `DECISIONS.md`, `ROADMAP.md`: keep both sides' lines, in date order.
    - `contracts.ts`: keep every optional field either side added.
+   - `CLAUDE.md`, `README.md`: keep both sides' changes (added 2026-10-18: both tracks fix stale lines in them, and main gets plan updates).
    - Any other conflict means the ownership table was broken: stop and report it to k._muz before choosing a side.
 3. I1 runs on `main`.
 
@@ -303,6 +368,15 @@ Footprint unchanged. Tests for the numbers and part looks.
 Typecheck, test, balance, build. Commit "Levels A2: rover and garage", push, report.
 ```
 
+**A2b (ROVEM-a; only if k._muz is still unhappy with the rover after seeing A2 in ROVEM-a)**
+```
+Track A, rover polish. Read docs/LEVELS_BUILD_PLAN.md A5 and look at docs/captures/a2-garage/.
+k._muz is not happy with the rover. Problems seen in the A2 screenshots: the rover is small in the garage frame; the All-terrain and Spiked wheels read as gear cogs, not tyres (use a round tyre with tread blocks or studs on it); the body is a plain box with no bevels; the mast is a bare stick; the motor reads as a heat-sink box; chassis and motor differences are hard to see at a glance.
+Improve proportions (lower, wider stance, bigger wheels), bevels, colour and material contrast and small details; frame the rover so it fills the turntable view. Keep the footprint, the part ids and the part-look tests.
+Also: show the "Developer: M5a test course" link only with ?unlock=all.
+Screenshots of all nine part looks into docs/captures/a2b-garage/. Typecheck, test, balance, build. Commit "Levels A2b: rover polish", push, report.
+```
+
 **A3 (ROVEM-a)**
 ```
 Track A, session 3. Read A3 (Report) and B4.
@@ -322,8 +396,10 @@ Typecheck, test, balance, build. Commit "Levels B1: slopes, water, magnets, roll
 
 **B2 (ROVEM-b)**
 ```
-Track B, session 2. Read A2, A7, A9.
-Level engine in src/game/level/: level schema and loader (validated), level session (track and walls, checkpoints and respawn incl. R, finish, timer, stars, stop lines and forks with the other-road time, terrain heights and slope, water depth, pylons with the Space pole flip and on/off cycles; boosts, cannons, gravity zones reused from the run), producing HudModel and ReportModel (contracts.ts). Captions per A4 with the student's numbers.
+Track B, session 2. First run "git merge main" (the plan changed on 2026-10-18; for CHANGELOG, DECISIONS, ROADMAP, CLAUDE.md and README keep both sides). Then read A2, A4, A7, A9: there are now 7 cumulative levels, samples instead of challenges, and arrows that show only while their force acts.
+Level engine in src/game/level/: level schema and loader (validated), level session (track and walls, checkpoints and respawn incl. R, finish beacon, timer, stars (beacon, all 3 samples, par), samples collected by driving through and kept after a respawn, First Tracks' on-the-move control hints, stop lines and forks with the other-road time, terrain heights and slope, water depth (a floating rover that comes to a stop counts as stuck and respawns), pylons with the Space pole flip and on/off cycles; boosts, cannons, gravity zones reused from the run), producing HudModel and ReportModel (contracts.ts). Captions per A4 with the student's numbers. Build the level's force arrows inside src/game/level/ (A4 rule); ground push uses normalForceN, never weightN.
+Use exactly these level ids: first-tracks, push-and-shove, crater-field, gravity-wells, ring-road, the-crossing, polar-pass.
+Magnets (from B1): flip the sign of sidewaysN when motionSign is -1; in a split step, accelerationMps2 is the start-of-step value.
 Tests first. Typecheck, test, balance, build. Commit "Levels B2: level engine", push, report.
 ```
 
@@ -338,16 +414,24 @@ Typecheck, test, balance, build. Commit "Levels B3: level scene", push, report.
 **B4 (ROVEM-b)**
 ```
 Track B, session 4. Read A7, A9, A10.
-Write the 8 level files and levelText.json ("placeholder": true) per A7, with the A10 values, in the A2 build-priority order, committing and pushing after each level. Check each by test: every challenge is reachable with the starting build except where A7 says otherwise; no build is trapped in a crater; a floating rover reaches the far side of every channel.
-Typecheck, test, balance, build. Commit "Levels B4: the eight levels", push, report. Then follow B5 step 2.
+Write the 7 level files and levelText.json ("placeholder": true) per A7 (the rules for every level, then each level), with the A10 values, in play order 1 to 7, committing and pushing after each level. Check each by test: at least two forks; every sample reachable with the starting build; no build trapped anywhere (craters, channels, pylons: respawn always works); a Light build entering a deep channel at 9 m/s reaches the far bank; where practical, a simple drive that holds W along the centre line misses at least one star. If a level cannot meet a rule without changing an A10 value, report it; do not tune the value.
+Typecheck, test, balance, build. Commit "Levels B4: the seven levels", push, report. Then follow B5 step 2.
 ```
 
 **I1 (main, after both merges)**
 ```
-Read docs/LEVELS_BUILD_PLAN.md. Both tracks are merged.
-Do every item under "Needs from the other track" from the A and B reports. Wire Continue and Next level. Set par times (A2) and record them in DECISIONS. Play every level start to finish (CDP or by hand) and fix what blocks it; screenshots of each into docs/captures/.
+Read docs/LEVELS_BUILD_PLAN.md. Both tracks are merged. There are 7 levels (A7, revised 2026-10-18).
+Do every item in Part E (the handover list from the A and B reports). Wire Continue and Next level. Set par times (A2) and record them in DECISIONS. Play every level start to finish (CDP or by hand) and fix what blocks it; screenshots of each into docs/captures/.
 Run physics-checker and spec-sync. Update ROADMAP, CHANGELOG ([Unreleased]) and CLAUDE.md where they are now stale.
 Typecheck, test, balance, build. Commit "Levels I1: integration", push, report CI and anything still open.
+```
+
+**E1 (main, after I1; approved 2026-10-18)**
+```
+Read CLAUDE.md, docs/LEVELS_BUILD_PLAN.md (A2, A6, A7 "Endless Canyon", A9) and docs/DEMO_BUILD_PLAN.md (the course generator).
+Rebuild the Endless Canyon on the level engine and level scene: the seeded course generator produces level-format chunks that mix every element (surfaces, boosts, cannons, slopes and craters, gravity zones, bends with signs, water, pylons), easing them in with distance as today. Keep the run rules: a crash ends the run; score and best distance as today; the same seed gives the same course.
+Tests first: determinism, no chunk traps any build, every element appears by a set distance. Keep 30+ fps with Graphics Low in mind.
+Typecheck, test, balance, build. Commit "Levels E1: Endless with every element", push, report.
 ```
 
 ---
@@ -367,3 +451,22 @@ Done: DECISIONS (Game v4 row; ladder superseded), DESIGN, ROADMAP, CLAUDE.md, RE
    - Physics Model Specification: new sections for ground push R, slopes and rolling back, water (upthrust, drag), magnets, turning grip with R, with the A6 formulas and check values; a note that T1–T10 are unchanged.
    - Wireframes: superseded by wireframes v2 (link above); the PDF's images stay mood references only.
 6. **`docs/ASSETS.md`**: the two fonts (name, licence, source, date).
+
+---
+
+## Part E: Handover list for I1 (collected from the track reports)
+
+I1 cannot see the chat, so every "Needs from the other track" item is copied here as it arrives.
+
+**From A1 (`e723c84`, 2026-10-18)**
+1. A1 used 8 level ids. Since 2026-10-18 there are 7, in this order: `first-tracks`, `push-and-shove`, `crater-field`, `gravity-wells`, `ring-road`, `the-crossing`, `polar-pass` (`fork-in-the-road` is gone; B2 was told). Update `levelCards.json` (order, hooks and intro text for the A7 levels, still `"placeholder": true`), the unlock order and their tests; check the Levels grid still looks right with 7 cards + Endless + Dust Storm.
+2. `LevelScreen.tsx`: call `recordLevelResult` (`src/save/levelProgress.ts`) and save; take the settings and pass them to `<Hud>` and `<PauseMenu mode="level">`; use `effectiveVolume`. Wire Next level, Retry and Home in `App.tsx`.
+3. Par times: set them (A2 rule), record them in DECISIONS, and pass `parS` to `LevelIntroScreen`.
+4. Remove the unused `run.unlocks` data from `run.json`, `schema.ts` (about line 303), `types.ts` and `runContent.test.ts`.
+5. Show "Coming soon" for any level that is not finished.
+6. Merge `src/content/levelCards.json` (names, hooks, intro text) with `levelText.json` into one file, kept `"placeholder": true`.
+7. Check the frame rate of the force arrows on the Intel UHD laptop (labels update every 4th frame).
+
+**From B1 (`f9499eb`, 2026-10-18)**
+8. B1 asked for "Ground push" in `forcePanel.ts` to use `normalForceN`. A1 deleted `forcePanel.ts`. Check that Track A's `src/game/forces.ts` and Track B's level arrows both use `normalForceN` for ground push wherever the ground slopes or the rover is in water. Keep one arrow builder, not two.
+9. Magnet notes for B2 (passed on in the B2 prompt): flip the sign of `sidewaysN` when `motionSign` is −1; in a split step, `accelerationMps2` is the value at the start of the step.
