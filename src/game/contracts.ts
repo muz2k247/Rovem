@@ -64,7 +64,7 @@ export type ReportResult =
       kind: 'level';
       timeS: number;
       stars: StarCount;
-      /** Finish, beat the par time, the level's challenge (A2). */
+      /** Reach the beacon, collect all 3 samples, beat the par time (A2, revised 2026-10-18). */
       starFlags: [boolean, boolean, boolean];
       parS: number;
     }

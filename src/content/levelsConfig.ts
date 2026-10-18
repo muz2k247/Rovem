@@ -41,6 +41,22 @@ export interface LevelsConfig {
   track: { widthM: number; runoffWidthM: number };
   pacing: { levelLengthMinS: number; levelLengthMaxS: number; checkpointSpacingS: number };
   par: { factor: number; roundUpToS: number };
+  /** Engine rules added by Levels B2 (all positive; see the DECISIONS row of 2026-10-18). */
+  rules: {
+    crashMomentS: number;
+    floatStopMps: number;
+    sampleRadiusM: number;
+    checkpointRadiusM: number;
+    captionShowS: number;
+    hintMaxS: number;
+    coastHintMinMps: number;
+    signLookAheadM: number;
+    steepSlopeDeg: number;
+    descentMinDropM: number;
+    magnetCaptionMinN: number;
+    bendCaptionMinMps: number;
+    whatIfTimeoutS: number;
+  };
   captions: { minShowS: number; maxLines: number };
   forceLine: { minAccelMps2: number; minDurationS: number; balancedShowS: number };
   arrows: {
@@ -156,6 +172,23 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
   const pr = sec('par');
   const par = { factor: num(pr, 'factor', p('par')), roundUpToS: num(pr, 'roundUpToS', p('par')) };
 
+  const ru = sec('rules');
+  const rules = {
+    crashMomentS: num(ru, 'crashMomentS', p('rules')),
+    floatStopMps: num(ru, 'floatStopMps', p('rules')),
+    sampleRadiusM: num(ru, 'sampleRadiusM', p('rules')),
+    checkpointRadiusM: num(ru, 'checkpointRadiusM', p('rules')),
+    captionShowS: num(ru, 'captionShowS', p('rules')),
+    hintMaxS: num(ru, 'hintMaxS', p('rules')),
+    coastHintMinMps: num(ru, 'coastHintMinMps', p('rules')),
+    signLookAheadM: num(ru, 'signLookAheadM', p('rules')),
+    steepSlopeDeg: num(ru, 'steepSlopeDeg', p('rules')),
+    descentMinDropM: num(ru, 'descentMinDropM', p('rules')),
+    magnetCaptionMinN: num(ru, 'magnetCaptionMinN', p('rules')),
+    bendCaptionMinMps: num(ru, 'bendCaptionMinMps', p('rules')),
+    whatIfTimeoutS: num(ru, 'whatIfTimeoutS', p('rules')),
+  };
+
   const ca = sec('captions');
   const captions = { minShowS: num(ca, 'minShowS', p('captions')), maxLines: num(ca, 'maxLines', p('captions')) };
 
@@ -193,6 +226,7 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     track,
     pacing,
     par,
+    rules,
     captions,
     forceLine,
     arrows,

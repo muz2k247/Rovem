@@ -22,6 +22,21 @@
   "track": { "widthM": 10, "runoffWidthM": 4 },
   "pacing": { "levelLengthMinS": 90, "levelLengthMaxS": 150, "checkpointSpacingS": 30 },
   "par": { "factor": 1.15, "roundUpToS": 5 },
+  "rules": {
+    "crashMomentS": 0.5,
+    "floatStopMps": 0.2,
+    "sampleRadiusM": 1.5,
+    "checkpointRadiusM": 6,
+    "captionShowS": 5,
+    "hintMaxS": 8,
+    "coastHintMinMps": 3,
+    "signLookAheadM": 25,
+    "steepSlopeDeg": 5,
+    "descentMinDropM": 2,
+    "magnetCaptionMinN": 100,
+    "bendCaptionMinMps": 3,
+    "whatIfTimeoutS": 90
+  },
   "captions": { "minShowS": 2.5, "maxLines": 2 },
   "forceLine": { "minAccelMps2": 0.1, "minDurationS": 0.3, "balancedShowS": 2 },
   "arrows": {

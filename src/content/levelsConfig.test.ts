@@ -85,4 +85,11 @@ describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
     expect(bad((r) => (r.arrows.colours.push = 'orange'))).toThrow(/colours\.push/);
     expect(bad((r) => delete r.arrows.colours.impulse)).toThrow(/colours\.impulse/);
   });
+
+  it('has the engine rules, all positive numbers (Levels B2)', () => {
+    expect(levelsConfig.rules.crashMomentS).toBe(0.5);
+    expect(levelsConfig.rules.sampleRadiusM).toBe(1.5);
+    expect(bad((r) => (r.rules.floatStopMps = 0))).toThrow(/rules.floatStopMps/);
+    expect(bad((r) => delete r.rules)).toThrow(/levels.rules/);
+  });
 });

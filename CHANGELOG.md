@@ -6,6 +6,15 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Levels B2: level engine)
+- `src/game/level/`: the level file format and validator (`types.ts`, `schema.ts`: roads, terrain, water, surfaces, gravity zones, pylons, boosts, cannons, barriers, checkpoints, stop lines, forks, samples, signs, hints), the map (`world.ts`: roads and walls, ground height and slope, surfaces, water depth, gravity), the session (`session.ts`: timer, checkpoints and respawn incl. R, beacon, stars, samples, stop lines, forks with the other-road time, control hints, bend signs, water and floating, pylons with the Space flip and on/off cycle, boosts, cannons, gravity zones), captions (`captions.ts`), the F = ma line (`forceLine.ts`), force arrows (`arrows.ts`, at most 3 by A4's order), the report (`report.ts`) and the level registry (`levels.ts`; B4 adds the files). Produces `HudModel` and `ReportModel`.
+- `src/content/levelText.json`: captions, hints, report cards and try-this lines with the student's numbers (`"placeholder": true`). `levels.json` gets a `rules` section of engine values (optional addition to the frozen P0 file).
+- Tests: 73 new (level schema and map, slopes and rolling back, water and floating, magnets incl. the sign flip while rolling back, boosts, cannons, stop lines and forks, hints, captions, report).
+
+### Changed (Levels B2)
+- `contracts.ts`: only the `starFlags` comment (beacon, 3 samples, par). Physics is untouched; T1–T10, the old tests and the balance counts (20/9/23/17) are unchanged.
+- DECISIONS 2026-10-18: how the level engine applies the rules, with the judgment calls.
+
 ### Added (Levels B1: slopes, water, magnets, rolling back)
 - `src/physics/ground.ts` (R = m g cos θ − U, slope pull m g sin θ), `water.ts` (submersion fraction, upthrust, drag coefficient, floats) and `magnet.ts` (force by distance; split along the gear and sideways), with tests in `levels.test.ts` using every A6 check value (12° ramp 2.5554 m/s², 25° wall roll-back 3.9640 m/s², Small-motor climb limit, water 0.50677 m/s², 18 m float coast, magnet 625 N at 8 m).
 - `step()` takes an optional `StepEnvironment` (`slopeRad`, `upthrustN`, `waterDragNsPerM`); `PhysicsState.rollingBack`; `motionSign()`; `buildQuantities()` takes an optional ground input and returns `normalForceN`. `externalForceN` now works at rest and acts along the gear.
