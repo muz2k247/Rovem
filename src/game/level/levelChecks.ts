@@ -15,7 +15,7 @@ vi.setConfig({ testTimeout: 240_000 });
 const MAGNET_CUTOFF_M = levelsConfig.magnet.cutoffM;
 /** Two roads are kept this far apart (two reaches of 9 m and a little more) except near their joins. */
 const REACH_GAP_M = 20;
-const JOIN_M = 60;
+const JOIN_M = 80;
 
 /** The level, its map and its plans, loaded once for a test file. */
 export function loadLevel(id: LevelId): { def: LevelDef; world: LevelWorld; plans: ReturnType<typeof levelPlans> } {

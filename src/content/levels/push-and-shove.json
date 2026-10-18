@@ -1,0 +1,354 @@
+{
+  "id": "push-and-shove",
+  "name": "Push & Shove",
+  "placeholder": true,
+  "atmosphere": "orange-haze",
+  "parS": 115,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Start",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 150
+        }
+      ]
+    },
+    {
+      "id": "bend-a",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 150,
+          "angleDeg": 30
+        }
+      ]
+    },
+    {
+      "id": "lead-1",
+      "after": "bend-a",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 90
+        }
+      ]
+    },
+    {
+      "id": "f1-short",
+      "name": "Short lane",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 280
+        }
+      ]
+    },
+    {
+      "id": "f1-long",
+      "name": "Protected lane",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 80,
+          "angleDeg": 25.494901122781936
+        },
+        {
+          "kind": "straight",
+          "lengthM": 78.804805269929
+        },
+        {
+          "kind": "arc",
+          "radiusM": 80,
+          "angleDeg": -50.98980224556387
+        },
+        {
+          "kind": "straight",
+          "lengthM": 78.804805269929
+        },
+        {
+          "kind": "arc",
+          "radiusM": 80,
+          "angleDeg": 25.494901122781936
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "after": "f1-short",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 70
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -35
+        },
+        {
+          "kind": "straight",
+          "lengthM": 70
+        }
+      ]
+    },
+    {
+      "id": "f2-pad",
+      "name": "Mud lane",
+      "after": "m1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 180
+        }
+      ]
+    },
+    {
+      "id": "f2-dry",
+      "name": "Dry lane",
+      "after": "m1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 47.80231190084682
+        },
+        {
+          "kind": "straight",
+          "lengthM": 45.75538138119631
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": -95.60462380169363
+        },
+        {
+          "kind": "straight",
+          "lengthM": 45.75538138119631
+        },
+        {
+          "kind": "arc",
+          "radiusM": 40,
+          "angleDeg": 47.80231190084682
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "after": "f2-pad",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 90
+        }
+      ]
+    },
+    {
+      "id": "finale",
+      "after": "m2",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 150
+        },
+        {
+          "kind": "arc",
+          "radiusM": 120,
+          "angleDeg": 25
+        },
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "bend-a",
+    "lead-1",
+    "f1-short",
+    "m1",
+    "f2-pad",
+    "m2",
+    "finale"
+  ],
+  "surfaceZones": [
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 816.14,
+          "zM": 227.82
+        },
+        {
+          "xM": 852.01,
+          "zM": 224.69
+        },
+        {
+          "xM": 854.1,
+          "zM": 248.6
+        },
+        {
+          "xM": 818.23,
+          "zM": 251.73
+        }
+      ]
+    }
+  ],
+  "boosts": [
+    {
+      "id": "pad-1",
+      "xM": 812.2,
+      "zM": 240.21,
+      "radiusM": 2.5
+    },
+    {
+      "id": "pad-3",
+      "xM": 1123.02,
+      "zM": 213.02,
+      "radiusM": 2.5
+    }
+  ],
+  "cannons": [
+    {
+      "id": "k1",
+      "kind": "kicker",
+      "xM": 324.59,
+      "zM": 77.6,
+      "directionDeg": 30
+    },
+    {
+      "id": "h1",
+      "kind": "headOn",
+      "xM": 532.44,
+      "zM": 197.6,
+      "directionDeg": 210
+    },
+    {
+      "id": "k3",
+      "kind": "kicker",
+      "xM": 1043.32,
+      "zM": 219.99,
+      "directionDeg": -5
+    },
+    {
+      "id": "h3",
+      "kind": "headOn",
+      "xM": 1307.77,
+      "zM": 254.81,
+      "directionDeg": 200
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 250.98,
+      "zM": 35.1,
+      "headingDeg": 30
+    },
+    {
+      "id": "cp-2",
+      "xM": 683.61,
+      "zM": 251.46,
+      "headingDeg": -5
+    },
+    {
+      "id": "cp-3",
+      "xM": 963.63,
+      "zM": 226.97,
+      "headingDeg": -5
+    }
+  ],
+  "stopLines": [
+    {
+      "id": "stop-fork-1",
+      "xM": 302.94,
+      "zM": 65.1,
+      "headingDeg": 30,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-fork-2",
+      "xM": 734.5,
+      "zM": 247.01,
+      "headingDeg": -5,
+      "widthM": 12,
+      "redS": 2
+    },
+    {
+      "id": "stop-mud",
+      "xM": 809.21,
+      "zM": 240.48,
+      "headingDeg": -5,
+      "widthM": 12,
+      "redS": 1.5
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "stopLineId": "stop-fork-1",
+      "roadIds": [
+        "f1-short",
+        "f1-long"
+      ],
+      "mergeAt": {
+        "xM": 545.43,
+        "zM": 205.1,
+        "radiusM": 8
+      }
+    },
+    {
+      "id": "fork-2",
+      "stopLineId": "stop-fork-2",
+      "roadIds": [
+        "f2-pad",
+        "f2-dry"
+      ],
+      "mergeAt": {
+        "xM": 913.82,
+        "zM": 231.32,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-lane",
+      "xM": 450.17,
+      "zM": 150.1
+    },
+    {
+      "id": "s-mud",
+      "xM": 834.85,
+      "zM": 235.22
+    },
+    {
+      "id": "s-kick",
+      "xM": 1061.51,
+      "zM": 221.41
+    }
+  ],
+  "finish": {
+    "xM": 1300.25,
+    "zM": 252.07,
+    "radiusM": 6
+  }
+}

@@ -53,7 +53,14 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
       },
     };
   },
-  'push-and-shove': undefined,
+  'push-and-shove': (def) => {
+    const [lane, mud, kick] = [samplePoint(def, 's-lane'), samplePoint(def, 's-mud'), samplePoint(def, 's-kick')];
+    const roads = (lane: string, pad: string) => ['start', 'bend-a', 'lead-1', lane, 'm1', pad, 'm2', 'finale'];
+    return {
+      safe: { roads: roads('f1-long', 'f2-dry') },
+      stars: { roads: roads('f1-short', 'f2-pad'), via: [lane, mud, kick] },
+    };
+  },
   'crater-field': undefined,
   'gravity-wells': undefined,
   'ring-road': undefined,

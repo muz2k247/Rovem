@@ -135,6 +135,7 @@
       "id": "f2-ice",
       "name": "Ice",
       "surfaceId": "ice",
+      "runoffSurfaceId": "ice",
       "after": "m1",
       "segments": [
         {
@@ -203,6 +204,7 @@
       "id": "f3-mud",
       "name": "Mud",
       "surfaceId": "mud",
+      "runoffSurfaceId": "mud",
       "after": "m2",
       "segments": [
         {

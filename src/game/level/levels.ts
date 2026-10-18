@@ -1,5 +1,6 @@
 import { content } from '../../content/index.ts';
 import firstTracks from '../../content/levels/first-tracks.json' with { type: 'json' };
+import pushAndShove from '../../content/levels/push-and-shove.json' with { type: 'json' };
 import { validateLevelDef } from './schema.ts';
 import { LEVEL_IDS, type LevelDef, type LevelId } from './types.ts';
 
@@ -8,6 +9,7 @@ import { LEVEL_IDS, type LevelDef, type LevelId } from './types.ts';
 
 const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {
   'first-tracks': firstTracks,
+  'push-and-shove': pushAndShove,
 };
 
 const surfaceIds = content.surfaces.map((s) => s.id);
