@@ -1,4 +1,5 @@
 import type { CannonKind, Content, GravityKind, RectM, RunChunk } from '../../content/index.ts';
+import type { EdgeContact } from '../../physics/collision.ts';
 import { footprintCorners, footprintOverlapsBox } from '../geometry.ts';
 import { mulberry32 } from './rng.ts';
 
@@ -38,11 +39,11 @@ export interface CourseChunk {
   gravityZones: WorldZone[];
 }
 
-export interface BarrierHit {
-  kind: 'barrier' | 'wall';
-  /** A barrier of a tunnel chunk that straddles z = 0: the wall between the two lanes. */
-  atDivider?: boolean;
-}
+/**
+ * A barrier is an obstacle (the run ends); the canyon wall is an edge (the rover scrapes along it, collision.ts).
+ * `atDivider`: a barrier of a tunnel chunk that straddles z = 0, the wall between the two lanes (still an obstacle).
+ */
+export type BarrierHit = { kind: 'barrier'; atDivider?: boolean } | { kind: 'wall'; contact: EdgeContact };
 
 const contains = (r: RectM, xM: number, zM: number) => xM >= r.xM[0] && xM <= r.xM[1] && zM >= r.zM[0] && zM <= r.zM[1];
 
@@ -156,11 +157,12 @@ export function createRunCourse(content: Content, seed: number) {
     gravityZonesAt(xM: number): readonly WorldZone[] {
       return chunkAt(xM)?.gravityZones ?? [];
     },
-    /** A canyon wall (a footprint corner past the corridor) or a barrier box under the footprint. Touching is safe. */
+    /**
+     * A barrier box under the footprint (an obstacle: it wins), or a canyon wall: a footprint corner past the corridor edge.
+     * For a wall, the contact says which way the edge runs (along x), which way is out, and how far the worst corner is past it.
+     * Touching is safe.
+     */
     barrierHit(frontXM: number, frontZM: number, headingRad: number, lengthM: number, widthM: number): BarrierHit | undefined {
-      for (const corner of footprintCorners(frontXM, frontZM, headingRad, lengthM, widthM)) {
-        if (Math.abs(corner.zM) > halfWidthM) return { kind: 'wall' };
-      }
       for (const c of chunksInRange(frontXM - lengthM - 1, frontXM + lengthM + 1)) {
         for (const b of c.barriers) {
           if (footprintOverlapsBox(frontXM, frontZM, headingRad, lengthM, widthM, b)) {
@@ -168,7 +170,16 @@ export function createRunCourse(content: Content, seed: number) {
           }
         }
       }
-      return undefined;
+      let worstM = 0;
+      let outwardRad = 0;
+      for (const corner of footprintCorners(frontXM, frontZM, headingRad, lengthM, widthM)) {
+        const pastM = Math.abs(corner.zM) - halfWidthM;
+        if (pastM > worstM) {
+          worstM = pastM;
+          outwardRad = corner.zM > 0 ? Math.PI / 2 : -Math.PI / 2;
+        }
+      }
+      return worstM > 0 ? { kind: 'wall', contact: { edgeRad: 0, outwardRad, depthM: worstM } } : undefined;
     },
     /** The boost pad under a point (the rover's front), if any. */
     boostPadAt(xM: number, zM: number): WorldPad | undefined {

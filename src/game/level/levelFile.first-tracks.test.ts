@@ -32,7 +32,7 @@ describe('first-tracks', () => {
     expect(sandFaster).toBeLessThan(27);
   });
 
-  it('the mud bogs down most builds; the smooth wheels, the large motor or the light chassis get through', () => {
+  it('the mud still bogs down some builds (most, before the stops were removed in R1)', () => {
     const passed = allBuilds(content).filter((build) => {
       const r = runPilot({
         content, def: startingAt(def, 'cp-3'), build, maxS: 60,
@@ -42,8 +42,8 @@ describe('first-tracks', () => {
       return r.session.events.some((e) => e.kind === 'fork' && e.yourRoad === 'f3-mud');
     });
     expect(passed.length).toBeGreaterThan(0);
-    expect(passed.length).toBeLessThan(14);
-    expect(passed.every((b) => b.wheelsId === 'wheels-smooth' || b.motorId === 'motor-large' || b.chassisId === 'chassis-light')).toBe(true);
+    expect(passed.length).toBeLessThan(27);
+    // Before R1 only smooth wheels, the large motor or the light chassis got through; entering at speed lets more builds across.
   });
 
   it('the ice bend is a trap at full speed: holding W on the ice road crashes', () => {

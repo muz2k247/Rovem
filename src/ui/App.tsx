@@ -21,7 +21,7 @@ import { SettingsScreen } from './SettingsScreen.tsx';
 import { screenFromHash, type HashScreen } from './screens.ts';
 
 /** Where the garage was opened from, so its Back button returns there. */
-type GarageFrom = { kind: 'home' } | { kind: 'intro'; levelId: string } | { kind: 'endless' };
+type GarageFrom = { kind: 'home' } | { kind: 'intro'; levelId: string } | { kind: 'level'; levelId: string } | { kind: 'endless' };
 
 type Screen =
   | { name: 'home' }
@@ -156,9 +156,10 @@ export function App() {
         <GarageScreen
           progress={progress}
           onProgressChange={update}
-          backLabel={from.kind === 'intro' ? 'Back to level' : 'Home'}
-          onBack={() => (from.kind === 'intro' ? setScreen({ name: 'levelIntro', levelId: from.levelId }) : toHome())}
-          onStart={from.kind === 'endless' ? () => startRun(newSeed()) : undefined}
+          backLabel={from.kind === 'intro' ? 'Back to level' : from.kind === 'level' ? 'Back to the level (restarts)' : 'Home'}
+          onBack={() => (from.kind === 'intro' ? setScreen({ name: 'levelIntro', levelId: from.levelId }) : from.kind === 'level' ? setScreen({ name: 'level', levelId: from.levelId }) : toHome())}
+          onStart={from.kind === 'endless' ? () => startRun(newSeed()) : from.kind === 'level' ? () => setScreen({ name: 'level', levelId: from.levelId }) : undefined}
+          startLabel={from.kind === 'level' ? 'Restart level with this rover' : undefined}
           onReplay={from.kind === 'endless' && progress.lastSeed !== null ? () => startRun(progress.lastSeed!) : undefined}
           onDeveloper={developerUnlock ? () => setScreen({ name: 'devBuild' }) : undefined}
         />
@@ -183,7 +184,7 @@ export function App() {
           onHome={toHome}
           onGarage={(partId) => {
             if (partId) update({ ...progress, build: buildWithPart(content, progress.build, partId) });
-            toGarage({ kind: 'intro', levelId });
+            toGarage({ kind: 'level', levelId }); // the new build restarts the level
           }}
         />
       );

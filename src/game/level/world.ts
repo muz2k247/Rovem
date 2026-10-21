@@ -1,4 +1,5 @@
 import type { Content, GravityKind, PointM } from '../../content/index.ts';
+import type { EdgeContact } from '../../physics/collision.ts';
 import { footprintCorners, footprintOverlapsBox, pointInPolygon } from '../geometry.ts';
 import { levelsConfig } from '../../content/levelsConfig.ts';
 import type { BarrierDef, CraterDef, HillDef, LevelDef, Pose, RidgeDef, RoadDef } from './types.ts';
@@ -21,8 +22,8 @@ export interface Polyline {
   /** Distance along the line at each point. */
   alongAt: readonly number[];
   lengthM: number;
-  /** The nearest point on the line: how far along it is, how far to the left (negative: right), and the straight-line distance. */
-  nearest(xM: number, zM: number, maxDistM?: number): { alongM: number; offsetM: number; distM: number } | undefined;
+  /** The nearest point on the line: how far along it is, how far to the left (negative: right), the straight-line distance, and the point itself. */
+  nearest(xM: number, zM: number, maxDistM?: number): { alongM: number; offsetM: number; distM: number; pointXM: number; pointZM: number } | undefined;
 }
 
 export function createPolyline(points: readonly PointM[]): Polyline {
@@ -72,7 +73,7 @@ export function createPolyline(points: readonly PointM[]): Polyline {
     lengthM: alongAt[alongAt.length - 1]!,
     nearest(xM, zM, maxDistM = Infinity) {
       let bestSq = maxDistM === Infinity ? Infinity : maxDistM * maxDistM;
-      let best: { alongM: number; offsetM: number; distM: number } | undefined;
+      let best: { alongM: number; offsetM: number; distM: number; pointXM: number; pointZM: number } | undefined;
       for (const c of chunks) {
         if (maxDistM !== Infinity && (xM < c.minX - maxDistM || xM > c.maxX + maxDistM || zM < c.minZ - maxDistM || zM > c.maxZ + maxDistM)) continue;
         for (let i = c.from; i < c.to; i++) {
@@ -85,7 +86,7 @@ export function createPolyline(points: readonly PointM[]): Polyline {
             bestSq = sq;
             const dist = Math.sqrt(sq);
             const side = p.ex * (zM - p.az) - p.ez * (xM - p.ax) >= 0 ? 1 : -1;
-            best = { alongM: p.alongM + t, offsetM: side * dist, distM: dist };
+            best = { alongM: p.alongM + t, offsetM: side * dist, distM: dist, pointXM: px, pointZM: pz };
           }
         }
       }
@@ -229,10 +230,8 @@ function footprintOverlapsBarrier(b: BarrierDef, frontXM: number, frontZM: numbe
   });
 }
 
-export interface WallHit {
-  kind: 'wall' | 'barrier';
-  barrierId?: string;
-}
+/** A barrier is an obstacle (a crash); a wall is an edge (the rover scrapes along it: collision.ts). */
+export type WallHit = { kind: 'barrier'; barrierId: string } | { kind: 'wall'; contact: EdgeContact };
 
 export interface RoadHit {
   road: RoadGeometry;
@@ -356,15 +355,31 @@ export function createLevelWorld(def: LevelDef, content: Content) {
       const near = roadAt(xM, zM);
       return near ? near.road.runoffSurfaceId : def.defaultSurfaceId;
     },
-    /** A canyon wall (a footprint corner past every road and its run-off) or a barrier. Touching is safe. */
+    /**
+     * A barrier under the footprint (an obstacle: it wins), or a canyon wall: a footprint corner past every road and its run-off.
+     * For a wall, the contact says which way the edge runs and how far the worst corner is past it. Touching is safe.
+     */
     hit(frontXM: number, frontZM: number, headingRad: number): WallHit | undefined {
-      for (const c of footprintCorners(frontXM, frontZM, headingRad, footprint.lengthM, footprint.widthM)) {
-        if (!roadAt(c.xM, c.zM)) return { kind: 'wall' };
-      }
       for (const b of def.barriers) {
         if (footprintOverlapsBarrier(b, frontXM, frontZM, headingRad, footprint.lengthM, footprint.widthM)) return { kind: 'barrier', barrierId: b.id };
       }
-      return undefined;
+      let worst: EdgeContact | undefined;
+      for (const c of footprintCorners(frontXM, frontZM, headingRad, footprint.lengthM, footprint.widthM)) {
+        if (roadAt(c.xM, c.zM)) continue;
+        // The wall is the edge of the nearest road's reach (its run-off strip included).
+        let best: { depthM: number; pointXM: number; pointZM: number } | undefined;
+        for (const road of roads) {
+          const n = road.line.nearest(c.xM, c.zM);
+          if (!n) continue;
+          const depthM = n.distM - (road.widthM / 2 + road.runoffM);
+          if (!best || depthM < best.depthM) best = { depthM, pointXM: n.pointXM, pointZM: n.pointZM };
+        }
+        if (!best) continue;
+        // The wall stands square to the line from the road to the corner: the edge runs a quarter turn from it.
+        const outwardRad = Math.atan2(c.zM - best.pointZM, c.xM - best.pointXM);
+        if (!worst || best.depthM > worst.depthM) worst = { edgeRad: outwardRad + Math.PI / 2, outwardRad, depthM: best.depthM };
+      }
+      return worst ? { kind: 'wall', contact: worst } : undefined;
     },
     /** The radius of the bend under a road position, if it is on an arc. */
     curveRadiusAt(road: RoadGeometry, alongM: number): { radiusM: number; turn: 1 | -1 } | undefined {

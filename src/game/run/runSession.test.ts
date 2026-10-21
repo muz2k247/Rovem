@@ -101,12 +101,20 @@ describe('crash', () => {
     expect(eventsOf(s, 'crash')).toHaveLength(1);
   });
 
-  it('a canyon wall ends the run when a footprint corner passes the corridor edge', () => {
+  it('a canyon wall does not end the run: the rover scrapes along it, turned along the wall, and stays inside', () => {
     const s = session(worldOf({}), { initialState: { positionXM: 100, speedMps: 16, throttleLevel: 1 } }, () => 1);
-    runUntil(s, () => false);
-    expect(s.ended?.cause).toBe('crash');
-    expect(s.ended?.obstacle).toBe('wall');
-    expect(Math.abs(s.state.positionZM)).toBeLessThan(15.01);
+    for (let i = 0; i < 1500; i++) s.stepOnce();
+    expect(s.ended).toBeUndefined();
+    expect(Math.abs(s.state.positionZM)).toBeLessThan(15 - 0.85 + 0.5); // the corner stays within the corridor edge at 15 m
+    expect(s.state.speedMps).toBeGreaterThan(5);
+    expect(s.state.positionXM).toBeGreaterThan(200);
+  });
+
+  it('a square-on hit on the wall stops the rover without ending the run', () => {
+    const s = session(worldOf({}), { initialState: { positionXM: 100, speedMps: 8, headingRad: Math.PI / 2, throttleLevel: 1 } }, () => 0);
+    for (let i = 0; i < 600; i++) s.stepOnce();
+    expect(s.ended).toBeUndefined();
+    expect(s.state.speedMps).toBeLessThan(0.2); // the throttle keeps nudging it into the wall; each nudge is scraped away
   });
 
   it('no more steps run after the run ends', () => {
@@ -333,7 +341,7 @@ describe('steering returns to straight (code kept, switched off in run.json)', (
 
   it('is off in the shipped content: a tap leaves the heading where it was left', () => {
     expect(content.run.steerReturnToStraight).toBe(false);
-    const s = drive(plain, tap, 600);
+    const s = drive(plain, tap, 420); // before the rover reaches the canyon wall, which would turn it along itself (E46)
     expect(s.state.headingRad).toBeGreaterThan(0.3);
     expect(s.steerSent.every((x) => x === 0 || x === 1)).toBe(true);
   });
@@ -355,7 +363,7 @@ describe('steering returns to straight (code kept, switched off in run.json)', (
 
   it('can be switched off: the heading then stays where the tap left it', () => {
     const off: Content = { ...world, run: { ...world.run, steerReturnToStraight: false } };
-    const s = drive(off, tap, 600);
+    const s = drive(off, tap, 420);
     expect(s.state.headingRad).toBeGreaterThan(0.3);
     expect(s.steerSent.every((x) => x === 0 || x === 1)).toBe(true);
   });

@@ -3,7 +3,7 @@
   "name": "Polar Pass",
   "placeholder": true,
   "atmosphere": "aurora-night",
-  "parS": 125,
+  "parS": 85,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -395,52 +395,15 @@
       "headingDeg": 0
     }
   ],
-  "stopLines": [
-    {
-      "id": "stop-pass",
-      "xM": 286,
-      "zM": 0,
-      "headingDeg": 0,
-      "widthM": 8,
-      "redS": 1.5
-    },
-    {
-      "id": "stop-gate",
-      "xM": 526,
-      "zM": 0,
-      "headingDeg": 0,
-      "widthM": 8,
-      "redS": 1.5
-    },
-    {
-      "id": "stop-fork-1",
-      "xM": 690,
-      "zM": 0,
-      "headingDeg": 0,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-2",
-      "xM": 1200,
-      "zM": 0,
-      "headingDeg": 0,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-wall",
-      "xM": 1308.5,
-      "zM": 0,
-      "headingDeg": 0,
-      "widthM": 12,
-      "redS": 1.5
-    }
-  ],
   "forks": [
     {
       "id": "fork-1",
-      "stopLineId": "stop-fork-1",
+      "line": {
+        "xM": 690,
+        "zM": 0,
+        "headingDeg": 0,
+        "widthM": 12
+      },
       "roadIds": [
         "channel",
         "bridge"
@@ -453,7 +416,12 @@
     },
     {
       "id": "fork-2",
-      "stopLineId": "stop-fork-2",
+      "line": {
+        "xM": 1200,
+        "zM": 0,
+        "headingDeg": 0,
+        "widthM": 12
+      },
       "roadIds": [
         "crater",
         "ramp"

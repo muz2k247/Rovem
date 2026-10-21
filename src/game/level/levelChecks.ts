@@ -54,13 +54,13 @@ export function checkLevelFile(id: LevelId): void {
       expect(def.parS).toBeGreaterThan(0);
     });
 
-    it('has at least two forks, each leaving its stop line and meeting again at the merge point (A7)', () => {
+    it('has at least two forks, each leaving its fork line and meeting again at the merge point (A7)', () => {
       expect(def.forks.length).toBeGreaterThanOrEqual(2);
       for (const f of def.forks) {
-        const line = def.stopLines.find((l) => l.id === f.stopLineId)!;
+        const line = f.line;
         for (const rid of f.roadIds) {
           const first = world.roadById(rid).line.points[0]!;
-          expect(Math.hypot(first.xM - line.xM, first.zM - line.zM), `${f.id}: ${rid} starts at the stop line`).toBeLessThan(1);
+          expect(Math.hypot(first.xM - line.xM, first.zM - line.zM), `${f.id}: ${rid} starts at the fork line`).toBeLessThan(1);
           const end = world.roadById(rid).end;
           expect(Math.hypot(end.xM - f.mergeAt.xM, end.zM - f.mergeAt.zM), `${f.id}: ${rid} ends at the merge`).toBeLessThan(1);
         }
@@ -103,11 +103,11 @@ export function checkLevelFile(id: LevelId): void {
       }
     });
 
-    it('the starting build finishes with all 3 samples in 75 to 150 s (A7), and beats the par time', () => {
+    it('the starting build finishes with all 3 samples in 60 to 150 s (A7), and beats the par time', () => {
       const r = runPilot({ content, def, plan: plans.stars });
       expect(r.finished).toBe(true);
       expect(r.samples.sort()).toEqual(def.samples.map((s) => s.id).sort());
-      expect(r.timeS).toBeGreaterThan(75);
+      expect(r.timeS).toBeGreaterThan(60); // was 75 s before the stops were removed (R1); the Showcase levels are 90–150 s (SHOWCASE_PLAN §5) and are rebuilt later
       expect(r.timeS).toBeLessThan(150);
       expect(r.starFlags).toEqual([true, true, true]);
       // The par time follows the A10 rule for this scripted drive: × 1.15, up to the next 5 s (provisional until I1 plays the levels).

@@ -12,6 +12,7 @@
 | Screens, game flow, physics, content and local-copy blocks renamed for levels, the Scavenger and the report | Game v4 and the Showcase | E39, DECISIONS 2026-10-17, 2026-10-21 |
 | Account and sync, the cloud database and the sign-in service drawn dashed as Future | Accounts are later | E39, E43 |
 | Planned modules added: `physics/air.ts`, `physics/collision.ts`, the autopilot, the Scavenger ghost, report stretches, the booster, `npm run maps` and `npm run rival` | Showcase sessions R1–R8 | SHOWCASE_PLAN Parts 3–5 |
+| R1 (2026-10-21) built `physics/collision.ts`, `npm run maps`, `game/level/mapSvg.ts`, `game/level/devKeys.ts` and `render/devOverlay.ts`; the stop lines are gone (a fork has a drive-through `line`) | Session R1 | SHOWCASE_PLAN §4, §5, §13 |
 | Real dependency check: one two-way link between `game/` and `save/` (types), found while checking | Say what is true | S0, section 4 |
 
 ## 1 The big picture
@@ -36,7 +37,7 @@ flowchart TB
       save["save/ local copy: stars, times, settings, Endless best"]
     end
     air["physics/air.ts jumps (planned R6)"]
-    coll["physics/collision.ts walls scrape (planned R1)"]
+    coll["physics/collision.ts walls scrape"]
     auto["game/level/autopilot.ts the Scavenger's driver (planned R4)"]
     ghost["Scavenger ghost, report stretches, booster (planned R3-R4)"]
   end
@@ -93,7 +94,7 @@ flowchart TB
         | [air.ts,   |  | and its   | | copy of  |
         | collision] |  | checks    | | progress |
         +------------+  +-----------+ +----------+
-        planned: R6, R1
+        planned: R6 (air.ts)
         
    Outside the browser:
    [ Nginx web server ] sends the files (decided, not done)
@@ -121,16 +122,16 @@ flowchart TB
 
 ## 3 Module map (checked against the code)
 
-**`src/physics/`** (Built): `build.ts` (build quantities, power-up multiplier), `step.ts` (the fixed step, states, reverse, rolling back), `ground.ts` (R, slope pull), `water.ts` (upthrust, drag, floating), `magnet.ts` (force and its split along the gear and sideways), `momentum.ts` (`shareMomentum`, `applyImpulse`), `missions.ts` (the old mission measurements, kept for the balance report), `loop.ts` (the fixed-step loop), `types.ts`.
-*Planned:* `air.ts` (jumps, R6), `collision.ts` (wall scrape, R1).
+**`src/physics/`** (Built): `build.ts` (build quantities, power-up multiplier), `step.ts` (the fixed step, states, reverse, rolling back), `ground.ts` (R, slope pull), `water.ts` (upthrust, drag, floating), `magnet.ts` (force and its split along the gear and sideways), `momentum.ts` (`shareMomentum`, `applyImpulse`), `missions.ts` (the old mission measurements, kept for the balance report), `loop.ts` (the fixed-step loop), `collision.ts` (edges scrape: v′ = v cos α; built R1), `types.ts`.
+*Planned:* `air.ts` (jumps, R6).
 
 **`src/content/`** (Built): `parts.json`, `surfaces.json`, `constants.json`, `levels.json` (shared Game v4 values), `levels/*.json` (the seven Game v4 level files and `testCourse.json`), `levelText.json` (level cards, captions, report words), `run.json`, `runChunks.json`, `runText.json` (Endless), `garage.json`, `missions.json` and `powerUps.json` (regression only), and `schema.ts`, `types.ts`, `levelsConfig.ts`, `levelCards.ts`, `garage.ts`, `index.ts` (validation and loading).
 *Planned:* level files `crash-site`, `geyser-canyon`, `crater-field` (merged), `the-crossing` (reshaped), `iron-ridge`; level data `ramps` and `stretches`; `levels.json` booster and Scavenger values.
 
-**`src/game/`** (Built): `contracts.ts` (the types shared with the screens), `controls.ts`, `controlsText.ts`, `captionQueue.ts`, `forceLine.ts`, `forces.ts`, `levelUnlock.ts`, `pauseMenu.ts`, `resetConfirm.ts`, `geometry.ts`, `balance.ts`, `buildFromParts.ts`, `partEffects.ts`, `steeringAssist.ts` (kept, unused), `driveSession.ts`, `hud.ts`, `level.ts` (the rover's footprint for rocks, from M5a); **`game/level/`**, the level engine: `session.ts`, `world.ts`, `schema.ts`, `types.ts`, `levels.ts`, `report.ts`, `arrows.ts`, `captions.ts`, `forceLine.ts`, `keys.ts`, `text.ts`, `index.ts`, and the test-only `testPilot.ts`, `levelPlans.ts`, `levelChecks.ts`, `testLevel.ts`; **`game/run/`**, the Endless Canyon: `runSession.ts`, `course.ts`, `rng.ts`, `drift.ts`, `feedback.ts`, `reportModel.ts`, `endlessHud.ts`, `garageView.ts`, `garageNumbers.ts`, `pausableRun.ts`, `tunnelCompare.ts`.
+**`src/game/`** (Built): `contracts.ts` (the types shared with the screens), `controls.ts`, `controlsText.ts`, `captionQueue.ts`, `forceLine.ts`, `forces.ts`, `levelUnlock.ts`, `pauseMenu.ts`, `resetConfirm.ts`, `geometry.ts`, `balance.ts`, `buildFromParts.ts`, `partEffects.ts`, `steeringAssist.ts` (kept, unused), `driveSession.ts`, `hud.ts`, `level.ts` (the rover's footprint for rocks, from M5a); **`game/level/`**, the level engine: `session.ts`, `world.ts`, `schema.ts`, `types.ts`, `levels.ts`, `report.ts`, `arrows.ts`, `captions.ts`, `forceLine.ts`, `keys.ts`, `devKeys.ts` (the `?dev=1` keys), `mapSvg.ts` (the picture `npm run maps` writes), `text.ts`, `index.ts`, and the test-only `testPilot.ts`, `levelPlans.ts`, `levelChecks.ts`, `testLevel.ts`; **`game/run/`**, the Endless Canyon: `runSession.ts`, `course.ts`, `rng.ts`, `drift.ts`, `feedback.ts`, `reportModel.ts`, `endlessHud.ts`, `garageView.ts`, `garageNumbers.ts`, `pausableRun.ts`, `tunnelCompare.ts`.
 *Planned:* `game/level/autopilot.ts` (the Scavenger's driver, made from `testPilot.ts`; R4); the Scavenger's ghost trace, report stretches and cause events in `session.ts` and `report.ts` (R3–R4); the booster in `session.ts` and `keys.ts` (R4); Endless sections in `game/run/course.ts` (R2).
 
-**`src/render/`** (Built): `levelScene.ts`, `runScene.ts`, `garageScene.ts`, `driveScene.ts`, `roverModel.ts`, `roverAttitude.ts`, `terrain.ts`, `water.ts`, `track.ts`, `pylons.ts`, `landmarks.ts`, `atmosphere.ts`, `levelCamera.ts`, `forceArrows.ts`, `skidMarks.ts`, `engineSound.ts`, `effectSounds.ts`, `SceneCanvas.tsx`, `spinningCube.ts`, `levelTestKit.ts`.
+**`src/render/`** (Built): `levelScene.ts`, `devOverlay.ts` (zone outlines for `?dev=1`), `runScene.ts`, `garageScene.ts`, `driveScene.ts`, `roverModel.ts`, `roverAttitude.ts`, `terrain.ts`, `water.ts`, `track.ts`, `pylons.ts`, `landmarks.ts`, `atmosphere.ts`, `levelCamera.ts`, `forceArrows.ts`, `skidMarks.ts`, `engineSound.ts`, `effectSounds.ts`, `SceneCanvas.tsx`, `spinningCube.ts`, `levelTestKit.ts`.
 *Planned:* the Scavenger's model and edge marker (R4), polygon ground blending (R2), the launch ending (R8).
 
 **`src/ui/`** (Built): `App.tsx`, `HomeScreen.tsx`, `LevelsScreen.tsx`, `LevelIntroScreen.tsx`, `LevelScreen.tsx`, `GarageScreen.tsx`, `GaragePreview.tsx`, `RunScreen.tsx`, `SettingsScreen.tsx`, `SettingsPanel.tsx`, `PauseMenu.tsx`, `Stars.tsx`, `LevelDiagram.tsx`, `BuildScreen.tsx` and `DriveScreen.tsx` (the old test drive, kept), `screens.ts`, `levelScreenLogic.ts`, `hud/Hud.tsx`, `report/` (`ReportScreen.tsx`, `ReportCards.tsx`, `SpeedGraph.tsx`, `graph.ts`).
@@ -138,7 +139,7 @@ flowchart TB
 
 **`src/save/`** (Built): `levelProgress.ts`, `settings.ts`, `demoProgress.ts`.
 
-**`scripts/`** (Built): `balance.ts`. *Planned:* `maps` (R1), `rival` (R4).
+**`scripts/`** (Built): `balance.ts`, `maps.ts` (with `node-fs.d.ts`, the two Node file functions it uses, so no `@types/node` is needed). *Planned:* `rival` (R4).
 
 ## 4 Checked dependencies (2026-10-21)
 

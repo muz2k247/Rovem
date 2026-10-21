@@ -104,7 +104,7 @@ Rules:
 
 ## Controls and mission rules decided outside the specs
 
-- Keys: both sets work at the same time. Throttle: W or ↑. Brake: S or ↓ (keep holding it after stopping to reverse). Steer: A/D or ←/→. Esc: pause. In levels only: Space flips the magnet pole, R returns to the last checkpoint, Shift fires the booster (Showcase). Keys live in one mapping in `src/game/` so they can change in one place.
+- Keys: both sets work at the same time. Throttle: W or ↑. Brake: S or ↓ (keep holding it after stopping to reverse). Steer: A/D or ←/→. Esc: pause. In levels only: Space flips the magnet pole, R returns to the last checkpoint, Shift fires the booster (Showcase). Keys live in one mapping in `src/game/` so they can change in one place. With `?dev=1` in the address, level builders also get T (top-down camera), Z (zone outlines), [ and ] (previous and next checkpoint) and − / = (zoom); they never change what a level saves (`src/game/level/devKeys.ts`).
 - The mission rules below belong to game design v2 (superseded 2026-10-17) and are kept for the record.
 - Judged trials from rest start on a start grid. The control levels are held at 0 during the 3-2-1 countdown. Mission 1 medals: silver ≤ 8.50 s, gold ≤ 8.10 s (provisional). Mission 3 has a speed trap at the brake line: v ≥ 14 m/s and u_b = 0 (DESIGN §5).
 - Run prediction bands (FR-32, Mission 1), judged on the exact run time: "Under 8 s" means less than 8 s; "8 s to 9 s" includes exactly 8 s and exactly 9 s; "More than 9 s" means above 9 s, which is also a fail. This matches the pass rule (time ≤ 9 s).
@@ -160,7 +160,7 @@ src/
   main.tsx
 tests/fixtures/       expected values, e.g. the 135 Simulation sheet results; the M4 step trace
 tests/helpers/        test-only helpers that load real content (kept out of src/physics/)
-scripts/              balance report over all 27 builds
+scripts/              balance report over all 27 builds; maps.ts (a top-down SVG per level)
 supabase/             migrations and functions (accounts milestone only)
 CHANGELOG.md
 README.md
@@ -178,6 +178,7 @@ npm run test        # unit tests (Vitest)
 npm run typecheck   # tsc --noEmit
 npm run build       # typecheck, then production build into dist/
 npm run balance     # simulate all 27 builds against the mission limits (Node runs the .ts directly)
+npm run maps        # write a top-down SVG of every built level to docs/captures/maps/
 npm run preview     # serve the built dist/ (run npm run build first)
 ```
 

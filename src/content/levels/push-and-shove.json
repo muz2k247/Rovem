@@ -3,7 +3,7 @@
   "name": "Push & Shove",
   "placeholder": true,
   "atmosphere": "orange-haze",
-  "parS": 115,
+  "parS": 100,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -275,36 +275,15 @@
       "headingDeg": -5
     }
   ],
-  "stopLines": [
-    {
-      "id": "stop-fork-1",
-      "xM": 302.94,
-      "zM": 65.1,
-      "headingDeg": 30,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-2",
-      "xM": 734.5,
-      "zM": 247.01,
-      "headingDeg": -5,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-mud",
-      "xM": 809.21,
-      "zM": 240.48,
-      "headingDeg": -5,
-      "widthM": 12,
-      "redS": 1.5
-    }
-  ],
   "forks": [
     {
       "id": "fork-1",
-      "stopLineId": "stop-fork-1",
+      "line": {
+        "xM": 302.94,
+        "zM": 65.1,
+        "headingDeg": 30,
+        "widthM": 12
+      },
       "roadIds": [
         "f1-short",
         "f1-long"
@@ -317,7 +296,12 @@
     },
     {
       "id": "fork-2",
-      "stopLineId": "stop-fork-2",
+      "line": {
+        "xM": 734.5,
+        "zM": 247.01,
+        "headingDeg": -5,
+        "widthM": 12
+      },
       "roadIds": [
         "f2-pad",
         "f2-dry"

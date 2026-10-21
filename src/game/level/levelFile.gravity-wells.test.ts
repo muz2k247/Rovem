@@ -45,7 +45,7 @@ describe('gravity-wells', () => {
     const climb = (withZone: boolean) =>
       runPilot({
         content, build: STARTING_BUILD, maxS: 20,
-        def: { ...def, gravityZones: withZone ? def.gravityZones : [], start: { xM: r.xM + 1, zM: r.zM, headingDeg: r.headingDeg }, checkpoints: [], stopLines: [], forks: [], barriers: [], cannons: [], boosts: [] },
+        def: { ...def, gravityZones: withZone ? def.gravityZones : [], start: { xM: r.xM + 1, zM: r.zM, headingDeg: r.headingDeg }, checkpoints: [], forks: [], barriers: [], cannons: [], boosts: [] },
         plan: { roads: ['w1-hill'], throttleOnly: true },
         until: (s) => s.world.heightM(s.pose.centreXM, s.pose.centreZM) > topM - 0.3,
       });
@@ -62,7 +62,7 @@ describe('gravity-wells', () => {
       const end = lane.points[lane.points.length - 1]!;
       const session = createLevelSession({
         content, rover: roverFromParts(content, STARTING_BUILD), constants: physicsConstants(content),
-        def: { ...def, gravityZones: zones, barriers: [], cannons: [], ridges: [], checkpoints: [], hints: [], stopLines: [], forks: [], samples: def.samples },
+        def: { ...def, gravityZones: zones, barriers: [], cannons: [], ridges: [], checkpoints: [], hints: [], forks: [], samples: def.samples },
         drive: () => ({ throttleHeld: false, brakeHeld: true, steer: 0 }),
         initialState: { positionXM: start.xM, positionZM: start.zM, headingRad: Math.atan2(end.zM - start.zM, end.xM - start.xM), speedMps: 12 },
       });
@@ -107,7 +107,7 @@ describe('gravity-wells', () => {
       const at = { xM: p.xM + ((q.xM - p.xM) / len) * 60, zM: p.zM + ((q.zM - p.zM) / len) * 60 };
       const session = createLevelSession({
         content, rover: roverFromParts(content, STARTING_BUILD), constants: physicsConstants(content),
-        def: { ...def, gravityZones: zones, checkpoints: [], hints: [], stopLines: [], forks: [], barriers: [], cannons: [], boosts: [] },
+        def: { ...def, gravityZones: zones, checkpoints: [], hints: [], forks: [], barriers: [], cannons: [], boosts: [] },
         drive: () => ({ throttleHeld: true, brakeHeld: false, steer: 0 }),
         initialState: { positionXM: at.xM, positionZM: at.zM, headingRad: Math.atan2(q.zM - p.zM, q.xM - p.xM), speedMps: 0 },
       });

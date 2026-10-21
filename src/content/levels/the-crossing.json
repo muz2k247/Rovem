@@ -3,7 +3,7 @@
   "name": "The Crossing",
   "placeholder": true,
   "atmosphere": "blue-mist",
-  "parS": 105,
+  "parS": 95,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -350,28 +350,15 @@
       "headingDeg": -40
     }
   ],
-  "stopLines": [
-    {
-      "id": "stop-fork-1",
-      "xM": 467.32,
-      "zM": -264.72,
-      "headingDeg": -40,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-2",
-      "xM": 704.8,
-      "zM": -463.99,
-      "headingDeg": -40,
-      "widthM": 12,
-      "redS": 2
-    }
-  ],
   "forks": [
     {
       "id": "fork-1",
-      "stopLineId": "stop-fork-1",
+      "line": {
+        "xM": 467.32,
+        "zM": -264.72,
+        "headingDeg": -40,
+        "widthM": 12
+      },
       "roadIds": [
         "ch1",
         "bridge-1"
@@ -384,7 +371,12 @@
     },
     {
       "id": "fork-2",
-      "stopLineId": "stop-fork-2",
+      "line": {
+        "xM": 704.8,
+        "zM": -463.99,
+        "headingDeg": -40,
+        "widthM": 12
+      },
       "roadIds": [
         "ch2",
         "bridge-2"

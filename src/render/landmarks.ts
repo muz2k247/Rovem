@@ -6,11 +6,9 @@ import { drawnHeightM } from './terrain.ts';
 import { directionAt } from './track.ts';
 
 // The things standing on a level (LEVELS_BUILD_PLAN A7): barriers, boost pads, cannons and their sandbags, the three
-// samples, checkpoint and finish arches, stop lights, bend signs and the gravity zones. Everything is placed from the
+// samples, checkpoint and finish arches, bend signs and the gravity zones. Everything is placed from the
 // level file on the same ground the physics uses. What the signs and zones say comes from the game layer (the numbers
 // depend on the student's build); this file only draws it. Presentation values only.
-
-export type LampState = 'amber' | 'red' | 'green';
 
 export interface LandmarkOptions {
   /** The lines on a bend sign, e.g. `Bend r = 25 m` and `Safe 15.34 m/s`. */
@@ -25,7 +23,6 @@ export interface LandmarkState {
   collected: readonly string[];
   /** The last checkpoint reached, or −1 for none. */
   checkpointIndex: number;
-  heldStopLineId?: string;
   roverXM: number;
   roverZM: number;
   bags: readonly { id: string; cannonId: string; xM: number; zM: number }[];
@@ -236,33 +233,7 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
     group.add(finishRoot);
   }
 
-  // Stop lines: a white strip across the road, and a lamp post with three lamps.
-  const stripMaterial = own(mat(0xf1f1ec));
   const postMaterial = own(mat(0x59546a));
-  const lampGeometry = own(new THREE.SphereGeometry(0.2, 10, 8));
-  const lampColours = { red: 0xff3b30, amber: 0xffb020, green: 0x3be07a } as const;
-  const stopLines = def.stopLines.map((line) => {
-    const root = new THREE.Group();
-    root.name = 'stopLine';
-    const strip = new THREE.Mesh(own(new THREE.BoxGeometry(0.5, 0.04, line.widthM)), stripMaterial);
-    strip.position.y = 0.04;
-    root.add(strip);
-    const post = new THREE.Mesh(own(new THREE.CylinderGeometry(0.1, 0.12, 3, 8)), postMaterial);
-    post.position.set(0, 1.5, line.widthM / 2 + 0.8);
-    root.add(post);
-    const lamps = {} as Record<LampState, THREE.MeshStandardMaterial>;
-    (['red', 'amber', 'green'] as const).forEach((k, i) => {
-      lamps[k] = own(mat(0x20242c, { emissive: lampColours[k], emissiveIntensity: 0 }));
-      const lamp = new THREE.Mesh(lampGeometry, lamps[k]);
-      lamp.name = 'lamp';
-      lamp.position.set(0, 3.2 + i * 0.5, line.widthM / 2 + 0.8);
-      root.add(lamp);
-    });
-    root.rotation.y = (line.headingDeg * Math.PI) / 180;
-    place(root, line.xM, line.zM);
-    group.add(root);
-    return { def: line, lamps, state: 'amber' as LampState };
-  });
 
   // Bend signs: a post and a yellow board that faces the traffic coming towards it.
   const signs = def.signs.map((s) => {
@@ -348,11 +319,6 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
 
   return {
     group,
-    lampState: (id: string): LampState => {
-      const s = stopLines.find((l) => l.def.id === id);
-      if (!s) throw new Error(`Unknown stop line "${id}"`);
-      return s.state;
-    },
     signLines: (id: string): string[] => {
       const s = signs.find((x) => x.id === id);
       if (!s) throw new Error(`Unknown sign "${id}"`);
@@ -385,14 +351,6 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
       }
       finishRoot.children[finishRoot.children.length - 1]!.scale.set(1 + 0.08 * Math.sin(s.timeS * 3), 1, 1 + 0.08 * Math.sin(s.timeS * 3));
       beamMaterial.opacity = 0.24 + 0.06 * Math.sin(s.timeS * 2.2);
-      for (const line of stopLines) {
-        const dx = s.roverXM - line.def.xM;
-        const dz = s.roverZM - line.def.zM;
-        const heading = (line.def.headingDeg * Math.PI) / 180;
-        const passed = dx * Math.cos(heading) + dz * Math.sin(heading) > 0;
-        line.state = s.heldStopLineId === line.def.id ? 'red' : passed ? 'green' : 'amber';
-        for (const k of ['red', 'amber', 'green'] as const) line.lamps[k].emissiveIntensity = k === line.state ? 2.2 : 0;
-      }
       // Sandbags: brown balls that drop from the barrel to the ground over the first few metres.
       const live = new Set<string>();
       for (const bag of s.bags) {

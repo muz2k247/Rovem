@@ -1,9 +1,9 @@
 import type { GravityKind, PointM } from '../../content/index.ts';
 import {
   ATMOSPHERE_IDS, LEVEL_IDS,
-  type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef,
+  type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef, type ForkLineDef,
   type GravityZoneDef, type HillDef, type HintDef, type HintDone, type HintTrigger, type LevelDef, type LevelId, type PylonDef,
-  type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type StopLineDef, type SurfaceZoneDef, type WaterDef,
+  type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type SurfaceZoneDef, type WaterDef,
   type Pose,
 } from './types.ts';
 
@@ -192,12 +192,9 @@ const checkpoint = (raw: unknown, path: string): CheckpointDef => {
   };
 };
 
-const stopLine = (raw: unknown, path: string): StopLineDef => {
+const forkLine = (raw: unknown, path: string): ForkLineDef => {
   const o = obj(raw, path);
-  return {
-    id: str(o, 'id', path), xM: num(o, 'xM', path), zM: num(o, 'zM', path), headingDeg: num(o, 'headingDeg', path),
-    widthM: pos(o, 'widthM', path), redS: pos(o, 'redS', path),
-  };
+  return { xM: num(o, 'xM', path), zM: num(o, 'zM', path), headingDeg: num(o, 'headingDeg', path), widthM: pos(o, 'widthM', path) };
 };
 
 const fork = (raw: unknown, path: string): ForkDef => {
@@ -206,7 +203,7 @@ const fork = (raw: unknown, path: string): ForkDef => {
   if (ids.length !== 2 || ids.some((id) => typeof id !== 'string')) fail(`${path}.roadIds`, 'expected two road ids');
   const m = obj(o.mergeAt, `${path}.mergeAt`);
   return {
-    id: str(o, 'id', path), stopLineId: str(o, 'stopLineId', path), roadIds: [ids[0] as string, ids[1] as string],
+    id: str(o, 'id', path), line: forkLine(o.line, `${path}.line`), roadIds: [ids[0] as string, ids[1] as string],
     mergeAt: { xM: num(m, 'xM', `${path}.mergeAt`), zM: num(m, 'zM', `${path}.mergeAt`), radiusM: pos(m, 'radiusM', `${path}.mergeAt`) },
   };
 };
@@ -278,7 +275,6 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     cannons: each(o.cannons, 'level.cannons', cannon),
     barriers: each(o.barriers, 'level.barriers', barrier),
     checkpoints: each(o.checkpoints, 'level.checkpoints', checkpoint),
-    stopLines: each(o.stopLines, 'level.stopLines', stopLine),
     forks: each(o.forks, 'level.forks', fork),
     samples: each(o.samples, 'level.samples', sample),
     signs: each(o.signs, 'level.signs', sign),
@@ -292,7 +288,6 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
   unique(def.roads.map((r) => r.id), 'level.roads');
   unique(def.samples.map((s) => s.id), 'level.samples');
   unique(def.checkpoints.map((c) => c.id), 'level.checkpoints');
-  unique(def.stopLines.map((s) => s.id), 'level.stopLines');
   unique(def.forks.map((f) => f.id), 'level.forks');
   unique(def.pylons.map((p) => p.id), 'level.pylons');
   unique(def.boosts.map((b) => b.id), 'level.boosts');
@@ -313,9 +308,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
   });
   needSurface(def.defaultSurfaceId, 'level.defaultSurfaceId');
   def.surfaceZones.forEach((z, i) => needSurface(z.surfaceId, `level.surfaceZones[${i}].surfaceId`));
-  const stopIds = new Set(def.stopLines.map((s) => s.id));
   def.forks.forEach((f, i) => {
-    if (!stopIds.has(f.stopLineId)) fail(`level.forks[${i}].stopLineId`, `unknown stop line "${f.stopLineId}"`);
     f.roadIds.forEach((r, k) => needRoad(r, `level.forks[${i}].roadIds[${k}]`));
   });
   return def;

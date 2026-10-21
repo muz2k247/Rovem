@@ -7,6 +7,8 @@ import {
   motorStyleFor,
   roverLookFor,
   wheelStyleFor,
+  wheelTurnRad,
+  MAX_WHEEL_TURN_PER_FRAME_RAD,
   type ChassisStyle,
   type MotorStyle,
   type RoverLook,
@@ -190,5 +192,14 @@ describe('steering, spinning and attitude', () => {
     expect(model.body.rotation.z).toBe(0);
     expect(model.body.position.y).toBe(0);
     model.setAttitude({ pitchRad: 0, leanRad: 0 });
+  });
+});
+
+describe('wheelTurnRad', () => {
+  it('is distance ÷ wheel radius when slow, and is capped per frame so fast wheels never look still', () => {
+    expect(wheelTurnRad(0.042)).toBeCloseTo(0.1, 10);
+    expect(wheelTurnRad(0.27)).toBe(MAX_WHEEL_TURN_PER_FRAME_RAD);
+    expect(wheelTurnRad(-0.27)).toBe(-MAX_WHEEL_TURN_PER_FRAME_RAD);
+    expect(wheelTurnRad(0)).toBe(0);
   });
 });

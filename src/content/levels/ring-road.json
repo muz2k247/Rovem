@@ -3,7 +3,7 @@
   "name": "Ring Road",
   "placeholder": true,
   "atmosphere": "violet-evening",
-  "parS": 120,
+  "parS": 115,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -325,28 +325,15 @@
       "headingDeg": 0
     }
   ],
-  "stopLines": [
-    {
-      "id": "stop-fork-1",
-      "xM": 383.42,
-      "zM": -66.88,
-      "headingDeg": 0,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-2",
-      "xM": 53.42,
-      "zM": 33.12,
-      "headingDeg": 180,
-      "widthM": 12,
-      "redS": 2
-    }
-  ],
   "forks": [
     {
       "id": "fork-1",
-      "stopLineId": "stop-fork-1",
+      "line": {
+        "xM": 383.42,
+        "zM": -66.88,
+        "headingDeg": 0,
+        "widthM": 12
+      },
       "roadIds": [
         "f1-hairpin",
         "f1-wide"
@@ -359,7 +346,12 @@
     },
     {
       "id": "fork-2",
-      "stopLineId": "stop-fork-2",
+      "line": {
+        "xM": 53.42,
+        "zM": 33.12,
+        "headingDeg": 180,
+        "widthM": 12
+      },
       "roadIds": [
         "f2-tight",
         "f2-wide"

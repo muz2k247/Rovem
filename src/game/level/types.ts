@@ -131,20 +131,18 @@ export interface CheckpointDef {
   radiusM?: number;
 }
 
-export interface StopLineDef {
-  id: string;
+/** A line the rover drives through where a fork begins. Nothing stops there (SHOWCASE_PLAN §5). */
+export interface ForkLineDef {
   xM: number;
   zM: number;
   headingDeg: number;
   widthM: number;
-  /** The red light: the rover is held at the line this long, then goes. */
-  redS: number;
 }
 
-/** Two roads that leave one stop line and meet again at `mergeAt` (A7: the choice is a prediction). */
+/** Two roads that leave one fork line and meet again at `mergeAt` (A7: the choice is a prediction). */
 export interface ForkDef {
   id: string;
-  stopLineId: string;
+  line: ForkLineDef;
   /** The two road ids: the first is the one named first in the caption. */
   roadIds: [string, string];
   mergeAt: { xM: number; zM: number; radiusM: number };
@@ -207,7 +205,6 @@ export interface LevelDef {
   cannons: CannonDef[];
   barriers: BarrierDef[];
   checkpoints: CheckpointDef[];
-  stopLines: StopLineDef[];
   forks: ForkDef[];
   samples: SampleDef[];
   signs: SignDef[];

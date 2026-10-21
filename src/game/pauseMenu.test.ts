@@ -20,7 +20,7 @@ describe('pause menu (LEVELS_BUILD_PLAN A3)', () => {
 
   it('says what a choice costs: garage restarts the level; leaving ends the run', () => {
     const level = pauseMenuItems('level');
-    expect(level.find((i) => i.action === 'garage')!.note).toBe('restarts the level');
+    expect(level.find((i) => i.action === 'garage')!.note).toBe('opens the garage, then restarts the level');
     const endless = pauseMenuItems('endless');
     expect(endless.find((i) => i.action === 'home')!.note).toBe('ends this run');
   });

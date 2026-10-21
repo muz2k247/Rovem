@@ -7,6 +7,7 @@ import { createKeyTracker } from '../game/controls.ts';
 import type { HudModel, ReportModel, StarCount } from '../game/contracts.ts';
 import { controlsHintVisible } from '../game/run/endlessHud.ts';
 import type { PauseAction } from '../game/pauseMenu.ts';
+import { devKeyAction, devModeFromSearch, jumpTarget, zoomedHeightM } from '../game/level/devKeys.ts';
 import { levelKeyAction } from '../game/level/keys.ts';
 import { loadLevelDef } from '../game/level/levels.ts';
 import { createLevelSession, type LevelInput, type LevelSession } from '../game/level/session.ts';
@@ -16,8 +17,8 @@ import { SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
 import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
-import { createLevelScene } from '../render/levelScene.ts';
-import { wheelStyleFor } from '../render/roverModel.ts';
+import { createLevelScene, type LevelScene } from '../render/levelScene.ts';
+import { roverLookFor } from '../render/roverModel.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
 import { Hud } from './hud/Hud.tsx';
 import { crashShakeM, shouldRefreshHud } from './levelScreenLogic.ts';
@@ -31,6 +32,7 @@ declare global {
     __rovemAuto?: (ctx: { stepIndex: number }, session: LevelSession) => LevelInput;
     /** Dev server only: the running session, for the play-check to read. */
     __rovemSession?: LevelSession;
+    __rovemView?: LevelScene;
   }
 }
 
@@ -127,7 +129,8 @@ export function LevelScreen(props: LevelScreenProps) {
       drive: (ctx) => (devAuto ? devAuto(ctx, session) : keys.read()),
     });
     if (import.meta.env.DEV) window.__rovemSession = session;
-    const view = createLevelScene(session, content, { wheelStyle: wheelStyleFor(build.wheelsId), quality, showForces: start.settings.forceArrows });
+    const view = createLevelScene(session, content, { look: roverLookFor(build), quality, showForces: start.settings.forceArrows });
+    if (import.meta.env.DEV) window.__rovemView = view;
     const driver = createPausableRun(session);
     const engine = createEngineSound();
     const effects = createEffectSounds();
@@ -145,6 +148,12 @@ export function LevelScreen(props: LevelScreenProps) {
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(host);
+
+    // Developer tools (?dev=1 only): top-down camera, zone outlines, jump to a checkpoint (SHOWCASE_PLAN §13).
+    const dev = devModeFromSearch(window.location.search);
+    let topDown = false;
+    let zones = false;
+    let topDownHeightM = 80;
 
     let reported = false;
     let eventsHandled = 0;
@@ -186,6 +195,17 @@ export function LevelScreen(props: LevelScreenProps) {
         return;
       }
       if (driver.paused || reported) return; // the pause menu is driven by its buttons
+      const devAction = dev ? devKeyAction(e.code) : undefined;
+      if (devAction) {
+        e.preventDefault();
+        if (devAction === 'topDown') topDown = !topDown;
+        else if (devAction === 'zones') zones = !zones;
+        else if (devAction === 'zoomIn' || devAction === 'zoomOut') topDownHeightM = zoomedHeightM(topDownHeightM, devAction);
+        else session.devJumpToCheckpoint(jumpTarget(session.checkpointIndex, levelDef.checkpoints.length, devAction === 'nextCheckpoint' ? 1 : -1));
+        view.setTopDown(topDown, topDownHeightM);
+        view.setZoneOutlines(zones);
+        return;
+      }
       if (action === 'flipPole' || action === 'respawn') {
         e.preventDefault(); // Space must not scroll the page
         if (e.repeat) return;
@@ -310,6 +330,9 @@ export function LevelScreen(props: LevelScreenProps) {
       <div className="drive-canvas" ref={hostRef} />
       {hud && <Hud model={hud} showControlsHint={controlsHintVisible(hud.timeS)} levelControls onPause={() => controls.current.pause()} />}
       {crashFlash && <div className="crash-flash" aria-hidden="true" />}
+      {devModeFromSearch(window.location.search) && (
+        <div className="dev-badge" role="note">dev: T top-down · Z zones · [ ] checkpoint · − = zoom</div>
+      )}
       {paused && !showSettings && <PauseMenu mode="level" onAction={onPauseAction} />}
       {paused && showSettings && (
         <div className="overlay" role="dialog" aria-modal="true" aria-label="Settings">

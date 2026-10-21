@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| Dev tools row: `npm run maps`, `?dev=1` built; the Playwright MCP server checked and its one-line setup recorded (2026-10-21, R1) | Session R1 | SHOWCASE_PLAN §13 |
 | Title: "and Mission 1 Plan" dropped. The milestone table (M1–M8) moved to Superseded; milestones now live in `docs/ROADMAP.md` | The prototype plan was replaced by Game v4, then the Showcase round | E40, DECISIONS 2026-10-17, 2026-10-21 |
 | Fonts added: Space Grotesk and IBM Plex Sans, bundled | Approved by k._muz | E40, DECISIONS 2026-10-17, `docs/ASSETS.md` |
 | Stack table marks what is built; Supabase and Nginx marked Future and Decided | Accounts and deployment are not done | ROADMAP M8, M12 |
@@ -31,7 +32,7 @@
 | Accounts and saving in the cloud | Supabase: PostgreSQL, sign-in, row-level security | Decided in the Data Model | Future (M12) |
 | Account deletion | One Supabase Edge Function (server-side TypeScript on Deno that can hold the secret key, FR-41) | The only application code that runs on a server | Future (M12) |
 | Hosting | Nginx on a Linux server in the cloud, HTTPS | Serves the built game files. Cost is upkeep: updates, the certificate and the firewall | Decided (M8, not done) |
-| Dev tools (Showcase) | `npm run maps` (a top-down SVG of every level), `?dev=1` keys, a browser-driving MCP server for screenshots, `npm run rival` (the Scavenger's candidate builds) | Building levels without guessing | Planned (R1, R4); the MCP setup is unverified as of 2026-10-21 |
+| Dev tools (Showcase) | `npm run maps` (a top-down SVG of every level), `?dev=1` keys, a browser-driving MCP server for screenshots, `npm run rival` (the Scavenger's candidate builds) | Building levels without guessing | `npm run maps`, `?dev=1` and the MCP check are Built (R1, 2026-10-21); `npm run rival` is Planned (R4). The MCP server `@playwright/mcp` (v0.0.83) was started and checked on 2026-10-21: it listed its 25 tools and opened and read the game page. The one command to add it: `claude mcp add playwright -- npx @playwright/mcp@latest --browser chrome` |
 
 Versions as in `package.json` on 2026-10-21: React ^19.3.0, three ^0.186.1, Vite ^8.3.4, Vitest ^5.0.4, TypeScript ^7.0.2, `@fontsource/*` ^5.3.0; Node ≥ 24.
 

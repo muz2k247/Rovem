@@ -3,10 +3,11 @@ import { controlsList } from '../game/controlsText.ts';
 import { disarmReset, pressReset, resetIdle, type ResetState } from '../game/resetConfirm.ts';
 import type { Graphics, Settings } from '../save/settings.ts';
 
+// One plain sentence under every option (placeholder wording: k._muz reviews it).
 const VOLUMES = [
-  { key: 'masterVolume', label: 'Master' },
-  { key: 'engineVolume', label: 'Engine' },
-  { key: 'effectsVolume', label: 'Effects' },
+  { key: 'masterVolume', label: 'Master', hint: 'How loud everything is.' },
+  { key: 'engineVolume', label: 'Engine', hint: 'How loud the motor is. It is silent when you stop and loudest when you press the throttle.' },
+  { key: 'effectsVolume', label: 'Effects', hint: 'How loud crashes, splashes, scrapes and the other sounds are.' },
 ] as const;
 
 const TOGGLES = [
@@ -16,8 +17,8 @@ const TOGGLES = [
 ] as const;
 
 /**
- * The settings (LEVELS_BUILD_PLAN A3): volumes and Mute, Force arrows, Show the maths, Camera shake, Graphics, the
- * controls list, Replay tutorial and Reset progress (press twice to confirm). Used by the Settings screen and, as an
+ * The settings (LEVELS_BUILD_PLAN A3; grouped in R1, SHOWCASE_PLAN §12): Sound (volumes and Mute), Display (Force arrows, Show the
+ * maths, Camera shake, Graphics) and Help (the controls list, Replay tutorial, Reset progress: press twice to confirm). Used by the Settings screen and, as an
  * overlay, by the pause menu.
  */
 export function SettingsPanel({
@@ -48,24 +49,30 @@ export function SettingsPanel({
     <div className="settings-panel">
       <section aria-label="Sound">
         <h2>Sound</h2>
-        {VOLUMES.map(({ key, label }) => (
-          <label key={key} className="slider">
-            <span>{label}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={Math.round(settings[key] * 100)}
-              onChange={(e) => change({ ...settings, [key]: Number(e.target.value) / 100 })}
-              aria-valuetext={`${Math.round(settings[key] * 100)} percent`}
-            />
-            <output>{Math.round(settings[key] * 100)}%</output>
-          </label>
+        {VOLUMES.map(({ key, label, hint }) => (
+          <div key={key} className="option">
+            <label className="slider">
+              <span>{label}</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={Math.round(settings[key] * 100)}
+                onChange={(e) => change({ ...settings, [key]: Number(e.target.value) / 100 })}
+                aria-valuetext={`${Math.round(settings[key] * 100)} percent`}
+              />
+              <output>{Math.round(settings[key] * 100)}%</output>
+            </label>
+            <small>{hint}</small>
+          </div>
         ))}
         <label className="check">
           <input type="checkbox" checked={settings.muted} onChange={(e) => change({ ...settings, muted: e.target.checked })} />
-          <span>Mute</span>
+          <span>
+            Mute
+            <small>Turns all sound off.</small>
+          </span>
         </label>
       </section>
 
@@ -92,8 +99,10 @@ export function SettingsPanel({
         </fieldset>
       </section>
 
-      <section aria-label="Controls">
-        <h2>Controls</h2>
+      <section aria-label="Help" className="help">
+        <h2>Help</h2>
+        <h3>Controls</h3>
+        <small>These keys work in the levels.</small>
         <ul className="control-list">
           {controlsList({ levels: true, extra: ['Space: flip your magnet (Polar Pass)'] }).map((c) => (
             <li key={c.keys + c.does}>
@@ -101,10 +110,8 @@ export function SettingsPanel({
             </li>
           ))}
         </ul>
-      </section>
-
-      <section aria-label="Progress">
-        <h2>Progress</h2>
+        <h3>Tutorial</h3>
+        <small>Shows the how-to-drive tips again.</small>
         <button
           type="button"
           className="btn"
@@ -117,6 +124,8 @@ export function SettingsPanel({
           Replay tutorial
         </button>
         {tutorialNote && <small role="status">The tutorial will show again at the start of your next Endless run.</small>}
+        <h3>Progress</h3>
+        <small>Erases every star, time and best distance. You press the button twice to confirm.</small>
         <button type="button" className={`btn danger${reset.armed ? ' armed' : ''}`} onClick={press}>
           {reset.armed ? 'Press again to erase all stars, times and bests' : 'Reset progress'}
         </button>

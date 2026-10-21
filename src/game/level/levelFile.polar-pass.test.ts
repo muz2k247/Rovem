@@ -10,7 +10,7 @@ import type { LevelDef } from './types.ts';
 checkLevelFile('polar-pass');
 
 describe('polar-pass', () => {
-  const { def, world, plans } = loadLevel('polar-pass');
+  const { def, world } = loadLevel('polar-pass');
   const magnet = levelsConfig.magnet;
   const alongOf = (roadId: string, x: number, z: number) => world.roadById(roadId).line.nearest(x, z)?.alongM ?? -1;
   /** The pole to carry through the pass: unlike the pylons to be pulled into the gap, then like them to be pushed out. */
@@ -31,15 +31,8 @@ describe('polar-pass', () => {
     expect(def.forks.map((f) => f.roadIds)).toEqual([['channel', 'bridge'], ['crater', 'ramp']]);
   });
 
-  it('the pass: held at the red light, the throttle alone cannot get through between two repelling pylons; the rover rolls back', () => {
-    const r = runPilot({
-      content, def: startingAt(def, 'cp-1'), plan: { roads: ['start', 'p1', 'pass'], throttleOnly: true }, maxS: 45,
-      until: (s) => alongOf('pass', s.state.positionXM, s.state.positionZM) > 30 && s.world.roadAt(s.state.positionXM, s.state.positionZM)?.road.def.id === 'pass',
-    });
-    const passed = alongOf('pass', r.session.state.positionXM, r.session.state.positionZM) > 30 && r.session.world.roadAt(r.session.state.positionXM, r.session.state.positionZM)?.road.def.id === 'pass';
-    expect(passed).toBe(false);
-    expect(r.session.events.some((e) => e.kind === 'rollback') || r.session.state.speedMps < 1).toBe(true);
-  });
+  // R1 removed two tests here: "the throttle alone cannot get through the pass" and "holding W the whole way never finishes".
+  // Both depended on the red light holding the rover at rest at the pass; arriving at speed it drives through (OI-19). Iron Ridge is rebuilt in R7.
 
   it('the pass: flip to the unlike pole to be pulled in, and back after the pylons to be pushed out; every one of the 27 builds gets through', () => {
     for (const build of allBuilds(content)) {
@@ -59,7 +52,7 @@ describe('polar-pass', () => {
         content, def: startingAt(def, 'cp-2'), plan: { roads: ['ice', 'gate'], poles, maxSpeedMps: 14 }, maxS: 40,
         until: (s) => {
           if (s.world.surfaceIdAt(s.pose.centreXM, s.pose.centreZM) === 'mud') steps += 1;
-          return s.phase === 'held' || s.world.roadAt(s.state.positionXM, s.state.positionZM)?.road.def.id === 'gate';
+          return s.world.roadAt(s.state.positionXM, s.state.positionZM)?.road.def.id === 'gate';
         },
       });
       return { steps, r };
@@ -74,10 +67,8 @@ describe('polar-pass', () => {
       until: (s) => s.world.roadAt(s.state.positionXM, s.state.positionZM)?.road.def.id === 'lead-1',
     });
     expect(r.session.world.roadAt(r.session.state.positionXM, r.session.state.positionZM)?.road.def.id).toBe('lead-1');
-    // It had to wait: the 3 s of current are in the way of a rover that starts the gate from a red light.
-    const light = r.session.events.find((e) => e.kind === 'stopLine')!;
-    const through = r.session.events.find((e) => e.kind === 'magnet' && e.timeS > light.timeS);
-    expect(through).toBeDefined();
+    // The coils were on at some point on the way: the gate is a magnet that switches.
+    expect(r.session.events.some((e) => e.kind === 'magnet')).toBe(true);
   });
 
   it('a slingshot: approach on attract, flip to repel as you pass, and leave about 3.5 m/s faster', () => {
@@ -85,7 +76,7 @@ describe('polar-pass', () => {
       const p0 = roadPoint(world, 'sling', 30, 0);
       const session = createLevelSession({
         content, rover: roverFromParts(content, STARTING_BUILD), constants: physicsConstants(content),
-        def: { ...def, start: { xM: p0.xM, zM: p0.zM, headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], stopLines: [], forks: [], hints: [] },
+        def: { ...def, start: { xM: p0.xM, zM: p0.zM, headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], forks: [], hints: [] },
         drive: () => ({ throttleHeld: false, brakeHeld: false, steer: 0 }), initialState: { speedMps: 11 },
       });
       let flipped = false;
@@ -110,7 +101,7 @@ describe('polar-pass', () => {
       const p0 = roadPoint(world, 'channel', 66, 0);
       const session = createLevelSession({
         content, rover: roverFromParts(content, light), constants: physicsConstants(content),
-        def: { ...def, pylons, start: { xM: p0.xM + Math.cos(p0.headingRad), zM: p0.zM + Math.sin(p0.headingRad), headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], stopLines: [], forks: [], hints: [] },
+        def: { ...def, pylons, start: { xM: p0.xM + Math.cos(p0.headingRad), zM: p0.zM + Math.sin(p0.headingRad), headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], forks: [], hints: [] },
         drive: () => ({ throttleHeld: false, brakeHeld: false, steer: 0 }), initialState: { speedMps },
       });
       if (session.pole !== pole) session.flipPole();
@@ -127,7 +118,7 @@ describe('polar-pass', () => {
     expect(crosses(5, bank, 'N')).toBe(false);
   });
 
-  it('the crater: a repelling pylon behind the red light kicks every build up the steep wall; without it eight builds would roll back', () => {
+  it('the crater: every build climbs the steep wall', () => {
     const climbs = (pylons: LevelDef['pylons']) =>
       allBuilds(content).filter((build) => {
         const r = runPilot({
@@ -137,12 +128,6 @@ describe('polar-pass', () => {
         return r.session.events.some((e) => e.kind === 'fork');
       }).length;
     expect(climbs(def.pylons)).toBe(27);
-    expect(climbs([])).toBeLessThan(24);
-  });
-
-  it('holding W the whole way fails: the pass stops it, so the naive drive never finishes', () => {
-    expect(plans.stars.poles?.some((p) => p.roadId === 'pass')).toBe(true);
-    const r = runPilot({ content, def, plan: { roads: def.route, throttleOnly: true }, maxS: 120 });
-    expect(r.finished).toBe(false);
+    // Before R1 eight builds rolled back without the pylon, held at rest at the foot; arriving at speed they all climb (the level is rebuilt in R7).
   });
 });

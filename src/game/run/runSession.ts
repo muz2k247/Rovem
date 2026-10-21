@@ -1,12 +1,13 @@
 import type { Content, GravityKind, EventKind } from '../../content/index.ts';
 import { buildQuantities } from '../../physics/build.ts';
 import { createFixedStepLoop } from '../../physics/loop.ts';
+import { movingIntoEdge, scrapeAlongEdge, type EdgeContact } from '../../physics/collision.ts';
 import { applyImpulse, shareMomentum } from '../../physics/momentum.ts';
 import { createState, step, type PhysicsState } from '../../physics/step.ts';
 import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/types.ts';
 import { surfaceSpec } from '../buildFromParts.ts';
 import { footprintCorners, footprintOverlapsCircle } from '../geometry.ts';
-import { SLIDE_MARK_RAD, slideAngleRad, travelTurnLimitRadPerS, turnTravelDirection } from './drift.ts';
+import { SLIDE_MARK_RAD, slideAngleRad, travelTurnLimitRadPerS, turnTravelDirection, wrapAngle } from './drift.ts';
 import { createRunCourse, type RunCourse, type WorldCannon } from './course.ts';
 import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
@@ -16,6 +17,7 @@ import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 // and W brakes); the keys are passed through as pressed. The physics is unchanged.
 // Reverse and drifting (DECISIONS 2026-10-16, demo only): the game layer passes the reverse top speed from run.json, keeps
 // a travel direction separate from the heading, and puts a wall behind the start line.
+// Walls scrape and obstacles end the run (Physics Model Specification 11.2, E46; SHOWCASE_PLAN P2).
 // With no steer key held the game steers the heading back to 0 (DECISIONS 2026-10-16); `steerSent` records what was
 // really passed to step(), so replaying that record with the return switched off gives the same run (T9).
 
@@ -73,7 +75,8 @@ export interface RunEnd {
   cause: 'crash' | 'stuck';
   /** Crash: the speed at the start of the step that crashed. Stuck: 0. */
   speedMps: number;
-  obstacle?: 'barrier' | 'wall';
+  /** What ended the run. A canyon wall never does: the rover scrapes along it (E46). */
+  obstacle?: 'barrier';
   /** The crash was on the divider between the two tunnel lanes. */
   atDivider?: boolean;
   /** The gravity zone the rover was in when it ended, if any. */
@@ -150,6 +153,9 @@ interface CannonState {
 
 /** How far ahead the course is always generated (A3). */
 export const GENERATE_AHEAD_M = 400;
+/** A rover scraping a wall is placed this far inside it, so it does not touch it again at once. */
+const WALL_CLEARANCE_M = 0.002;
+const WALL_PUSH_TRIES = 8;
 
 export function createRunSession(options: RunSessionOptions) {
   const { content, rover, constants, seed, input, stopAtStep } = options;
@@ -307,6 +313,41 @@ export function createRunSession(options: RunSessionOptions) {
     currentSurfaceId = 'asphalt';
   }
 
+  /**
+   * The rover's corner is past the canyon wall. Its velocity into the wall is removed and the rest kept (collision.ts: v′ = v cos α);
+   * the heading turns along the wall, and the rover is placed back against it. Returns false if no place against the wall was found.
+   */
+  function scrapeAgainstWall(contact: EdgeContact, motion: 1 | -1): boolean {
+    const speedBeforeMps = state.speedMps;
+    let speedMps = speedBeforeMps;
+    let headingRad = state.headingRad;
+    let newTravelRad = travelRad;
+    if (movingIntoEdge(travelRad, contact.outwardRad)) {
+      const scrape = scrapeAlongEdge(travelRad, speedBeforeMps, contact.edgeRad);
+      speedMps = scrape.speedMps;
+      if (speedMps > 0) {
+        newTravelRad = wrapAngle(scrape.directionRad);
+        headingRad = wrapAngle(scrape.directionRad + (motion === 1 ? 0 : Math.PI));
+      }
+    }
+    let c = contact;
+    let x = state.positionXM;
+    let z = state.positionZM;
+    for (let i = 0; i < WALL_PUSH_TRIES; i++) {
+      x -= Math.cos(c.outwardRad) * (c.depthM + WALL_CLEARANCE_M);
+      z -= Math.sin(c.outwardRad) * (c.depthM + WALL_CLEARANCE_M);
+      const again = course.barrierHit(x, z, headingRad, footprint.lengthM, footprint.widthM);
+      if (again?.kind === 'barrier') return false;
+      if (!again) {
+        state = { ...state, positionXM: x, positionZM: z, headingRad, speedMps };
+        travelRad = newTravelRad;
+        return true;
+      }
+      c = again.contact;
+    }
+    return false;
+  }
+
   function onStep() {
     if (ended) return;
     if (stopAtStep !== undefined && state.stepCount >= stopAtStep) return;
@@ -349,16 +390,26 @@ export function createRunSession(options: RunSessionOptions) {
     }
     const sliding = slideRad >= SLIDE_MARK_RAD;
 
-    // 4. Crash: a barrier, or a corner past the canyon wall. The step is undone (position, heading, distance) and v = 0.
-    const hit = course.barrierHit(state.positionXM, state.positionZM, state.headingRad, footprint.lengthM, footprint.widthM);
-    if (hit) {
+    // 4. Crash: a barrier. The step is undone (position, heading, distance) and v = 0, and the run ends.
+    // A corner past the canyon wall is not a crash: the rover is placed against the wall and scrapes along it.
+    let hit = course.barrierHit(state.positionXM, state.positionZM, state.headingRad, footprint.lengthM, footprint.widthM);
+    if (hit?.kind === 'wall') {
+      // No place against the wall was found: the step is undone and v = 0, as in a level (not a crash).
+      if (!scrapeAgainstWall(hit.contact, state.direction === 'forward' ? 1 : -1)) {
+        state = { ...next, positionXM: prev.positionXM, positionZM: prev.positionZM, headingRad: prev.headingRad, distanceM: prev.distanceM, speedMps: 0 };
+        travelRad = travelBefore;
+      }
+      slideRad = 0;
+      hit = undefined;
+    }
+    if (hit?.kind === 'barrier') {
       state = { ...next, positionXM: prev.positionXM, positionZM: prev.positionZM, headingRad: prev.headingRad, distanceM: prev.distanceM, speedMps: 0 };
       travelRad = travelBefore;
       slideRad = 0;
       endZone(prev.speedMps, 'crash');
       closeOpenMud(prev.speedMps);
       ended = {
-        cause: 'crash', speedMps: prev.speedMps, obstacle: hit.kind, ...(hit.atDivider ? { atDivider: true } : {}), gravityKind: prevZone,
+        cause: 'crash', speedMps: prev.speedMps, obstacle: 'barrier', ...(hit.atDivider ? { atDivider: true } : {}), gravityKind: prevZone,
         ...(sliding ? { sliding: true } : {}),
       };
       record({ kind: 'crash', timeS: t, xM: state.positionXM, speedBeforeMps: prev.speedMps, speedAfterMps: 0 });

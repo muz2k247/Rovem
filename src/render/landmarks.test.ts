@@ -9,7 +9,6 @@ const stuff = {
   barriers: [{ id: 'b1', xM: 180, zM: 0, headingDeg: 0, lengthM: 1, widthM: 8 }],
   boosts: [{ id: 'p1', xM: 80, zM: 0, radiusM: 3 }],
   cannons: [{ id: 'c1', kind: 'headOn', xM: 220, zM: 7, directionDeg: 180 }, { id: 'c2', kind: 'kicker', xM: 40, zM: -7, directionDeg: 0 }],
-  stopLines: [{ id: 'sl', xM: 20, zM: 0, headingDeg: 0, widthM: 10, redS: 2 }],
   signs: [{ id: 'sg', xM: 250, zM: 6, radiusM: 25 }],
   gravityZones: [{ id: 'gz', kind: 'low', polygon: [{ xM: 120, zM: -5 }, { xM: 160, zM: -5 }, { xM: 160, zM: 5 }, { xM: 120, zM: 5 }] }],
 };
@@ -46,7 +45,6 @@ describe('landmarks', () => {
     expect(named(view.group, 'sample')).toHaveLength(3);
     expect(named(view.group, 'checkpoint')).toHaveLength(def.checkpoints.length);
     expect(named(view.group, 'finish')).toHaveLength(1);
-    expect(named(view.group, 'stopLine')).toHaveLength(1);
     expect(named(view.group, 'sign')).toHaveLength(1);
     expect(named(view.group, 'gravityZone')).toHaveLength(1);
   });
@@ -93,16 +91,6 @@ describe('landmarks', () => {
     expect(cps[1]!.userData.lit).toBe(false);
     view.update(state({ checkpointIndex: 1 }));
     expect(cps[1]!.userData.lit).toBe(true);
-  });
-
-  it('the stop light is amber before the line, red while the rover waits, green once it is past', () => {
-    const { view } = make();
-    view.update(state({ roverXM: 5 }));
-    expect(view.lampState('sl')).toBe('amber');
-    view.update(state({ roverXM: 19.8, heldStopLineId: 'sl' }));
-    expect(view.lampState('sl')).toBe('red');
-    view.update(state({ roverXM: 25 }));
-    expect(view.lampState('sl')).toBe('green');
   });
 
   it('draws sandbags where the session says, and removes them when they are gone', () => {

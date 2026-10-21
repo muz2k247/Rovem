@@ -717,3 +717,17 @@ h4 {
     opacity: 0;
   }
 }
+
+/* Developer tools badge (?dev=1 only) */
+.dev-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(13, 17, 23, 0.8);
+  color: #8fe3ff;
+  font-size: 0.9rem;
+  pointer-events: none;
+}

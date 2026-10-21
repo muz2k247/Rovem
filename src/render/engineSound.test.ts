@@ -13,6 +13,15 @@ describe('engine tone', () => {
     expect(engineTone(1, 1).gain).toBeLessThanOrEqual(0.1);
   });
 
+  it('follows the throttle: silent at rest, quiet while coasting, loudest under power', () => {
+    expect(engineTone(0, 0).gain).toBe(0);
+    const coasting = engineTone(1, 0).gain;
+    expect(coasting).toBeGreaterThan(0);
+    expect(coasting).toBeLessThan(engineTone(1, 1).gain / 4);
+    expect(engineTone(0, 1).gain).toBeGreaterThan(coasting);
+    expect(engineTone(0.5, 0.5).gain).toBeGreaterThan(engineTone(0.5, 0.25).gain);
+  });
+
   it('clamps out-of-range input', () => {
     expect(engineTone(2, 2)).toEqual(engineTone(1, 1));
     expect(engineTone(-1, -1)).toEqual(engineTone(0, 0));

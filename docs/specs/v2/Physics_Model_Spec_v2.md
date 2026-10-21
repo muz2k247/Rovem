@@ -25,6 +25,7 @@
 | 15 | Power-ups moved to Superseded | Not in the game | E21, DECISIONS 2026-10-17 |
 | 16 | New tests T11–T20 with hand arithmetic, recomputed on 2026-10-21 | Every new rule needs a test | E27–E34, E45–E47 |
 | 17 | New section "Open questions": the landing step, the held-brake hold force, code that still carries the tow input | Found while writing | S0 |
+| 18 | 11.2: the edge rule is Built (R1, 2026-10-21): walls scrape in levels and Endless, barriers crash or end the run. Added what happens when no place against the wall is found. T19 is Built | Session R1 | E46, `src/physics/collision.ts` |
 
 ## 1 Constants and units
 
@@ -142,13 +143,13 @@ Everything in this section is outside `step()`, so T1–T10 and the balance coun
 
 `step()` takes an optional external force along the gear, default 0 (`externalForceN`), and an optional environment (slope, upthrust, water drag coefficient). Magnets and the booster use the external force. Any step with none of these returns exactly the numbers it returned before they existed (tested over 1500 mixed steps).
 
-### 11.2 Collisions (E22 replaced by E46; walls and obstacles are one crash today, the scrape is Planned, session R1)
+### 11.2 Collisions (E22 replaced by E46; Built in session R1, 2026-10-21; pure function `src/physics/collision.ts`)
 
 The footprint is 2 m long by 1.7 m wide, its front edge centred on the physics position and extending 2 m back along the heading, in both directions of travel (DECISIONS 2026-10-13).
 
 - **Edges** (walls, cliffs, cave walls, crater lips, the edge of the ground): when a step ends with the footprint crossing an edge, the rover is placed against it and the velocity component into the edge is removed. With α the angle between the travel direction and the edge, the new speed is v′ = v cos α along the edge, in the direction the rover was going, and the heading turns along the edge. A square-on hit (α = 90°) gives v′ = 0. Friction along the edge is ignored (provisional). A wall can only push straight back on a rover, so it removes the velocity part pointing into it and leaves the part along it.
 - **Obstacles** (boulders, barriers, launcher bases, pylons): a step that ends with the footprint overlapping an obstacle is undone (position, distance and heading, because a turn alone can swing the rear into an obstacle) and v = 0; the clock still advances. In a level this is a crash: after the 0.5 s crash moment the rover returns at rest to the last checkpoint, and the clock keeps running. In the Endless run the run ends. Water too deep, or a chasm, also sends the rover back to the last checkpoint.
-- **Built today:** a wall and an obstacle both act as the obstacle rule (levels: crash and checkpoint; Endless: the run ends). The edge rule is Planned for R1.
+- **Built (R1, 2026-10-21):** walls scrape in levels and in Endless; barriers crash in levels and end the Endless run. The game layer finds the worst footprint corner past the edge, takes the edge direction a quarter turn from the line between the road (or corridor) and that corner, removes the velocity into the edge, turns the heading and the travel direction along it, and places the rover back against it (the push is repeated up to 8 times, because turning along the edge swings the other corners). A rover moving along or away from the edge only gets placed back and loses nothing. A square-on hit leaves the heading as it was. If no place against the wall is found (an odd junction), the step is undone and v = 0, with no crash. An obstacle wins when a step touches both. A wall scrape does not turn the rover into reverse, and there is no automatic reversing out: the student reverses.
 
 ### 11.3 Leaving the ground: jumps (E45; Planned, session R6, pure function `src/physics/air.ts`)
 
@@ -200,7 +201,7 @@ Tests T1–T9 and T11–T20 compare the code with hand calculations at a relativ
 | T16 Water | Depth 0.50 m, 4.00 m/s, sand bed, full throttle | a = 0.506775 m/s², wheels slip; a Light-chassis build in 1.0 m of water floats (E33) | Built |
 | T17 Magnet and bend | d = 8 m; bends of 12, 25, 30, 40 m | 625 N; safe speeds 9.70, 14.00, 15.34, 17.71 m/s (E34) | Built |
 | T18 Jump | v = 16 m/s, φ = 15°, landing at take-off height | g = 9.8: 0.84512 s, 0.87494 m, 13.061 m; g = 4.9: 1.69025 s, 1.74987 m, 26.122 m (E45) | Planned (R6) |
-| T19 Edge | 12 m/s into an edge | α = 30° → 10.392 m/s; 60° → 6.000; 90° → 0 (E46) | Planned (R1) |
+| T19 Edge | 12 m/s into an edge | α = 30° → 10.392 m/s; 60° → 6.000; 90° → 0 (E46) | Built (`src/physics/collision.test.ts`, R1) |
 | T20 Booster | Starting build at rest in mud, primed, booster on | a = 10.8664 m/s². Heavy + All-terrain + Small (259 kg) leaves a 12 m patch; Heavy + Spiked + Small (267 kg) does not; 24 of 27 builds leave it when primed, 22 when cold (E47) | Planned (R4) |
 
 ### Hand arithmetic (recomputed 2026-10-21)

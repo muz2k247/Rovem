@@ -6,6 +6,23 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R1: fixes, crashes, tools; 2026-10-21)
+- `src/physics/collision.ts` (pure): an edge removes the velocity into it and keeps the part along it, v′ = v cos α (test T19: 12 m/s at 30°, 60°, 90° gives 10.392, 6.000, 0 m/s). `world.ts` and `course.ts` report the edge direction, which way is out and how deep the worst corner is. Walls scrape in levels and in Endless; barriers still crash in levels (back to the checkpoint after 0.5 s) and end the Endless run. Levels get a `scrape` event.
+- `npm run maps`: a top-down SVG of every built level in `docs/captures/maps/` (`scripts/maps.ts`, `src/game/level/mapSvg.ts`).
+- `?dev=1` level tools: T top-down camera, Z zone outlines, [ ] jump to the previous or next checkpoint, − = zoom (`src/game/level/devKeys.ts`, `src/render/devOverlay.ts`, `session.devJumpToCheckpoint`). In the dev server only, `window.__rovemView` exposes the level scene.
+- The Playwright MCP server `@playwright/mcp` was checked (25 tools; it opened the game): `claude mcp add playwright -- npx @playwright/mcp@latest --browser chrome`.
+- Pause menu: "Change rover" opens the garage and restarts the level with the new build.
+
+### Changed (Showcase R1)
+- No stops anywhere: the level files lost `stopLines`; a fork has a drive-through `line`; the stop lamps, the red and green captions and the held phase are removed. The other road's what-if run starts at the speed the rover had at the fork line. Par times re-derived (105, 100, 100, 115, 115, 95, 85 s); the length floor of the level check is 60 s (ROADMAP OI-19, OI-20).
+- The level rover wears the whole build (`createLevelScene` takes `look`, not `wheelStyle`). The picture's wheel turn is capped at 0.18 rad a frame so the tread does not look still at speed (levels and Endless).
+- Engine sound follows the throttle level: silent at rest, quiet while coasting; the default engine volume is 0.5 (was 1).
+- Settings are grouped Sound, Display, Help, each option with one plain sentence (placeholder wording).
+- Walls no longer send the rover back (`RunEnd.obstacle` is now only `'barrier'`).
+
+### Docs (Showcase R1)
+- Physics Model Specification 11.2 and T19 marked Built, with the push-back and fallback rules; Architecture, SRS (FR-51) and Tech Stack updated; ROADMAP: R1 done, Open issues OI-19 to OI-21; CLAUDE.md and README: the `maps` command and the dev keys.
+
 ### Docs (Showcase S0: editable source documents, 2026-10-21)
 - `docs/specs/v2/`: the SRS (Draft 0.6), Physics Model Specification v2 (tests T1–T20, hand arithmetic recomputed), Data Model v2, Tech Stack v2, Architecture v2 (Mermaid and ASCII diagrams, module names checked against `src/`), Art Direction v2, and `component_values/` (one CSV per sheet, plus `levels.csv` and `showcase.csv`). Each document has a version line, a change log and a "Superseded (kept for the record)" section (the CSVs share one change log in `read_me.csv`). The v1 PDFs and the xlsx are kept unchanged.
 - PENDING_SPEC_EDITS E4–E47 marked applied (the file is history). CLAUDE.md "Sources of truth", the physics-checker and spec-sync agents, the milestone and sync-docs skills and the README point at the v2 files.

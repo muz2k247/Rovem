@@ -7,7 +7,9 @@ import { validateLevelDef } from '../game/level/schema.ts';
 import { SURFACE_IDS, testLevelRaw } from '../game/level/testLevel.ts';
 import { constants, rover } from '../../tests/helpers/physics.ts';
 import { CAMERA_BACK_M } from './levelCamera.ts';
+import { STARTING_BUILD } from '../game/buildFromParts.ts';
 import { createLevelScene } from './levelScene.ts';
+import { MAX_WHEEL_TURN_PER_FRAME_RAD, roverLookFor } from './roverModel.ts';
 
 const GAS: LevelInput = { throttleHeld: true, brakeHeld: false, steer: 0 };
 const DT = 1 / 120;
@@ -15,7 +17,7 @@ const DT = 1 / 120;
 function make(patch: Record<string, unknown> = {}, quality: 'high' | 'low' = 'high') {
   const def = validateLevelDef({ ...testLevelRaw(), ...patch }, SURFACE_IDS);
   const session = createLevelSession({ content, def, rover: rover(), constants, drive: () => GAS });
-  const view = createLevelScene(session, content, { wheelStyle: 'all-terrain', quality });
+  const view = createLevelScene(session, content, { look: roverLookFor(STARTING_BUILD), quality });
   return { session, view, def };
 }
 const names = (root: THREE.Object3D) => {
@@ -60,6 +62,51 @@ describe('level scene', () => {
     expect(view.rover.rotation.y).toBeCloseTo(p.headingRad, 6);
     expect(view.rover.rotation.z).toBeCloseTo(p.pitchRad, 6); // nose up on the climb
     expect(p.pitchRad).toBeGreaterThan(0);
+  });
+
+  it('the wheels turn as the rover moves, and a fast rover still turns them forwards a little each frame (no wagon-wheel stall)', () => {
+    const { view, session } = make();
+    const wheels: THREE.Object3D[] = [];
+    view.rover.traverse((o) => { if (o.name === 'wheel') wheels.push(o); });
+    expect(wheels).toHaveLength(4);
+    run(session, 1);
+    view.update(session, 1 / 60);
+    const a = wheels[0]!.rotation.z;
+    expect(a).toBeLessThan(0);
+    run(session, 1 / 60);
+    view.update(session, 1 / 60);
+    expect(wheels[0]!.rotation.z).toBeLessThan(a);
+    expect(a - wheels[0]!.rotation.z).toBeLessThanOrEqual(MAX_WHEEL_TURN_PER_FRAME_RAD + 1e-9);
+  });
+
+  it('the developer top-down camera looks straight down with z up the picture; the zone outlines appear only when asked', () => {
+    const { view, session } = make({ water: [{ id: 'w', polygon: [{ xM: 50, zM: -4 }, { xM: 70, zM: -4 }, { xM: 70, zM: 4 }, { xM: 50, zM: 4 }], depthM: 0.3 }] });
+    view.setTopDown(true, 60);
+    view.update(session, 1 / 60);
+    expect(view.camera.position.y).toBeCloseTo(60, 6);
+    const dir = new THREE.Vector3();
+    view.camera.getWorldDirection(dir);
+    expect(dir.y).toBeCloseTo(-1, 6);
+    expect(view.camera.up.z).toBe(-1);
+    view.setTopDown(false);
+    view.update(session, 1 / 60);
+    expect(view.camera.up.y).toBe(1);
+    expect(names(view.scene)).not.toContain('devOverlay');
+    view.setZoneOutlines(true);
+    expect(names(view.scene)).toContain('devOverlay');
+    expect(view.scene.getObjectByName('devOverlay')!.visible).toBe(true);
+    view.setZoneOutlines(false);
+    expect(view.scene.getObjectByName('devOverlay')!.visible).toBe(false);
+  });
+
+  it('wears the whole build, not just its wheels', () => {
+    const heavy = { chassisId: 'chassis-heavy', wheelsId: 'wheels-spiked', motorId: 'motor-large' };
+    const def = validateLevelDef({ ...testLevelRaw() }, SURFACE_IDS);
+    const session = createLevelSession({ content, def, rover: rover(), constants, drive: () => GAS });
+    const a = createLevelScene(session, content, { look: roverLookFor(STARTING_BUILD), quality: 'low' });
+    const b = createLevelScene(session, content, { look: roverLookFor(heavy), quality: 'low' });
+    const count = (v: typeof a) => { let n = 0; v.rover.traverse(() => n++); return n; };
+    expect(count(a)).not.toBe(count(b));
   });
 
   it('the camera chases behind the rover and above it', () => {

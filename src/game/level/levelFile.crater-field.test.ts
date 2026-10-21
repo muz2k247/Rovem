@@ -75,7 +75,7 @@ describe('crater-field', () => {
     for (const b of builds.filter((x) => !crossed.includes(x))) expect(b.wheelsId).toBe('wheels-spiked');
   });
 
-  it('crater 3: at the foot of the steep wall, weak builds roll back; the starting build climbs it with the pad’s kick', () => {
+  it('crater 3: the starting build climbs the steep wall with the pad’s kick; with no stop at the foot every build now arrives fast enough (R1)', () => {
     const climbs = (build: BuildSelection) => {
       const r = runPilot({
         content, def: startingAt(def, 'cp-3'), build, plan: { roads: ['m2', 'c3-through'] }, maxS: 80,
@@ -85,15 +85,16 @@ describe('crater-field', () => {
     };
     expect(climbs(STARTING_BUILD).passed).toBe(true);
     const results = allBuilds(content).map((b) => climbs(b));
-    expect(results.some((r) => r.rolledBack && !r.passed)).toBe(true);
+    // Before the stops were removed (R1) weak builds rolled back here, held at rest at the foot. Now they arrive moving and none does;
+    // the crater is redesigned in R6. The rolling-back physics itself is tested by the next test.
     expect(results.filter((r) => r.passed).length).toBeGreaterThan(10);
   });
 
   it('a rover with a Small motor at rest at the foot of the 25° wall rolls back (A6)', () => {
-    const foot = def.stopLines.find((l) => l.id === 'stop-wall')!;
+    const foot = { xM: 1001.71, zM: -262.65, headingDeg: -30 }; // the foot of the wall (it was once marked by a stop line)
     const r = runPilot({
       content, build: { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-small' }, maxS: 20,
-      def: { ...def, start: { xM: foot.xM, zM: foot.zM, headingDeg: foot.headingDeg }, checkpoints: [], stopLines: [], boosts: [], forks: [] },
+      def: { ...def, start: { xM: foot.xM, zM: foot.zM, headingDeg: foot.headingDeg }, checkpoints: [], boosts: [], forks: [] },
       plan: { roads: ['c3-through'], throttleOnly: true },
       until: (s) => s.events.some((e) => e.kind === 'rollback'),
     });

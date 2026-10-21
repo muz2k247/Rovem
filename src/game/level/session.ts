@@ -2,6 +2,7 @@ import type { Content, GravityKind } from '../../content/index.ts';
 import { levelsConfig } from '../../content/levelsConfig.ts';
 import { buildQuantities } from '../../physics/build.ts';
 import { createFixedStepLoop } from '../../physics/loop.ts';
+import { movingIntoEdge, scrapeAlongEdge, type EdgeContact } from '../../physics/collision.ts';
 import { magnetOnRover } from '../../physics/magnet.ts';
 import { shareMomentum } from '../../physics/momentum.ts';
 import { createState, motionSign, step, type PhysicsState } from '../../physics/step.ts';
@@ -19,15 +20,18 @@ import { createCaptionQueue } from './captions.ts';
 import { createForceLine, type ForceTerm } from './forceLine.ts';
 import { buildLevelReport } from './report.ts';
 import { fill, levelText, newtons, twoDecimals, type TokenValues } from './text.ts';
-import type { HintDef, LevelDef, StopLineDef } from './types.ts';
+import type { ForkLineDef, HintDef, LevelDef } from './types.ts';
 import { createLevelWorld, type LevelWorld } from './world.ts';
 
 // The level engine (LEVELS_BUILD_PLAN A2, A4, A7): one session is one attempt at one level. Game layer: no rendering,
 // no React. It calls the same physics functions as the run (FR-3), adds the ground (slope, water, gravity zones, magnets)
-// and keeps the rules (checkpoints, samples, stop lines, forks, stars). The HUD and report models are made from it.
+// and keeps the rules (checkpoints, samples, forks, stars). The HUD and report models are made from it.
 
 const DEG = Math.PI / 180;
 const SPEED_TRACE_STEP_S = 0.1;
+/** A rover scraping a wall is placed this far inside it, so it does not touch it again at once. */
+const WALL_CLEARANCE_M = 0.002;
+const WALL_PUSH_TRIES = 8;
 
 /** What the student does at a step: the pedals and the steering. */
 export interface LevelInput {
@@ -61,13 +65,13 @@ export interface LevelSessionOptions {
   whatIf?: WhatIfOptions;
 }
 
-export type LevelPhase = 'driving' | 'held' | 'respawning' | 'finished' | 'ended';
+export type LevelPhase = 'driving' | 'respawning' | 'finished' | 'ended';
 export type RespawnCause = 'crash' | 'stuck' | 'floated' | 'manual';
 export type WhatIfOutcome = 'merged' | 'wall' | 'barrier' | 'stuck' | 'floated' | 'timeout';
 
 export type LevelEventKind =
   | 'surface' | 'slip' | 'boost' | 'hit' | 'gravity' | 'slope' | 'descent' | 'rollback' | 'slide' | 'water' | 'float'
-  | 'magnet' | 'pole' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'stopLine' | 'finish';
+  | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish';
 
 /** Something that happened, with the numbers that changed. Captions and the report are made from these. */
 export interface LevelEvent {
@@ -146,6 +150,8 @@ interface CannonState {
 
 interface ForkState {
   startClockS: number | undefined;
+  /** The rover's speed along its heading when it crossed the fork line: the other road starts from it. */
+  startSpeedMps: number;
   votes: Record<string, number>;
   done: boolean;
 }
@@ -211,7 +217,6 @@ export function createLevelSession(options: LevelSessionOptions) {
   let phase: LevelPhase = 'driving';
   let respawnAtS = 0;
   let manualRespawn = false;
-  let holdUntilS = 0;
   let lastCheckpoint = -1;
   let collected: string[] = [];
   let result: LevelResult | undefined;
@@ -222,7 +227,6 @@ export function createLevelSession(options: LevelSessionOptions) {
   let usedPads = new Set<string>();
   let cannonStates = new Map<string, CannonState>();
   let bags: Bag[] = [];
-  let stopPassed = new Set<string>();
   let forks = new Map<string, ForkState>();
   let signsShown = new Set<string>();
   let hints: HintState[] = [];
@@ -232,6 +236,7 @@ export function createLevelSession(options: LevelSessionOptions) {
   let wasRollingBack = false;
   let wasInWater = false;
   let wasFloating = false;
+  let wasScraping = false;
   let deepShown = false;
   let steepNow = false;
   let descent: { startHeightM: number; startSpeedMps: number } | undefined;
@@ -296,20 +301,20 @@ export function createLevelSession(options: LevelSessionOptions) {
     wasRollingBack = false;
     wasInWater = false;
     wasFloating = false;
+    wasScraping = false;
     steepNow = false;
     descent = undefined;
     releasedSinceS = undefined;
     usedPads = new Set();
     cannonStates = new Map();
     bags = [];
-    stopPassed = new Set();
     signsShown = new Set();
     pylonModes = new Map();
     flash = undefined;
     flashUntilS = 0;
     snap = undefined;
     forceLine.reset();
-    // An unfinished fork starts again from its stop line; a finished one stays finished.
+    // An unfinished fork starts again from its fork line; a finished one stays finished.
     for (const f of forks.values()) if (!f.done) f.startClockS = undefined;
     for (const f of forks.values()) if (!f.done) for (const k of Object.keys(f.votes)) f.votes[k] = 0;
     currentSurfaceId = world.surfaceIdAt(state.positionXM, state.positionZM);
@@ -370,9 +375,10 @@ export function createLevelSession(options: LevelSessionOptions) {
     }
   }
 
-  // --- forks and stop lines ---
+  // --- forks ---
 
-  function crossedStopLine(line: StopLineDef, prev: { x: number; z: number }, now: { x: number; z: number }): boolean {
+  /** Did the front of the rover cross the line, going the way the line points, within its width? Nothing stops there. */
+  function crossedForkLine(line: ForkLineDef, prev: { x: number; z: number }, now: { x: number; z: number }): boolean {
     const a = line.headingDeg * DEG;
     const nx = Math.cos(a);
     const nz = Math.sin(a);
@@ -383,45 +389,15 @@ export function createLevelSession(options: LevelSessionOptions) {
     return Math.abs(lateral) <= line.widthM / 2;
   }
 
-  function holdAtLine(line: StopLineDef) {
-    const a = line.headingDeg * DEG;
-    const nx = Math.cos(a);
-    const nz = Math.sin(a);
-    const over = (state.positionXM - line.xM) * nx + (state.positionZM - line.zM) * nz;
-    state = createState({
-      ...state,
-      positionXM: state.positionXM - over * nx,
-      positionZM: state.positionZM - over * nz,
-      speedMps: 0, throttleLevel: 0, brakeLevel: 0, direction: 'forward', rollingBack: false, drivingState: 'Stopped',
-      accelerationMps2: 0, driveForceN: 0, brakeForceN: 0, slipping: false,
-    });
-    travelRad = state.headingRad;
-    slideRad = 0;
-    phase = 'held';
-    holdUntilS = clockS() + line.redS;
-    emit({ kind: 'stopLine' });
-    say('red', {});
-  }
-
-  function goGreen(line: StopLineDef) {
-    phase = 'driving';
-    say('green', {});
-    for (const f of def.forks) {
-      if (f.stopLineId !== line.id) continue;
-      const fs = forks.get(f.id)!;
-      fs.startClockS = clockS();
-      for (const k of Object.keys(fs.votes)) fs.votes[k] = 0;
-    }
-  }
-
-  /** The other road, driven straight from the same start with the throttle held: how long it takes to the merge, or how it ends. */
-  function otherRoadResult(roadId: string, mergeAt: WhatIfOptions['mergeAt']): { outcome: WhatIfOutcome; timeS: number } {
+  /** The other road, driven straight from the fork line at the speed the rover had there, with the throttle held: how long it takes to the merge, or how it ends. */
+  function otherRoadResult(roadId: string, mergeAt: WhatIfOptions['mergeAt'], startSpeedMps: number): { outcome: WhatIfOutcome; timeS: number } {
     const road = world.roadById(roadId);
     const first = road.line.points[0]!;
     const second = road.line.points[1]!;
     const headingDeg = (Math.atan2(second.zM - first.zM, second.xM - first.xM) / DEG);
     const sim = createLevelSession({
-      content, rover, constants, def: { ...def, start: { xM: first.xM, zM: first.zM, headingDeg }, stopLines: [], forks: [], hints: [], signs: [], samples: def.samples },
+      content, rover, constants, def: { ...def, start: { xM: first.xM, zM: first.zM, headingDeg }, forks: [], hints: [], signs: [], samples: def.samples },
+      initialState: { speedMps: startSpeedMps },
       whatIf: { roadId, mergeAt },
       drive: ({ state: s }) => {
         const near = road.line.nearest(s.positionXM, s.positionZM);
@@ -435,17 +411,24 @@ export function createLevelSession(options: LevelSessionOptions) {
     return sim.whatIfEnd ?? { outcome: 'timeout', timeS: sim.clockS };
   }
 
-  function checkForks(front: { x: number; z: number }) {
+  function checkForks(prev: { x: number; z: number }, front: { x: number; z: number }) {
     for (const f of def.forks) {
       const fs = forks.get(f.id)!;
-      if (fs.done || fs.startClockS === undefined) continue;
+      if (fs.done) continue;
+      if (fs.startClockS === undefined) {
+        if (crossedForkLine(f.line, prev, front)) {
+          fs.startClockS = clockS();
+          fs.startSpeedMps = state.speedMps;
+        }
+        continue;
+      }
       const on = world.onRoadAt(front.x, front.z);
       if (on && f.roadIds.includes(on.road.def.id)) fs.votes[on.road.def.id] = (fs.votes[on.road.def.id] ?? 0) + 1;
       if (Math.hypot(front.x - f.mergeAt.xM, front.z - f.mergeAt.zM) > f.mergeAt.radiusM) continue;
       fs.done = true;
       const yourRoad = (fs.votes[f.roadIds[1]] ?? 0) > (fs.votes[f.roadIds[0]] ?? 0) ? f.roadIds[1] : f.roadIds[0];
       const otherRoad = yourRoad === f.roadIds[0] ? f.roadIds[1] : f.roadIds[0];
-      const other = otherRoadResult(otherRoad, f.mergeAt);
+      const other = otherRoadResult(otherRoad, f.mergeAt, fs.startSpeedMps);
       const yourS = clockS() - fs.startClockS;
       emit({ kind: 'fork', yourRoad, otherRoad, yourS, otherS: other.timeS, otherOutcome: other.outcome });
       if (other.outcome === 'merged') {
@@ -454,6 +437,49 @@ export function createLevelSession(options: LevelSessionOptions) {
         say('fork-result-crash', { otherRoad: roadName(otherRoad).toLowerCase(), outcome: levelText.outcomes[other.outcome]! });
       }
     }
+  }
+
+  // --- walls ---
+
+  /**
+   * The rover met an edge this step. Its velocity into the edge is removed and the rest is kept (collision.ts: v′ = v cos α, along
+   * the edge); the heading turns along the edge, and the rover is placed back against it. A rover moving along or away from the
+   * edge only gets placed back. Returns false if no place against the wall was found.
+   */
+  function scrapeAgainstWall(contact: EdgeContact, motion: 1 | -1): boolean {
+    const speedBeforeMps = state.speedMps;
+    let speedMps = speedBeforeMps;
+    let headingRad = state.headingRad;
+    let alphaRad = 0;
+    if (movingIntoEdge(travelRad, contact.outwardRad)) {
+      const scrape = scrapeAlongEdge(travelRad, speedBeforeMps, contact.edgeRad);
+      speedMps = scrape.speedMps;
+      alphaRad = scrape.alphaRad;
+      if (speedMps > 0) {
+        travelRad = wrapAngle(scrape.directionRad);
+        headingRad = wrapAngle(scrape.directionRad + (motion === 1 ? 0 : Math.PI));
+      }
+    }
+    // Turning along the edge swings the other corners of the footprint, so the push back is repeated until nothing is past a wall.
+    let c = contact;
+    let x = state.positionXM;
+    let z = state.positionZM;
+    for (let i = 0; i < WALL_PUSH_TRIES; i++) {
+      x -= Math.cos(c.outwardRad) * (c.depthM + WALL_CLEARANCE_M);
+      z -= Math.sin(c.outwardRad) * (c.depthM + WALL_CLEARANCE_M);
+      const again = world.hit(x, z, headingRad);
+      if (again?.kind === 'barrier') return false;
+      if (!again) {
+        state = { ...state, positionXM: x, positionZM: z, headingRad, speedMps, ...(speedMps === 0 ? { rollingBack: false } : {}) };
+        if (!wasScraping && speedBeforeMps > 0) {
+          emit({ kind: 'scrape', speedBeforeMps, speedAfterMps: speedMps, angleDeg: alphaRad / DEG });
+        }
+        wasScraping = true;
+        return true;
+      }
+      c = again.contact;
+    }
+    return false;
   }
 
   // --- the step ---
@@ -473,11 +499,6 @@ export function createLevelSession(options: LevelSessionOptions) {
       if (clockS() >= respawnAtS) respawnNow('crash');
       return;
     }
-    if (phase === 'held') {
-      const line = def.stopLines.find((l) => l.id === holdingLine)!;
-      if (clockS() >= holdUntilS) goGreen(line);
-      return;
-    }
     if (manualRespawn && !whatIf) {
       manualRespawn = false;
       respawnNow('manual');
@@ -491,8 +512,6 @@ export function createLevelSession(options: LevelSessionOptions) {
     }
     drivingStep();
   }
-
-  let holdingLine = '';
 
   function drivingStep() {
     const prev = state;
@@ -539,6 +558,8 @@ export function createLevelSession(options: LevelSessionOptions) {
     const vsGear: 1 | -1 = next.rollingBack ? -1 : 1;
     const q = buildQuantities(rover, surface, { gravityMps2: g }, { slopeRad: slopeGear, upthrustN: upN });
 
+    const travelBefore = travelRad;
+
     // Travel direction (drifting): it follows the way the rover moves, no faster than the tyres can bend the path (μ_g k_g R ÷ m v),
     // plus the magnet's sideways push (F⊥ ÷ m v). A floating rover has R = 0: its path cannot be bent by the tyres at all.
     const sideBend = sidewaysBendRadPerS(sideN * vsGear, rover.massKg, prev.speedMps, cfg.magnet.sidewaysCutoffMps);
@@ -548,7 +569,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     const target = next.headingRad + (motion === 1 ? 0 : Math.PI);
     travelRad = turnTravelDirection(travelRad + sideBend * dtS, target, turnLimit, dtS);
     slideRad = slideAngleRad(travelRad, target);
-    const sliding = slideRad >= SLIDE_MARK_RAD;
+    let sliding = slideRad >= SLIDE_MARK_RAD;
 
     // Move the step distance along the ground: the horizontal part is d cos θ (A6).
     const d = next.distanceM - prev.distanceM;
@@ -559,15 +580,25 @@ export function createLevelSession(options: LevelSessionOptions) {
       positionZM: prev.positionZM + horizontal * Math.sin(travelRad),
     };
 
-    // A crash: a wall or a barrier. The step is undone and the crash moment begins.
+    // An obstacle (a barrier) is a crash: the step is undone and the crash moment begins (E46).
+    // A wall is an edge: the rover is placed against it and scrapes along it, losing the speed that pointed into it.
     const hit = world.hit(state.positionXM, state.positionZM, state.headingRad);
-    if (hit) {
+    if (hit?.kind === 'barrier') {
       state = { ...prev, speedMps: 0, rollingBack: false };
       travelRad = prev.headingRad;
       snap = undefined;
       scheduleRespawn('crash', hit.kind);
       return;
     }
+    if (hit?.kind === 'wall') {
+      if (!scrapeAgainstWall(hit.contact, motion)) {
+        // No place against the wall was found (a corner of an odd junction): treat the step as not taken.
+        state = { ...prev, speedMps: 0, rollingBack: false };
+        travelRad = travelBefore;
+      }
+      slideRad = 0;
+      sliding = false;
+    } else wasScraping = false;
 
     const front = { x: state.positionXM, z: state.positionZM };
     const centreNow = centreOf(state);
@@ -587,7 +618,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     moveBags(t);
     hitBags(front, t, motion);
 
-    // Samples, checkpoints, stop lines, signs, finish.
+    // Samples, checkpoints, signs, finish.
     if (!quiet) {
       for (const s of def.samples) {
         if (collected.includes(s.id)) continue;
@@ -605,15 +636,6 @@ export function createLevelSession(options: LevelSessionOptions) {
           say('checkpoint', {});
         }
       });
-      for (const line of def.stopLines) {
-        if (stopPassed.has(line.id)) continue;
-        if (crossedStopLine(line, { x: prev.positionXM, z: prev.positionZM }, front)) {
-          stopPassed.add(line.id);
-          holdingLine = line.id;
-          holdAtLine(line);
-          return;
-        }
-      }
       for (const sign of def.signs) {
         if (signsShown.has(sign.id) || state.speedMps < cfg.rules.bendCaptionMinMps) continue;
         if (Math.hypot(front.x - sign.xM, front.z - sign.zM) > cfg.rules.signLookAheadM) continue;
@@ -625,7 +647,7 @@ export function createLevelSession(options: LevelSessionOptions) {
       }
       updateHints(front);
     }
-    checkForks(front);
+    checkForks({ x: prev.positionXM, z: prev.positionZM }, front);
 
     if (whatIf) {
       if (Math.hypot(front.x - whatIf.mergeAt.xM, front.z - whatIf.mergeAt.zM) <= whatIf.mergeAt.radiusM) {
@@ -933,11 +955,10 @@ export function createLevelSession(options: LevelSessionOptions) {
     pole = cfg.magnet.startPole;
     events = [];
     trace = [{ timeS: 0, speedMps: state.speedMps }];
-    forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), done: false }]));
+    forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), startSpeedMps: 0, done: false }]));
     hints = def.hints.map((h) => ({ def: h, shown: false, done: false }));
     deepShown = false;
     placeAt(def.start);
-    // A fork with no stop line to wait at starts when the level does.
     state = { ...state, ...options.initialState };
     captionNow = null;
     forceLineText = null;
@@ -955,7 +976,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     get phase(): LevelPhase {
       return phase;
     },
-    /** The level clock: it runs from the first step and does not stop for a crash, a respawn or a red light (A2). */
+    /** The level clock: it runs from the first step and does not stop for a crash or a respawn (A2). */
     get clockS(): number {
       return clockS();
     },
@@ -995,10 +1016,6 @@ export function createLevelSession(options: LevelSessionOptions) {
     get floating(): boolean {
       return wasFloating;
     },
-    /** For the scene: the stop line whose red light the rover is waiting at, if any. */
-    get heldStopLineId(): string | undefined {
-      return phase === 'held' ? holdingLine : undefined;
-    },
     /** For the scene's bend signs: the radius and the safe speed √(μ_g k_g g r) for this build, on the surface and in the gravity under the sign. */
     signInfo(signId: string): { radiusM: number; safeSpeedMps: number } {
       const sign = def.signs.find((x) => x.id === signId);
@@ -1024,7 +1041,13 @@ export function createLevelSession(options: LevelSessionOptions) {
     },
     /** R: back to the last checkpoint at once. The clock keeps running. */
     requestRespawn(): void {
-      if (phase === 'driving' || phase === 'held') manualRespawn = true;
+      if (phase === 'driving') manualRespawn = true;
+    },
+    /** Developer tool (`?dev=1`, SHOWCASE_PLAN §13): put the rover at checkpoint `index` (−1: the start), at rest. The clock keeps running; samples are not given. */
+    devJumpToCheckpoint(index: number): void {
+      if (phase !== 'driving' || whatIf) return;
+      lastCheckpoint = Math.max(-1, Math.min(def.checkpoints.length - 1, index));
+      respawnNow('manual');
     },
     report(): ReportModel {
       return buildLevelReport({ def, rover, result, events, trace, clockS: clockS(), text: levelText });

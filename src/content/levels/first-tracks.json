@@ -3,7 +3,7 @@
   "name": "First Tracks",
   "placeholder": true,
   "atmosphere": "clear-dusk",
-  "parS": 145,
+  "parS": 105,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -305,36 +305,15 @@
       "headingDeg": 40
     }
   ],
-  "stopLines": [
-    {
-      "id": "stop-fork-1",
-      "xM": 269.26,
-      "zM": 87.08,
-      "headingDeg": 40,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-2",
-      "xM": 468.43,
-      "zM": 254.21,
-      "headingDeg": 40,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-3",
-      "xM": 621.64,
-      "zM": 382.77,
-      "headingDeg": 40,
-      "widthM": 12,
-      "redS": 2
-    }
-  ],
   "forks": [
     {
       "id": "fork-1",
-      "stopLineId": "stop-fork-1",
+      "line": {
+        "xM": 269.26,
+        "zM": 87.08,
+        "headingDeg": 40,
+        "widthM": 12
+      },
       "roadIds": [
         "f1-asphalt",
         "f1-sand"
@@ -347,7 +326,12 @@
     },
     {
       "id": "fork-2",
-      "stopLineId": "stop-fork-2",
+      "line": {
+        "xM": 468.43,
+        "zM": 254.21,
+        "headingDeg": 40,
+        "widthM": 12
+      },
       "roadIds": [
         "f2-asphalt",
         "f2-ice"
@@ -360,7 +344,12 @@
     },
     {
       "id": "fork-3",
-      "stopLineId": "stop-fork-3",
+      "line": {
+        "xM": 621.64,
+        "zM": 382.77,
+        "headingDeg": 40,
+        "widthM": 12
+      },
       "roadIds": [
         "f3-asphalt",
         "f3-mud"

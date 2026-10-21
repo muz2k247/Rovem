@@ -482,3 +482,16 @@ export function createRoverModel(lengthM: number, widthM: number, look: RoverLoo
 }
 
 export const ROVER_WHEEL_RADIUS_M = WHEEL_RADIUS_M;
+
+/**
+ * The tread blocks are 36° apart and the spikes 22.5°. A wheel that turns more than half of that between two frames looks
+ * still or backwards (the wagon-wheel effect), and at 16 m/s and 60 fps the true turn is about 38°. So the picture turns at most
+ * this far per frame: about 10° (under half of 22.5°). Presentation only.
+ */
+export const MAX_WHEEL_TURN_PER_FRAME_RAD = 0.18;
+
+/** How far the wheels turn this frame for a move of `movedM` (signed, along the way the rover faces): s ÷ r, but never past the per-frame limit. */
+export function wheelTurnRad(movedM: number): number {
+  const turn = movedM / ROVER_WHEEL_RADIUS_M;
+  return Math.max(-MAX_WHEEL_TURN_PER_FRAME_RAD, Math.min(MAX_WHEEL_TURN_PER_FRAME_RAD, turn));
+}

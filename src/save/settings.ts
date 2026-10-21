@@ -23,7 +23,7 @@ export interface Settings {
 export function defaultSettings(): Settings {
   return {
     masterVolume: 0.8,
-    engineVolume: 1,
+    engineVolume: 0.5,
     effectsVolume: 1,
     muted: false,
     forceArrows: true,

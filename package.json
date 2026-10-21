@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "balance": "node scripts/balance.ts"
+    "balance": "node scripts/balance.ts",
+    "maps": "node scripts/maps.ts"
   },
   "engines": {
     "node": ">=24"

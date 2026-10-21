@@ -4,12 +4,13 @@ import type { HudModel } from '../game/contracts.ts';
 import type { AtmosphereId } from '../game/level/types.ts';
 import type { LevelSession } from '../game/level/session.ts';
 import { createAtmosphere } from './atmosphere.ts';
+import { createDevOverlay, type DevOverlay } from './devOverlay.ts';
 import { createDust } from './driveScene.ts';
 import { createForceArrows } from './forceArrows.ts';
 import { createLandmarks } from './landmarks.ts';
 import { levelCameraPose } from './levelCamera.ts';
 import { createPylons } from './pylons.ts';
-import { createRoverModel, ROVER_WHEEL_RADIUS_M, type WheelStyle } from './roverModel.ts';
+import { createRoverModel, wheelTurnRad, type RoverLook } from './roverModel.ts';
 import { createTerrain, SURFACE_COLOURS } from './terrain.ts';
 import { createTrack } from './track.ts';
 import { createCameraBlend } from './runScene.ts';
@@ -32,7 +33,8 @@ const ARROWS_LIFT_M = 0.75;
 const DUST_PER_MPS: Record<string, number> = { sand: 7, ice: 2.5, mud: 6, asphalt: 3 };
 
 export interface LevelSceneOptions {
-  wheelStyle: WheelStyle;
+  /** The whole build's look: chassis, wheels and motor (roverLookFor). */
+  look: RoverLook;
   /** Graphics Low turns off the fog particles and the shadows and uses a coarser ground (A8). */
   quality: 'high' | 'low';
   /** The setting "Force arrows" (A4). Default on. */
@@ -49,6 +51,10 @@ export interface LevelScene {
   setShowForces(on: boolean): void;
   /** Camera shake for the crash moment: the amplitude in metres (0 = none). */
   setShake(amplitudeM: number): void;
+  /** Developer tool (`?dev=1`): a camera straight above the rover, x to the right and z up the picture, `heightM` above the ground. */
+  setTopDown(on: boolean, heightM?: number): void;
+  /** Developer tool (`?dev=1`): outlines of the zones the physics uses. */
+  setZoneOutlines(on: boolean): void;
   /** Moves everything to the session's state. `frameS` drives the effects only (0 while paused). Pass the HUD model if you already have it. */
   update(session: LevelSession, frameS?: number, hud?: HudModel): void;
   dispose(): void;
@@ -81,7 +87,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
   if (pylons) scene.add(pylons.group);
 
   const { lengthM: roverLengthM, widthM: roverWidthM } = session.world.footprint;
-  const model = createRoverModel(roverLengthM, roverWidthM, options.wheelStyle);
+  const model = createRoverModel(roverLengthM, roverWidthM, options.look);
   const rover = model.root;
   rover.rotation.order = 'YZX'; // turn to the heading first, then nose up or down along the slope
   rover.traverse((o) => {
@@ -108,6 +114,9 @@ export function createLevelScene(session: LevelSession, content: Content, option
   let camY: number | undefined;
   let lastCamTarget: { x: number; z: number } | undefined;
   let shakeM = 0;
+  let topDown = false;
+  let topDownHeightM = 80;
+  let devOverlay: DevOverlay | undefined;
   const tint = new THREE.Color();
 
   const update = (s: LevelSession, frameS = 0, hudIn?: HudModel) => {
@@ -127,7 +136,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
     const movedM = state.distanceM >= lastDistanceM ? state.distanceM - lastDistanceM : 0; // 0 after a reset
     lastDistanceM = state.distanceM;
     const rolling = state.direction === 'reverse' !== state.rollingBack ? -1 : 1;
-    wheelAngle -= (rolling * movedM) / ROVER_WHEEL_RADIUS_M;
+    wheelAngle -= wheelTurnRad(rolling * movedM);
     for (const w of model.wheels) w.rotation.z = wheelAngle;
 
     const hud = hudIn ?? s.hud;
@@ -144,7 +153,6 @@ export function createLevelScene(session: LevelSession, content: Content, option
       timeS: clockS,
       collected: s.samplesCollected,
       checkpointIndex: s.checkpointIndex,
-      heldStopLineId: s.heldStopLineId,
       roverXM: pose.frontXM,
       roverZM: pose.frontZM,
       bags: s.bags,
@@ -192,6 +200,11 @@ export function createLevelScene(session: LevelSession, content: Content, option
     }
     camera.position.set(cam.position.xM + shakeX, camY + shakeY, -(cam.position.zM + shakeZ));
     camera.lookAt(cam.look.xM, cam.look.yM, -cam.look.zM);
+    if (topDown) {
+      camera.up.set(0, 0, -1); // screen-up is physics +z, which is three −z
+      camera.position.set(target.x, world.heightM(target.x, target.z) + topDownHeightM, -target.z);
+      camera.lookAt(target.x, world.heightM(target.x, target.z), -target.z);
+    } else camera.up.set(0, 1, 0);
 
     atmosphere.update(frameS, { x: camera.position.x, y: world.heightM(target.x, target.z), z: camera.position.z });
   };
@@ -211,6 +224,17 @@ export function createLevelScene(session: LevelSession, content: Content, option
     setShake(amplitudeM) {
       shakeM = Math.max(0, amplitudeM);
     },
+    setTopDown(on, heightM) {
+      topDown = on;
+      if (heightM !== undefined) topDownHeightM = heightM;
+    },
+    setZoneOutlines(on) {
+      if (on && !devOverlay) {
+        devOverlay = createDevOverlay(world);
+        scene.add(devOverlay.group);
+      }
+      if (devOverlay) devOverlay.group.visible = on;
+    },
     update,
     dispose() {
       scene.remove(terrain.group, track.group, landmarks.group, rover, arrows.group);
@@ -218,6 +242,10 @@ export function createLevelScene(session: LevelSession, content: Content, option
       track.dispose();
       landmarks.dispose();
       water?.dispose();
+      if (devOverlay) {
+        scene.remove(devOverlay.group);
+        devOverlay.dispose();
+      }
       splashes?.dispose();
       pylons?.dispose();
       arrows.dispose();

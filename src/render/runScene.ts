@@ -9,7 +9,7 @@ import { createDust } from './driveScene.ts';
 import { createSkidMarks } from './skidMarks.ts';
 import { SLIDE_MARK_RAD, wrapAngle } from '../game/run/drift.ts';
 import { leanRad, steerAngleRad } from './roverAttitude.ts';
-import { createRoverModel, ROVER_WHEEL_RADIUS_M, type RoverLook, type WheelStyle } from './roverModel.ts';
+import { createRoverModel, wheelTurnRad, type RoverLook, type WheelStyle } from './roverModel.ts';
 
 // The 3D view of the endless canyon (docs/DEMO_BUILD_PLAN.md A3, A4, A7). Original low-poly shapes; no outside assets.
 // Axes as in driveScene: physics x is three x, physics z is three −z, y is up.
@@ -418,7 +418,7 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
 
     const movedM = state.distanceM >= lastDistanceM ? state.distanceM - lastDistanceM : 0; // 0 after a reset
     lastDistanceM = state.distanceM;
-    wheelAngle -= ((state.direction === 'reverse' ? -1 : 1) * movedM) / ROVER_WHEEL_RADIUS_M;
+    wheelAngle -= wheelTurnRad((state.direction === 'reverse' ? -1 : 1) * movedM);
     for (const w of model.wheels) w.rotation.z = wheelAngle;
 
     // The front wheels turn with the steer input and the body leans a little outward in turns (presentation only).

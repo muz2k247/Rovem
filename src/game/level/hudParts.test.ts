@@ -143,7 +143,7 @@ describe('level text', () => {
   });
 
   it('every caption, hint, outcome and card the engine can ask for exists', () => {
-    for (const id of ['surface-mud', 'slip', 'boost', 'hit-headOn', 'gravity-low', 'descent', 'rollback', 'bend', 'slide', 'float', 'magnet-attract', 'pole', 'sample', 'checkpoint', 'crash', 'stuck', 'floated', 'red', 'green', 'fork-result']) {
+    for (const id of ['surface-mud', 'slip', 'boost', 'hit-headOn', 'gravity-low', 'descent', 'rollback', 'bend', 'slide', 'float', 'magnet-attract', 'pole', 'sample', 'checkpoint', 'crash', 'stuck', 'floated', 'fork-result']) {
       expect(levelText.captions[id], id).toBeDefined();
     }
     expect(Object.keys(levelText.hints)).toEqual(['hold-w', 'coast', 'steer', 'brake']);

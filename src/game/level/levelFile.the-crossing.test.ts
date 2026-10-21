@@ -19,7 +19,7 @@ describe('the-crossing', () => {
     const p0 = roadPoint(world, 'ch1', 66, 0);
     const session = createLevelSession({
       content, rover: roverFromParts(content, build), constants: physicsConstants(content),
-      def: { ...def, start: { xM: p0.xM + Math.cos(p0.headingRad), zM: p0.zM + Math.sin(p0.headingRad), headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], stopLines: [], forks: [], hints: [] },
+      def: { ...def, start: { xM: p0.xM + Math.cos(p0.headingRad), zM: p0.zM + Math.sin(p0.headingRad), headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], forks: [], hints: [] },
       drive: () => ({ throttleHeld: false, brakeHeld: false, steer: 0 }),
       initialState: { speedMps },
     });
@@ -88,7 +88,7 @@ describe('the-crossing', () => {
     expect(crossesAt({ chassisId: 'chassis-light', wheelsId: 'wheels-smooth', motorId: 'motor-small' }, 11)).toBe(true);
   });
 
-  it('with the pad, every one of the 27 builds crosses both deep channels from the stop line', () => {
+  it('with the pad, every one of the 27 builds crosses both deep channels', () => {
     for (const build of allBuilds(content)) {
       const one = runPilot({ content, def: startingAt(def, 'cp-2'), build, plan: { roads: ['mid', 'to-ch1', 'ch1'] }, maxS: 80, until: (s) => s.events.some((e) => e.kind === 'fork' || e.kind === 'respawn') });
       expect(one.session.events.some((e) => e.kind === 'fork'), `${build.chassisId} ${build.wheelsId} ${build.motorId} channel 1`).toBe(true);
@@ -113,7 +113,7 @@ describe('the-crossing', () => {
     const heavy: BuildSelection = { chassisId: 'chassis-heavy', wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' };
     const session = createLevelSession({
       content, rover: roverFromParts(content, heavy), constants: physicsConstants(content),
-      def: { ...def, start: { xM: mid.xM, zM: mid.zM, headingDeg: def.checkpoints[0]!.headingDeg }, checkpoints: [], stopLines: [], forks: [], hints: [] },
+      def: { ...def, start: { xM: mid.xM, zM: mid.zM, headingDeg: def.checkpoints[0]!.headingDeg }, checkpoints: [], forks: [], hints: [] },
       drive: () => ({ throttleHeld: true, brakeHeld: false, steer: 0 }),
     });
     for (let i = 0; i < 120 * 4; i++) session.stepOnce();
@@ -123,8 +123,13 @@ describe('the-crossing', () => {
 
   it('the shallow fords and the river slow nobody down to a stop: every build drives through them', () => {
     for (const build of representative()) {
-      const r = runPilot({ content, def: startingAt(def, 'cp-1'), build, plan: { roads: ['lead', 'mid', 'to-ch1'] }, maxS: 80, until: (s) => s.events.some((e) => e.kind === 'respawn') || s.phase === 'held' });
+      const r = runPilot({ content, def: startingAt(def, 'cp-1'), build, plan: { roads: ['lead', 'mid', 'to-ch1'] }, maxS: 80, until: (s) => s.events.some((e) => e.kind === 'respawn') || atForkLine(s.state.positionXM, s.state.positionZM) });
       expect(r.respawns.floated + r.respawns.stuck + r.respawns.crash).toBe(0);
+    }
+    // The plan ends where the first fork begins; the test stops there, as the rover would carry on onto a fork road.
+    function atForkLine(x: number, z: number) {
+      const line = def.forks[0]!.line;
+      return Math.hypot(x - line.xM, z - line.zM) < 3;
     }
     function representative() {
       return allBuilds(content).filter((_, i) => i % 4 === 0);

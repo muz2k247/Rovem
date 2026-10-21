@@ -91,6 +91,74 @@ describe('driving a level', () => {
   });
 });
 
+describe('developer tools', () => {
+  it('devJumpToCheckpoint puts the rover at the checkpoint, at rest, and the clock keeps running', () => {
+    const s = make();
+    run(s, 2);
+    const clock = s.clockS;
+    s.devJumpToCheckpoint(1);
+    expect(s.state.positionXM).toBe(200);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.checkpointIndex).toBe(1);
+    expect(s.clockS).toBe(clock);
+    run(s, 1);
+    expect(s.state.positionXM).toBeGreaterThan(200);
+    s.devJumpToCheckpoint(-1);
+    expect(s.state.positionXM).toBe(0);
+    expect(s.checkpointIndex).toBe(-1);
+  });
+});
+
+describe('walls scrape, obstacles crash (E46)', () => {
+  const DEG = Math.PI / 180;
+  const wallRun = (headingDeg: number, drive = () => NONE) =>
+    make({ start: { xM: 40, zM: 0, headingDeg } }, { drive, initialState: { speedMps: 12, headingRad: headingDeg * DEG } });
+
+  it('a rover that meets the canyon wall at 20° keeps v cos α along it, turns along the wall, and is not sent back', () => {
+    const s = wallRun(20);
+    until(s, () => s.events.some((e) => e.kind === 'scrape'), 20);
+    const e = s.events.find((x) => x.kind === 'scrape')!;
+    expect(e.angleDeg).toBeCloseTo(20, 3);
+    expect(e.speedAfterMps!).toBeCloseTo(e.speedBeforeMps! * Math.cos(20 * DEG), 6);
+    expect(s.phase).toBe('driving');
+    expect(Math.abs(s.state.headingRad)).toBeLessThan(1e-6); // turned along the wall (the road runs along x)
+    run(s, 2);
+    expect(s.events.some((x) => x.kind === 'respawn')).toBe(false);
+    expect(s.state.speedMps).toBeGreaterThan(5);
+    expect(s.world.hit(s.state.positionXM, s.state.positionZM, s.state.headingRad)).toBeUndefined(); // it is back inside the wall
+  });
+
+  it('a square-on hit (α = 90°) stops the rover without a crash, and it can reverse out', () => {
+    const s = wallRun(90);
+    until(s, () => s.events.some((x) => x.kind === 'scrape'), 20);
+    const e = s.events.find((x) => x.kind === 'scrape')!;
+    expect(e.angleDeg).toBeCloseTo(90, 3);
+    expect(e.speedAfterMps).toBe(0);
+    expect(s.state.speedMps).toBe(0);
+    expect(s.phase).toBe('driving');
+    expect(s.events.some((x) => x.kind === 'respawn')).toBe(false);
+    const z = s.state.positionZM;
+    const back = make({ start: { xM: 40, zM: z, headingDeg: 90 } }, { drive: () => ({ throttleHeld: false, brakeHeld: true, steer: 0 }) });
+    run(back, 3);
+    expect(back.state.direction).toBe('reverse');
+    expect(back.state.positionZM).toBeLessThan(z);
+  });
+
+  it('a light brush costs little: 3° loses under 0.2% of the speed', () => {
+    const s = make({ start: { xM: 40, zM: 8, headingDeg: 3 } }, { drive: () => NONE, initialState: { speedMps: 12, headingRad: 3 * DEG } });
+    until(s, () => s.events.some((x) => x.kind === 'scrape'), 40);
+    const e = s.events.find((x) => x.kind === 'scrape')!;
+    expect(e.speedAfterMps! / e.speedBeforeMps!).toBeGreaterThan(0.998);
+  });
+
+  it('a barrier is still a crash, even next to a wall', () => {
+    const s = make({ barriers: [{ id: 'b', xM: 100.5, zM: 0, headingDeg: 0, lengthM: 1, widthM: 8 }] });
+    until(s, () => s.events.some((e) => e.kind === 'respawn'), 30);
+    expect(s.events.find((e) => e.kind === 'respawn')?.cause).toBe('crash');
+    expect(s.events.some((e) => e.kind === 'scrape')).toBe(false);
+  });
+});
+
 describe('checkpoints, crashes and respawn', () => {
   const barrier = { id: 'wall', xM: 160.5, zM: 0, headingDeg: 0, lengthM: 1, widthM: 8 };
 
@@ -324,7 +392,7 @@ describe('boosts and cannons', () => {
   });
 });
 
-describe('stop lines and forks', () => {
+describe('forks (no stops)', () => {
   const fork = () => ({
     start: { xM: 0, zM: 3, headingDeg: 0 },
     roads: [
@@ -334,27 +402,29 @@ describe('stop lines and forks', () => {
       { id: 'tail', start: { xM: 120, zM: 0, headingDeg: 0 }, segments: [{ kind: 'straight', lengthM: 200 }] },
     ],
     route: ['main', 'asphalt', 'tail'],
-    stopLines: [{ id: 'sl', xM: 20, zM: 0, headingDeg: 0, widthM: 14, redS: 2 }],
-    forks: [{ id: 'f1', stopLineId: 'sl', roadIds: ['asphalt', 'sand'], mergeAt: { xM: 120, zM: 0, radiusM: 8 } }],
+    forks: [{ id: 'f1', line: { xM: 20, zM: 0, headingDeg: 0, widthM: 14 }, roadIds: ['asphalt', 'sand'], mergeAt: { xM: 120, zM: 0, radiusM: 8 } }],
     checkpoints: [],
     finish: { xM: 300, zM: 0, radiusM: 6 },
   });
 
-  it('the rover is held at the stop line for the red light, then goes; the clock runs while it waits', () => {
+  it('nothing stops the rover at a fork: it drives through the fork line without slowing', () => {
     const s = make(fork());
-    until(s, () => s.phase === 'held', 20);
-    expect(s.phase).toBe('held');
-    expect(s.state.speedMps).toBe(0);
-    const x = s.state.positionXM;
-    const held = s.clockS;
-    run(s, 1);
-    expect(s.state.positionXM).toBe(x);
-    expect(s.phase).toBe('held');
-    run(s, 1.1);
+    until(s, () => s.state.positionXM > 20, 20);
+    const v = s.state.speedMps;
+    run(s, 0.5);
     expect(s.phase).toBe('driving');
-    expect(s.clockS).toBeCloseTo(held + 2.1, 1);
-    run(s, 1);
-    expect(s.state.positionXM).toBeGreaterThan(x);
+    expect(s.state.speedMps).toBeGreaterThanOrEqual(v);
+  });
+
+  it('the other road starts from the speed the rover had at the fork line, not from rest', () => {
+    const fast = make({ ...fork(), start: { xM: 0, zM: 3, headingDeg: 0 } }, { initialState: { speedMps: 14 } });
+    const slow = make(fork());
+    until(fast, () => fast.events.some((e) => e.kind === 'fork'), 60);
+    until(slow, () => slow.events.some((e) => e.kind === 'fork'), 60);
+    const f = fast.events.find((x) => x.kind === 'fork')!;
+    const g = slow.events.find((x) => x.kind === 'fork')!;
+    expect(f.otherS!).toBeLessThan(g.otherS!);
+    expect(f.yourS!).toBeLessThan(g.yourS!);
   });
 
   it('at the merge a caption and an event give the other road’s time for the same build; sand is slower than asphalt', () => {
@@ -365,8 +435,8 @@ describe('stop lines and forks', () => {
     expect(e.otherRoad).toBe('sand');
     expect(e.otherOutcome).toBe('merged');
     expect(e.otherS).toBeGreaterThan(e.yourS!);
-    // 100 m from rest, a ≈ 4.6 m/s² on asphalt: about 7 s to the merge circle; sand is slower (a ≈ 3.6 m/s²).
-    expect(e.yourS).toBeGreaterThan(6);
+    // From the fork line (20 m from the start, so about 13.6 m/s) to the merge circle, 100 m on asphalt: about 6 s; sand is slower.
+    expect(e.yourS).toBeGreaterThan(5);
     expect(e.yourS).toBeLessThan(9);
     expect(e.otherS).toBeLessThan(11);
     expect(s.hud.caption?.title).toMatch(/sand road/i);

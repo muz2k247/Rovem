@@ -338,8 +338,10 @@ describe('drifting', () => {
   });
 
   it('a crash while sliding is flagged; a crash in a straight line is not', () => {
-    const wall = play(on, () => 1, 3000, { initialState: { positionXM: 100, speedMps: 16, throttleLevel: 1 } });
-    expect(wall.ended).toMatchObject({ cause: 'crash', obstacle: 'wall', sliding: true });
+    // A barrier across the corridor 78 m into the first field chunk (the warm-up is 60 m), met while the 1 s hard turn is still sliding.
+    const withBarrier = worldOf({ barriers: [{ xM: [78, 80], zM: [-15, 15] }] });
+    const slidingBarrier = play({ ...withBarrier, run: { ...withBarrier.run, drift: true } }, hard, 3000, { initialState: { positionXM: 100, speedMps: 16, throttleLevel: 1 } });
+    expect(slidingBarrier.ended).toMatchObject({ cause: 'crash', obstacle: 'barrier', sliding: true });
     const barrier = play(worldOf({ barriers: [{ xM: [30, 32], zM: [-15, 15] }] }), STRAIGHT, 3000);
     expect(barrier.ended?.cause).toBe('crash');
     expect(barrier.ended?.sliding).toBeUndefined();

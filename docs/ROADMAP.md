@@ -14,7 +14,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 |---|---|---|---|
 | SC | **Showcase round** (`docs/SHOWCASE_PLAN.md`; approved 2026-10-21) | 🟨 Planned 2026-10-21 | v4 I1 |
 | S0 | New editable source documents (`docs/specs/v2/`) | ✅ 2026-10-21 (DECISIONS 2026-10-21 S0; spec-sync run) | — |
-| R1 | Fixes, crashes (walls scrape, obstacles crash), tools | ⬜ | S0 |
+| R1 | Fixes, crashes (walls scrape, obstacles crash), tools | ✅ 2026-10-21 (physics-checker run; OI-19 to OI-21 are for k._muz) | S0 |
 | R2 | Endless as places, natural terrain, warnings and pop-ups, colours | ⬜ | R1 |
 | R3 | Story frame, Crash Site, report stretches | ⬜ | R2 |
 | R4 | The Scavenger, Change one part, the booster | ⬜ | R3 |
@@ -358,6 +358,19 @@ Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`
 **OI-17 (S0, for R6): the jump's landing step.** E45's test values (0.84512 s, 13.061 m at g = 9.8) are exact. Stepping at 1/120 s and landing at the end of the first step with y ≤ 0 gives 0.8500 s and 13.137 m. `Physics_Model_Spec_v2.md` 11.3 assumes the landing step is split at the exact landing time, as `step()` splits at v_max and at 0. Proposal: confirm in R6.
 
 **OI-18 (S0): small gaps between the docs and the code, found while checking; none changed (docs only).** (1) `levels.json` still has `ringRoad.laps = 2`, a leftover of the closed-circuit design. (2) `step()` still accepts the `towed` input and returns "Cruising", unused by the game. (3) `game/` and `save/` import each other through one type (`StarCount`). Proposal: clean up in a later code session.
+
+**OI-19 (R1): the lessons that stops carried are gone from the v4 level files.** With no stop line the rover enters every fork and every hazard already moving, so some lessons the v4 levels taught by arriving at rest no longer happen. Tests changed to say what the levels do now: First Tracks' mud bogs down fewer builds (15 of 27 get across, not fewer than 14); Push & Shove's boost pad is no longer needed to cross the mud; Crater Field's wall no longer rolls weak builds back; Ring Road's tight low-gravity bend is no longer faster than the wide one when braked; Polar Pass's pass lets a throttle-only rover through and its crater is climbed by all 27 builds (two Polar Pass tests were removed, with a comment in the file). A wall at full throttle is now a scrape, so a fork's "other road" no longer reports "you would have hit the wall". Each lesson comes back when its level is rebuilt: Crater Field R6, Geyser Canyon R5, Crash Site R3 (Ring Road folded in), The Crossing and Iron Ridge R7. Proposal: confirm that nothing is fixed in the old files.
+
+**OI-20 (R1): par times and the length floor.** The stops took seconds off every scripted run, so each level's par time was re-derived by the A10 rule (× 1.15, up to the next 5 s): First Tracks 105 s, Push & Shove 100, Crater Field 100, Gravity Wells 115, Ring Road 115, The Crossing 95, Polar Pass 85 (were 145, 115, 125, 135, 120, 105, 125). Polar Pass now finishes in 72 s, under the A7 floor of 75 s, so the check's floor is 60 s (Showcase levels are 90 to 150 s: SHOWCASE_PLAN §5). Par is replaced by the Scavenger in R4. Proposal: confirm.
+
+**OI-21 (R1): judgment calls inside the session, for k._muz to confirm or change.**
+1. *Stop lines are gone from the data, not just switched off.* A fork now carries its own drive-through `line`; the level files lost `stopLines` and `redS`, and the stop-line lamps, the `red`/`green` captions and the `held` phase were removed. Stops that were not forks' (Crater Field and Polar Pass's wall and mud stops, Polar Pass's pass and gate stops, Push & Shove's mud stop) were dropped.
+2. *Wheels.* The wheels did turn in the level scene (checked in Chrome: −2.28 rad after 0.96 m). Two things hide it: the chase camera sees the wheels from behind, and the tread (10 blocks, 36° apart) aliases at level speeds (at 16.7 m/s and 60 fps the true turn is about 38° a frame, so the wheel looks frozen). The fix caps the picture's turn at 0.18 rad (10.3°) a frame, for levels and Endless. I could not reproduce your exact frame rate in the headless browser, so this is the most likely cause, not a proven one.
+3. *Engine sound:* gain = 0.06 × throttle level + 0.01 × speed share (it was 0.025 + 0.045 t + 0.02 s, never silent); silent below 0.0005; default engine volume 0.5 (was 1). Saved settings are not changed.
+4. *Settings:* three groups. Reset progress sits under Help (the plan names three groups and it fits none better). Every option has one plain sentence; the wording is a placeholder for k._muz.
+5. *Change rover* replaces "Garage" in the pause menu and goes straight back into the level (restarting it) when you leave the garage; the report's "Try this" does the same now.
+6. *Collisions:* an obstacle wins when a step touches both a wall and an obstacle. A scrape never reverses the rover, and there is no automatic reversing out. If no place against the wall is found (an odd junction), the step is undone and v = 0, with no crash, in levels and in Endless. In Endless the scrape is not an event (the report does not need it yet); in levels it is a `scrape` event for the sound and report sessions. `WALL_CLEARANCE_M` (2 mm) and `WALL_PUSH_TRIES` (8) are in code, not in content, because they are numerical tolerances.
+7. *Dev keys (`?dev=1`):* T top-down camera, Z zone outlines, [ and ] previous and next checkpoint, − and = zoom. The jump gives no samples.
 
 Spec edits E4–E47 were applied in S0 (2026-10-21): the source documents are now `docs/specs/v2/`; `docs/PENDING_SPEC_EDITS.md` is history.
 

@@ -38,6 +38,7 @@ export function GarageScreen({
   backLabel,
   onBack,
   onStart,
+  startLabel = 'Start run',
   onReplay,
   onDeveloper,
 }: {
@@ -48,6 +49,8 @@ export function GarageScreen({
   onBack: () => void;
   /** Start an Endless run from here; left out when the garage was opened from a level. */
   onStart?: () => void;
+  /** The label of the start button (default "Start run"). */
+  startLabel?: string;
   onReplay?: () => void;
   /** The M5a test course link; shown only with the developer link (?unlock=all). */
   onDeveloper?: () => void;
@@ -172,7 +175,7 @@ export function GarageScreen({
 
           {onStart && (
             <button type="button" className="btn cta garage-go" onClick={onStart}>
-              Start run
+              {startLabel}
             </button>
           )}
           {onReplay && progress.lastSeed !== null && (

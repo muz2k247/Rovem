@@ -3,7 +3,7 @@
   "name": "Gravity Wells",
   "placeholder": true,
   "atmosphere": "starry",
-  "parS": 135,
+  "parS": 115,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -375,36 +375,15 @@
       "headingDeg": 10
     }
   ],
-  "stopLines": [
-    {
-      "id": "stop-fork-1",
-      "xM": 304.02,
-      "zM": -56.32,
-      "headingDeg": -25,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-2",
-      "xM": 739.95,
-      "zM": -201.66,
-      "headingDeg": 10,
-      "widthM": 12,
-      "redS": 2
-    },
-    {
-      "id": "stop-fork-3",
-      "xM": 1055.08,
-      "zM": -146.1,
-      "headingDeg": 10,
-      "widthM": 12,
-      "redS": 2
-    }
-  ],
   "forks": [
     {
       "id": "fork-1",
-      "stopLineId": "stop-fork-1",
+      "line": {
+        "xM": 304.02,
+        "zM": -56.32,
+        "headingDeg": -25,
+        "widthM": 12
+      },
       "roadIds": [
         "w1-hill",
         "w1-round"
@@ -417,7 +396,12 @@
     },
     {
       "id": "fork-2",
-      "stopLineId": "stop-fork-2",
+      "line": {
+        "xM": 739.95,
+        "zM": -201.66,
+        "headingDeg": 10,
+        "widthM": 12
+      },
       "roadIds": [
         "w2-ice",
         "w2-round"
@@ -430,7 +414,12 @@
     },
     {
       "id": "fork-3",
-      "stopLineId": "stop-fork-3",
+      "line": {
+        "xM": 1055.08,
+        "zM": -146.1,
+        "headingDeg": 10,
+        "widthM": 12
+      },
       "roadIds": [
         "w3-mud",
         "w3-round"

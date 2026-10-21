@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| FR-51 (collisions) marked Built; the stops of the Game v4 level files marked removed (2026-10-21, R1) | Session R1 | E46, SHOWCASE_PLAN §4–§5 |
 | The game is five levels as natural places plus Endless; the story is a crashed ship; each level ends at a ship part; the Scavenger rival replaces par. Sections 1.1–1.3, 3.1, 3.5 rewritten | Showcase round | E35, E37, DECISIONS 2026-10-17, 2026-10-18, 2026-10-21 |
 | Missions, questions, Knowledge, medals, hub, start grid, power-ups, tow line, prediction, accounts marked superseded or future; full text moved to the last section | Advisor ruled out multiple-choice questions; Game v4 replaced missions | E26, E37, E43, DECISIONS 2026-10-14, 2026-10-17 |
 | FR-6: reverse exists | k._muz asked for it | E10, DECISIONS 2026-10-13 |
@@ -128,7 +129,7 @@ Primary users are Grade 9 students. Secondary users are teachers and evaluators 
 | FR-28 | Each motor has a top speed. At top speed the motor only balances friction, so net force is zero and the rover moves at constant speed (Newton's first law). |
 | FR-29 | The physics uses g = 9.8 m/s², a fixed time step that does not depend on the frame rate, and no random values (the Endless course uses a seeded generator). |
 | FR-50 | The physics also covers slopes, rolling back, water (upthrust and drag), magnets, momentum events and gravity zones, as in the Physics Model Specification. (E37) |
-| FR-51 | **Collisions.** Walls and edges are solid: driving into one removes the part of the velocity into the wall, and the rover scrapes along it. Obstacles (boulders, barriers, launcher bases, pylons) are solid: hitting one is a crash, which returns the rover to the last checkpoint in a level and ends the Endless run. There is no damage. (E46, replacing E16's FR-48; *Planned*, R1) |
+| FR-51 | **Collisions.** Walls and edges are solid: driving into one removes the part of the velocity into the wall, and the rover scrapes along it. Obstacles (boulders, barriers, launcher bases, pylons) are solid: hitting one is a crash, which returns the rover to the last checkpoint in a level and ends the Endless run. There is no damage. (E46, replacing E16's FR-48; *Built*, R1, 2026-10-21) |
 | FR-52 | **Booster.** Once per level attempt the student may fire a booster: 2500 N along the direction of travel for at most 1.5 s, stopping at top speed. It works on the ground and in water, not in the air. (E47; *Planned*, R4; provisional) |
 | FR-53 | **Jumps.** The rover leaves the ground only at ramps designed into a level, and falls under gravity (the g of the zone it is in) with no drive, brake or steering until it lands. (E45; *Planned*, R6) |
 
@@ -156,7 +157,7 @@ Each level defines a goal, one physics idea, a meaningful decision (the fork), a
 | 4 | The Crossing | Splashdown floats | Upthrust and water drag | Shallow ford, deep ford or long bridge |
 | 5 | Iron Ridge | Docking clamps, then the ship flies home | Magnetism | The magnet line or the long switchback road |
 
-Until a level is rebuilt, its Game v4 file (`first-tracks` and the other six; DECISIONS 2026-10-19 holds their layouts) stays playable behind `?unlock=all`, with its stops removed in R1.
+Until a level is rebuilt, its Game v4 file (`first-tracks` and the other six; DECISIONS 2026-10-19 holds their layouts) stays playable behind `?unlock=all`, with its stops removed (done in R1, 2026-10-21).
 
 **Parameters (provisional).** Length 90–150 s (Crash Site about 90 s). Mud patches at most 12 m. Bends at least 62 m radius on rock and 100 m on sand, except where turning is the lesson. Checkpoints before each boulder field, the Ring, each fork and each jump. Values: `component_values/showcase.csv`.
 

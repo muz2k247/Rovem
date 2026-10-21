@@ -1,5 +1,9 @@
 // Engine sound made in code with Web Audio (DESIGN §6): no outside asset, so nothing to license.
-// Two detuned oscillators through a low-pass filter. Pitch follows speed; volume and brightness follow throttle.
+// Two detuned oscillators through a low-pass filter. Volume follows the throttle level (SHOWCASE_PLAN §12): silent at rest,
+// quiet while coasting, loud under power. Pitch follows speed.
+
+/** Below this gain the engine is switched off. */
+const SILENT_BELOW = 0.0005;
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -9,7 +13,7 @@ export function engineTone(speedShare: number, throttleLevel: number): { frequen
   const t = clamp01(throttleLevel);
   return {
     frequencyHz: 42 + 110 * s + 18 * t,
-    gain: 0.025 + 0.045 * t + 0.02 * s,
+    gain: 0.06 * t + 0.01 * s,
     filterHz: 380 + 900 * t + 500 * s,
   };
 }
@@ -64,7 +68,8 @@ export function createEngineSound(): EngineSound {
       main.frequency.setTargetAtTime(tone.frequencyHz, now, 0.05);
       sub.frequency.setTargetAtTime(tone.frequencyHz * 0.5 * 1.01, now, 0.05);
       filter.frequency.setTargetAtTime(tone.filterHz, now, 0.05);
-      const gain = muted ? 0 : tone.gain * level;
+      // Below this the engine is silent (a coasting rover at a crawl makes no sound).
+      const gain = muted || tone.gain < SILENT_BELOW ? 0 : tone.gain * level;
       if (gain !== lastGain) volume.gain.setTargetAtTime(gain, now, 0.08);
       lastGain = gain;
     },

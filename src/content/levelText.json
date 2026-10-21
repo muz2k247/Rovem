@@ -116,8 +116,6 @@
     "crash": { "title": "Crash", "line": "Back to the last checkpoint. The clock keeps running." },
     "stuck": { "title": "Stuck", "line": "Friction beats your motor. Back to the last checkpoint." },
     "floated": { "title": "Floated to a stop", "line": "A floating rover cannot drive. Back to the last checkpoint." },
-    "red": { "title": "Red light", "line": "Wait for green, then go. Acceleration counts." },
-    "green": { "title": "Green: go", "line": "" },
     "fork-result": { "title": "{otherRoad} road: {otherS} s", "line": "You took {yourRoad}: {yourS} s." },
     "fork-result-crash": { "title": "The {otherRoad} road", "line": "At full throttle you would have {outcome}." },
     "balanced": { "title": "", "line": "Balanced: constant speed" }

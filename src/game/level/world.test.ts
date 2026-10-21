@@ -62,8 +62,22 @@ describe('roads and walls', () => {
   it('a rover in the middle is clear; one whose corner is past the run-off hits the wall', () => {
     const w = world();
     expect(w.hit(50, 0, 0)).toBeUndefined();
-    expect(w.hit(50, 8.5, 0)).toEqual({ kind: 'wall' }); // the left corners are at z = 9.35
+    const wall = w.hit(50, 8.5, 0); // the left corners are at z = 9.35
+    expect(wall?.kind).toBe('wall');
     expect(w.hit(50, 7.9, 0)).toBeUndefined(); // 7.9 + 0.85 = 8.75 < 9
+  });
+
+  it('a wall hit reports the direction of the edge, which way is out, and how far the corner is past it', () => {
+    const w = world();
+    const wall = w.hit(50, 8.5, 0);
+    if (wall?.kind !== 'wall') throw new Error('expected a wall');
+    // The road runs along x with 9 m of reach each side; the worst corner is at z = 9.35: 0.35 m past the left wall.
+    expect(wall.contact.depthM).toBeCloseTo(0.35, 9);
+    expect(wall.contact.outwardRad).toBeCloseTo(Math.PI / 2, 9); // out is to the left (+z)
+    expect(Math.abs(Math.cos(wall.contact.edgeRad))).toBeCloseTo(1, 9); // the edge runs along x
+    const right = w.hit(50, -8.5, 0);
+    if (right?.kind !== 'wall') throw new Error('expected a wall');
+    expect(right.contact.outwardRad).toBeCloseTo(-Math.PI / 2, 9);
   });
 
   it('a barrier crashes the rover only when the footprint overlaps it', () => {

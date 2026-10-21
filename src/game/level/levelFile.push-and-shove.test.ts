@@ -36,7 +36,7 @@ describe('push-and-shove', () => {
     expect(hit.speedAfterMps!).toBeGreaterThan(hit.speedBeforeMps!);
   });
 
-  it('the boost pad before the mud carries the starting build across; without it the build bogs down', () => {
+  it('the boost pad before the mud carries the starting build across (before R1, without it the build bogged down)', () => {
     const cross = (boosts: typeof def.boosts) =>
       runPilot({
         content, def: { ...startingAt(def, 'cp-2'), boosts }, build: STARTING_BUILD, plan: { roads: ['m1', 'f2-pad'] }, maxS: 60,
@@ -44,8 +44,7 @@ describe('push-and-shove', () => {
       });
     const withPad = cross(def.boosts);
     expect(withPad.session.events.some((e) => e.kind === 'fork' && e.yourRoad === 'f2-pad')).toBe(true);
-    const withoutPad = cross(def.boosts.filter((b) => b.id !== 'pad-1'));
-    expect(withoutPad.respawns.stuck).toBe(1);
+    // With no stop line the rover arrives at the mud already moving, so it no longer bogs down without the pad; the level is redesigned in R5.
   });
 
   it('the mud lane is a real choice: some builds get across with the pad, and some cannot', () => {
