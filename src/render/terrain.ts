@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { pointInPolygon } from '../game/geometry.ts';
 import type { LevelWorld } from '../game/level/world.ts';
+import { BARE_GROUND, blendColour, groundOffsetM, surfaceWeights, type Weights } from './groundBlend.ts';
 import { waterBedDropM } from './water.ts';
 
 // The ground of a level (LEVELS_BUILD_PLAN A7, A9): one mesh made of square tiles, built only where a road, its run-off
@@ -65,14 +66,53 @@ export function terrainTileKeys(world: LevelWorld, tileM: number = TILE_M, margi
   return [...seen.values()].sort((a, b) => a.ix - b.ix || a.iz - b.iz);
 }
 
-/** The ground height as drawn: the physics height, with pools dug down. */
-export const drawnHeightM = (world: LevelWorld, xM: number, zM: number): number => world.heightM(xM, zM) - waterBedDropM(world, xM, zM);
+/** The shape of the ground: the physics height, with pools dug down. Normals come from this (the surface offsets are too small to light). */
+const shapeHeightM = (world: LevelWorld, xM: number, zM: number): number => world.heightM(xM, zM) - waterBedDropM(world, xM, zM);
 
-function surfaceColour(world: LevelWorld, xM: number, zM: number): readonly [number, number, number] {
-  const onGround = world.roadAt(xM, zM) !== undefined || world.def.surfaceZones.some((z) => pointInPolygon(xM, zM, z.polygon));
-  if (!onGround) return GROUND_COLOUR;
-  return SURFACE_COLOURS[world.surfaceIdAt(xM, zM)] ?? FALLBACK_COLOUR;
+/**
+ * What lies at a point: a road or surface patch id, or bare ground beyond them. The same answer as `world.surfaceIdAt` on
+ * the ground the roads and patches cover, in one pass (the terrain asks about every vertex and its ring, so this is hot).
+ */
+const surfaceOrGround = (world: LevelWorld) => {
+  const zones = world.def.surfaceZones;
+  return (xM: number, zM: number): string => {
+    let zone: string | undefined;
+    for (let i = zones.length - 1; i >= 0; i--) {
+      if (pointInPolygon(xM, zM, zones[i]!.polygon)) {
+        zone = zones[i]!.surfaceId;
+        break;
+      }
+    }
+    const near = world.roadAt(xM, zM);
+    if (near === undefined && zone === undefined) return BARE_GROUND;
+    if (world.waterDepthM(xM, zM) > 0) return 'sand'; // the riverbed
+    if (zone !== undefined) return zone;
+    const on = world.onRoadAt(xM, zM);
+    return on ? on.road.surfaceId : near!.road.runoffSurfaceId;
+  };
+};
+
+/** The surfaces around a point, blended over the fringe of about 1 m (SHOWCASE_PLAN §5). */
+const finders = new WeakMap<LevelWorld, (xM: number, zM: number) => string>();
+function finderOf(world: LevelWorld): (xM: number, zM: number) => string {
+  let find = finders.get(world);
+  if (!find) {
+    find = surfaceOrGround(world);
+    finders.set(world, find);
+  }
+  return find;
 }
+export function surfaceWeightsOf(world: LevelWorld, xM: number, zM: number): Weights {
+  return surfaceWeights(finderOf(world), xM, zM);
+}
+
+/** How far the ground is lifted (sand ripples) or dug (mud and ice lie in dips) at a point; the rover rides on it too. */
+export const groundOffsetOf = (world: LevelWorld, xM: number, zM: number): number => groundOffsetM(surfaceWeightsOf(world, xM, zM), xM, zM);
+
+/** The ground height as drawn: the physics height, with pools dug down, sand rippled and mud and ice in dips. */
+export const drawnHeightM = (world: LevelWorld, xM: number, zM: number): number => shapeHeightM(world, xM, zM) + groundOffsetOf(world, xM, zM);
+
+const COLOURS: Readonly<Record<string, readonly [number, number, number]>> = { ...SURFACE_COLOURS, [BARE_GROUND]: GROUND_COLOUR };
 
 /**
  * One tile as a grid of (n+1)² vertices, x-major: index = i·(n+1) + j for x = x0 + i·cell and physics z = z0 + j·cell.
@@ -87,17 +127,35 @@ export function buildTerrainTile(world: LevelWorld, ix: number, iz: number, cell
   const normals = new Float32Array(count * 3);
   const colours = new Float32Array(count * 3);
   const probe = cellM / 2;
+  // What lies at each vertex and one ring of vertices round the tile. A vertex whose eight neighbours all lie on the same
+  // surface is plain ground of that surface: only the vertices beside an edge take the nine samples of the fringe. (No surface
+  // is narrower than a cell, which is how finely the ground is drawn anyway.)
+  const find = finderOf(world);
+  const side = n + 3;
+  const ids: string[] = new Array(side * side);
+  for (let i = -1; i <= n + 1; i++) for (let j = -1; j <= n + 1; j++) ids[(i + 1) * side + (j + 1)] = find(x0 + i * cellM, z0 + j * cellM);
+  const plain = new Map<string, Weights>();
   for (let i = 0; i <= n; i++) {
     for (let j = 0; j <= n; j++) {
       const x = x0 + i * cellM;
       const z = z0 + j * cellM;
       const k = i * (n + 1) + j;
-      positions.set([x, drawnHeightM(world, x, z), -z], k * 3);
-      const dhdx = (drawnHeightM(world, x + probe, z) - drawnHeightM(world, x - probe, z)) / (2 * probe);
-      const dhdz = (drawnHeightM(world, x, z + probe) - drawnHeightM(world, x, z - probe)) / (2 * probe);
+      const here = ids[(i + 1) * side + (j + 1)]!;
+      let uniform = true;
+      for (let di = -1; di <= 1 && uniform; di++) for (let dj = -1; dj <= 1; dj++) if (ids[(i + 1 + di) * side + (j + 1 + dj)] !== here) { uniform = false; break; }
+      let w: Weights;
+      if (uniform) {
+        w = plain.get(here) ?? new Map([[here, 1]]);
+        plain.set(here, w);
+      } else {
+        w = surfaceWeights(find, x, z);
+      }
+      positions.set([x, shapeHeightM(world, x, z) + groundOffsetM(w, x, z), -z], k * 3);
+      const dhdx = (shapeHeightM(world, x + probe, z) - shapeHeightM(world, x - probe, z)) / (2 * probe);
+      const dhdz = (shapeHeightM(world, x, z + probe) - shapeHeightM(world, x, z - probe)) / (2 * probe);
       const len = Math.hypot(dhdx, 1, dhdz);
       normals.set([-dhdx / len, 1 / len, dhdz / len], k * 3);
-      const base = surfaceColour(world, x, z);
+      const base = blendColour(w, COLOURS, FALLBACK_COLOUR);
       const shade = 0.94 + 0.12 * grain(x, z);
       colours.set([base[0] * shade, base[1] * shade, base[2] * shade], k * 3);
     }

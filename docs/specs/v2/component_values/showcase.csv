@@ -2,24 +2,32 @@
 "All values are provisional (chosen by Claude unless the Set by column says otherwise) and tuned in playtesting. 'planned' means the session that builds it has not run: R1 collisions, R2 Endless places, R3 Crash Site, R4 Scavenger and booster, R5 Geyser Canyon, R6 jumps and Crater Field, R7 Crossing and Iron Ridge."
 ,,,,,
 Group,Value,Number,Why,Set by,Status
-"Section 16","Normal bend radius","at least 62 m on rock, at least 100 m on sand","1.5 x the tightest bend all-terrain wheels hold at 18 m/s: 18^2 / (0.8 x 9.8) = 324 / 7.84 = 41.33 m; x 1.5 = 61.99 m","Claude, at k._muz's request",planned
+"Section 16","Normal bend radius","at least 62 m on rock, at least 100 m on sand","1.5 x the tightest bend all-terrain wheels hold at 18 m/s: 18^2 / (0.8 x 9.8) = 324 / 7.84 = 41.33 m; x 1.5 = 61.99 m","Claude, at k._muz's request",built for Endless (R2); levels planned
 "Section 16","The Ring","inner edge 25 m, outer edge 40 m, about 270 deg","The starting rover's best line, r* = v_max^2 / (mu_g k_g g) = 256 / 7.84 = 32.65 m, lies between the edges, so the build decides the line; safe speed on the inner edge = sqrt(0.8 x 9.8 x 25) = 14.00 m/s, below the 16 m/s top speed",Claude,planned
-"Section 16","Mud patch length","at most 12 m, after a straight approach so every build arrives at 14 m/s or more","The worst build (Heavy chassis, Spiked wheels, Small motor, 267 kg) slows at (700 - 2511.94) / 267 = -6.79 m/s2 and stops in 14.44 m from 14 m/s (recomputed with step() on 2026-10-21); the starting rover slows at only 1.095 m/s2",Claude,planned
+"Section 16","Mud patch length","at most 12 m, after a straight approach so every build arrives at 14 m/s or more","The worst build (Heavy chassis, Spiked wheels, Small motor, 267 kg) slows at (700 - 2511.94) / 267 = -6.79 m/s2 and stops in 14.44 m from 14 m/s (recomputed with step() on 2026-10-21); the starting rover slows at only 1.095 m/s2",Claude,built for Endless (R2); levels planned
 "Section 16","Booster","2500 N, up to 1.5 s, stops at top speed, once per level attempt, Shift, not in the air","See the booster check rows below. The booster itself was k._muz's idea; the numbers are Claude's","k._muz (idea); Claude (numbers)",planned
 "Section 16","Scavenger target","4-8% slower than the starting rover's clean best drive; tuned by hand with a visible start delay (scavengerStartDelayS, 0 by default)","One mistake loses to it; a clean drive wins",Claude,planned
 "Section 16","Scavenger fade","within 8 m, to 30% opacity","Never hides the road",Claude,planned
 "Section 16","Split gates","3-4 per level","Gap information without nagging",Claude,planned
-"Section 16","Pop-up life","1.5 s","Readable at speed",Claude,planned
-"Section 16","Caption card","4 s, first time per element per run, at most one on screen","One idea at a time",Claude,planned
-"Section 16","Camera kick","0.2 s","Felt, not disorienting",Claude,planned
-"Section 16","Ground colour fringe","1 m, noise-warped","Natural edges; the physics edge stays a simple polygon",Claude,planned
-"Section 16","Endless section length","at least 150 m","Long enough to feel like a place",Claude,planned
-"Section 16","Crash Site length","about 90 s","Keeps the demo rematch short",Claude,planned
+"Section 16","Pop-up life","1.5 s","Readable at speed",Claude,built (R2)
+"Section 16","Caption card","4 s, first time per element per run, at most one on screen","One idea at a time",Claude,built (R2)
+"Section 16","Camera kick","0.2 s","Felt, not disorienting",Claude,built (R2)
+"Section 16","Ground colour fringe","1 m, noise-warped","Natural edges; the physics edge stays a simple polygon",Claude,built (R2)
+"Section 16","Endless section length","at least 150 m","Long enough to feel like a place",Claude,built (R2)
+"Section 16","Crash Site length","about 90 s (90.8 s: the scripted starting-build drive; parS 105)","Keeps the demo rematch short",Claude,"Built (R3)"
 "Section 16","Crash cost target","3-6 s, by checkpoint placement","A mistake matters, but does not end the level",Claude,planned
 "Section 16","Kept unchanged","surfaces; gravity x 0.5 and x 2; boost pad 1200 N s; sandbag 40 kg at 10 and 30 m/s; water; magnets; crash moment 0.5 s","See levels.csv and inputs.csv",,"provisional (as before)"
 "Section 3","Level length, stars","90-150 s; 3 stars: reach the ship part, collect all 3 samples, beat the Scavenger; 3 samples per level",,k._muz,confirmed
 "Section 3","Levels","Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge","Each teaches one idea no other level teaches",k._muz,confirmed
-"Section 11","Endless sections","Rock Plain, Dune Sea, Frozen Flats, Clay Gully, Vent Run, Launcher Alley, Gravity Caves","Named places picked by the seeded random generator; difficulty still grows with distance",Claude,planned
+"Section 11","Endless sections","Rock Plain, Dune Sea, Frozen Flats, Clay Gully, Vent Run, Launcher Alley, Gravity Caves","Named places picked by the seeded random generator; difficulty still grows with distance",Claude,built (R2)
+"R2","Bend radius on mud and ice","at least 100 m on mud, at least 500 m on ice (run.minBendRadiusM)","The plan gives rock and sand. Same rule: 1.5 x v^2 / (mu_g g) with v = 18 m/s: mud (mu_g 0.5) 1.5 x 324 / 4.9 = 99.2 m; ice (mu_g 0.1) 1.5 x 324 / 0.98 = 495.9 m","Claude","built (R2)"
+"R2","Tightest weave in Endless","apexes 3.5 to 5.5 m off the middle, 28 to 52 m apart (the gentlest-fitting example: 4 m every 32 m, radius about 68 m; the section test checks every line against 62 m on rock and 100 m on sand)","Circle through three apexes at +4, -4, +4 m, 32 m apart: R = 68 m, above the 62 m of the rule","Claude","built (R2)"
+"R2","Gravity Caves rhythm","after every second field section (fieldChunksBetweenTunnels 2): the first at 360 m, then every 450 m","Kept from the demo (it was ""a tunnel every 250 m"" with 100 m chunks); sections are 150 m now","Claude","built (R2); see ROADMAP OI-22"
+"R2","Colour fringe: sampling","9 samples on a 0.45 m ring round a point moved by noise of at most 0.15 m, so the fringe is about 1 m wide","Works for any zone shape, and for the levels' roads as well as polygons","Claude","built (R2)"
+"R2","Dips and ripples","mud dips 0.10 m, ice 0.05 m; sand ripples 0.07 m high every 2.2 m","Shallow enough that the rover never looks to float; the physics stays flat","Claude","built (R2)"
+"R2","Ground cell","0.75 m on Graphics High, 1.5 m on Low","0.5 m cost about 50 ms to build a section (a hitch); 0.75 m takes a median 6.5 ms and at worst 27 ms in Node","Claude","built (R2); fps on Intel UHD not measured"
+"R2","Speed number after a hit or gain","red or green for 0.8 s","Section 10: ""speed drops in red""","Claude","built (R2)"
+"R2","Obstacle shape","a barrier at most 3.5 m on a side (outside the caves) is drawn as a boulder","Presentation only: the obstacle is still the box","Claude","built (R2)"
 ,,,,,
 "Booster checks, recomputed 2026-10-21 by S0 with the real step() (throttle held; booster 2500 N along the gear through externalForceN, up to 1.5 s, stopping early at top speed). 'Cold' = the throttle level is 0 when the booster fires, so it builds from 0 over 1.0 s. 'Primed' = the student was already holding W, so the throttle level is 1. The plan's numbers are the primed case.",,,,,
 Group,Check,Value,Why,Set by,Status
@@ -38,3 +46,10 @@ Group,Check,Value,Why,Set by,Status
 "Check (E45)","g = 4.9 m/s2","T = 1.690247 s; h = 1.749872 m; length = 26.1224 m",,hand,confirmed
 "Check (E45)","Stepping at 1/120 s, landing taken at the end of the first step with y <= 0 (not split inside the step)","g = 9.8: 102 steps = 0.8500 s, length 13.137 m. g = 4.9: 203 steps = 1.6917 s, length 26.144 m","The exact values above need the landing step split at the exact landing time, as step() already splits at v_max and at 0. Open question for R6: see Physics_Model_Spec_v2, Leaving the ground",hand and code-like loop,"planned (open for R6)"
 "Check (E46)","12 m/s into an edge","alpha = 30 deg: 12 cos 30 = 10.3923 m/s; alpha = 60 deg: 6.0000 m/s; alpha = 90 deg: 0",,hand,confirmed
+"R3","Report thresholds (levels.json report)","minGapS 0.5 s (smallest gap called a loss or a gain); minCauseS 0.3 s (shortest cause named)","Provisional, mine",Claude,"Built (R3)"
+"R3","Opening line on screen","8 s, or Enter or a click","Provisional, mine",Claude,"Built (R3)"
+"R3","Crash Site Ring","Radius 32.5 m, width 15 m (edges 25 m and 40 m), 270 deg, exit bend r 25 m, climb 270 m at 4 deg","Provisional, mine (the plan gives 25-40 m and about 270 deg)",Claude,"Built (R3)"
+"R3","Crash Site boulders","5 boulders, 2.4 m, at ring angle/radius 30/38, 56/27, 138/27, 205/27.5, 250/38","Provisional, mine",Claude,"Built (R3)"
+"R3","Crash Site checkpoints","cp-1 on the lead road 35 m before the fork; cp-2, cp-3, cp-4 on the Ring at 10, 88 and 165 deg","Provisional, mine",Claude,"Built (R3)"
+"R3","Crash Site stretch clean times (cleanS)","The Plain 33.4 s, The Dunes 16.89, The Run-up 11.83, The Ring 12.97, The Climb 15.73 (sum 90.8)","Provisional: the scripted pilot with the starting build; R4's Scavenger replaces it",Claude,"Built (R3)"
+"R3","Crash Site dune fork","Dunes: 260 m of sand; ridge: r 120 m, 26 deg, about 273 m (+13 m)","Provisional, mine; with these surface values 26 of 27 builds are faster on the dunes (ROADMAP OI-29)",Claude,"Built (R3)"

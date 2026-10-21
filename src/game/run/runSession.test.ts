@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
 import type { Content, RunChunk } from '../../content/index.ts';
+import { testChunk, type ChunkSpec } from '../../../tests/helpers/chunks.ts';
 import { constants, rover } from '../../../tests/helpers/physics.ts';
 import { createRunCourse } from './course.ts';
 import { createRunSession, type RunInputProvider } from './runSession.ts';
@@ -9,13 +10,13 @@ const close = (actual: number, expected: number) =>
   expect(Math.abs(actual - expected) / Math.abs(expected)).toBeLessThan(1e-9);
 
 const STRAIGHT: RunInputProvider = () => 0;
-const empty: RunChunk = { id: 'empty-a', difficulty: 1, lengthM: 100, tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [] };
+const SECTION_M = 100;
 
 /** A world whose every field chunk is the given template (two copies, so "never the same twice" still has a choice). */
-function worldOf(template: Partial<RunChunk>): Content {
-  const a: RunChunk = { ...empty, ...template, id: 'test-a' };
-  const b: RunChunk = { ...a, id: 'test-b' };
-  return { ...content, runChunks: { fieldChunks: [a, b], tunnel: { ...empty, id: 'test-tunnel', difficulty: 0, lengthM: 50 } } };
+function worldOf(template: ChunkSpec): Content {
+  const a: RunChunk = testChunk({ lengthM: SECTION_M, ...template, id: 'test-a' });
+  const b: RunChunk = testChunk({ lengthM: SECTION_M, ...template, id: 'test-b' });
+  return { ...content, runChunks: { fieldChunks: [a, b], tunnel: testChunk({ id: 'test-tunnel', lengthM: 50 }) } };
 }
 
 /** A seed whose first field chunk is not mirrored, so the z values in the template are as written. */
@@ -108,6 +109,26 @@ describe('crash', () => {
     expect(Math.abs(s.state.positionZM)).toBeLessThan(15 - 0.85 + 0.5); // the corner stays within the corridor edge at 15 m
     expect(s.state.speedMps).toBeGreaterThan(5);
     expect(s.state.positionXM).toBeGreaterThan(200);
+  });
+
+  it('a scrape is an event, once per contact: the speed before and after, and the angle to the wall (the pop-up "kept 10.4 of 12.0")', () => {
+    const s = session(worldOf({}), { initialState: { positionXM: 100, speedMps: 12, throttleLevel: 1, headingRad: (30 * Math.PI) / 180 } }, () => 0);
+    for (let i = 0; i < 600; i++) s.stepOnce();
+    const scrapes = eventsOf(s, 'scrape');
+    expect(scrapes.length).toBeGreaterThanOrEqual(1);
+    expect(scrapes.length).toBeLessThanOrEqual(2); // heading 30° into the left wall: one contact, then it runs along the wall
+    const first = scrapes[0]!;
+    expect(first.speedBeforeMps!).toBeGreaterThanOrEqual(12);
+    expect(first.speedAfterMps!).toBeLessThan(first.speedBeforeMps!);
+    expect(first.angleDeg!).toBeGreaterThan(0);
+    expect(first.angleDeg!).toBeLessThanOrEqual(90);
+    expect(s.ended).toBeUndefined();
+  });
+
+  it('driving straight along the open road records no scrape', () => {
+    const s = session(worldOf({}), { initialState: { positionXM: 100, speedMps: 16, throttleLevel: 1 } }, () => 0);
+    for (let i = 0; i < 300; i++) s.stepOnce();
+    expect(eventsOf(s, 'scrape')).toHaveLength(0);
   });
 
   it('a square-on hit on the wall stops the rover without ending the run', () => {
@@ -524,5 +545,63 @@ describe('the student drives (DECISIONS 2026-10-16)', () => {
     expect(a.driveSent).toEqual(b.driveSent);
     expect(a.score).toBe(b.score);
     expect(a.stats.brakeUsed).toBe(true);
+  });
+});
+
+describe('places (R2)', () => {
+  it('knows the section the rover is in and its name', () => {
+    const s = session(worldOf({}));
+    expect(s.section.place).toBe('start');
+    s.stepOnce();
+    expect(s.section.name).toBe('Start');
+    const inside = session(worldOf({}), { initialState: { positionXM: 70 } });
+    expect(inside.section.id).toMatch(/^test-/);
+    expect(inside.section.startXM).toBe(60);
+  });
+
+  it('devSkipTo puts the rover on the line of a place at a speed, for the developer keys', () => {
+    const s = session(worldOf({}));
+    s.devSkipTo(210, 12);
+    expect(s.state.positionXM).toBe(210);
+    expect(s.state.positionZM).toBe(0);
+    expect(s.state.speedMps).toBe(12);
+    expect(s.section.startXM).toBe(160);
+    for (let i = 0; i < 30; i++) s.stepOnce();
+    expect(s.state.positionXM).toBeGreaterThan(210);
+    s.devSkipTo(300, 10, 3); // into a lane, for the screenshots
+    expect(s.state.positionZM).toBe(3);
+    expect(s.state.headingRad).toBe(0);
+  });
+});
+
+describe('cannons wake and charge', () => {
+  it('a head-on cannon is awake once the rover is within its trigger distance, not before', () => {
+    const world = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 0 }] });
+    const probe = session(world);
+    probe.course.ensureAhead(300);
+    const id = probe.course.chunks[1]!.cannons[0]!.id;
+    probe.stepOnce();
+    expect(probe.cannonAwake(id)).toBe(false);
+    // The cannon stands at 60 + 98 = 158 and wakes 90 m before it, at x = 68.
+    const near = session(world, { initialState: { positionXM: 70, speedMps: 10, throttleLevel: 1 } });
+    near.stepOnce();
+    expect(near.cannonAwake(id)).toBe(true);
+    const short = session(world, { initialState: { positionXM: 60, speedMps: 5, throttleLevel: 1 } });
+    short.stepOnce();
+    expect(short.cannonAwake(id)).toBe(false);
+  });
+});
+
+describe('events carry the numbers the pop-ups need (R2)', () => {
+  it('a real run onto ice, sand and mud gives pop-ups with hand-worked numbers', async () => {
+    const { popupForRunEvent } = await import('../popups.ts');
+    const world = worldOf({ tiles: [{ surfaceId: 'ice', xM: [20, 40], zM: [-15, 15] }, { surfaceId: 'sand', xM: [50, 70], zM: [-15, 15] }, { surfaceId: 'mud', xM: [80, 90], zM: [-15, 15] }] });
+    const s = session(world, { initialState: { positionXM: 60, speedMps: 16, throttleLevel: 1 } });
+    runUntil(s, () => eventsOf(s, 'ice').length > 0 && eventsOf(s, 'sand').length > 0 && eventsOf(s, 'mud').length > 0, 6000);
+    const ctx = { massKg: 209, motorForceN: 1000, rockRollingMu: 0.02, unit: 'mps' as const };
+    // F_lim on ice = 0.1 × 1 × 209 × 9.8 = 204.82 N
+    expect(popupForRunEvent(eventsOf(s, 'ice')[0]!, ctx)!.text).toBe('Ice: your grip is only 205 N');
+    expect(popupForRunEvent(eventsOf(s, 'sand')[0]!, ctx)!.text).toBe('Sand: rolling friction 246 N, 0.98 m/s² more slowing than rock');
+    expect(popupForRunEvent(eventsOf(s, 'mud')[0]!, ctx)!.text).toBe("Mud: rolling friction 1229 N, more than your motor's 1000 N: carry speed in");
   });
 });

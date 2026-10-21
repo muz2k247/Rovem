@@ -16,6 +16,8 @@ export interface LandmarkOptions {
   /** The label over a gravity zone, e.g. `g = 4.9 m/s²`. */
   gravityLabel: (kind: GravityKind) => string;
   bagRadiusM: number;
+  /** The level ends at a ship part (Showcase): a crate of it stands in the beacon. */
+  shipPart?: boolean;
 }
 
 export interface LandmarkState {
@@ -90,9 +92,29 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
   // Barriers: orange blocks with a pale band.
   const barrierMaterial = own(mat(0xe0703c));
   const bandMaterial = own(mat(0xf1f1ec));
+  const rockMaterial = own(mat(0x7d5c49));
+  const rockDarkMaterial = own(mat(0x5c4336));
+  const rockGeometry = own(new THREE.IcosahedronGeometry(1, 1));
   for (const b of def.barriers) {
     const root = new THREE.Group();
     root.name = 'barrier';
+    if (b.look === 'boulder') {
+      // A boulder: a lumpy rock with a smaller one leaning on it, the size of the box the physics uses.
+      const main = new THREE.Mesh(rockGeometry, rockMaterial);
+      main.scale.set(b.lengthM * 0.55, 0.9, b.widthM * 0.55);
+      main.position.y = 0.55;
+      main.rotation.set(0.3, b.xM * 0.7, 0.2);
+      main.castShadow = true;
+      const small = new THREE.Mesh(rockGeometry, rockDarkMaterial);
+      small.scale.set(b.lengthM * 0.25, 0.45, b.widthM * 0.28);
+      small.position.set(b.lengthM * 0.3, 0.3, -b.widthM * 0.3);
+      small.rotation.set(0.1, b.zM * 0.9, 0.4);
+      root.add(main, small);
+      root.rotation.y = (b.headingDeg * Math.PI) / 180;
+      place(root, b.xM, b.zM);
+      group.add(root);
+      continue;
+    }
     const body = new THREE.Mesh(own(new THREE.BoxGeometry(b.lengthM, 1.2, b.widthM)), barrierMaterial);
     body.position.y = 0.6;
     body.castShadow = true;
@@ -206,6 +228,7 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
   const beamMaterial = own(new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
   const finishRoot = new THREE.Group();
   finishRoot.name = 'finish';
+  let finishCrate: THREE.Group | undefined;
   {
     const f = def.finish;
     const heading = roadHeadingAt(f.xM, f.zM, 0);
@@ -226,6 +249,21 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.08;
     finishRoot.add(ring);
+    if (options.shipPart) {
+      // The ship part: a dented grey crate with glowing cyan bands, hovering inside the arch.
+      const crate = new THREE.Group();
+      const shell = new THREE.Mesh(own(new THREE.BoxGeometry(1.9, 1.1, 1.1)), own(mat(0x8a95a8, { metalness: 0.5, roughness: 0.55 })));
+      const bandMaterial = own(mat(0x63c7e6, { emissive: 0x63c7e6, emissiveIntensity: 1.1 }));
+      for (const x of [-0.55, 0.55]) {
+        const band = new THREE.Mesh(own(new THREE.BoxGeometry(0.16, 1.18, 1.18)), bandMaterial);
+        band.position.x = x;
+        crate.add(band);
+      }
+      crate.add(shell);
+      crate.position.y = 1.7;
+      finishCrate = crate;
+      finishRoot.add(crate);
+    }
     const beam = new THREE.Mesh(own(new THREE.CylinderGeometry(0.6, 1.2, 60, 14, 1, true)), beamMaterial);
     beam.position.y = 30;
     finishRoot.add(beam);
@@ -350,6 +388,10 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
         for (const part of c.parts) part.material = lit ? litMaterial : dimMaterial;
       }
       finishRoot.children[finishRoot.children.length - 1]!.scale.set(1 + 0.08 * Math.sin(s.timeS * 3), 1, 1 + 0.08 * Math.sin(s.timeS * 3));
+      if (finishCrate) {
+        finishCrate.rotation.y = s.timeS * 0.8;
+        finishCrate.position.y = 1.7 + 0.15 * Math.sin(s.timeS * 2);
+      }
       beamMaterial.opacity = 0.24 + 0.06 * Math.sin(s.timeS * 2.2);
       // Sandbags: brown balls that drop from the barrel to the ground over the first few metres.
       const live = new Set<string>();

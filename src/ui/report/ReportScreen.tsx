@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import type { ReportModel, TryThisAction } from "../../game/contracts.ts";
 import type { SpeedUnit } from "../../game/run/feedback.ts";
 import { Stars } from "../Stars.tsx";
+import { levelText } from "../../game/level/text.ts";
 import { ReportCards } from "./ReportCards.tsx";
+import { StretchStrip } from "./StretchStrip.tsx";
 import { SpeedGraph } from "./SpeedGraph.tsx";
 import "./report.css";
 
@@ -35,6 +37,12 @@ export function ReportScreen({
     <div className="report-backdrop">
       <div className="report-screen" role="dialog" aria-label="Report">
         <h2>{title}</h2>
+        {model.pickup && (
+          <section className="part-pickup" aria-label="Ship part recovered">
+            <strong>{levelText.ship.recoveredTitle.replace("{name}", model.pickup.partName)}</strong>
+            <p>{model.pickup.line}</p>
+          </section>
+        )}
         <div className="report-main">
           <div className="report-result">
             {result.kind === "level" ? (
@@ -59,6 +67,9 @@ export function ReportScreen({
           />
         </div>
         <div className="report-side">
+          {model.stretches && model.stretches.length > 0 && (
+            <StretchStrip stretches={model.stretches} explanation={model.explanation} legend={levelText.stretch.legend} />
+          )}
           <ReportCards cards={model.cards} />
           {tryThis && (
             <div className="try-this">

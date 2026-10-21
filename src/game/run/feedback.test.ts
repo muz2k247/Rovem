@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
 import type { EventKind } from '../../content/index.ts';
+import { testChunk, type ChunkSpec } from '../../../tests/helpers/chunks.ts';
 import { constants, rover } from '../../../tests/helpers/physics.ts';
 import type { Content } from '../../content/index.ts';
 import { createRunSession, type RunEnd, type RunEvent, type RunStats } from './runSession.ts';
-import {
-  buildReport, captionMain, emptyFeed, pushCaption, reportEffects, tryThisLine, visibleCaptions, speedText, workedLine,
-  type CaptionFeed,
-} from './feedback.ts';
+import { buildReport, reportEffects, tryThisLine, speedText, workedLine } from './feedback.ts';
 
 const text = content.runText;
-const none = new Set<EventKind>();
 const boost = (t: number, from = 16, to = 21.741627): RunEvent => ({
   kind: 'boost', timeS: t, xM: 0, speedBeforeMps: from, speedAfterMps: to, massKg: 209, impulseNs: 1200,
 });
@@ -21,30 +18,6 @@ const stats = (over: Partial<RunStats> = {}): RunStats => ({
 });
 const FITTED = { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' };
 
-describe('caption main lines (A7)', () => {
-  it('matches the examples in the plan', () => {
-    const m = (e: RunEvent) => captionMain(e, 'mps');
-    expect(m({ kind: 'mud', timeS: 0, xM: 0, frictionN: 1228.92 })).toBe('Mud · friction 1229 N');
-    expect(m(boost(0))).toBe('Boost · 16.00 → 21.74 m/s');
-    expect(m({ kind: 'headOnHit', timeS: 0, xM: 0, speedBeforeMps: 16, speedAfterMps: 11.823293 })).toBe('Sandbag hit · 16.00 → 11.82 m/s');
-    expect(m({ kind: 'kickerHit', timeS: 0, xM: 0, speedBeforeMps: 16, speedAfterMps: 18.248996 })).toBe('Kicker hit · 16.00 → 18.25 m/s');
-    expect(m({ kind: 'gravity', timeS: 0, xM: 0, gravityMultiplier: 2, weightN: 4096.4 })).toBe('Gravity ×2 · weight 4096 N');
-    expect(m({ kind: 'slip', timeS: 0, xM: 0, gripN: 512.05 })).toBe('Wheels slipping · grip 512 N');
-    expect(m({ kind: 'aboveTopSpeed', timeS: 0, xM: 0 })).toBe("Above top speed · motor can't push");
-    expect(m({ kind: 'crash', timeS: 0, xM: 0 })).toBeUndefined();
-  });
-
-  it('slide: the tyres\' limit in °/s', () => {
-    const slide: RunEvent = { kind: 'slide', timeS: 0, xM: 0, turnLimitRadPerS: 0.49 };
-    expect(captionMain(slide, 'mps')).toBe('Sliding · tyres bend your path 28°/s at most');
-  });
-
-  it('shows km/h with 2 decimals when chosen (km/h = m/s × 3.6)', () => {
-    expect(speedText(16, 'kmh')).toBe('57.60 km/h');
-    expect(captionMain(boost(0), 'kmh')).toBe('Boost · 57.60 → 78.27 km/h');
-  });
-});
-
 // The worked formulas use the student's own numbers (DECISIONS 2026-10-16). Values are the A5 hand-checks.
 const hit = (kind: 'headOnHit' | 'kickerHit', u1: number, u2: number, result: number): RunEvent => ({
   kind, timeS: 0, xM: 0, speedBeforeMps: Math.abs(u1), speedAfterMps: Math.abs(result),
@@ -52,6 +25,13 @@ const hit = (kind: 'headOnHit' | 'kickerHit', u1: number, u2: number, result: nu
 });
 const surfaceEvent = (kind: 'mud' | 'sand' | 'ice', mu: number, k: number, g: number): RunEvent => ({
   kind, timeS: 0, xM: 0, massKg: 209, gravityMps2: g, surfaceRolling: mu, wheelRolling: k, frictionN: mu * k * 209 * g,
+});
+
+describe('speeds with their unit', () => {
+  it('shows km/h with 2 decimals when chosen (km/h = m/s × 3.6)', () => {
+    expect(speedText(16, 'mps')).toBe('16.00 m/s');
+    expect(speedText(16, 'kmh')).toBe('57.60 km/h');
+  });
 });
 
 describe('worked formulas', () => {
@@ -117,102 +97,6 @@ describe('worked formulas', () => {
     const line = workedLine(hit('headOnHit', 16, -10, 11.823293), 'kmh')!;
     expect(line.endsWith('v = 11.82 m/s  (formulas use m/s)')).toBe(true);
     expect(workedLine(surfaceEvent('mud', 0.6, 1, 9.8), 'kmh')).toBe('Friction = 0.6 × 1 × 209 × 9.8 = 1229 N');
-  });
-});
-
-describe('caption feed', () => {
-  const add = (feed: CaptionFeed, e: RunEvent, t: number, seen: ReadonlySet<EventKind> = none) =>
-    pushCaption(feed, e, t, { seenKinds: seen, unit: 'mps' });
-
-  it('the first time a kind is seen it lasts 8 s and carries the worked formula; later it lasts 4 s without', () => {
-    const first = add(emptyFeed, boost(0), 0);
-    expect(first.firstTime).toBe(true);
-    const c = first.feed.captions[0]!;
-    expect(c.worked).toBe('Δv = 1200 ÷ 209 = 5.74 m/s');
-    expect(visibleCaptions(first.feed, 7.9)).toHaveLength(1);
-    expect(visibleCaptions(first.feed, 8)).toHaveLength(0);
-    const later = add(emptyFeed, boost(0), 0, new Set<EventKind>(['boost']));
-    expect(later.firstTime).toBe(false);
-    expect(later.feed.captions[0]!.worked).toBeUndefined();
-    expect(visibleCaptions(later.feed, 3.99)).toHaveLength(1);
-    expect(visibleCaptions(later.feed, 4)).toHaveLength(0);
-  });
-
-  it('merges the same kind within 3 s into "×n" with the latest numbers, and keeps the clock running from the latest', () => {
-    const seen = new Set<EventKind>(['boost']);
-    let r = add(emptyFeed, boost(0, 16, 21.74), 0, seen);
-    r = add(r.feed, boost(2.5, 17, 22.74), 2.5, seen);
-    r = add(r.feed, boost(5.5, 18, 23.74), 5.5, seen);
-    const [c] = visibleCaptions(r.feed, 5.6);
-    expect(r.feed.captions).toHaveLength(1);
-    expect(c!.count).toBe(3);
-    expect(c!.label).toBe('Boost · 18.00 → 23.74 m/s ×3');
-    expect(visibleCaptions(r.feed, 9.4)).toHaveLength(1);
-    expect(visibleCaptions(r.feed, 9.5)).toHaveLength(0);
-  });
-
-  it('merged hits show the total: "6 hits · 16.00 → 0.91 m/s", and the formula stays the first hit\'s', () => {
-    const seen = new Set<EventKind>(['headOnHit']);
-    let u = 16;
-    let r = { feed: emptyFeed, firstTime: false };
-    for (let i = 0; i < 6; i++) {
-      const next = (209 * u - 40 * 10) / 249;
-      r = add(r.feed, hit('headOnHit', u, -10, next), i * 0.5, seen);
-      u = next;
-    }
-    const [c] = visibleCaptions(r.feed, 3);
-    expect(r.feed.captions).toHaveLength(1);
-    expect(c!.count).toBe(6);
-    expect(c!.label).toBe('6 hits · 16.00 → 0.91 m/s'); // each bag takes 40 kg × 10 m/s of momentum
-    const first = add(emptyFeed, hit('headOnHit', 16, -10, 11.823293), 0);
-    const merged = add(first.feed, hit('headOnHit', 11.823293, -10, 8.5), 1);
-    expect(merged.feed.captions[0]!.worked).toBe('209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s');
-  });
-
-  it('one hit reads as a single hit, a second makes "2 hits", and kicker hits add up too', () => {
-    const seen = new Set<EventKind>(['headOnHit', 'kickerHit']);
-    let r = add(emptyFeed, hit('headOnHit', 16, -10, 11.82), 0, seen);
-    expect(r.feed.captions[0]!.label).toBe('Sandbag hit · 16.00 → 11.82 m/s');
-    r = add(r.feed, hit('headOnHit', 11.82, -10, 7.73), 1, seen);
-    expect(r.feed.captions[0]!.label).toBe('2 hits · 16.00 → 7.73 m/s');
-    let k = add(emptyFeed, hit('kickerHit', 16, 30, 18.25), 0, seen);
-    k = add(k.feed, hit('kickerHit', 18.25, 30, 20.3), 1, seen);
-    expect(k.feed.captions[0]!.label).toBe('2 hits · 16.00 → 20.30 m/s');
-  });
-
-  it('every caption is one line: no line break, and the main line and the formula each fit 60 characters', () => {
-    const gravity: RunEvent = { kind: 'gravity', timeS: 0, xM: 0, massKg: 209, gravityMps2: 19.6, weightN: 4096.4, gravityMultiplier: 2 };
-    for (const e of [surfaceEvent('mud', 0.6, 1, 9.8), boost(0), hit('headOnHit', 16, -10, 11.82), gravity]) {
-      const c = add(emptyFeed, e, 0).feed.captions[0]!;
-      for (const line of [c.label, c.worked ?? '']) {
-        expect(line).not.toContain('\n');
-        expect(line.length).toBeLessThanOrEqual(60);
-      }
-    }
-  });
-
-  it('does not merge after 3 s', () => {
-    const seen = new Set<EventKind>(['boost']);
-    let r = add(emptyFeed, boost(0), 0, seen);
-    r = add(r.feed, boost(3.01), 3.01, seen);
-    expect(visibleCaptions(r.feed, 3.02)).toHaveLength(2);
-  });
-
-  it('shows at most 3, newest on top, and drops expired ones', () => {
-    const seen = new Set<EventKind>(['boost', 'mud', 'slip', 'gravity']);
-    let r = add(emptyFeed, boost(0), 0, seen);
-    r = add(r.feed, { kind: 'mud', timeS: 0.5, xM: 0, frictionN: 1229 }, 0.5, seen);
-    r = add(r.feed, { kind: 'slip', timeS: 1, xM: 0, gripN: 512 }, 1, seen);
-    r = add(r.feed, { kind: 'gravity', timeS: 1.5, xM: 0, gravityMultiplier: 2, weightN: 4096 }, 1.5, seen);
-    const v = visibleCaptions(r.feed, 1.6);
-    expect(v.map((c) => c.kind)).toEqual(['gravity', 'slip', 'mud']);
-    expect(visibleCaptions(r.feed, 4.6).map((c) => c.kind)).toEqual(['gravity', 'slip']); // boost (0 + 4 s) and mud (0.5 + 4 s) are gone
-  });
-
-  it('events that end a run make no caption', () => {
-    const r = add(emptyFeed, { kind: 'crash', timeS: 1, xM: 0 }, 1);
-    expect(r.feed.captions).toHaveLength(0);
-    expect(r.firstTime).toBe(false);
   });
 });
 
@@ -354,10 +238,9 @@ describe('buildReport', () => {
 });
 
 describe('a real run feeds the report', () => {
-  const chunk = (over: object, id: string) => ({ id, difficulty: 1, lengthM: 100, tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [], ...over });
-  const worldWith = (over: object) => ({
+  const worldWith = (over: ChunkSpec) => ({
     ...content,
-    runChunks: { fieldChunks: [chunk(over, 'a'), chunk(over, 'b')], tunnel: { ...chunk({}, 't'), difficulty: 0, lengthM: 50 } },
+    runChunks: { fieldChunks: [testChunk({ lengthM: 100, ...over, id: 'a' }), testChunk({ lengthM: 100, ...over, id: 'b' })], tunnel: testChunk({ id: 't', lengthM: 50 }) },
   });
   const firstWorked = (s: ReturnType<typeof createRunSession>, kind: EventKind) => workedLine(s.stats.firstEvents[kind]!, 'mps');
   const drive = (world: Content, stop: (s: ReturnType<typeof createRunSession>) => boolean, initialState = {}) => {
@@ -378,8 +261,8 @@ describe('a real run feeds the report', () => {
   });
 
   it('a run that ends stuck in mud counts the patch it died in', () => {
-    const mudChunk = { id: 'mud-a', difficulty: 1, lengthM: 100, tiles: [{ surfaceId: 'mud', xM: [0, 100] as [number, number], zM: [-15, 15] as [number, number] }], barriers: [], boostPads: [], cannons: [], gravityZones: [] };
-    const world = { ...content, runChunks: { fieldChunks: [mudChunk, { ...mudChunk, id: 'mud-b' }], tunnel: { ...mudChunk, id: 't', difficulty: 0, tiles: [] } } };
+    const mud: ChunkSpec = { lengthM: 100, tiles: [{ surfaceId: 'mud', xM: [0, 100], zM: [-15, 15] }] };
+    const world = { ...content, runChunks: { fieldChunks: [testChunk({ ...mud, id: 'mud-a' }), testChunk({ ...mud, id: 'mud-b' })], tunnel: testChunk({ id: 't', lengthM: 50 }) } };
     const s = createRunSession({ content: world, rover: rover(), constants, seed: 1, input: () => 0, initialState: { positionXM: 100, speedMps: 3, throttleLevel: 1 } });
     for (let i = 0; i < 2000 && !s.ended; i++) s.stepOnce();
     expect(s.ended?.cause).toBe('stuck');

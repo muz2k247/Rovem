@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| FR-48 and FR-57 marked Built (2026-10-21, R2): the Endless places, pop-ups, cards, moments and colours | Session R2 | SHOWCASE_PLAN §10–§12, DECISIONS 2026-10-21 (R2) |
 | FR-51 (collisions) marked Built; the stops of the Game v4 level files marked removed (2026-10-21, R1) | Session R1 | E46, SHOWCASE_PLAN §4–§5 |
 | The game is five levels as natural places plus Endless; the story is a crashed ship; each level ends at a ship part; the Scavenger rival replaces par. Sections 1.1–1.3, 3.1, 3.5 rewritten | Showcase round | E35, E37, DECISIONS 2026-10-17, 2026-10-18, 2026-10-21 |
 | Missions, questions, Knowledge, medals, hub, start grid, power-ups, tow line, prediction, accounts marked superseded or future; full text moved to the last section | Advisor ruled out multiple-choice questions; Game v4 replaced missions | E26, E37, E43, DECISIONS 2026-10-14, 2026-10-17 |
@@ -166,7 +167,7 @@ Until a level is rebuilt, its Game v4 file (`first-tracks` and the other six; DE
 | FR-54 | **The Scavenger.** Each level has a rival: a ghost replay of an honest scripted run on the same physics, with its own build and route, 4–8% slower than the starting rover's clean best, never colliding with the student. Beating it is the third star. Its tuning knob is a visible start delay. | Confirmed; *Planned*, R4 |
 | FR-55 | **The report after a level** shows time per stretch against the Scavenger, names the biggest loss and one cause the session actually recorded (never a guess), gives one "try" line, and after a retry compares with the previous run and names what changed. Only recorded causes are named; a crash is never blamed on the parts. | Confirmed; *Planned*, R3–R4 |
 | FR-56 | **The story.** A crashed ship, one part recovered per level, a one-line opening, a ship silhouette on level select that lights up recovered parts, and a launch ending after the last level. Fiction is presented with confidence, never with disclaimers. | Confirmed; *Planned*, R3 and R8 |
-| FR-57 | **Endless as places.** The Endless Canyon is made of named sections at least 150 m long: Rock Plain, Dune Sea, Frozen Flats, Clay Gully, Vent Run, Launcher Alley, Gravity Caves, picked by a seeded generator, with difficulty growing with distance. A crash ends the run. | Confirmed; *Planned*, R2 |
+| FR-57 | **Endless as places.** The Endless Canyon is made of named sections at least 150 m long: Rock Plain, Dune Sea, Frozen Flats, Clay Gully, Vent Run, Launcher Alley, Gravity Caves, picked by a seeded generator, with difficulty growing with distance. A crash ends the run. Each section has an entry post with its name, mud patches of at most 12 m with a bypass, and a line through it that avoids every obstacle and never bends tighter than the bend rule allows (62 m on rock, 100 m on sand). | Confirmed; *Built*, R2, 2026-10-21 (DECISIONS 2026-10-21 R2) |
 
 Superseded in this section: the three missions, the mission parameters table, FR-12, FR-13, FR-30, FR-31, FR-39 (last section).
 
@@ -174,7 +175,7 @@ Superseded in this section: the three missions, the mission parameters table, FR
 
 | ID | Requirement |
 |---|---|
-| FR-48 | During a run, the game shows only what teaches something at that moment: force arrows for the level's forces, one short caption with the student's number, and the net-force line while the speed changes. For each element: a warning (it is seen coming), a moment (sound, particles or camera) and a pop-up with the student's numbers. (E37; SHOWCASE_PLAN section 10) |
+| FR-48 | During a run, the game shows only what teaches something at that moment: force arrows for the level's forces, one short caption with the student's number, and the net-force line while the speed changes. For each element: a warning (it is seen coming), a moment (sound, particles or camera) and a pop-up with the student's numbers. A pop-up (1.5 s) stands beside the rover; a caption card (4 s) shows only the first time an element appears in a run and waits while the wheels are at the grip limit or the rover is in the air; at most one of these is on screen at a time. (E37; SHOWCASE_PLAN section 10; *Built*, R2, 2026-10-21, for Endless and the levels) |
 | FR-49 | After a run, the game shows a speed–time graph, up to three moments that mattered with the student's numbers and an optional worked formula, and one suggestion that can be tried at once. (E37; refined by FR-55 for levels) |
 | FR-14, FR-15, FR-16 | *Superseded by FR-48 and FR-49 (E37).* They asked for measured results, pre-written explanations and predictions beside results. |
 

@@ -8,7 +8,7 @@ A browser-based 3D game that teaches Grade 9 physics (the newest Punjab Textbook
 
 ## Current focus: the Showcase round
 
-Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0 (done) and R1–R8 are in the roadmap. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
+Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0, R1, R2 and R3 are done; R4–R8 are in the roadmap. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
 
 ## Base: Game v4, concept levels
 
@@ -16,15 +16,14 @@ After the advisor saw the demo (an endless canyon run), the game became **seven 
 
 | Level | What it teaches |
 |---|---|
-| First Tracks | friction and surfaces; the controls; choosing the faster route |
+| Crash Site | rolling friction on sand against rock; grip in a turn on the Ring; choosing the faster route (replaces First Tracks and Ring Road, R3) |
 | Push & Shove | momentum and impulse |
 | Crater Field | slopes; kinetic and potential energy |
 | Gravity Wells | mass and weight |
-| Ring Road | circular motion: every bend has a safe speed |
 | The Crossing | density, upthrust, pressure |
 | Polar Pass | magnetic poles and electromagnets |
 
-- Levels open in order and last 90–150 s, with forks, checkpoints and up to three stars each (reach the beacon, collect 3 samples, beat par). After the levels, Endless gets every element.
+- Levels open in order and last 90–150 s, with forks, checkpoints and up to three stars each (reach the beacon, collect 3 samples, beat par; revised 2026-10-21 to reach the part, collect 3 samples, beat the Scavenger). After the levels, Endless gets every element.
 - All parts (chassis, wheels, motor; three each) are open; the garage shows what each change does.
 - On screen, only what teaches something: force arrows for the level's forces, one short caption with the student's number, and the F = ma line while the speed changes. The report shows a speed–time graph and the moments that mattered, with the worked maths on request.
 - Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole and R returns to the last checkpoint.
@@ -82,7 +81,7 @@ npm run maps       # write a top-down SVG of every built level to docs/captures/
 npm run preview    # serve the built dist/ (run npm run build first)
 ```
 
-Open the game with `?unlock=all` added to the address to open every level (for demos; nothing is saved).
+Open the game with `?unlock=all` added to the address to open every level (for demos; nothing is saved). With `?dev=1` the builders' keys work: in a level T, Z, [ ], − =; in the Endless Canyon [ and ] jump to the previous and next place.
 
 Accounts (milestone M12, later) will need a `.env` file; copy `.env.example`. Only the Supabase URL and public anon key go in it. The service-role key never goes in the browser build.
 

@@ -505,6 +505,16 @@ describe('captions with the student’s numbers', () => {
     expect(s.hud.caption).toEqual({ title: 'Mud', line: 'Friction here: 1229 N. On asphalt: 41 N.' });
   });
 
+  it('with elementCaptions off the mud caption is left to the pop-up, but the event is still recorded and other captions stay (R2)', () => {
+    const mud = [{ surfaceId: 'mud', polygon: [{ xM: 30, zM: -6 }, { xM: 60, zM: -6 }, { xM: 60, zM: 6 }, { xM: 30, zM: 6 }] }];
+    const s = make({ surfaceZones: mud }, { elementCaptions: false });
+    until(s, () => s.events.some((e) => e.kind === 'surface'), 20);
+    expect(s.events.find((x) => x.kind === 'surface')!.frictionN).toBeCloseTo(0.6 * 209 * 9.8, 3);
+    expect(s.hud.caption?.title ?? '').not.toBe('Mud');
+    until(s, () => s.samplesCollected.length > 0, 20);
+    expect(s.hud.caption?.title).toBe('Sample 1 of 3'); // not an element: still captioned
+  });
+
   it('collecting a sample says "Sample 1 of 3"', () => {
     const s = make();
     until(s, () => s.samplesCollected.length > 0, 20);

@@ -19,6 +19,7 @@ import { selectArrows, worldDirection } from './arrows.ts';
 import { createCaptionQueue } from './captions.ts';
 import { createForceLine, type ForceTerm } from './forceLine.ts';
 import { buildLevelReport } from './report.ts';
+import { createStretchTracker, type StretchRecord, type StretchTracker } from './stretches.ts';
 import { fill, levelText, newtons, twoDecimals, type TokenValues } from './text.ts';
 import type { ForkLineDef, HintDef, LevelDef } from './types.ts';
 import { createLevelWorld, type LevelWorld } from './world.ts';
@@ -63,7 +64,16 @@ export interface LevelSessionOptions {
   /** Test hook: start from a different state (already fast, already in water ...). */
   initialState?: Partial<PhysicsState>;
   whatIf?: WhatIfOptions;
+  /**
+   * Show a caption when an element acts on the rover (mud, a vent, a launcher, a slope ...). Default true. The screen sets it
+   * false because pop-ups beside the rover and caption cards say the same, one at a time (SHOWCASE_PLAN §10); hints, samples,
+   * checkpoints, fork results and the crash messages stay.
+   */
+  elementCaptions?: boolean;
 }
+
+/** The captions an element's pop-up and card replace on screen (R2). The others (descent, rolling back, pressure, bend signs ...) stay. */
+const ELEMENT_CAPTION_IDS = /^(boost|surface-.+|gravity-.+|slip|slope-up|slide|water-in|float|magnet-attract|magnet-repel|hit-.+)$/;
 
 export type LevelPhase = 'driving' | 'respawning' | 'finished' | 'ended';
 export type RespawnCause = 'crash' | 'stuck' | 'floated' | 'manual';
@@ -202,6 +212,15 @@ export function createLevelSession(options: LevelSessionOptions) {
   const maxDepthM = Math.max(...cfg.water.depthsM);
   const traceEvery = Math.round(SPEED_TRACE_STEP_S / dtS);
   const quiet = whatIf !== undefined; // a what-if drive keeps no captions, hints, samples or forks
+  const elementCaptions = options.elementCaptions ?? true;
+
+  // Where each stretch after the first begins: the end of the route road it names, across the road and its run-off (P6).
+  const stretchGates: ForkLineDef[] = def.stretches.map((st) => {
+    const road = st.startsAfterRoad ? world.roadById(st.startsAfterRoad) : undefined;
+    return road
+      ? { xM: road.end.xM, zM: road.end.zM, headingDeg: road.end.headingDeg, widthM: road.widthM + 2 * road.runoffM }
+      : { xM: def.start.xM, zM: def.start.zM, headingDeg: def.start.headingDeg, widthM: 0 };
+  });
 
   const startHeadingRad = def.start.headingDeg * DEG;
   const startState = (): PhysicsState =>
@@ -230,6 +249,7 @@ export function createLevelSession(options: LevelSessionOptions) {
   let forks = new Map<string, ForkState>();
   let signsShown = new Set<string>();
   let hints: HintState[] = [];
+  let tracker: StretchTracker = createStretchTracker(quiet ? [] : def.stretches);
   let currentSurfaceId = 'asphalt';
   let currentZone: GravityKind | undefined;
   let wasSlipping = false;
@@ -268,11 +288,16 @@ export function createLevelSession(options: LevelSessionOptions) {
   function emit(e: Omit<LevelEvent, 'timeS' | 'xM' | 'zM'> & Partial<Pick<LevelEvent, 'xM' | 'zM'>>): LevelEvent {
     const event: LevelEvent = { timeS: clockS(), xM: state.positionXM, zM: state.positionZM, ...e };
     events.push(event);
+    if (event.kind === 'scrape') tracker.addScrape((event.speedBeforeMps ?? 0) - (event.speedAfterMps ?? 0));
+    else if (event.kind === 'respawn' && event.cause === 'crash') tracker.addCrash();
+    else if (event.kind === 'boost') tracker.addBoost();
+    else if (event.kind === 'hit') tracker.addHit((event.speedAfterMps ?? 0) - (event.speedBeforeMps ?? 0));
     return event;
   }
 
   function say(id: string, values: TokenValues, urgent = false, isDone?: () => boolean) {
     if (quiet) return;
+    if (!elementCaptions && ELEMENT_CAPTION_IDS.test(id)) return;
     const text = levelText.captions[id];
     if (!text) throw new Error(`Level text: no caption "${id}"`);
     queue.push({ title: fill(text.title, values), line: fill(text.line, values), ...(urgent ? { urgent } : {}), ...(isDone ? { isDone } : {}) }, clockS());
@@ -603,6 +628,22 @@ export function createLevelSession(options: LevelSessionOptions) {
     const front = { x: state.positionXM, z: state.positionZM };
     const centreNow = centreOf(state);
 
+    // Stretches: the next one begins when the front crosses its gate; the time, the grip limit, a roll back and the ground are counted in the one the rover is in.
+    if (!quiet && tracker.count > 0) {
+      const nextStretch = tracker.current + 1;
+      if (nextStretch < stretchGates.length && crossedForkLine(stretchGates[nextStretch]!, { x: prev.positionXM, z: prev.positionZM }, front)) {
+        tracker.enter(nextStretch, t, state.speedMps);
+      }
+      if ((next.slipping && !floating) || sliding) tracker.addGripLimit(dtS, q.gripLimitN);
+      if (state.rollingBack) tracker.addRollingBack(dtS);
+      const underId = world.surfaceIdAt(front.x, front.z);
+      tracker.addSurface(underId, dtS, underId === 'asphalt' ? undefined : () => {
+        const on = buildQuantities(rover, specs.get(underId)!, { gravityMps2: g }, { slopeRad: slopeGear, upthrustN: upN });
+        const rock = buildQuantities(rover, specs.get('asphalt')!, { gravityMps2: g }, { slopeRad: slopeGear, upthrustN: upN });
+        return { frictionN: on.rollingForceN, rockN: rock.rollingForceN };
+      });
+    }
+
     // Boost pads, then cannons.
     for (const pad of def.boosts) {
       if (usedPads.has(pad.id) || Math.hypot(front.x - pad.xM, front.z - pad.zM) > pad.radiusM) continue;
@@ -662,6 +703,7 @@ export function createLevelSession(options: LevelSessionOptions) {
       const flags: [boolean, boolean, boolean] = [true, collected.length === def.samples.length, t <= def.parS];
       result = { timeS: t, starFlags: flags, stars: flags.filter(Boolean).length as 0 | 1 | 2 | 3 };
       phase = 'finished';
+      tracker.finish(t, state.speedMps);
       emit({ kind: 'finish' });
       return;
     }
@@ -958,6 +1000,8 @@ export function createLevelSession(options: LevelSessionOptions) {
     forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), startSpeedMps: 0, done: false }]));
     hints = def.hints.map((h) => ({ def: h, shown: false, done: false }));
     deepShown = false;
+    tracker = createStretchTracker(quiet ? [] : def.stretches);
+    tracker.start(0);
     placeAt(def.start);
     state = { ...state, ...options.initialState };
     captionNow = null;
@@ -985,6 +1029,10 @@ export function createLevelSession(options: LevelSessionOptions) {
     },
     get samplesCollected(): string[] {
       return [...collected];
+    },
+    /** What the report compares, per stretch (P6): times, speeds in and out, and the causes recorded in each. */
+    get stretches(): StretchRecord[] {
+      return tracker.records(clockS());
     },
     get checkpointIndex(): number {
       return lastCheckpoint;
@@ -1050,7 +1098,11 @@ export function createLevelSession(options: LevelSessionOptions) {
       respawnNow('manual');
     },
     report(): ReportModel {
-      return buildLevelReport({ def, rover, result, events, trace, clockS: clockS(), text: levelText });
+      const flat = buildQuantities(rover, specs.get('asphalt')!, { gravityMps2: baseConstants.gravityMps2 }, { slopeRad: 0, upthrustN: 0 });
+      return buildLevelReport({
+        def, rover, result, events, trace, clockS: clockS(), text: levelText, stretches: tracker.records(clockS()), content,
+        partValues: { grip: newtons(flat.gripLimitN) },
+      });
     },
     stepOnce: onStep,
     /** Runs the steps that fit in one frame. Returns how many ran. */

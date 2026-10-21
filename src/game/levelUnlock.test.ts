@@ -42,7 +42,7 @@ describe('level unlocking (LEVELS_BUILD_PLAN A2)', () => {
     expect(isLevelUnlocked(ids, -1, emptyLevelProgress(), false)).toBe(false);
   });
 
-  it('opens Endless after First Tracks, not before', () => {
+  it('opens Endless after Crash Site, not before', () => {
     expect(isEndlessUnlocked(ids, emptyLevelProgress(), false)).toBe(false);
     expect(isEndlessUnlocked(ids, finish(emptyLevelProgress(), ids[1]!), false)).toBe(false); // level 2 alone does not do it
     expect(isEndlessUnlocked(ids, finish(emptyLevelProgress(), ids[0]!), false)).toBe(true);
@@ -92,11 +92,11 @@ describe('level summaries for the Levels screen (A3)', () => {
     let p = recordLevelResult(emptyLevelProgress(), ids[0]!, { stars: 2, timeS: 97.5 });
     p = finish(p, ids[1]!, 1);
     const rows = levelSummaries(levelCards.levels, p, false);
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(6); // Crash Site replaced First Tracks and Ring Road (R3)
     expect(rows[0]).toEqual({
       id: ids[0],
       number: 1,
-      name: 'First Tracks',
+      name: 'Crash Site',
       hook: levelCards.levels[0]!.hook,
       stars: 2,
       bestTimeS: 97.5,
@@ -109,10 +109,10 @@ describe('level summaries for the Levels screen (A3)', () => {
   });
 
   it('marks a level with no file as coming soon, even under the developer link', () => {
-    const built = new Set(ids.slice(0, 5));
+    const built = new Set(ids.slice(0, 4));
     const rows = levelSummaries(levelCards.levels, emptyLevelProgress(), true, built);
-    expect(rows.slice(0, 5).every((r) => r.comingSoon === undefined)).toBe(true);
-    expect(rows.slice(5).every((r) => r.comingSoon === true)).toBe(true);
+    expect(rows.slice(0, 4).every((r) => r.comingSoon === undefined)).toBe(true);
+    expect(rows.slice(4).every((r) => r.comingSoon === true)).toBe(true);
   });
 
   it('marks nothing locked under the developer link', () => {

@@ -2,16 +2,16 @@
   "placeholder": true,
   "levels": [
     {
-      "id": "first-tracks",
-      "name": "First Tracks",
-      "hook": "Two roads at every fork. Which is faster for your rover?",
-      "goal": "Reach the relay beacon at the end of the canyon.",
+      "id": "crash-site",
+      "name": "Crash Site",
+      "hook": "Dunes or the rock ridge? Then round the Ring. Your wheels decide.",
+      "goal": "Get the landing brakes from the far side of the crater.",
       "newHere": [
-        "Friction always pushes back against your motion, so a rover you let go of slows down.",
-        "Different ground grips differently: asphalt, sand, ice and mud.",
-        "A shorter road is not always the faster road. After each fork you see the time the other road would have taken."
+        "Some ground drags on your wheels more than other ground. Sand drags six times more than rock.",
+        "To go round a bend, your tyres must push you sideways. Go faster than your grip allows and you slide wide.",
+        "Two roads at the fork: the short way through the dunes, or the longer, firm ridge. Which is faster depends on your rover."
       ],
-      "diagram": "fork"
+      "diagram": "ring"
     },
     {
       "id": "push-and-shove",
@@ -48,18 +48,6 @@
         "A cannon hits just as hard in any field, because your mass did not change."
       ],
       "diagram": "lanes"
-    },
-    {
-      "id": "ring-road",
-      "name": "Ring Road",
-      "hook": "How fast can you take a bend before you slide?",
-      "goal": "Race down the canyon road to the beacon.",
-      "newHere": [
-        "To go round a bend, your tyres must push you sideways towards the centre.",
-        "Tyres can give only so much sideways push, so each bend has a safe speed.",
-        "Signs show each bend's radius and the safe speed for your rover."
-      ],
-      "diagram": "ring"
     },
     {
       "id": "the-crossing",
@@ -150,6 +138,53 @@
     "fork-crash": { "title": "Two roads", "sentence": "You took the {yourRoad} road in {yourS} s. At full throttle on the {otherRoad} road you would have {outcome}.", "maths": ["Same rover, same start, throttle held"] },
     "crash": { "title": "Crashes", "sentence": "You went back to a checkpoint {n} time(s) after a crash.", "maths": ["The clock kept running"] },
     "stuck": { "title": "Stuck", "sentence": "You got stuck {n} time(s): the ground held you with more force than the motor could give.", "maths": ["Stuck when the motor force is no more than friction plus the slope pull"] }
+  },
+  "elementCards": {
+    "slope": { "title": "Slope", "line": "A slope pulls a rover back with a force that grows with the steepness and with the weight. Your motor has to push harder than the pull to climb." },
+    "water": { "title": "Water", "line": "Water pushes up on anything in it. When that upthrust is bigger than the weight, the rover floats, and its wheels can no longer grip." },
+    "magnet": { "title": "Magnet", "line": "A magnet pulls or pushes without touching. Unlike poles attract and like poles repel." }
+  },
+  "stretch": {
+    "legend": "Against a clean drive (green: you were faster)",
+    "headlineLoss": "You lost {lostS} s on {name}.",
+    "headlineGain": "You gained {gainS} s on {name}.",
+    "headlineEven": "Every stretch was within {minGapS} s of a clean drive.",
+    "why": {
+      "crash": "You hit {obstacle}: back to the checkpoint.",
+      "hit": "A sandbag hit took {lostMps} m/s off your speed.",
+      "grip": "You were past your grip limit for {gripS} s: your wheels grip with up to {gripN} N.",
+      "scrape": "You scraped the wall {n} time(s) and lost {lostMps} m/s against it.",
+      "rollback": "You rolled backwards for {rollS} s: the slope pulled harder than your motor and friction could hold.",
+      "surface": "You spent {surfaceS} s on {surface}, where the ground pulls back with {frictionN} N. On rock it pulls back with {rockN} N.",
+      "fork": "You took the {yourRoad} road in {yourS} s. The {otherRoad} road would have taken {otherS} s.",
+      "none": "No crash, slide or wall scrape was recorded here. You went in at {inMps} m/s and came out at {outMps} m/s.",
+      "gain": "You went in at {inMps} m/s and came out at {outMps} m/s.",
+      "even": "Your times were close to a clean drive all the way."
+    },
+    "try": {
+      "crash": "Look for the gap between the boulders, and slow down before them.",
+      "hit": "Watch for the launcher turning, and slow down or speed up to meet the bag.",
+      "grip": "Try wheels with more grip, or a wider line.",
+      "scrape": "Start the turn earlier and keep clear of the wall.",
+      "rollback": "Try a stronger motor, or take more speed into the slope.",
+      "surface": "Try smoother wheels, which drag less on soft ground, or take the firm road.",
+      "fork": "At the fork, try the other road.",
+      "none": "Try a different line, or change one part, and see what changes.",
+      "even": "Try again and beat your time."
+    },
+    "obstacles": { "default": "an obstacle", "crash-site": "a boulder" },
+    "surfaces": { "sand": "sand", "mud": "mud", "ice": "ice" }
+  },
+  "ship": {
+    "openingLine": "Your ship came down hard. Five parts lie scattered across this red planet. Find them all.",
+    "recoveredTitle": "Part recovered: {name}",
+    "parts": [
+      { "levelId": "crash-site", "name": "Landing brakes", "built": true, "pickupLine": "On the Ring, grip gave you up to {grip} N of sideways force. These brakes use friction too: they stop the ship on the runway." },
+      { "levelId": "geyser-canyon", "name": "Thruster", "built": false, "pickupLine": "Each vent gave you {impulse} N·s of push. A thruster throws gas back, and the ship gains equal momentum forward." },
+      { "levelId": "crater-field", "name": "Lift engine", "built": false, "pickupLine": "In the Heavy Cave your weight was {weight} N, but your mass stayed {mass} kg. To lift off, this engine must push harder than the ship's weight." },
+      { "levelId": "the-crossing", "name": "Splashdown floats", "built": false, "pickupLine": "The river pushed up on you with {upthrust} N. On Earth, the capsule lands in the sea and floats for the same reason." },
+      { "levelId": "iron-ridge", "name": "Docking clamps", "built": false, "pickupLine": "You switched attract and repel to ride the pylons. These clamps are electromagnets: current on, they hold; current off, they let go." }
+    ]
   },
   "tryThis": {
     "float": "A heavier chassis sinks, so the tyres keep their grip on the riverbed.",

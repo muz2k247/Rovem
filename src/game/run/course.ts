@@ -1,19 +1,23 @@
-import type { CannonKind, Content, GravityKind, RectM, RunChunk } from '../../content/index.ts';
+import type { CannonKind, Content, GravityKind, PointM, RectM, RunChunk } from '../../content/index.ts';
 import type { EdgeContact } from '../../physics/collision.ts';
-import { footprintCorners, footprintOverlapsBox } from '../geometry.ts';
+import { footprintCorners, footprintOverlapsBox, pointInPolygon } from '../geometry.ts';
 import { mulberry32 } from './rng.ts';
 
 // The endless canyon (docs/DEMO_BUILD_PLAN.md A3). Game layer: no rendering, no physics.
 // Axes as everywhere: x forward along the canyon, z to the left, the corridor is |z| ≤ corridorHalfWidthM.
 
-export interface WorldTile extends RectM {
+/** A zone's shape in the world: the polygon the lookup uses, and its bounding box (a quick test before the polygon test). */
+export interface WorldShape extends RectM {
+  polygon: PointM[];
+}
+export interface WorldTile extends WorldShape {
   surfaceId: string;
 }
 export interface WorldPad extends RectM {
   /** Unique in the course, so the run can remember which pads are used. */
   id: string;
 }
-export interface WorldZone extends RectM {
+export interface WorldZone extends WorldShape {
   kind: GravityKind;
 }
 export interface WorldCannon {
@@ -23,12 +27,23 @@ export interface WorldCannon {
   zM: number;
 }
 
-/** One chunk placed in the world: offset by its start, and mirrored (z → −z) if `mirrored`. */
+/**
+ * One section placed in the world: offset by its start, and mirrored (z → −z) if `mirrored`. Every section after the warm-up
+ * is a named place (SHOWCASE_PLAN §11) with an entry post; "chunk" is the older name for the same thing.
+ */
 export interface CourseChunk {
   index: number;
   kind: 'warmUp' | 'field' | 'tunnel';
   /** The template id; "warm-up" for the opening stretch. */
   id: string;
+  /** The place id ("dune-sea"); "start" for the warm-up. */
+  place: string;
+  /** The place's name, shown on the entry post and in the HUD. */
+  name: string;
+  /** Where the entry post stands (world x); none for the warm-up. */
+  entryPostXM?: number;
+  /** A line through the section that avoids every obstacle (world coordinates, mirrored with the section). */
+  line: PointM[];
   startXM: number;
   endXM: number;
   mirrored: boolean;
@@ -46,6 +61,8 @@ export interface CourseChunk {
 export type BarrierHit = { kind: 'barrier'; atDivider?: boolean } | { kind: 'wall'; contact: EdgeContact };
 
 const contains = (r: RectM, xM: number, zM: number) => xM >= r.xM[0] && xM <= r.xM[1] && zM >= r.zM[0] && zM <= r.zM[1];
+/** Is the point inside the zone? The bounding box is the quick test; the polygon decides (P3: a rectangle is a 4-corner polygon). */
+const inShape = (s: WorldShape, xM: number, zM: number) => contains(s, xM, zM) && pointInPolygon(xM, zM, s.polygon);
 
 /** z → −z. Written so that 0 stays 0 and the from < to order is kept. */
 const mirrorRange = (z: [number, number]): [number, number] => [z[1] === 0 ? 0 : -z[1], z[0] === 0 ? 0 : -z[0]];
@@ -56,7 +73,7 @@ export function createRunCourse(content: Content, seed: number) {
   const halfWidthM = run.corridorHalfWidthM;
   const rng = mulberry32(seed);
   const chunks: CourseChunk[] = [];
-  let previousFieldId: string | undefined;
+  let previousFieldPlace: string | undefined;
   let fieldsSinceTunnel = 0;
 
   const place = (index: number, kind: 'field' | 'tunnel', t: RunChunk, startXM: number, mirrored: boolean): CourseChunk => {
@@ -64,14 +81,20 @@ export function createRunCourse(content: Content, seed: number) {
       xM: [startXM + r.xM[0], startXM + r.xM[1]],
       zM: mirrored ? mirrorRange(r.zM) : [r.zM[0], r.zM[1]],
     });
+    const pt = (p: PointM): PointM => ({ xM: startXM + p.xM, zM: mirrored && p.zM !== 0 ? -p.zM : p.zM });
+    const shape = (z: RectM & { polygon: PointM[] }): WorldShape => ({ ...x(z), polygon: z.polygon.map(pt) });
     return {
       index,
       kind,
       id: t.id,
+      place: t.place,
+      name: t.name,
+      entryPostXM: startXM + t.entryPostXM,
+      line: t.line.map(pt),
       startXM,
       endXM: startXM + t.lengthM,
       mirrored,
-      tiles: t.tiles.map((tile) => ({ ...x(tile), surfaceId: tile.surfaceId })),
+      tiles: t.tiles.map((tile) => ({ ...shape(tile), surfaceId: tile.surfaceId })),
       barriers: t.barriers.map(x),
       boostPads: t.boostPads.map((pad, i) => ({ ...x(pad), id: `${index}:pad${i}` })),
       cannons: t.cannons.map((c, i) => ({
@@ -80,7 +103,7 @@ export function createRunCourse(content: Content, seed: number) {
         xM: startXM + c.xM,
         zM: mirrored && c.zM !== 0 ? -c.zM : c.zM,
       })),
-      gravityZones: t.gravityZones.map((z) => ({ ...x(z), kind: z.kind })),
+      gravityZones: t.gravityZones.map((z) => ({ ...shape(z), kind: z.kind })),
     };
   };
 
@@ -92,7 +115,7 @@ export function createRunCourse(content: Content, seed: number) {
     const startXM = last ? last.endXM : 0;
     if (index === 0) {
       chunks.push({
-        index, kind: 'warmUp', id: 'warm-up', startXM, endXM: run.warmUpLengthM, mirrored: false,
+        index, kind: 'warmUp', id: 'warm-up', place: 'start', name: 'Start', line: [], startXM, endXM: run.warmUpLengthM, mirrored: false,
         tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [],
       });
       return;
@@ -102,12 +125,13 @@ export function createRunCourse(content: Content, seed: number) {
       fieldsSinceTunnel = 0;
       return;
     }
-    // Difficulty 1 from the first start, 2 from the second, 3 from the third; a harder level adds to the easier ones.
+    // Difficulty 1 from the first start, 2 from the second, 3 from the third; a harder section adds to the easier ones.
+    // A place is never used twice in a row, even at another difficulty.
     const allowed = run.difficultyStartsM.filter((from) => startXM >= from).length;
-    const candidates = fieldChunks.filter((c) => c.difficulty <= allowed && c.id !== previousFieldId);
+    const candidates = fieldChunks.filter((c) => c.difficulty <= allowed && c.place !== previousFieldPlace);
     const picked = candidates[Math.floor(rng() * candidates.length)]!;
     chunks.push(place(index, 'field', picked, startXM, rng() < 0.5));
-    previousFieldId = picked.id;
+    previousFieldPlace = picked.place;
     fieldsSinceTunnel += 1;
   };
 
@@ -138,11 +162,15 @@ export function createRunCourse(content: Content, seed: number) {
       while (chunks.length === 0 || chunks[chunks.length - 1]!.endXM < xM) addNext();
     },
     chunksInRange,
+    /** The section that covers x (the named place the rover is in), if it has been generated. */
+    sectionAt(xM: number): CourseChunk | undefined {
+      return chunkAt(xM);
+    },
     /** The surface at a point: the last tile that covers it (later tiles are drawn on top), else asphalt. */
     surfaceIdAt(xM: number, zM: number): string {
       const c = chunkAt(xM);
       if (c) {
-        for (let i = c.tiles.length - 1; i >= 0; i--) if (contains(c.tiles[i]!, xM, zM)) return c.tiles[i]!.surfaceId;
+        for (let i = c.tiles.length - 1; i >= 0; i--) if (inShape(c.tiles[i]!, xM, zM)) return c.tiles[i]!.surfaceId;
       }
       return 'asphalt';
     },
@@ -150,7 +178,7 @@ export function createRunCourse(content: Content, seed: number) {
     gravityKindAt(xM: number, zM: number): GravityKind | undefined {
       const c = chunkAt(xM);
       if (!c) return undefined;
-      for (let i = c.gravityZones.length - 1; i >= 0; i--) if (contains(c.gravityZones[i]!, xM, zM)) return c.gravityZones[i]!.kind;
+      for (let i = c.gravityZones.length - 1; i >= 0; i--) if (inShape(c.gravityZones[i]!, xM, zM)) return c.gravityZones[i]!.kind;
       return undefined;
     },
     /** Every gravity zone of the chunk that covers x (a tunnel has two, one per lane). */

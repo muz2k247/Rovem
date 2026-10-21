@@ -23,7 +23,7 @@ describe('the level map (npm run maps)', () => {
   }
 
   it('the picture box holds every road with its run-off', () => {
-    const def = loadLevelDef('first-tracks');
+    const def = loadLevelDef('crash-site');
     const world = createLevelWorld(def, content);
     const b = mapBounds(world);
     for (const road of world.roads) {

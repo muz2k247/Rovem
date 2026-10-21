@@ -5,6 +5,7 @@ import type {
   ChunkCannon,
   ChunkGravityZone,
   ChunkTile,
+  ChunkZoneShape,
   Constants,
   Content,
   GravityKind,
@@ -299,6 +300,9 @@ function run(raw: unknown): RunParams {
   if (d1 < 0 || !(d1 < d2 && d2 < d3)) fail(`${p}.difficultyStartsM`, 'must start at 0 or more and rise: difficulty 1, then 2, then 3');
   const between = num(o, 'fieldChunksBetweenTunnels', p, { positive: true });
   if (!Number.isInteger(between)) fail(`${p}.fieldChunksBetweenTunnels`, 'must be a whole number');
+  const bends = obj(o.minBendRadiusM, `${p}.minBendRadiusM`);
+  const minBendRadiusM: Record<string, number> = {};
+  for (const id of Object.keys(bends)) minBendRadiusM[id] = num(bends, id, `${p}.minBendRadiusM`, { positive: true });
   return {
     corridorHalfWidthM: num(o, 'corridorHalfWidthM', p, { positive: true }),
     warmUpLengthM: num(o, 'warmUpLengthM', p, { min: 0 }),
@@ -307,6 +311,9 @@ function run(raw: unknown): RunParams {
     drift: bool(o, 'drift', p),
     startWallXM: num(o, 'startWallXM', p, { max: 0 }),
     fieldChunksBetweenTunnels: between,
+    sectionMinLengthM: num(o, 'sectionMinLengthM', p, { positive: true }),
+    mudPatchMaxLengthM: num(o, 'mudPatchMaxLengthM', p, { positive: true }),
+    minBendRadiusM,
     difficultyStartsM: [d1, d2, d3],
     gravityMultipliers: {
       low: num(g, 'low', `${p}.gravityMultipliers`, { positive: true }),
@@ -339,24 +346,74 @@ function rect(raw: unknown, path: string, lengthM: number, halfWidthM: number): 
   return { xM, zM };
 }
 
-function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly string[], isTunnel: boolean): RunChunk {
+function chunkPoint(raw: unknown, path: string, lengthM: number, halfWidthM: number): PointM {
+  const o = obj(raw, path);
+  const xM = num(o, 'xM', path);
+  const zM = num(o, 'zM', path);
+  if (xM < 0 || xM > lengthM) fail(`${path}.xM`, `must lie inside the chunk (0 to ${lengthM} m)`);
+  if (Math.abs(zM) > halfWidthM) fail(`${path}.zM`, `must lie inside the corridor (±${halfWidthM} m)`);
+  return { xM, zM };
+}
+
+/**
+ * A ground or gravity zone: a rectangle (`xM`, `zM` ranges, so old data still loads) or a `polygon` of at least 3 points.
+ * Either way the result has the polygon, and the ranges are its bounding box (P3, SHOWCASE_PLAN §4).
+ */
+function zoneShape(raw: unknown, path: string, lengthM: number, halfWidthM: number): ChunkZoneShape {
+  const o = obj(raw, path);
+  if (o.polygon === undefined) {
+    const r = rect(raw, path, lengthM, halfWidthM);
+    const polygon: PointM[] = [
+      { xM: r.xM[0], zM: r.zM[0] },
+      { xM: r.xM[1], zM: r.zM[0] },
+      { xM: r.xM[1], zM: r.zM[1] },
+      { xM: r.xM[0], zM: r.zM[1] },
+    ];
+    return { ...r, polygon };
+  }
+  if (o.xM !== undefined || o.zM !== undefined) fail(path, 'give either xM and zM or a polygon, not both');
+  const points = arr(o.polygon, `${path}.polygon`);
+  if (points.length < 3) fail(`${path}.polygon`, 'needs at least 3 points');
+  const polygon = points.map((pt, i) => chunkPoint(pt, `${path}.polygon[${i}]`, lengthM, halfWidthM));
+  const xs = polygon.map((pt) => pt.xM);
+  const zs = polygon.map((pt) => pt.zM);
+  const xM: [number, number] = [Math.min(...xs), Math.max(...xs)];
+  const zM: [number, number] = [Math.min(...zs), Math.max(...zs)];
+  if (!(xM[0] < xM[1]) || !(zM[0] < zM[1])) fail(`${path}.polygon`, 'must cover some area');
+  return { xM, zM, polygon };
+}
+
+function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly string[]): RunChunk {
   const o = obj(raw, path);
   const lengthM = num(o, 'lengthM', path, { positive: true });
+  if (lengthM < run.sectionMinLengthM) fail(`${path}.lengthM`, `a section is at least ${run.sectionMinLengthM} m long`);
   const halfWidthM = run.corridorHalfWidthM;
-  let difficulty = 0;
-  if (!isTunnel) {
-    difficulty = num(o, 'difficulty', path);
-    if (![1, 2, 3].includes(difficulty)) fail(`${path}.difficulty`, 'must be 1, 2 or 3');
-  }
+  const difficulty = num(o, 'difficulty', path);
+  if (![1, 2, 3].includes(difficulty)) fail(`${path}.difficulty`, 'must be 1, 2 or 3');
+  const entryPostXM = num(o, 'entryPostXM', path, { min: 0 });
+  if (entryPostXM > lengthM) fail(`${path}.entryPostXM`, 'must lie inside the section');
+  const line = arr(o.line, `${path}.line`).map((item, i) => chunkPoint(item, `${path}.line[${i}]`, lengthM, halfWidthM));
+  if (line.length < 2) fail(`${path}.line`, 'needs at least 2 points');
+  for (let i = 1; i < line.length; i++) if (!(line[i]!.xM > line[i - 1]!.xM)) fail(`${path}.line[${i}].xM`, 'must be further on than the point before');
   const list = (key: string) => arr(o[key], `${path}.${key}`);
+  const tiles = list('tiles').map((item, i): ChunkTile => {
+    const tp = `${path}.tiles[${i}]`;
+    const shape = zoneShape(item, tp, lengthM, halfWidthM);
+    const surfaceId = oneOf(obj(item, tp), 'surfaceId', tp, surfaceIds);
+    if (surfaceId === 'mud' && shape.xM[1] - shape.xM[0] > run.mudPatchMaxLengthM) {
+      fail(tp, `a mud patch is at most ${run.mudPatchMaxLengthM} m long`);
+    }
+    return { ...shape, surfaceId };
+  });
   return {
     id: str(o, 'id', path),
+    place: str(o, 'place', path),
+    name: str(o, 'name', path),
     difficulty,
     lengthM,
-    tiles: list('tiles').map((item, i): ChunkTile => {
-      const tp = `${path}.tiles[${i}]`;
-      return { ...rect(item, tp, lengthM, halfWidthM), surfaceId: oneOf(obj(item, tp), 'surfaceId', tp, surfaceIds) };
-    }),
+    entryPostXM,
+    line,
+    tiles,
     barriers: list('barriers').map((item, i) => rect(item, `${path}.barriers[${i}]`, lengthM, halfWidthM)),
     boostPads: list('boostPads').map((item, i) => rect(item, `${path}.boostPads[${i}]`, lengthM, halfWidthM)),
     cannons: list('cannons').map((item, i): ChunkCannon => {
@@ -371,7 +428,7 @@ function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly 
     }),
     gravityZones: list('gravityZones').map((item, i): ChunkGravityZone => {
       const zp = `${path}.gravityZones[${i}]`;
-      return { ...rect(item, zp, lengthM, halfWidthM), kind: oneOf(obj(item, zp), 'kind', zp, GRAVITY_KINDS) as GravityKind };
+      return { ...zoneShape(item, zp, lengthM, halfWidthM), kind: oneOf(obj(item, zp), 'kind', zp, GRAVITY_KINDS) as GravityKind };
     }),
   };
 }
@@ -382,14 +439,14 @@ const GRAVITY_KINDS: readonly GravityKind[] = ['low', 'high'];
 function runChunks(raw: unknown, runParams: RunParams, surfaceIds: readonly string[]): RunChunks {
   const o = obj(raw, 'runChunks');
   const fieldChunks = arr(o.fieldChunks, 'runChunks.fieldChunks').map((item, i) =>
-    chunk(item, `runChunks.fieldChunks[${i}]`, runParams, surfaceIds, false),
+    chunk(item, `runChunks.fieldChunks[${i}]`, runParams, surfaceIds),
   );
   noDuplicates(fieldChunks, 'runChunks.fieldChunks');
   for (const d of [1, 2, 3]) {
     if (!fieldChunks.some((c) => c.difficulty === d)) fail('runChunks.fieldChunks', `no chunk of difficulty ${d}`);
   }
-  if (fieldChunks.length < 2) fail('runChunks.fieldChunks', 'needs at least 2 chunks so the same one is never used twice in a row');
-  return { fieldChunks, tunnel: chunk(o.tunnel, 'runChunks.tunnel', runParams, surfaceIds, true) };
+  if (new Set(fieldChunks.map((c) => c.place)).size < 2) fail('runChunks.fieldChunks', 'needs at least 2 places so the same place is never used twice in a row');
+  return { fieldChunks, tunnel: chunk(o.tunnel, 'runChunks.tunnel', runParams, surfaceIds) };
 }
 
 function textMap<K extends string>(raw: unknown, path: string, keys: readonly K[]): Record<K, string> {
@@ -412,6 +469,7 @@ function runText(raw: unknown): RunText {
     placeholder: bool(o, 'placeholder', p),
     briefing: { headline: str(b, 'headline', `${p}.briefing`), hazards: hazards as string[] },
     tidbits: textMap(o.tidbits, `${p}.tidbits`, EVENT_KINDS),
+    titles: textMap(o.titles, `${p}.titles`, EVENT_KINDS),
     formulas: textMap(o.formulas, `${p}.formulas`, FORMULA_KINDS),
     tunnelQuestion: str(o, 'tunnelQuestion', p),
     tryThis: textMap(o.tryThis, `${p}.tryThis`, TRY_THIS_KEYS),

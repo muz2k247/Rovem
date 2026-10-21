@@ -4,7 +4,8 @@ import type { CannonKind, GravityKind, PointM } from '../../content/index.ts';
 // load by `schema.ts`. Axes as everywhere in the game layer: x along the start heading, z to its left, metres.
 // Every number a level needs is in its file; shared values (water, magnets, arrows) are in `levels.json`.
 
-export const LEVEL_IDS = ['first-tracks', 'push-and-shove', 'crater-field', 'gravity-wells', 'ring-road', 'the-crossing', 'polar-pass'] as const;
+// Crash Site (Showcase R3) replaces First Tracks and Ring Road. The other four are the v4 files, rebuilt in R5–R7 (SHOWCASE_PLAN §7).
+export const LEVEL_IDS = ['crash-site', 'push-and-shove', 'crater-field', 'gravity-wells', 'the-crossing', 'polar-pass'] as const;
 export type LevelId = (typeof LEVEL_IDS)[number];
 
 export interface Pose {
@@ -121,6 +122,8 @@ export interface BarrierDef {
   headingDeg: number;
   lengthM: number;
   widthM: number;
+  /** How it is drawn: the orange block (default) or a rock. The physics is the same box. */
+  look?: 'boulder';
 }
 
 export interface CheckpointDef {
@@ -182,6 +185,21 @@ export interface FinishDef {
   radiusM: number;
 }
 
+/**
+ * A named part of a level's route that the report compares time on (SHOWCASE_PLAN §9, P6). A stretch begins where the route
+ * road named in `startsAfterRoad` ends (the first stretch begins at the start) and ends where the next one begins; the last
+ * ends at the part. The rover enters a stretch the first time its front crosses that line, so a crash and the drive back
+ * count against the stretch the crash happened in.
+ */
+export interface StretchDef {
+  id: string;
+  /** What the report calls it ("The Ring"). */
+  name: string;
+  startsAfterRoad?: string;
+  /** The time a clean drive with the starting build takes on it (provisional: the Scavenger's trace replaces it in R4). */
+  cleanS: number;
+}
+
 export interface LevelDef {
   id: LevelId;
   name: string;
@@ -210,6 +228,10 @@ export interface LevelDef {
   signs: SignDef[];
   hints: HintDef[];
   finish: FinishDef;
+  /** 4–6 named stretches for the report (P6), or none. */
+  stretches: StretchDef[];
+  /** The smoking wreck beside the start (Crash Site): where the opening line stands. */
+  wreck?: Pose;
 }
 
 /** The looks a level can ask for (A8). Presentation only; `src/render/atmosphere.ts` has one preset for each. */

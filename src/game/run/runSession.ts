@@ -8,7 +8,7 @@ import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/typ
 import { surfaceSpec } from '../buildFromParts.ts';
 import { footprintCorners, footprintOverlapsCircle } from '../geometry.ts';
 import { SLIDE_MARK_RAD, slideAngleRad, travelTurnLimitRadPerS, turnTravelDirection, wrapAngle } from './drift.ts';
-import { createRunCourse, type RunCourse, type WorldCannon } from './course.ts';
+import { createRunCourse, type CourseChunk, type RunCourse, type WorldCannon } from './course.ts';
 import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
 // The run rules of the endless canyon (docs/DEMO_BUILD_PLAN.md A2, A4, A6). Game layer: no rendering, no React.
@@ -34,7 +34,7 @@ export type RunDriveProvider = (stepIndex: number) => DriveKeys;
 /** Throttle held, brake free: what a session does when no `drive` is given (tests, and the tunnel comparison's other lane). */
 export const HOLD_THROTTLE: RunDriveProvider = () => ({ throttleHeld: true, brakeHeld: false });
 
-export type RunEventKind = EventKind | 'crash' | 'stuck';
+export type RunEventKind = EventKind | 'crash' | 'stuck' | 'scrape';
 
 /** Something that happened in the run, with the numbers that changed. Captions and the report are made from these. */
 export interface RunEvent {
@@ -69,6 +69,8 @@ export interface RunEvent {
   slideSpeedMps?: number;
   turnLimitRadPerS?: number;
   turnRateDegPerS?: number;
+  /** A scrape: the angle between the way the rover was going and the wall, 0 to 90°. Speeds are in speedBeforeMps and speedAfterMps. */
+  angleDeg?: number;
 }
 
 export interface RunEnd {
@@ -199,6 +201,7 @@ export function createRunSession(options: RunSessionOptions) {
   let slideRad = 0;
   let wasSliding = false;
   let zoneEnteredForward = false;
+  let wasScraping = false;
 
   /**
    * The steer input that turns the heading back toward 0 at the normal turn rate; 0 when the heading is within half
@@ -226,7 +229,7 @@ export function createRunSession(options: RunSessionOptions) {
 
   const record = (event: RunEvent) => {
     events.push(event);
-    if (event.kind !== 'crash' && event.kind !== 'stuck') stats.firstEvents[event.kind] ??= event;
+    if (event.kind !== 'crash' && event.kind !== 'stuck' && event.kind !== 'scrape') stats.firstEvents[event.kind] ??= event;
   };
 
   /** Recomputed from the build for the surface and gravity in force (for the captions). */
@@ -320,11 +323,13 @@ export function createRunSession(options: RunSessionOptions) {
   function scrapeAgainstWall(contact: EdgeContact, motion: 1 | -1): boolean {
     const speedBeforeMps = state.speedMps;
     let speedMps = speedBeforeMps;
+    let alphaRad = 0;
     let headingRad = state.headingRad;
     let newTravelRad = travelRad;
     if (movingIntoEdge(travelRad, contact.outwardRad)) {
       const scrape = scrapeAlongEdge(travelRad, speedBeforeMps, contact.edgeRad);
       speedMps = scrape.speedMps;
+      alphaRad = scrape.alphaRad;
       if (speedMps > 0) {
         newTravelRad = wrapAngle(scrape.directionRad);
         headingRad = wrapAngle(scrape.directionRad + (motion === 1 ? 0 : Math.PI));
@@ -341,6 +346,11 @@ export function createRunSession(options: RunSessionOptions) {
       if (!again) {
         state = { ...state, positionXM: x, positionZM: z, headingRad, speedMps };
         travelRad = newTravelRad;
+        // One event for each contact, not one for each step spent against the wall.
+        if (!wasScraping && speedBeforeMps > 0) {
+          record({ kind: 'scrape', timeS: state.timeS, xM: x, speedBeforeMps, speedAfterMps: speedMps, angleDeg: (alphaRad * 180) / Math.PI });
+        }
+        wasScraping = true;
         return true;
       }
       c = again.contact;
@@ -393,6 +403,7 @@ export function createRunSession(options: RunSessionOptions) {
     // 4. Crash: a barrier. The step is undone (position, heading, distance) and v = 0, and the run ends.
     // A corner past the canyon wall is not a crash: the rover is placed against the wall and scrapes along it.
     let hit = course.barrierHit(state.positionXM, state.positionZM, state.headingRad, footprint.lengthM, footprint.widthM);
+    if (hit?.kind !== 'wall') wasScraping = false;
     if (hit?.kind === 'wall') {
       // No place against the wall was found: the step is undone and v = 0, as in a level (not a crash).
       if (!scrapeAgainstWall(hit.contact, state.direction === 'forward' ? 1 : -1)) {
@@ -403,6 +414,7 @@ export function createRunSession(options: RunSessionOptions) {
       hit = undefined;
     }
     if (hit?.kind === 'barrier') {
+      wasScraping = false;
       state = { ...next, positionXM: prev.positionXM, positionZM: prev.positionZM, headingRad: prev.headingRad, distanceM: prev.distanceM, speedMps: 0 };
       travelRad = travelBefore;
       slideRad = 0;
@@ -469,7 +481,7 @@ export function createRunSession(options: RunSessionOptions) {
       if (surfaceId === 'mud' || surfaceId === 'sand' || surfaceId === 'ice') {
         const zone = course.gravityKindAt(state.positionXM, state.positionZM);
         record({
-          kind: surfaceId, timeS: t, xM: state.positionXM, surfaceId, frictionN: quantities(surfaceId, zone).rollingForceN,
+          kind: surfaceId, timeS: t, xM: state.positionXM, surfaceId, frictionN: quantities(surfaceId, zone).rollingForceN, gripN: quantities(surfaceId, zone).gripLimitN,
           massKg: rover.massKg, gravityMps2: gravityAt(zone), surfaceRolling: specs.get(surfaceId)!.rollingFriction, wheelRolling: rover.rollingFactor,
         });
       }
@@ -577,6 +589,21 @@ export function createRunSession(options: RunSessionOptions) {
     get stats(): RunStats {
       return stats;
     },
+    /** The section (the named place) under the rover's front: its name is on the entry post and in the HUD. */
+    get section(): CourseChunk {
+      course.ensureAhead(state.positionXM + GENERATE_AHEAD_M);
+      return course.sectionAt(state.positionXM) ?? course.chunks[course.chunks.length - 1]!;
+    },
+    /** Has this cannon woken (its trigger was reached)? An awake cannon charges: the scene shows it. */
+    cannonAwake: (id: string): boolean => cannonStates.has(id),
+    /** Developer tool (`?dev=1`): put the rover at x (on the middle line unless `zM` says otherwise), moving at a speed, as if it had driven there. */
+    devSkipTo(xM: number, speedMps: number, zM = 0) {
+      course.ensureAhead(xM + GENERATE_AHEAD_M);
+      state = { ...state, positionXM: xM, positionZM: zM, headingRad: 0, speedMps, throttleLevel: speedMps > 0 ? 1 : 0, direction: 'forward', distanceM: Math.max(state.distanceM, xM) };
+      travelRad = 0;
+      slideRad = 0;
+      progressM = Math.max(progressM, xM);
+    },
     /** The gravity zone under the front right now (for the screen tint). */
     get gravityKind(): GravityKind | undefined {
       return course.gravityKindAt(state.positionXM, state.positionZM);
@@ -607,6 +634,7 @@ export function createRunSession(options: RunSessionOptions) {
       slideRad = 0;
       wasSliding = false;
       zoneEnteredForward = false;
+      wasScraping = false;
     },
   };
 }

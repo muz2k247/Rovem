@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import type { Content } from '../content/index.ts';
 import type { HudModel } from '../game/contracts.ts';
+import type { MomentCamera, MomentParticles } from '../game/moments.ts';
 import type { AtmosphereId } from '../game/level/types.ts';
 import type { LevelSession } from '../game/level/session.ts';
+import { levelText } from '../game/level/text.ts';
 import { createAtmosphere } from './atmosphere.ts';
+import { createBursts, type BurstKind } from './bursts.ts';
 import { createDevOverlay, type DevOverlay } from './devOverlay.ts';
 import { createDust } from './driveScene.ts';
 import { createForceArrows } from './forceArrows.ts';
@@ -11,8 +14,9 @@ import { createLandmarks } from './landmarks.ts';
 import { levelCameraPose } from './levelCamera.ts';
 import { createPylons } from './pylons.ts';
 import { createRoverModel, wheelTurnRad, type RoverLook } from './roverModel.ts';
-import { createTerrain, SURFACE_COLOURS } from './terrain.ts';
+import { createTerrain, groundOffsetOf, SURFACE_COLOURS } from './terrain.ts';
 import { createTrack } from './track.ts';
+import { createWreck, type Wreck } from './wreck.ts';
 import { createCameraBlend } from './runScene.ts';
 import { createSplashes, createWater, roverRideHeightM, waterBedDropM } from './water.ts';
 
@@ -31,6 +35,11 @@ const SHAKE_HZ = 38;
 const SHAKE_UP_SHARE = 0.6;
 const ARROWS_LIFT_M = 0.75;
 const DUST_PER_MPS: Record<string, number> = { sand: 7, ice: 2.5, mud: 6, asphalt: 3 };
+/** A camera kick (SHOWCASE_PLAN §16: 0.2 s) and the wider view of a vent, as in the Endless scene. */
+const CAMERA_KICK_S = 0.2;
+const CAMERA_KICK_M = 0.14;
+const FOV_WIDEN_DEG = 9;
+const FOV_WIDEN_DECAY_PER_S = 16;
 
 export interface LevelSceneOptions {
   /** The whole build's look: chassis, wheels and motor (roverLookFor). */
@@ -45,12 +54,18 @@ export interface LevelScene {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   rover: THREE.Group;
+  /** Where the opening line stands: above the wreck, in three.js coordinates; undefined for a level with no wreck. */
+  readonly wreckAnchor: THREE.Vector3 | undefined;
   /** How many force arrows are drawn right now. */
   readonly forceArrowCount: number;
   readonly stats: { terrainVertices: number; terrainTiles: number; moteCount: number; shadows: boolean };
   setShowForces(on: boolean): void;
   /** Camera shake for the crash moment: the amplitude in metres (0 = none). */
   setShake(amplitudeM: number): void;
+  /** Particles alive in the moment bursts. */
+  readonly burstCount: number;
+  /** The scene's part of a moment (SHOWCASE_PLAN §10): a burst of particles at the rover and a camera cue. */
+  cue(moment: { particles?: MomentParticles; camera?: MomentCamera }): void;
   /** Developer tool (`?dev=1`): a camera straight above the rover, x to the right and z up the picture, `heightM` above the ground. */
   setTopDown(on: boolean, heightM?: number): void;
   /** Developer tool (`?dev=1`): outlines of the zones the physics uses. */
@@ -78,8 +93,12 @@ export function createLevelScene(session: LevelSession, content: Content, option
     },
     gravityLabel: (kind) => `g = ${gravityOf(kind).toFixed(1)} m/s²`,
     bagRadiusM: content.run.sandbag.radiusM,
+    shipPart: levelText.ship.parts.some((p) => p.levelId === def.id && p.built),
   });
   scene.add(landmarks.group);
+  // The wreck beside the start (Crash Site): a level file with `wreck` has one.
+  const wreck: Wreck | undefined = def.wreck ? createWreck(def.wreck, world.heightM(def.wreck.xM, def.wreck.zM)) : undefined;
+  if (wreck) scene.add(wreck.group);
   const water = def.water.length > 0 ? createWater(world) : undefined;
   if (water) scene.add(water.group);
   const splashes = water ? createSplashes(scene) : undefined;
@@ -104,6 +123,10 @@ export function createLevelScene(session: LevelSession, content: Content, option
   const dustPoints = scene.getObjectByName('dust') as THREE.Points | undefined;
   if (dustPoints) (dustPoints.material as THREE.PointsMaterial).size = 0.22;
 
+  const bursts = createBursts(scene);
+  let kickLeftS = 0;
+  let fovWiden = 0;
+  let lastPose = session.pose;
   const camera = new THREE.PerspectiveCamera(FOV_AT_REST_DEG, 1, 0.1, 700);
   const cameraAngle = createCameraBlend();
 
@@ -123,11 +146,12 @@ export function createLevelScene(session: LevelSession, content: Content, option
     clockS += frameS;
     const state = s.state;
     const pose = s.pose;
+    lastPose = pose;
     const fx = Math.cos(state.headingRad);
     const fz = Math.sin(state.headingRad);
 
     // The rover: its front on the ground (or the riverbed), turned to its heading and tipped along the slope.
-    const groundFront = world.heightM(pose.frontXM, pose.frontZM);
+    const groundFront = world.heightM(pose.frontXM, pose.frontZM) + groundOffsetOf(world, pose.frontXM, pose.frontZM);
     const targetRide = roverRideHeightM({ groundYM: groundFront, bedDropM: waterBedDropM(world, pose.frontXM, pose.frontZM), floating: s.floating });
     rideY = rideY === undefined || frameS === 0 ? targetRide : rideY + (targetRide - rideY) * Math.min(1, RIDE_EASE_PER_S * frameS);
     rover.position.set(pose.frontXM, rideY, -pose.frontZM);
@@ -158,6 +182,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
       bags: s.bags,
     });
     water?.update(clockS);
+    wreck?.update(clockS);
     const inWater = pose.waterDepthM > 0;
     splashes?.update(frameS, {
       xM: pose.frontXM, yM: rideY + (s.floating ? 0.45 : world.heightM(pose.centreXM, pose.centreZM) - rideY), zM: pose.frontZM,
@@ -184,7 +209,10 @@ export function createLevelScene(session: LevelSession, content: Content, option
     const target = { x: pose.centreXM, z: pose.centreZM };
     const jumped = lastCamTarget !== undefined && Math.hypot(target.x - lastCamTarget.x, target.z - lastCamTarget.z) > CAMERA_SNAP_M;
     lastCamTarget = target;
-    const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps;
+    fovWiden = frameS > 0 ? Math.max(0, fovWiden - FOV_WIDEN_DECAY_PER_S * frameS) : fovWiden;
+    kickLeftS = frameS > 0 ? Math.max(0, kickLeftS - frameS) : kickLeftS;
+    if (frameS > 0) bursts.update(frameS);
+    const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps + fovWiden;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
     camera.updateProjectionMatrix();
     const cam = levelCameraPose(world, { xM: target.x, zM: target.z, travelRad: cameraAngle.follow(s.pose.travelRad, jumped ? 1e3 : frameS) });
@@ -198,7 +226,8 @@ export function createLevelScene(session: LevelSession, content: Content, option
       shakeY = Math.sin(clockS * SHAKE_HZ * 0.9 + 1) * shakeM * SHAKE_UP_SHARE;
       shakeZ = Math.sin(clockS * SHAKE_HZ) * shakeM;
     }
-    camera.position.set(cam.position.xM + shakeX, camY + shakeY, -(cam.position.zM + shakeZ));
+    const kickY = -CAMERA_KICK_M * (kickLeftS / CAMERA_KICK_S);
+    camera.position.set(cam.position.xM + shakeX, camY + shakeY + kickY, -(cam.position.zM + shakeZ));
     camera.lookAt(cam.look.xM, cam.look.yM, -cam.look.zM);
     if (topDown) {
       camera.up.set(0, 0, -1); // screen-up is physics +z, which is three −z
@@ -214,8 +243,30 @@ export function createLevelScene(session: LevelSession, content: Content, option
     scene,
     camera,
     rover,
+    wreckAnchor: wreck?.anchor,
     get forceArrowCount() {
       return arrowCount;
+    },
+    get burstCount() {
+      return bursts.liveCount;
+    },
+    cue(moment) {
+      const p = lastPose;
+      const fx = Math.cos(p.headingRad);
+      const fz = Math.sin(p.headingRad);
+      const y = (rideY ?? 0) + 0.2;
+      const kind = moment.particles;
+      if (kind && kind !== 'skidMarks') {
+        const burstKind: BurstKind = kind;
+        const rearX = p.frontXM - fx * model.rearAxleBackM;
+        const rearZ = p.frontZM - fz * model.rearAxleBackM;
+        if (burstKind === 'steam') bursts.emit('steam', p.centreXM, y, -p.centreZM, 0, 0);
+        else if (burstKind === 'sparks') bursts.emit('sparks', p.centreXM, y, -p.centreZM, -fx, fz);
+        else if (burstKind === 'debris') bursts.emit('debris', p.frontXM, y + 0.2, -p.frontZM, fx, -fz);
+        else bursts.emit(burstKind, rearX, y - 0.1, -rearZ, -fx, fz);
+      }
+      if (moment.camera === 'kick') kickLeftS = CAMERA_KICK_S;
+      if (moment.camera === 'wide') fovWiden = FOV_WIDEN_DEG;
     },
     stats: { terrainVertices: terrain.vertexCount, terrainTiles: terrain.tileCount, moteCount: atmosphere.moteCount, shadows: atmosphere.sun.castShadow },
     setShowForces(on) {
@@ -238,6 +289,10 @@ export function createLevelScene(session: LevelSession, content: Content, option
     update,
     dispose() {
       scene.remove(terrain.group, track.group, landmarks.group, rover, arrows.group);
+      if (wreck) {
+        scene.remove(wreck.group);
+        wreck.dispose();
+      }
       terrain.dispose();
       track.dispose();
       landmarks.dispose();
@@ -246,6 +301,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
         scene.remove(devOverlay.group);
         devOverlay.dispose();
       }
+      bursts.dispose();
       splashes?.dispose();
       pylons?.dispose();
       arrows.dispose();

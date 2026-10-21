@@ -4,6 +4,8 @@ import { levelCards } from '../content/levelCards.ts';
 import { STARTING_BUILD, type BuildSelection } from '../game/buildFromParts.ts';
 import type { StarCount } from '../game/contracts.ts';
 import { builtLevelIds, levelParS } from '../game/level/levels.ts';
+import { levelText } from '../game/level/text.ts';
+import { shipParts } from '../game/ship.ts';
 import { buildWithPart } from '../game/run/reportModel.ts';
 import { continueTarget, developerUnlockFromSearch, isEndlessUnlocked, levelSummaries, nextLevelId } from '../game/levelUnlock.ts';
 import { loadDemoProgress, resetDemoProgress, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
@@ -128,6 +130,7 @@ export function App() {
           nextId={continueTarget(levelIds, levelProgress)}
           endless={{ ...levelCards.endless, locked: !endlessUnlocked, bestDistanceM: progress.bestDistanceM }}
           dustStorm={levelCards.dustStorm}
+          ship={shipParts(levelText.ship.parts, levelProgress)}
           onOpenLevel={(levelId) => setScreen({ name: 'levelIntro', levelId })}
           onEndless={() => startRun(newSeed())}
           onBack={toHome}

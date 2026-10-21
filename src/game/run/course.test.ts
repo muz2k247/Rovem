@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
+import { testChunk } from '../../../tests/helpers/chunks.ts';
 import { createRunCourse, type CourseChunk } from './course.ts';
 
 const { roverLengthM: L, roverWidthM: W } = content.constants;
@@ -69,13 +70,48 @@ describe('layout', () => {
     for (let i = 1; i < chunks.length; i++) expect(chunks[i]!.startXM).toBe(chunks[i - 1]!.endXM);
   });
 
-  it('puts a tunnel every 250 m', () => {
+  it('puts Gravity Caves after every two field sections: 450 m apart, the first at 360 m', () => {
     for (const seed of [1, 2, 3]) {
       const t = tunnels(build(seed).chunks);
-      expect(t.length).toBeGreaterThan(15);
-      expect(t[0]!.startXM).toBe(60 + 200);
-      for (let i = 1; i < t.length; i++) expect(t[i]!.startXM - t[i - 1]!.startXM).toBe(250);
-      expect(t.every((c) => c.endXM - c.startXM === 50)).toBe(true);
+      expect(t.length).toBeGreaterThan(8);
+      expect(t[0]!.startXM).toBe(60 + 300);
+      for (let i = 1; i < t.length; i++) expect(t[i]!.startXM - t[i - 1]!.startXM).toBe(450);
+      expect(t.every((c) => c.endXM - c.startXM === 150 && c.place === 'gravity-caves')).toBe(true);
+    }
+  });
+
+  it('every section is a named place at least 150 m long, and no place comes twice in a row', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const sections = build(seed).chunks.filter((c) => c.kind !== 'warmUp');
+      for (const c of sections) {
+        expect(c.endXM - c.startXM, c.id).toBeGreaterThanOrEqual(150);
+        expect(c.name, c.id).not.toBe('');
+        expect(c.entryPostXM, c.id).toBeGreaterThanOrEqual(c.startXM);
+        expect(c.entryPostXM, c.id).toBeLessThan(c.endXM);
+      }
+      for (let i = 1; i < sections.length; i++) expect(sections[i]!.place).not.toBe(sections[i - 1]!.place);
+    }
+  });
+
+  it('visits every place of §11 within a few thousand metres of play, whatever the seed', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) for (const c of build(seed, 4000).chunks) seen.add(c.place);
+    expect([...seen].sort()).toEqual(['clay-gully', 'dune-sea', 'frozen-flats', 'gravity-caves', 'launcher-alley', 'rock-plain', 'start', 'vent-run']);
+  });
+
+  it('puts the entry post and the line of a mirrored section on the mirrored side', () => {
+    const c = build(4).chunks.find((x) => x.kind === 'field' && x.mirrored && x.line.some((p) => p.zM !== 0))!;
+    const tpl = templateOf(c.id);
+    expect(c.entryPostXM).toBe(c.startXM + tpl.entryPostXM);
+    c.line.forEach((p, i) => {
+      expect(p.xM).toBe(c.startXM + tpl.line[i]!.xM);
+      expect(p.zM === 0 ? 0 : p.zM).toBe(tpl.line[i]!.zM === 0 ? 0 : -tpl.line[i]!.zM);
+    });
+  });
+
+  it('starts hard sections later: launcher alley (difficulty 2 and up) never comes in the first 500 m', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const c of build(seed, 1000).chunks.filter((x) => x.place === 'launcher-alley')) expect(c.startXM).toBeGreaterThanOrEqual(500);
     }
   });
 
@@ -147,22 +183,23 @@ describe('lookups at known points', () => {
   const highZ = -lowZ;
 
   it('gravity kind by zone, and none outside', () => {
-    expect(course.gravityKindAt(tunnel.startXM + 20, lowZ)).toBe('low');
-    expect(course.gravityKindAt(tunnel.startXM + 20, highZ)).toBe('high');
-    expect(course.gravityKindAt(tunnel.startXM + 2, lowZ)).toBeUndefined(); // before the zones begin at x 5
+    expect(course.gravityKindAt(tunnel.startXM + 60, lowZ)).toBe('low');
+    expect(course.gravityKindAt(tunnel.startXM + 60, highZ)).toBe('high');
+    expect(course.gravityKindAt(tunnel.startXM + 52, lowZ)).toBeUndefined(); // before the zones begin at x 55
+    expect(course.gravityKindAt(tunnel.startXM + 96, lowZ)).toBeUndefined(); // and after they end at x 95
     expect(course.gravityKindAt(30, 0)).toBeUndefined();
   });
 
-  it('surface: mud in both tunnel lanes at x 20 to 28, asphalt elsewhere', () => {
-    expect(course.surfaceIdAt(tunnel.startXM + 24, lowZ)).toBe('mud');
-    expect(course.surfaceIdAt(tunnel.startXM + 24, highZ)).toBe('mud');
-    expect(course.surfaceIdAt(tunnel.startXM + 10, highZ)).toBe('asphalt');
-    expect(course.surfaceIdAt(tunnel.startXM + 28.5, highZ)).toBe('asphalt'); // the patch is 8 m long
+  it('surface: mud in both tunnel lanes at x 70 to 78, asphalt elsewhere', () => {
+    expect(course.surfaceIdAt(tunnel.startXM + 74, lowZ)).toBe('mud');
+    expect(course.surfaceIdAt(tunnel.startXM + 74, highZ)).toBe('mud');
+    expect(course.surfaceIdAt(tunnel.startXM + 60, highZ)).toBe('asphalt');
+    expect(course.surfaceIdAt(tunnel.startXM + 78.5, highZ)).toBe('asphalt'); // the patch is 8 m long
   });
 
   it('barriers, walls and open road', () => {
     expect(course.barrierHit(30, 0, 0, L, W)).toBeUndefined();
-    expect(course.barrierHit(tunnel.startXM + 20, 0, 0, L, W)?.kind).toBe('barrier'); // the divider
+    expect(course.barrierHit(tunnel.startXM + 70, 0, 0, L, W)?.kind).toBe('barrier'); // the divider
     expect(course.barrierHit(30, 14.5, 0, L, W)?.kind).toBe('wall'); // a corner passes z = 15
     expect(course.barrierHit(30, -14.5, 0, L, W)?.kind).toBe('wall');
     expect(course.barrierHit(30, 14, 0, L, W)).toBeUndefined(); // corner at 14.85
@@ -184,8 +221,64 @@ describe('lookups at known points', () => {
       const listed = course.cannonsInRange(withCannon.startXM, withCannon.endXM);
       expect(listed.map((c) => c.id)).toEqual(withCannon.cannons.map((c) => c.id));
     }
-    const range = course.chunksInRange(250, 320);
-    expect(range.map((c) => c.index)).toEqual(course.chunks.filter((c) => c.endXM > 250 && c.startXM < 320).map((c) => c.index));
-    expect(range.length).toBeGreaterThanOrEqual(2);
+    const range = course.chunksInRange(350, 420); // the second field section ends at 360, where Gravity Caves starts
+    expect(range.map((c) => c.index)).toEqual(course.chunks.filter((c) => c.endXM > 350 && c.startXM < 420).map((c) => c.index));
+    expect(range.length).toBe(2);
+    expect(course.sectionAt(359.9)!.index).toBe(2);
+    expect(course.sectionAt(360)!.place).toBe('gravity-caves');
+  });
+});
+
+describe('polygon zones (P3, R2)', () => {
+  // A triangle of sand and a wedge of low gravity: the bounding box is bigger than the shape, so the polygon test decides.
+  const triangle = [{ xM: 20, zM: -10 }, { xM: 60, zM: -10 }, { xM: 20, zM: 10 }];
+  const bounds = { xM: [20, 60] as [number, number], zM: [-10, 10] as [number, number] };
+  const world = (): typeof content => ({
+    ...content,
+    runChunks: {
+      fieldChunks: [
+        { ...testChunk({ id: 'tri-a', lengthM: 100 }), tiles: [{ ...bounds, surfaceId: 'sand', polygon: triangle }], gravityZones: [{ ...bounds, kind: 'low' as const, polygon: triangle }] },
+        { ...testChunk({ id: 'tri-b', lengthM: 100 }), tiles: [{ ...bounds, surfaceId: 'sand', polygon: triangle }], gravityZones: [{ ...bounds, kind: 'low' as const, polygon: triangle }] },
+      ],
+      tunnel: testChunk({ id: 'tri-tunnel', lengthM: 100 }),
+    },
+  });
+  const first = (seed: number, wantMirrored: boolean) => {
+    const c = createRunCourse(world(), seed);
+    c.ensureAhead(400);
+    return { c, chunk: c.chunks[1]!, ok: c.chunks[1]!.mirrored === wantMirrored };
+  };
+  const seedFor = (mirrored: boolean) => {
+    for (let seed = 1; seed < 200; seed++) if (first(seed, mirrored).ok) return seed;
+    throw new Error('no seed');
+  };
+
+  it('a point inside the triangle is sand and low gravity; a point in its bounding box but outside it is neither', () => {
+    const { c, chunk } = first(seedFor(false), false);
+    const x = chunk.startXM;
+    expect(c.surfaceIdAt(x + 25, -5)).toBe('sand'); // inside the triangle
+    expect(c.gravityKindAt(x + 25, -5)).toBe('low');
+    expect(c.surfaceIdAt(x + 55, 8)).toBe('asphalt'); // inside the box, outside the triangle
+    expect(c.gravityKindAt(x + 55, 8)).toBeUndefined();
+    expect(c.surfaceIdAt(x + 70, 0)).toBe('asphalt'); // outside the box
+  });
+
+  it('a mirrored section mirrors the polygon: the triangle is on the other side', () => {
+    const { c, chunk } = first(seedFor(true), true);
+    const x = chunk.startXM;
+    expect(c.surfaceIdAt(x + 25, 5)).toBe('sand'); // the diagonal runs the other way: here z is between −7.5 and 10
+    expect(c.surfaceIdAt(x + 25, -9)).toBe('asphalt'); // below the diagonal
+    expect(c.surfaceIdAt(x + 55, -8)).toBe('asphalt');
+    expect(chunk.tiles[0]!.polygon.map((p) => p.zM)).toEqual([10, 10, -10]);
+  });
+
+  it('a rectangle given as the 4 corners of a polygon behaves exactly like a rectangle (old data still loads)', () => {
+    const rect = createRunCourse({ ...content, runChunks: { fieldChunks: [testChunk({ id: 'r-a', lengthM: 100, tiles: [{ surfaceId: 'mud', xM: [10, 20], zM: [-5, 5] }] }), testChunk({ id: 'r-b', lengthM: 100 })], tunnel: testChunk({ id: 'r-t', lengthM: 100 }) } }, 3);
+    rect.ensureAhead(300);
+    const chunk = rect.chunks.find((c) => c.tiles.length > 0)!;
+    const x = chunk.startXM;
+    for (const [dx, dz, want] of [[15, 0, 'mud'], [10.1, 4.9, 'mud'], [9.9, 0, 'asphalt'], [20.1, 0, 'asphalt'], [15, 5.1, 'asphalt']] as const) {
+      expect(rect.surfaceIdAt(x + dx, dz * (chunk.mirrored ? -1 : 1)), `${dx},${dz}`).toBe(want);
+    }
   });
 });

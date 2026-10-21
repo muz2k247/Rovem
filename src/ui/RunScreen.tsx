@@ -3,28 +3,42 @@ import * as THREE from 'three';
 import { content, type EventKind, type GravityKind } from '../content/index.ts';
 import { EVENT_KINDS } from '../content/types.ts';
 import { physicsConstants, roverFromParts, surfaceSpec } from '../game/buildFromParts.ts';
-import { currentCaption, emptyQueue, enqueueCaption, tickCaptions, type CaptionQueue } from '../game/captionQueue.ts';
 import type { HudModel, ReportModel, TryThisAction } from '../game/contracts.ts';
 import { createKeyTracker } from '../game/controls.ts';
+import { cardForPopup } from '../game/cardText.ts';
+import { createDriveFeedback } from '../game/driveFeedback.ts';
+import type { FeedbackShown } from '../game/feedbackQueue.ts';
 import { createForceLine } from '../game/forceLine.ts';
 import { pathArrows, pathForces } from '../game/forces.ts';
+import { devKeyAction, devModeFromSearch } from '../game/level/devKeys.ts';
+import { levelText } from '../game/level/text.ts';
 import type { PauseAction } from '../game/pauseMenu.ts';
-import { buildEndlessHud, captionForEvent, controlsHintVisible } from '../game/run/endlessHud.ts';
-import { buildReport, emptyFeed, type CaptionFeed, type RunReport } from '../game/run/feedback.ts';
+import { popupForRunEvent } from '../game/popups.ts';
+import { buildEndlessHud, controlsHintVisible } from '../game/run/endlessHud.ts';
+import { buildReport, type RunReport } from '../game/run/feedback.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
-import { SLIDE_SOUND_RAD } from '../game/run/drift.ts';
-import { createRunSession } from '../game/run/runSession.ts';
+import { SLIDE_MARK_RAD, SLIDE_SOUND_RAD } from '../game/run/drift.ts';
+import { createRunSession, type RunSession } from '../game/run/runSession.ts';
 import { createTraceRecorder, endlessReportModel } from '../game/run/reportModel.ts';
-import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
+import { sectionJumpX } from '../game/run/sectionJump.ts';
+import { createEffectSounds, effectForSound } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { roverLookFor } from '../render/roverModel.ts';
-import { createRunScene } from '../render/runScene.ts';
+import { createRunScene, type RunScene } from '../render/runScene.ts';
 import { recordRun, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
+import { FeedbackLayer } from './hud/FeedbackLayer.tsx';
 import { Hud } from './hud/Hud.tsx';
 import { ReportScreen } from './report/ReportScreen.tsx';
 import { PauseMenu } from './PauseMenu.tsx';
 import { SettingsPanel } from './SettingsPanel.tsx';
+
+declare global {
+  interface Window {
+    /** Dev server only: the running Endless session and scene, for the play-check and the screenshots to read. */
+    __rovemRun?: { session: RunSession; view: RunScene };
+  }
+}
 
 const BRIEFING_S = 2.5;
 /** The crash moment before the report: shake, flash and a thud (DECISIONS 2026-10-16). Presentation values. */
@@ -33,8 +47,10 @@ const CRASH_SHAKE_M = 0.35;
 /** Force arrow labels are rebuilt when their number changes, so the arrows update every few frames, not every frame. */
 const ARROW_EVERY_N_FRAMES = 4;
 
-/** The sound that goes with an event, if any. */
-const EVENT_SOUNDS: Partial<Record<string, EffectKind>> = { boost: 'boost', headOnHit: 'sandbagHit', kickerHit: 'kickerHit' };
+/** The speed number stays red or green this long after a hit or a vent (physics seconds). Presentation value. */
+const SPEED_TONE_S = 0.8;
+/** The pop-up stands this far to the right of the rover and above its roof, in pixels. */
+const POPUP_OFFSET_PX = { x: 36, y: -28 };
 
 /**
  * One run of the endless canyon: briefing, the game loop driving the run session, the HUD (one caption at a time,
@@ -80,6 +96,12 @@ export function RunScreen({
   const firstBriefing = useRef(!progress.briefingSeen);
   const [hud, setHud] = useState<HudModel | null>(null);
   const [gravityKind, setGravityKind] = useState<GravityKind | undefined>(undefined);
+  const [shown, setShown] = useState<FeedbackShown>(null);
+  const [place, setPlace] = useState<{ index: number; name: string } | null>(null);
+  const [speedLinesKey, setSpeedLinesKey] = useState(0);
+  const [hitFlashKey, setHitFlashKey] = useState(0);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const dev = devModeFromSearch(window.location.search);
   const [report, setReport] = useState<{ run: RunReport; model: ReportModel } | null>(null);
   // This screen is mounted afresh for every run (key = run id), so what the run starts with is read once.
   const progressRef = useRef(progress);
@@ -113,7 +135,8 @@ export function RunScreen({
         return { throttleHeld, brakeHeld };
       },
     });
-    const view = createRunScene(session, content, roverLookFor(start.build));
+    const view = createRunScene(session, content, roverLookFor(start.build), { quality: settingsRef.current.graphics });
+    if (import.meta.env.DEV) window.__rovemRun = { session, view };
     const engine = createEngineSound();
     const effects = createEffectSounds();
     const driver = createPausableRun(session);
@@ -170,6 +193,12 @@ export function RunScreen({
       }
       if (driver.paused) return; // the pause menu is driven by its buttons
       skipBriefing();
+      // Developer tools (?dev=1): [ and ] jump to the previous and next place, to look at it. Never saved.
+      const devAction = devModeFromSearch(window.location.search) ? devKeyAction(e.code) : undefined;
+      if (devAction === 'nextCheckpoint' || devAction === 'previousCheckpoint') {
+        session.devSkipTo(sectionJumpX(session.course, session.state.positionXM, devAction === 'nextCheckpoint' ? 1 : -1), Math.max(session.state.speedMps, 12));
+        return;
+      }
       if (!keys.handles(e.code)) return;
       e.preventDefault(); // arrow keys must not scroll the page
       keys.down(e.code);
@@ -179,9 +208,31 @@ export function RunScreen({
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', pause);
 
-    let feed: CaptionFeed = emptyFeed;
-    let queue: CaptionQueue = emptyQueue;
-    const seenKinds = new Set<EventKind>(start.seenEvents);
+    // Pop-ups beside the rover, caption cards the first time an element appears, and each element's moment (SHOWCASE_PLAN §10).
+    let speedTone: 'loss' | 'gain' | undefined;
+    let speedToneUntilS = 0;
+    const rockRollingMu = content.surfaces.find((x) => x.id === 'asphalt')!.rollingFriction;
+    const feedback = createDriveFeedback(
+      {
+        sound: (sound, gained) => {
+          const kind = effectForSound(sound, { gained });
+          if (kind) effects.play(kind);
+        },
+        scene: (moment) => view.cue(moment),
+        hud: (effect, tone) => {
+          if (effect === 'speedLines') setSpeedLinesKey((k) => k + 1);
+          if (effect === 'flash') setHitFlashKey((k) => k + 1);
+          if (effect === 'speedFlash') {
+            speedTone = tone === 'good' ? 'gain' : 'loss';
+            speedToneUntilS = session.state.timeS + SPEED_TONE_S;
+          }
+        },
+      },
+      (popup, eventKind) => cardForPopup(popup, eventKind, { runText: content.runText, levelCards: levelText.elementCards }),
+    );
+    let lastShownKey = '';
+    let lastSectionIndex = -1;
+    const popupPoint = new THREE.Vector3();
     let eventsHandled = 0;
     let frame = 0;
     let lastMs = performance.now();
@@ -256,12 +307,33 @@ export function RunScreen({
 
       for (; eventsHandled < session.events.length; eventsHandled++) {
         const event = session.events[eventsHandled]!;
-        const sound = EVENT_SOUNDS[event.kind];
-        if (sound) effects.play(sound);
-        const made = captionForEvent(feed, event, event.timeS, { seenKinds, unit: unitRef.current }, s.showMaths);
-        feed = made.feed;
-        if (made.caption) queue = enqueueCaption(queue, made.caption, event.timeS);
-        if (made.firstTime) seenKinds.add(event.kind as EventKind);
+        const popup = popupForRunEvent(event, { massKg: rover.massKg, motorForceN: rover.driveForceMaxN, rockRollingMu, unit: unitRef.current });
+        if (popup) feedback.onPopup(popup, event.kind, event.timeS);
+      }
+
+      // The tyres on the ground, by surface (quiet; silent at rest and while paused).
+      const rolling = phase === 'running' && !driver.paused;
+      effects.setRoll(session.course.surfaceIdAt(state.positionXM, state.positionZM), rolling ? state.speedMps / rover.topSpeedMps : 0);
+
+      // What is on screen now: a pop-up beside the rover, a card low in the middle, or nothing; and the name of a new place.
+      const section = session.section;
+      if (section.index !== lastSectionIndex) {
+        lastSectionIndex = section.index;
+        if (section.kind !== 'warmUp') setPlace({ index: section.index, name: section.name });
+      }
+      const now = phase === 'ended' ? null : feedback.queue.update(state.timeS, { atGripLimit: state.slipping || session.slideAngleRad >= SLIDE_MARK_RAD, inAir: false });
+      const key = now === null ? '' : now.kind === 'popup' ? `p:${now.popup.element}:${now.popup.text}` : `c:${now.card.element}`;
+      if (key !== lastShownKey) {
+        lastShownKey = key;
+        setShown(now);
+      }
+      const popupEl = popupRef.current;
+      if (popupEl && now?.kind === 'popup') {
+        popupPoint.set(view.rover.position.x, view.rover.position.y + 1.4, view.rover.position.z).project(view.camera);
+        const px = (popupPoint.x * 0.5 + 0.5) * host.clientWidth + POPUP_OFFSET_PX.x;
+        const py = (-popupPoint.y * 0.5 + 0.5) * host.clientHeight + POPUP_OFFSET_PX.y;
+        const x = Math.max(8, Math.min(px, host.clientWidth - popupEl.offsetWidth - 8));
+        popupEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(Math.max(8, py))}px)`;
       }
 
       const hudFrame = frame % 2 === 0 || phase === 'ended';
@@ -275,17 +347,18 @@ export function RunScreen({
         const arrows = phase === 'running' || phase === 'crashing' ? pathArrows(forces, state) : [];
         if (arrowFrame) view.setForceArrows(s.forceArrows ? arrows : []);
         if (hudFrame) {
-          queue = tickCaptions(queue, state.timeS);
           const line = forceLine.update({ ...forces, timeS: state.timeS, massKg: rover.massKg });
           setGravityKind(kind);
           setHud(
             buildEndlessHud({
               state,
+              ...(section.kind !== 'warmUp' ? { placeName: section.name } : {}),
+              ...(speedTone && state.timeS < speedToneUntilS ? { speedTone } : {}),
               distanceM: session.progressM,
               bestDistanceM: Math.max(start.bestDistanceM, session.progressM),
               score: session.score,
               multiplier: session.multiplier,
-              caption: phase === 'ended' ? null : currentCaption(queue),
+              caption: null,
               forceLine: s.showMaths && phase === 'running' ? line : null,
               forces: arrows,
             }),
@@ -339,7 +412,20 @@ export function RunScreen({
       <div className="drive-canvas" ref={hostRef} />
       {gravityKind && <div className={`tint tint-${gravityKind}`} aria-hidden="true" />}
       {hud && !briefing && <Hud model={hud} showControlsHint={controlsHintVisible(hud.timeS)} onPause={() => controls.current.pause()} />}
+      <FeedbackLayer shown={shown} popupRef={popupRef} />
+      {place && !briefing && (
+        <div key={place.index} className="place-toast" role="status">
+          {place.name}
+        </div>
+      )}
+      {speedLinesKey > 0 && <div key={`speed-lines-${speedLinesKey}`} className="speed-lines" aria-hidden="true" />}
+      {hitFlashKey > 0 && <div key={`hit-flash-${hitFlashKey}`} className="hit-flash" aria-hidden="true" />}
       {crashMoment && <div className="crash-flash" aria-hidden="true" />}
+      {dev && (
+        <div className="dev-badge" role="note">
+          dev: [ ] previous / next place
+        </div>
+      )}
       {paused && !showSettings && <PauseMenu mode="endless" onAction={onPauseAction} />}
       {paused && showSettings && (
         <div className="overlay" role="dialog" aria-modal="true" aria-label="Settings">

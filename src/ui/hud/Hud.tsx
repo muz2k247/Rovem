@@ -25,7 +25,7 @@ export function Hud({
     <div className="hud2">
       <div className="hud2-top">
         <div className="hud2-speed">
-          <strong className="speed-big">{model.speedMps.toFixed(2)}</strong>
+          <strong className={model.speedTone ? `speed-big speed-${model.speedTone}` : 'speed-big'}>{model.speedMps.toFixed(2)}</strong>
           <span className="speed-unit">m/s</span>
           <small className="speed-kmh">{Math.round(model.speedKmh)} km/h</small>
           <span className="badges">

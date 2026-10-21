@@ -1,12 +1,12 @@
 {
   "placeholder": true,
   "briefing": {
-    "headline": "Drive as far as you can. Hold W to go, S to brake (hold S at rest to reverse), A/D to steer. Don't hit the barriers.",
+    "headline": "Drive as far as you can. Hold W to go, S to brake (hold S at rest to reverse), A/D to steer. Boulders end your run; walls only scrape.",
     "hazards": [
       "Mud slows you.",
-      "Boost pads push you.",
-      "Cannons fire sandbags.",
-      "Tunnels change gravity.",
+      "Vents push you.",
+      "Launchers fire sandbags.",
+      "Gravity caves change your weight.",
       "Fast corners slide."
     ]
   },
@@ -14,13 +14,14 @@
     "mud": "Friction pushes against you. In mud it can beat your motor, and then you slow down.",
     "sand": "Sand's friction is lower than your motor's force, so at top speed you hold your speed.",
     "ice": "Ice has very little friction and very little grip.",
-    "boost": "An impulse changes momentum: Δv = J ÷ m. Lighter rovers gain more.",
+    "boost": "A vent gives an impulse, and an impulse changes momentum: Δv = J ÷ m. Lighter rovers gain more.",
     "headOnHit": "You hand part of your momentum to the bag. The total stays the same, so you slow down.",
     "kickerHit": "The bag from behind hands you some of its momentum. The total stays the same, so you speed up.",
     "gravity": "Gravity presses you into the ground, so friction grows with it. Your mass stays the same; your weight changes.",
     "slip": "Your motor or your brake pushes harder than the tyres can grip.",
     "aboveTopSpeed": "Nothing pushes you now. Only friction slows you: Newton's first law.",
-    "slide": "Tyres can only bend your path so fast, and the faster you go the slower that is. Steer harder than the tyres allow and you slide."
+    "slide": "Tyres can only bend your path so fast, and the faster you go the slower that is. Steer harder than the tyres allow and you slide.",
+    "scrape": "A wall can only push straight back on you. It takes away the speed that points into it and leaves the speed along it."
   },
   "formulas": {
     "mud": "Friction = mud's friction × your wheels' rolling × mass × g",
@@ -34,11 +35,24 @@
     "pickLane": "Pick a lane before the tunnel: the divider is solid.",
     "stuckInHighGravity": "Try the low-gravity tunnel: less weight means less friction.",
     "smoothWheels": "Try Smooth wheels: they lose less speed in mud.",
-    "brakeFirst": "Brake before the cannon's line: a slower rover loses less speed to a sandbag.",
+    "brakeFirst": "Brake before the launcher's line: a slower rover loses less speed to a sandbag.",
     "heavyChassis": "Try the Heavy chassis: a heavier rover loses less speed to a sandbag.",
-    "dodgeCannon": "Dodge the cannon's line: the sandbags cost you the most speed.",
-    "steerEarlier": "You crashed fast. Steer earlier.",
+    "dodgeCannon": "Dodge the launcher's line: the sandbags cost you the most speed.",
+    "steerEarlier": "You crashed fast. Steer earlier round the boulders.",
     "brakeBeforeCorner": "Brake before the corner: a slower rover slides less.",
-    "takeBoosts": "Take the boost pads: each one adds speed."
+    "takeBoosts": "Take the vents: each one adds speed."
+  },
+  "titles": {
+    "mud": "Mud",
+    "sand": "Sand",
+    "ice": "Ice",
+    "boost": "Vent",
+    "headOnHit": "Launcher hit",
+    "kickerHit": "Launcher hit from behind",
+    "gravity": "Gravity cave",
+    "slip": "Wheels slipping",
+    "aboveTopSpeed": "Above top speed",
+    "slide": "Tight turn",
+    "scrape": "Wall scrape"
   }
 }

@@ -6,6 +6,48 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R3: story frame, Crash Site, report stretches; 2026-10-22)
+- **Crash Site** (`levels/crash-site.json`): a start plain, a dune fork (sand against a ridge road), a 270° Ring 25–40 m wide round a crater with five boulders and a rock lip, and a climb; 3 samples, 4 checkpoints, about 90 s (90.8 s scripted with the starting build, par 105 s). `npm run maps` writes its picture. First Tracks and Ring Road are retired.
+- **Stretches** (P6): level data `stretches` (4–6 for Crash Site); the session records the time, entry and exit speed and the cause events of each (`game/level/stretches.ts`). `levels.json` gained `report` (`minGapS` 0.5, `minCauseS` 0.3).
+- **The report strip and its three lines** (`game/level/stretchReport.ts`, `ui/report/StretchStrip.tsx`): the biggest loss or gain, its recorded cause and a Try this; a crash is never blamed on parts. Tests on hand-built cases.
+- **Story frame:** an opening line over the smoking wreck (`render/wreck.ts`), the ship silhouette on the Levels screen with recovered, open and locked parts (`ui/ShipSilhouette.tsx`, `game/ship.ts`), and the part brought home with its line on the report and in the finish arch. Boulder look for barriers. All text is placeholder in `levelText.json` (`ship`, `stretch`).
+- `docs/captures/showcase/r3-*`: screenshots.
+
+### Changed (Showcase R3)
+- The level registry is crash-site, push-and-shove, crater-field, gravity-wells, the-crossing, polar-pass. The fork card names the roads, not their ids. Fork checks need one fork, not two.
+
+### Removed (Showcase R3)
+- `first-tracks.json`, `ring-road.json` and their file tests and maps. Progress saved under those ids is no longer read (ROADMAP OI-32).
+
+### Docs (Showcase R3)
+- ROADMAP: R3 done, Open issues OI-28 to OI-32; DECISIONS 2026-10-22 (R3); Architecture, `showcase.csv`, `levels.csv`; CLAUDE.md layout; README.
+
+
+### Added (Showcase R2: Endless as places; 2026-10-21)
+- **Polygon zones** (P3). A chunk's ground tiles and gravity zones are a rectangle (the old form, still loads) or a `polygon` of at least 3 points; the loaded zone has both, and the lookup is the bounding box, then point-in-polygon (`content/schema.ts`, `game/run/course.ts`). Mirroring mirrors the polygon.
+- **Endless sections of §11** (`runChunks.json`, rewritten): seven named places, each 150 m, 14 field templates (three difficulties) and Gravity Caves (the old two-lane tunnel, with its mud, inside 150 m). Each has an entry post (`entryPostXM`), a name, a `line`, and natural-shaped sand, ice and mud polygons; mud patches are at most 12 m with a bypass. The generator never uses a place twice in a row; Gravity Caves comes after every second field section. `run.json` gained `sectionMinLengthM` (150), `mudPatchMaxLengthM` (12) and `minBendRadiusM` (asphalt 62, sand 100, mud 100, ice 500). The loader rejects a short section, a long mud patch, a bad entry post or line, and a zone given both ways.
+- **The bend rule (D5) as a test** (`game/run/sections.test.ts`): every section's line avoids every obstacle with 0.3 m to spare and never bends tighter than the surface allows; outside the caves the line never goes through mud.
+- **Natural ground** (`render/groundBlend.ts`, `runGround.ts`): colours blend across a fringe of about 1 m whose edge is warped by noise; mud and ice lie in dips (0.10 m, 0.05 m), sand has ripples (0.07 m); the rover rides the drawn ground. The levels' terrain (`terrain.ts`) uses the same blend and dips.
+- **Places in the scene** (`render/runScenery.ts`, `placeLooks.ts`): entry posts with the place's name, a look for each place (sky, haze, walls, banner; eased as the rover passes a post), boulders, vents with steam, mud with cracks and puddles, ice with a sheen and frost, crystals and drifting or falling dust in the caves, and cannons whose lamp glows and whose sight line shows along the bag's lane once they wake. A name appears at the top as the rover enters a place.
+- **§10 for every existing element** (`game/popups.ts`, `moments.ts`, `driveFeedback.ts`, `render/bursts.ts`, `effectSounds.ts`): the pop-up text is worked from the student's own build (sand, mud, ice, a tight turn, a vent, a launcher hit, a gravity cave, a slope, water, a magnet, wheel slip, above top speed, a wall scrape, a crash); each element has a moment (a sound, particles, a camera kick or wider view, speed lines, a flash, the speed number red or green); new sounds (hiss, squelch, skid, crunch, scrape, rumble, hum, splash) and a quiet tyre bed for each surface. Endless records a `scrape` event once for each contact with a wall.
+- **New captions** (`game/feedbackQueue.ts`, `cardText.ts`, `ui/hud/FeedbackLayer.tsx`): pop-ups beside the rover (1.5 s); one caption card (4 s) the first time an element appears in a run, which waits while the wheels are at the grip limit or the rover is in the air; at most one at a time; a pop-up may interrupt a card and the card carries on afterwards. Levels get the same (`LevelScreen.tsx`, `levelScene.cue`).
+- **Colours**: daylight on a red planet; the HUD on dark glass panels with white text of at least 1 rem, one cyan accent, amber for warnings (`ui/screens.css`, `styles.css`; checked by `ui/hudStyles.test.ts`).
+- `?dev=1` in Endless: [ and ] jump to the previous and next place (`game/run/sectionJump.ts`, `session.devSkipTo`); in the dev server, `window.__rovemRun` exposes the session and scene. `session.section` and `session.cannonAwake(id)`.
+- `docs/captures/showcase/`: screenshots of every place and moment.
+
+### Changed (Showcase R2)
+- The Endless scene is daylight, not dusk; the red-planet ground replaces the dark paved strip; boxes for tiles are gone (one ground mesh for each section).
+- A boost pad is a **vent** in all Endless text. `EVENT_KINDS` gained `scrape` (old saves still load); `runText.json` gained `titles` and a `scrape` tidbit.
+- The level session has an option `elementCaptions` (default true); the level screen passes false, so mud, vents, launchers, slopes, water, magnets, bends and wheel slip are shown as pop-ups and cards, not as v4 captions (ROADMAP OI-24). `levelText.json` gained `elementCards`.
+- The Endless run's captions no longer merge into "×n" or show a worked formula; the formulas stay in the report.
+
+### Removed (Showcase R2)
+- The Endless caption feed (`captionForEvent`, `pushCaption`, `captionMain`, `visibleCaptions` and their tests) and `game/captionQueue.ts`: the new pop-up and card queue replaced them. The report still works its formulas (`workedLine`).
+- The eight 100 m chunks and the 50 m tunnel of the demo (`mud-field`, `boost-alley`, `cannon-ice`, `kicker-run`, `crossfire`, `slalom`, `gauntlet`, `narrow-pass`): their ideas live on in the places; their bends were tighter than the bend rule allows.
+
+### Docs (Showcase R2)
+- ROADMAP: R2 done, Open issues OI-22 to OI-27; DECISIONS 2026-10-21 (R2); SRS FR-48 and FR-57, Architecture, Art Direction and `showcase.csv` marked Built; CLAUDE.md layout and the dev keys; README.
+
 ### Added (Showcase R1: fixes, crashes, tools; 2026-10-21)
 - `src/physics/collision.ts` (pure): an edge removes the velocity into it and keeps the part along it, v′ = v cos α (test T19: 12 m/s at 30°, 60°, 90° gives 10.392, 6.000, 0 m/s). `world.ts` and `course.ts` report the edge direction, which way is out and how deep the worst corner is. Walls scrape in levels and in Endless; barriers still crash in levels (back to the checkpoint after 0.5 s) and end the Endless run. Levels get a `scrape` event.
 - `npm run maps`: a top-down SVG of every built level in `docs/captures/maps/` (`scripts/maps.ts`, `src/game/level/mapSvg.ts`).

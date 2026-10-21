@@ -1,0 +1,89 @@
+/* The part brought home, and the stretch strip (Showcase R3, SHOWCASE_PLAN §9, §12). Colours are the tokens on :root in styles.css. */
+
+.part-pickup {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  background: rgba(99, 199, 230, 0.1);
+}
+
+.part-pickup strong {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  color: var(--cyan);
+}
+
+.part-pickup p {
+  margin: 0.25rem 0 0;
+}
+
+.stretch-report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.stretch-strip {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stretch-box {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.stretch-box.won {
+  border-color: var(--green);
+}
+
+.stretch-box.lost {
+  border-color: var(--amber);
+}
+
+.stretch-box.picked {
+  box-shadow: 0 0 0 1px currentColor;
+}
+
+.stretch-name {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.2;
+  min-height: 2.4em;
+}
+
+.stretch-gap {
+  font: 700 1.05rem 'Space Grotesk', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.stretch-box.won .stretch-gap {
+  color: var(--green);
+}
+
+.stretch-box.lost .stretch-gap {
+  color: var(--amber);
+}
+
+.stretch-legend {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.stretch-lines p {
+  margin: 0 0 0.25rem;
+}
+
+.stretch-headline {
+  font: 700 1.05rem 'Space Grotesk', system-ui, sans-serif;
+}

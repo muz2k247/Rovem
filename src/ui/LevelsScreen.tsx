@@ -1,6 +1,8 @@
 import type { NamedCard } from '../content/levelCards.ts';
 import type { LevelSummary } from '../game/contracts.ts';
 import { formatClock } from '../game/controlsText.ts';
+import type { ShipPartView } from '../game/ship.ts';
+import { ShipSilhouette } from './ShipSilhouette.tsx';
 import { Stars } from './Stars.tsx';
 
 export interface EndlessCardInfo extends NamedCard {
@@ -11,13 +13,14 @@ export interface EndlessCardInfo extends NamedCard {
 /**
  * Levels (LEVELS_BUILD_PLAN A3): a 4-column grid of cards with number, name, hook and stars. The next level is
  * marked "NEXT"; later ones show a lock and "Finish the previous level". The Endless card shows the best distance.
- * The Dust Storm card is always locked.
+ * The Dust Storm card is always locked. Above them, the ship shows the five parts and which are recovered.
  */
 export function LevelsScreen({
   levels,
   nextId,
   endless,
   dustStorm,
+  ship,
   onOpenLevel,
   onEndless,
   onBack,
@@ -26,6 +29,8 @@ export function LevelsScreen({
   nextId: string | null;
   endless: EndlessCardInfo;
   dustStorm: NamedCard;
+  /** The ship's five parts and which are recovered (SHOWCASE_PLAN §12). */
+  ship: ShipPartView[];
   onOpenLevel: (id: string) => void;
   onEndless: () => void;
   onBack: () => void;
@@ -38,6 +43,7 @@ export function LevelsScreen({
         </button>
         <h1>Levels</h1>
       </header>
+      <ShipSilhouette parts={ship} />
       <div className="level-grid">
         {levels.map((l) => {
           const isNext = l.id === nextId;

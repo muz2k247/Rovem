@@ -1,9 +1,17 @@
 import * as THREE from 'three';
 import type { Content, GravityKind } from '../content/index.ts';
 import type { ForceArrow } from '../game/contracts.ts';
+import type { MomentCamera, MomentParticles } from '../game/moments.ts';
 import type { CourseChunk } from '../game/run/course.ts';
 import type { Graphics } from '../save/settings.ts';
+import { createBursts, type BurstKind } from './bursts.ts';
 import { createForceArrows } from './forceArrows.ts';
+import { lookAt, placeLook } from './placeLooks.ts';
+import { buildChunkGround, groundHeightAt } from './runGround.ts';
+import {
+  addCannon, addCaveDressing, addEntryPost, addIceDressing, addMudDressing, addObstacle, addVent, boxAt, bannerTexture, newDisposables,
+  updateCannon, updateCaveDust, updateSteam, type CannonParts, type CaveDust, type SceneryDisposables, type SteamPuff,
+} from './runScenery.ts';
 import { GENERATE_AHEAD_M, type RunSession } from '../game/run/runSession.ts';
 import { createDust } from './driveScene.ts';
 import { createSkidMarks } from './skidMarks.ts';
@@ -33,6 +41,17 @@ const FOV_EASE_PER_S = 3;
 export const CAMERA_HEADING_SHARE = 1;
 /** The camera never goes closer to a canyon wall than this, so it cannot end up inside it. */
 export const CAMERA_WALL_MARGIN_M = 0.8;
+/** The camera kick of a moment (SHOWCASE_PLAN §16: 0.2 s) and the wider view of a vent. */
+export const CAMERA_KICK_S = 0.2;
+const CAMERA_KICK_M = 0.14;
+const FOV_WIDEN_DEG = 9;
+const FOV_WIDEN_DECAY_PER_S = 16;
+/** The rover rides the drawn ground (dips and ripples) at this speed. */
+const RIDE_EASE_PER_S = 14;
+/** Colours ease from one place to the next at this rate (per second). */
+const LOOK_EASE_PER_S = 1.6;
+/** The ground is built in cells this big: 0.75 m on Graphics High, 1.5 m on Low (0.5 m cost about 50 ms a section, a visible hitch). */
+export const GROUND_CELL_M = { high: 0.75, low: 1.5 } as const;
 const SHAKE_HZ = 38;
 const SHAKE_UP_SHARE = 0.6; // the shake is smaller up and down than sideways
 
@@ -96,14 +115,7 @@ const ROOF_HEIGHT_M = 4.6;
 const BAG_BARREL_HEIGHT_M = 2;
 const BAG_DROP_DISTANCE_M = 4;
 
-const SURFACE_COLOURS: Record<string, number> = {
-  asphalt: 0x2b2d33,
-  sand: 0xcfae7f,
-  ice: 0xbfe3f2,
-  mud: 0x4a3222,
-};
 const MARS_RED = 0x9c4a2c;
-const SKY = 0x1b1424;
 
 /** Body sits 0.07 m lower in high gravity and bobs gently in low gravity. Visual only (A7). */
 const HIGH_GRAVITY_SAG_M = 0.07;
@@ -113,77 +125,22 @@ function mat(color: number, extra: THREE.MeshStandardMaterialParameters = {}): T
   return new THREE.MeshStandardMaterial({ color, flatShading: true, ...extra });
 }
 
-// Shared geometry and materials: unit boxes scaled per object.
-const unitBox = new THREE.BoxGeometry(1, 1, 1);
-const chevronGeometry = new THREE.ShapeGeometry(
-  new THREE.Shape([
-    new THREE.Vector2(-0.5, -1),
-    new THREE.Vector2(0.4, 0),
-    new THREE.Vector2(-0.5, 1),
-    new THREE.Vector2(-0.9, 1),
-    new THREE.Vector2(0, 0),
-    new THREE.Vector2(-0.9, -1),
-  ]),
-);
+const SURFACE_DUST: Record<string, number> = { sand: 0xcfae7f, ice: 0xbfe3f2, mud: 0x4a3222 };
+const ROCK_DUST = 0xb9a58c;
+
 const postGeometry = new THREE.ConeGeometry(0.14, 1, 5);
-const barrelGeometry = new THREE.CylinderGeometry(0.35, 0.42, 1.8, 10);
 
 const materials = {
-  asphalt: mat(SURFACE_COLOURS.asphalt!),
   wall: mat(0x7a3a24),
   barrier: mat(0xe0703c),
   barrierBand: mat(0xf1f1ec),
   tunnelWall: mat(0x59546a),
   roofLow: mat(0x3a5a86, { transparent: true, opacity: 0.55 }),
   roofHigh: mat(0x8a4a24, { transparent: true, opacity: 0.55 }),
-  pad: mat(0x28d8e8, { emissive: 0x0e8a99, emissiveIntensity: 1 }),
-  chevron: mat(0xe9ffff, { emissive: 0x9ffcff, emissiveIntensity: 1 }),
-  gantry: mat(0x6c7388),
-  barrel: mat(0x2b2f3a),
   post: mat(0xe0703c),
   bag: mat(0x6b4a2a),
-  tile: Object.fromEntries(Object.entries(SURFACE_COLOURS).map(([id, c]) => [id, mat(c)])) as Record<string, THREE.MeshStandardMaterial>,
+  start: mat(0x7a4a38),
 };
-
-/** The unit box placed at the physics rectangle [x0,x1] × [z0,z1], from y0 up by `height`. */
-function boxAt(material: THREE.Material, x: readonly [number, number], z: readonly [number, number], y0: number, height: number, name: string): THREE.Mesh {
-  const mesh = new THREE.Mesh(unitBox, material);
-  mesh.name = name;
-  mesh.scale.set(x[1] - x[0], height, z[1] - z[0]);
-  mesh.position.set((x[0] + x[1]) / 2, y0 + height / 2, -(z[0] + z[1]) / 2);
-  return mesh;
-}
-
-function bannerTexture(text: string, question: string, colour: string): THREE.Texture | undefined {
-  if (typeof document === 'undefined') return undefined; // Node tests have no canvas
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 192;
-  const g = canvas.getContext('2d');
-  if (!g) return undefined;
-  g.fillStyle = colour;
-  g.fillRect(0, 0, 512, 192);
-  g.strokeStyle = '#f1f1ec';
-  g.lineWidth = 6;
-  g.strokeRect(6, 6, 500, 180);
-  g.fillStyle = '#f1f1ec';
-  // Each line shrinks until it fits inside the frame, so no text is cut off.
-  const fit = (line: string, sizePx: number) => {
-    for (let size = sizePx; size > 12; size -= 2) {
-      g.font = `bold ${size}px system-ui, sans-serif`;
-      if (g.measureText(line).width <= 470) break;
-    }
-  };
-  fit(text, 54);
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(text, 256, 66);
-  fit(question, 40);
-  g.fillText(question, 256, 134);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
 
 export interface RunScene {
   scene: THREE.Scene;
@@ -204,53 +161,100 @@ export interface RunScene {
   readonly arrowsGroup: THREE.Group;
   /** Skid marks currently on the ground (they fade away). */
   readonly skidMarkCount: number;
+  /** Particles alive in the moment bursts (spray, splash, steam, sparks, debris). */
+  readonly burstCount: number;
+  /**
+   * The scene's part of a moment (SHOWCASE_PLAN §10): a burst of particles at the rover and a camera cue. The sound and the
+   * HUD parts belong to the screen. `gained` tells a vent or a bag from behind (more speed) from a loss.
+   */
+  cue(moment: { particles?: MomentParticles; camera?: MomentCamera }): void;
   /** Moves the rover, the chunks, the bags and the camera to the session. `frameS` drives the effects only. */
   update(session: RunSession, frameS?: number): void;
   dispose(): void;
 }
 
-export function createRunScene(session: RunSession, content: Content, look: RoverLook | WheelStyle): RunScene {
+export interface RunSceneOptions {
+  /** Graphics Low builds the ground in coarser cells (GROUND_CELL_M). Default high. */
+  quality?: 'high' | 'low';
+}
+
+interface ChunkExtras {
+  own: SceneryDisposables;
+  steam: SteamPuff[];
+  dust: CaveDust[];
+  cannons: CannonParts[];
+}
+
+export function createRunScene(session: RunSession, content: Content, look: RoverLook | WheelStyle, options: RunSceneOptions = {}): RunScene {
   const { course } = session;
   const run = content.run;
   const WALL_INNER_M = run.corridorHalfWidthM;
   const WALL_OUTER_M = WALL_INNER_M + WALL_THICKNESS_M;
   const roverLengthM = content.constants.roverLengthM;
   const roverWidthM = content.constants.roverWidthM;
+  const cellM = GROUND_CELL_M[options.quality ?? 'high'];
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(SKY);
-  scene.fog = new THREE.Fog(SKY, 80, 200);
-  scene.add(new THREE.HemisphereLight(0xffd9b0, 0x3a2a35, 1.1));
-  const sun = new THREE.DirectionalLight(0xffffff, 2);
+  // Daylight on a red planet (SHOWCASE_PLAN §12). The sky and the haze take the colour of the place the rover is in.
+  const skyColour = new THREE.Color(lookAt(session.section).sky);
+  const wallColour = new THREE.Color(lookAt(session.section).wall);
+  scene.background = skyColour;
+  const fog = new THREE.Fog(skyColour, 90, 260);
+  scene.fog = fog;
+  scene.add(new THREE.HemisphereLight(0xffe6c8, 0x6a4a40, 1.5));
+  const sun = new THREE.DirectionalLight(0xfff2dc, 2.4);
   sun.position.set(30, 50, 20);
   scene.add(sun);
+  materials.wall.color.copy(wallColour);
 
   // The red ground follows the rover, so the horizon is always red.
   const far = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), mat(MARS_RED));
   far.rotation.x = -Math.PI / 2;
-  far.position.y = -0.03;
+  far.position.y = -0.12;
   scene.add(far);
 
-  // The start area: a strip of asphalt under the rover's back, the canyon walls along it, and the wall behind the start line.
+  // The start area: a strip of rock under the rover's back, the canyon walls along it, and the wall behind the start line.
   const startGroup = new THREE.Group();
   startGroup.name = 'startArea';
   const wallX = session.startWallXM;
-  startGroup.add(boxAt(materials.asphalt, [wallX, 0], [-WALL_INNER_M, WALL_INNER_M], -0.02, 0.02, 'startPad'));
+  startGroup.add(boxAt(materials.start, [wallX, 0], [-WALL_INNER_M, WALL_INNER_M], -0.02, 0.02, 'startPad'));
   startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, 0], [WALL_INNER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'startSide'));
   startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, 0], [-WALL_OUTER_M, -WALL_INNER_M], 0, WALL_HEIGHT_M, 'startSide'));
   startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, wallX], [-WALL_OUTER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'startWall'));
   scene.add(startGroup);
 
   const chunkGroups = new Map<number, THREE.Group>();
+  const extras = new Map<number, ChunkExtras>();
   const cannonX = new Map<string, number>();
-  const ownedTextures = new Map<number, THREE.Texture[]>();
+
+  /** The colour of bare rock at x: each place's own, averaged over ±8 m so it eases across a seam instead of cutting. */
+  const rockRgb = (xM: number): readonly [number, number, number] => {
+    const c = new THREE.Color();
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    for (const [dx, w] of [[-8, 0.25], [0, 0.5], [8, 0.25]] as const) {
+      const section = course.sectionAt(Math.max(0, xM + dx)) ?? course.sectionAt(xM);
+      c.setHex(lookAt(section).rock);
+      r += c.r * w;
+      g += c.g * w;
+      b += c.b * w;
+    }
+    return [r, g, b];
+  };
 
   const buildChunk = (c: CourseChunk): THREE.Group => {
     const group = new THREE.Group();
     group.name = `chunk-${c.index}`;
-    const textures: THREE.Texture[] = [];
+    const own = newDisposables();
+    const ex: ChunkExtras = { own, steam: [], dust: [], cannons: [] };
     const span = [c.startXM, c.endXM] as const;
+    const placeStyle = placeLook(c.place);
 
-    group.add(boxAt(materials.asphalt, span, [-WALL_INNER_M, WALL_INNER_M], -0.02, 0.02, 'asphalt'));
+    // The ground: one mesh, colours blended across the fringe, mud and ice in dips (P3).
+    const ground = buildChunkGround({ course, chunk: c, halfWidthM: WALL_INNER_M, cellM, rockRgb });
+    own.geometries.push(ground.geometry);
+    own.materials.push(ground.material as THREE.Material);
+    group.add(ground);
     group.add(boxAt(materials.wall, span, [WALL_INNER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'canyonWall'));
     group.add(boxAt(materials.wall, span, [-WALL_OUTER_M, -WALL_INNER_M], 0, WALL_HEIGHT_M, 'canyonWall'));
     // Posts every 10 m near the walls: things close to the track show speed.
@@ -262,64 +266,25 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
         group.add(post);
       }
     }
-    c.tiles.forEach((tile, i) => {
-      group.add(boxAt(materials.tile[tile.surfaceId] ?? mat(0x808080), tile.xM, tile.zM, 0, 0.03 + i * 0.004, 'tile'));
-    });
-    for (const b of c.barriers) {
-      if (c.kind === 'tunnel') {
-        group.add(boxAt(materials.tunnelWall, b.xM, b.zM, 0, ROOF_HEIGHT_M, 'barrier')); // tunnel walls reach the roof
-      } else {
-        group.add(boxAt(materials.barrier, b.xM, b.zM, 0, 1.2, 'barrier'));
-        group.add(boxAt(materials.barrierBand, [b.xM[0] - 0.02, b.xM[1] + 0.02], [b.zM[0] - 0.02, b.zM[1] + 0.02], 0.65, 0.3, 'barrierBand'));
-      }
+    addEntryPost(group, c, placeStyle, WALL_INNER_M, own);
+    for (const tile of c.tiles) {
+      if (tile.surfaceId === 'mud') addMudDressing(group, tile);
+      if (tile.surfaceId === 'ice') addIceDressing(group, tile, own);
     }
-    for (const pad of c.boostPads) {
-      group.add(boxAt(materials.pad, pad.xM, pad.zM, 0, 0.05, 'boostPad'));
-      const lengthM = pad.xM[1] - pad.xM[0];
-      const widthM = pad.zM[1] - pad.zM[0];
-      const count = Math.max(1, Math.floor(lengthM / 1.6));
-      for (let i = 0; i < count; i++) {
-        const chevron = new THREE.Mesh(chevronGeometry, materials.chevron);
-        chevron.name = 'chevron';
-        chevron.rotation.x = -Math.PI / 2;
-        const scale = Math.min(widthM, 3) / 2.6;
-        chevron.scale.set(scale, scale, scale);
-        chevron.position.set(pad.xM[0] + ((i + 0.5) * lengthM) / count, 0.07, -(pad.zM[0] + pad.zM[1]) / 2);
-        group.add(chevron);
-      }
-    }
+    for (const b of c.barriers) addObstacle(group, b, materials.barrier, materials.barrierBand, c.kind === 'tunnel', materials.tunnelWall, ROOF_HEIGHT_M);
+    for (const pad of c.boostPads) addVent(group, pad, ex.steam);
     for (const cannon of c.cannons) {
       cannonX.set(cannon.id, cannon.xM);
-      const gantry = new THREE.Group();
-      gantry.name = 'cannon';
-      for (const dz of [-2.2, 2.2]) {
-        const leg = new THREE.Mesh(unitBox, materials.gantry);
-        leg.scale.set(0.35, 3.8, 0.35);
-        leg.position.set(0, 1.9, dz);
-        gantry.add(leg);
-      }
-      const beam = new THREE.Mesh(unitBox, materials.gantry);
-      beam.scale.set(0.5, 0.45, 4.9);
-      beam.position.set(0, 3.8, 0);
-      gantry.add(beam);
-      const hanger = new THREE.Mesh(unitBox, materials.gantry);
-      hanger.scale.set(0.3, 1.0, 0.3);
-      hanger.position.set(0, 3.2, 0);
-      gantry.add(hanger);
-      const barrel = new THREE.Mesh(barrelGeometry, materials.barrel);
-      barrel.rotation.z = Math.PI / 2;
-      barrel.position.set((cannon.kind === 'headOn' ? -1 : 1) * 0.7, BAG_BARREL_HEIGHT_M + 0.9, 0);
-      gantry.add(barrel);
-      gantry.position.set(cannon.xM, 0, -cannon.zM);
-      group.add(gantry);
+      addCannon(group, cannon, own, ex.cannons);
     }
     for (const zone of c.gravityZones) {
       const low = zone.kind === 'low';
       group.add(boxAt(low ? materials.roofLow : materials.roofHigh, zone.xM, zone.zM, ROOF_HEIGHT_M, 0.3, 'roof'));
+      addCaveDressing(group, zone, ex.dust, own);
       const text = `${low ? 'LOW' : 'HIGH'} GRAVITY ×${run.gravityMultipliers[zone.kind]}`;
       const question = content.runText.tunnelQuestion;
       const texture = bannerTexture(text, question, low ? '#2d5f9a' : '#a8501c');
-      if (texture) textures.push(texture);
+      if (texture) own.textures.push(texture);
       const sign = new THREE.Mesh(
         new THREE.PlaneGeometry(5, 1.875),
         new THREE.MeshBasicMaterial({ color: texture ? 0xffffff : low ? 0x2d5f9a : 0xa8501c, map: texture ?? null, side: THREE.DoubleSide }),
@@ -331,7 +296,7 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
       sign.position.set(zone.xM[0] + 0.5, ROOF_HEIGHT_M - 1.2, -(zone.zM[0] + zone.zM[1]) / 2);
       group.add(sign);
     }
-    ownedTextures.set(c.index, textures);
+    extras.set(c.index, ex);
     return group;
   };
 
@@ -340,13 +305,19 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     if (!group) return;
     scene.remove(group);
     group.traverse((o) => {
-      if (o.name !== 'banner') return; // everything else uses shared geometry and materials
+      if (o.name !== 'banner') return; // everything else uses shared geometry and materials, or is listed in `own`
       const mesh = o as THREE.Mesh;
       mesh.geometry.dispose();
       (mesh.material as THREE.Material).dispose();
     });
-    for (const t of ownedTextures.get(index) ?? []) t.dispose();
-    ownedTextures.delete(index);
+    const ex = extras.get(index);
+    if (ex) {
+      for (const t of ex.own.textures) t.dispose();
+      for (const m of ex.own.materials) m.dispose();
+      for (const g of ex.own.geometries) g.dispose();
+      for (const cp of ex.cannons) cannonX.delete(cp.cannon.id);
+    }
+    extras.delete(index);
     chunkGroups.delete(index);
   };
 
@@ -382,6 +353,9 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
   const dustPoints = scene.getObjectByName('dust') as THREE.Points | undefined;
   if (dustPoints) (dustPoints.material as THREE.PointsMaterial).size = 0.22; // smaller than the test course: near puffs hid the track
   const dustColour = new THREE.Color();
+  const bursts = createBursts(scene);
+  const targetSky = new THREE.Color();
+  const targetWall = new THREE.Color();
   let lastDistanceM = 0;
   let wheelAngle = 0;
   let steerEased = 0;
@@ -389,16 +363,21 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
   let lastHeadingRad = 0;
   let clockS = 0;
   let sagM = 0;
+  let rideY: number | undefined;
   let gravityKind: GravityKind | undefined;
   let shakeM = 0;
+  let kickLeftS = 0;
+  let fovWiden = 0;
   const skid = createSkidMarks(scene);
   const cameraAngle = createCameraBlend();
   /** Where each wheel touched the ground last frame while slipping; null when not slipping. */
   let lastWheelPoints: { x: number; z: number }[] | null = null;
+  let lastState = session.state;
 
   const update = (s: RunSession, frameS = 0) => {
     clockS += frameS;
     const state = s.state;
+    lastState = state;
     const fx = Math.cos(state.headingRad);
     const fz = Math.sin(state.headingRad);
     const x = state.positionXM;
@@ -407,9 +386,22 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     far.position.x = x;
     far.position.z = -z;
 
-    rover.position.set(x, 0, -z);
+    // The look of the place: the sky, the haze and the walls ease toward the colours of the section the rover is in.
+    const place = lookAt(s.section);
+    targetSky.setHex(place.sky);
+    targetWall.setHex(place.wall);
+    const k = frameS > 0 ? Math.min(1, LOOK_EASE_PER_S * frameS) : 1;
+    skyColour.lerp(targetSky, k);
+    wallColour.lerp(targetWall, k);
+    materials.wall.color.copy(wallColour);
+    fog.color.copy(skyColour);
+
+    // The rover rides the drawn ground: mud and ice dips, sand ripples.
+    const targetRide = groundHeightAt(course, x, z);
+    rideY = rideY === undefined || frameS === 0 ? targetRide : rideY + (targetRide - rideY) * Math.min(1, RIDE_EASE_PER_S * frameS);
+    rover.position.set(x, rideY, -z);
     rover.rotation.y = state.headingRad;
-    arrows.group.position.set(x - fx * (roverLengthM / 2), ARROWS_HEIGHT_M, -(z - fz * (roverLengthM / 2)));
+    arrows.group.position.set(x - fx * (roverLengthM / 2), rideY + ARROWS_HEIGHT_M, -(z - fz * (roverLengthM / 2)));
     gravityKind = s.gravityKind;
     const targetSag =
       gravityKind === 'high' ? -HIGH_GRAVITY_SAG_M : gravityKind === 'low' ? LOW_GRAVITY_BOB_M * (0.5 + 0.5 * Math.sin(clockS * 2.4)) : 0;
@@ -454,18 +446,26 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
       bagMeshes.delete(id);
     }
 
+    // The things that move on the sections: cannons that charge, steam, dust in the caves.
+    for (const ex of extras.values()) {
+      for (const cp of ex.cannons) updateCannon(cp, s.cannonAwake(cp.cannon.id), clockS);
+      updateSteam(ex.steam, clockS);
+      if (frameS > 0) updateCaveDust(ex.dust, frameS);
+    }
+
     if (frameS > 0) {
       const surfaceId = course.surfaceIdAt(x, z);
       const perMps = surfaceId === 'sand' ? 7 : surfaceId === 'ice' ? 2.5 : surfaceId === 'mud' ? 6 : 3;
-      dustColour.setHex(surfaceId === 'asphalt' ? 0xb9a58c : (SURFACE_COLOURS[surfaceId] ?? 0xcfae7f));
+      dustColour.setHex(SURFACE_DUST[surfaceId] ?? ROCK_DUST);
       const rearX = x - fx * model.rearAxleBackM;
       const rearZ = z - fz * model.rearAxleBackM;
       const side = roverWidthM / 2 - 0.1;
       const emitters = [
-        new THREE.Vector3(rearX - fz * side, 0.12, -(rearZ + fx * side)),
-        new THREE.Vector3(rearX + fz * side, 0.12, -(rearZ - fx * side)),
+        new THREE.Vector3(rearX - fz * side, rideY + 0.12, -(rearZ + fx * side)),
+        new THREE.Vector3(rearX + fz * side, rideY + 0.12, -(rearZ - fx * side)),
       ];
       dust.update(frameS, emitters, state.speedMps * perMps, dustColour, new THREE.Vector3(-fx, 0, fz));
+      bursts.update(frameS);
     }
 
     // Skid marks: while the physics reports wheel slip, a strip behind each of the four wheels (presentation only).
@@ -486,8 +486,10 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
       }
     }
 
-    // Low chase camera; the field of view widens with speed.
-    const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps;
+    // Low chase camera; the field of view widens with speed, and a bit more for a moment (a vent).
+    fovWiden = frameS > 0 ? Math.max(0, fovWiden - FOV_WIDEN_DECAY_PER_S * frameS) : fovWiden;
+    kickLeftS = frameS > 0 ? Math.max(0, kickLeftS - frameS) : kickLeftS;
+    const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps + fovWiden;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
     camera.updateProjectionMatrix();
     const pose = cameraPose(x, z, cameraAngle.follow(s.travelRad, frameS), WALL_INNER_M, s.startWallXM);
@@ -499,9 +501,11 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
       shakeY = Math.sin(clockS * SHAKE_HZ * 0.9 + 1) * shakeM * SHAKE_UP_SHARE;
       shakeZ = Math.sin(clockS * SHAKE_HZ) * shakeM;
     }
+    // A kick is a quick dip that settles back over CAMERA_KICK_S.
+    const kickY = -CAMERA_KICK_M * (kickLeftS / CAMERA_KICK_S);
     const limit = WALL_INNER_M - CAMERA_WALL_MARGIN_M;
     const camZ = Math.min(limit, Math.max(-limit, pose.position.z + shakeZ));
-    camera.position.set(pose.position.x + shakeX, CAMERA_UP_M + shakeY, -camZ);
+    camera.position.set(pose.position.x + shakeX, CAMERA_UP_M + shakeY + kickY, -camZ);
     camera.lookAt(pose.look.x, 0.8, -pose.look.z);
   };
   update(session);
@@ -517,6 +521,9 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     get skidMarkCount() {
       return skid.count;
     },
+    get burstCount() {
+      return bursts.liveCount;
+    },
     setShake(amplitudeM) {
       shakeM = Math.max(0, amplitudeM);
     },
@@ -526,12 +533,33 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     setGraphics(graphics) {
       if (dustPoints) dustPoints.visible = graphics === 'high';
     },
+    cue(moment) {
+      const st = lastState;
+      const fx = Math.cos(st.headingRad);
+      const fz = Math.sin(st.headingRad);
+      const y = (rideY ?? 0) + 0.2;
+      const kind = moment.particles;
+      if (kind && kind !== 'skidMarks' && kind !== 'waterSplash') {
+        const burstKind: BurstKind = kind;
+        const rearX = st.positionXM - fx * model.rearAxleBackM;
+        const rearZ = st.positionZM - fz * model.rearAxleBackM;
+        if (burstKind === 'steam') bursts.emit('steam', st.positionXM - fx * roverLengthM * 0.5, y, -(st.positionZM - fz * roverLengthM * 0.5), 0, 0);
+        else if (burstKind === 'sparks') {
+          const side = st.positionZM >= 0 ? 1 : -1; // the wall the rover is scraping
+          bursts.emit('sparks', st.positionXM - fx * 0.5, y, -(st.positionZM + side * (roverWidthM / 2)), -fx, fz);
+        } else if (burstKind === 'debris') bursts.emit('debris', st.positionXM, y + 0.2, -st.positionZM, fx, -fz);
+        else bursts.emit(burstKind, rearX, y - 0.1, -rearZ, -fx, fz);
+      }
+      if (moment.camera === 'kick') kickLeftS = CAMERA_KICK_S;
+      if (moment.camera === 'wide') fovWiden = FOV_WIDEN_DEG;
+    },
     arrowsGroup: arrows.group,
     loadedChunkIndices: () => [...chunkGroups.keys()].sort((a, b) => a - b),
     update,
     dispose() {
       arrows.dispose();
       skid.dispose();
+      bursts.dispose();
       for (const index of [...chunkGroups.keys()]) removeChunk(index);
     },
   };

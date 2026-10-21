@@ -12,6 +12,11 @@
   --gold: #f2c14e;
   --violet: #b49cff;
   --green: #6fd08c;
+  /* R2: the driving HUD (SHOWCASE_PLAN §12) */
+  --glass: rgba(10, 14, 22, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --amber: #ffb02e;
+  --red: #ff6b5e;
 }
 
 html,

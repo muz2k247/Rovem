@@ -36,21 +36,13 @@ function pastBarrier(def: LevelDef, world: LevelWorld, barrierId: string, roadId
 type PlanMaker = (def: LevelDef, world: LevelWorld) => LevelPlans;
 
 const PLANS: Record<LevelId, PlanMaker | undefined> = {
-  'first-tracks': (def, world) => {
-    const gap = pastBarrier(def, world, 'chicane-barrier', 'chicane', 55, -1);
-    const iceCap = [{ roadId: 'f2-ice', fromM: 0, toM: 400, speedMps: 4.2 }];
-    const [sand, ice, mud] = [samplePoint(def, 's-sand'), samplePoint(def, 's-ice'), samplePoint(def, 's-mud')];
-    const asphaltAll = ['start', 'bend-1', 'chicane', 'f1-asphalt', 'm1', 'f2-asphalt', 'm2', 'f3-asphalt', 'm3'];
-    const starsRoads = (mudRoad: string) => ['start', 'bend-1', 'chicane', 'f1-sand', 'm1', 'f2-ice', 'm2', mudRoad, 'm3'];
+  'crash-site': (def) => {
+    const [debris, ring, climb] = [samplePoint(def, 's-debris'), samplePoint(def, 's-ring'), samplePoint(def, 's-climb')];
+    // The ridge is the firm way for every build; the dunes are a choice the level file's tests make on their own.
+    const roads = (fork: string) => ['start', 'bend-1', 'lead', fork, 'm1', 'b2', 'ring', 'exit', 'climb'];
     return {
-      safe: { roads: asphaltAll, via: [gap] },
-      stars: {
-        roads: starsRoads('f3-mud'),
-        via: [gap, sand, ice, mud],
-        caps: iceCap,
-        // The starting build bogs down in the mud: it comes back to the checkpoint and takes the asphalt.
-        afterRespawn: { roads: starsRoads('f3-asphalt'), via: [gap, sand, ice], caps: iceCap },
-      },
+      safe: { roads: roads('f1-ridge') },
+      stars: { roads: roads('f1-ridge'), via: [debris, ring, climb] },
     };
   },
   'push-and-shove': (def) => {
@@ -82,14 +74,6 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
         caps: [{ roadId: 'w1-hill', fromM: 160, toM: 200, speedMps: 8.5 }],
         decelMps2: 2,
       },
-    };
-  },
-  'ring-road': (def) => {
-    const [hairpin, lowg, ring] = [samplePoint(def, 's-hairpin'), samplePoint(def, 's-lowg'), samplePoint(def, 's-ring')];
-    const roads = (f1: string, f2: string) => ['start', 'b1', 'c1', 'b2', 'c2', f1, 'c3', 'c4', f2, 'c5', 'ring', 'exit'];
-    return {
-      safe: { roads: roads('f1-wide', 'f2-wide') },
-      stars: { roads: roads('f1-hairpin', 'f2-tight'), via: [hairpin, lowg, ring] },
     };
   },
   'the-crossing': (def) => {

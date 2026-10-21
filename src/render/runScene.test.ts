@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { content } from '../content/index.ts';
+import { testChunk, type ChunkSpec } from '../../tests/helpers/chunks.ts';
 import { constants, rover } from '../../tests/helpers/physics.ts';
 import { createRunSession } from '../game/run/runSession.ts';
 import { BUILD_AHEAD_M, CAMERA_HEADING_SHARE, CAMERA_WALL_MARGIN_M, cameraPose, createCameraBlend, createRunScene, KEEP_BEHIND_M } from './runScene.ts';
 import { wrapAngle } from '../game/run/drift.ts';
+import { placeLook } from './placeLooks.ts';
 
 const names = (root: THREE.Object3D) => {
   const found: string[] = [];
@@ -12,6 +14,9 @@ const names = (root: THREE.Object3D) => {
   return found;
 };
 const count = (root: THREE.Object3D, name: string) => names(root).filter((n) => n === name).length;
+/** An obstacle is a boulder or a built barrier (the physics treats them alike). */
+const obstacles = (root: THREE.Object3D) => count(root, 'barrier') + count(root, 'boulder');
+const grounds = (root: THREE.Object3D) => names(root).filter((n) => n.startsWith('ground-')).length;
 
 function make(seed: number, initialState = {}) {
   const session = createRunSession({ content, rover: rover(), constants, seed, input: () => 0, initialState });
@@ -27,6 +32,9 @@ function expected(session: ReturnType<typeof make>['session'], xM: number) {
     pads: chunks.reduce((n, c) => n + c.boostPads.length, 0),
     cannons: chunks.reduce((n, c) => n + c.cannons.length, 0),
     tiles: chunks.reduce((n, c) => n + c.tiles.length, 0),
+    muds: chunks.reduce((n, c) => n + c.tiles.filter((t) => t.surfaceId === 'mud').length, 0),
+    ices: chunks.reduce((n, c) => n + c.tiles.filter((t) => t.surfaceId === 'ice').length, 0),
+    posts: chunks.filter((c) => c.entryPostXM !== undefined).length,
     zones: chunks.reduce((n, c) => n + c.gravityZones.length, 0),
   };
 }
@@ -36,10 +44,9 @@ describe('run scene', () => {
     const { session, view } = make(7);
     const want = expected(session, 0);
     expect(view.loadedChunkIndices()).toEqual(want.indices);
-    expect(count(view.scene, 'barrier')).toBe(want.barriers);
+    expect(obstacles(view.scene)).toBe(want.barriers);
     expect(count(view.scene, 'boostPad')).toBe(want.pads);
     expect(count(view.scene, 'cannon')).toBe(want.cannons);
-    expect(count(view.scene, 'tile')).toBe(want.tiles);
     expect(count(view.scene, 'roof')).toBe(want.zones);
     expect(count(view.scene, 'banner')).toBe(want.zones);
     expect(want.barriers).toBeGreaterThan(0);
@@ -52,10 +59,10 @@ describe('run scene', () => {
       view.update(session.state.positionXM === xM ? session : fakeAt(session, xM));
       const want = expected(session, xM);
       expect(view.loadedChunkIndices()).toEqual(want.indices);
-      expect(count(view.scene, 'barrier')).toBe(want.barriers);
+      expect(obstacles(view.scene)).toBe(want.barriers);
       expect(count(view.scene, 'boostPad')).toBe(want.pads);
       expect(count(view.scene, 'cannon')).toBe(want.cannons);
-      expect(count(view.scene, 'tile')).toBe(want.tiles);
+      expect(grounds(view.scene)).toBe(want.indices.length);
     }
     expect(view.loadedChunkIndices()).not.toContain(first[0]);
     // Chunks more than KEEP_BEHIND_M behind are gone.
@@ -102,6 +109,7 @@ describe('run scene', () => {
 
   it('draws one bag per live bag and removes it when it is gone', () => {
     const { session } = make(7);
+    session.course.ensureAhead(8000); // launcher sections come after the first 500 m, and not in every seed soon
     const cannon = session.course.chunks.flatMap((c) => c.cannons)[0];
     expect(cannon).toBeDefined();
     const s = createRunSession({ content, rover: rover(), constants, seed: 7, input: () => 0, initialState: { positionXM: cannon!.xM - 60 }, course: session.course });
@@ -176,8 +184,8 @@ describe('chase camera', () => {
 });
 
 describe('skid marks follow the physics slip flag', () => {
-  const emptyChunk = { id: 'ice-a', difficulty: 1, lengthM: 100, tiles: [{ surfaceId: 'ice', xM: [0, 100] as [number, number], zM: [-15, 15] as [number, number] }], barriers: [], boostPads: [], cannons: [], gravityZones: [] };
-  const world = { ...content, runChunks: { fieldChunks: [emptyChunk, { ...emptyChunk, id: 'ice-b' }], tunnel: content.runChunks.tunnel } };
+  const ice: ChunkSpec = { lengthM: 100, tiles: [{ surfaceId: 'ice', xM: [0, 100], zM: [-15, 15] }] };
+  const world = { ...content, runChunks: { fieldChunks: [testChunk({ ...ice, id: 'ice-a' }), testChunk({ ...ice, id: 'ice-b' })], tunnel: content.runChunks.tunnel } };
   const play = (brake: boolean) => {
     const session = createRunSession({
       content: world, rover: rover(), constants, seed: 5, input: () => 0,
@@ -303,5 +311,186 @@ describe('run scene: force arrows and graphics (LEVELS_BUILD_PLAN A4, A8)', () =
     expect(dust!.visible).toBe(false);
     view.setGraphics('high');
     expect(dust!.visible).toBe(true);
+  });
+});
+
+describe('places and their warnings (R2, SHOWCASE_PLAN §10 and §11)', () => {
+  const seed = 7;
+  type Made = ReturnType<typeof make>;
+  const world = () => {
+    const { session, view } = make(seed);
+    session.course.ensureAhead(9000);
+    return { session, view };
+  };
+  const firstWith = (session: Made['session'], has: (c: Made['session']['course']['chunks'][number]) => boolean) =>
+    session.course.chunks.find((c) => c.kind !== 'warmUp' && has(c))!;
+  const showAt = (session: Made['session'], view: Made['view'], xM: number) => view.update(fakeAt(session, xM));
+
+  it('every place has an entry post with its name, across the road', () => {
+    const { session, view } = world();
+    const chunk = firstWith(session, () => true);
+    showAt(session, view, chunk.startXM + 5);
+    const banners: string[] = [];
+    view.scene.traverse((o) => {
+      if (o.name === 'entryBanner') banners.push(String(o.userData.text));
+    });
+    expect(banners).toContain(chunk.name);
+    const want = session.course.chunksInRange(chunk.startXM + 5 - KEEP_BEHIND_M, chunk.startXM + 5 + BUILD_AHEAD_M).filter((c) => c.entryPostXM !== undefined).length;
+    expect(count(view.scene, 'entryPost')).toBe(want);
+    expect(count(view.scene, 'entryPostLeg')).toBe(want * 2);
+  });
+
+  it('mud has cracks and puddles, ice has frost and a sheen, vents have steam, caves have crystals and dust, cannons have lamps', () => {
+    const { session, view } = world();
+    const seen = { mud: 0, ice: 0, vent: 0, cave: 0, cannon: 0 };
+    for (const c of session.course.chunks.filter((x) => x.kind !== 'warmUp' && x.startXM < 5000)) {
+      const mid = (c.startXM + c.endXM) / 2;
+      showAt(session, view, mid);
+      const inView = session.course.chunksInRange(mid - KEEP_BEHIND_M, mid + BUILD_AHEAD_M);
+      const muds = inView.reduce((n, k) => n + k.tiles.filter((t) => t.surfaceId === 'mud').length, 0);
+      const ices = inView.reduce((n, k) => n + k.tiles.filter((t) => t.surfaceId === 'ice').length, 0);
+      const vents = inView.reduce((n, k) => n + k.boostPads.length, 0);
+      const caves = inView.reduce((n, k) => n + k.gravityZones.length, 0);
+      const cannons = inView.reduce((n, k) => n + k.cannons.length, 0);
+      expect(count(view.scene, 'puddle'), `puddles at ${mid}`).toBe(muds * 3);
+      expect(count(view.scene, 'iceSheen'), `sheens at ${mid}`).toBe(ices);
+      expect(count(view.scene, 'steam'), `steam at ${mid}`).toBe(vents * 3);
+      expect(count(view.scene, 'caveDust'), `dust at ${mid}`).toBe(caves);
+      expect(count(view.scene, 'cannonLamp'), `lamps at ${mid}`).toBe(cannons);
+      if (muds > 0) expect(count(view.scene, 'crack')).toBeGreaterThan(0);
+      if (ices > 0) expect(count(view.scene, 'frost')).toBeGreaterThan(0);
+      if (caves > 0) expect(count(view.scene, 'crystal')).toBeGreaterThan(0);
+      seen.mud += muds > 0 ? 1 : 0;
+      seen.ice += ices > 0 ? 1 : 0;
+      seen.vent += vents > 0 ? 1 : 0;
+      seen.cave += caves > 0 ? 1 : 0;
+      seen.cannon += cannons > 0 ? 1 : 0;
+    }
+    for (const [what, n] of Object.entries(seen)) expect(n, what).toBeGreaterThan(0); // the course really offered each of them
+  });
+
+  it('small obstacles are boulders and the cave walls are barriers', () => {
+    const { session, view } = world();
+    const rocks = firstWith(session, (c) => c.id.startsWith('rock-plain'));
+    showAt(session, view, rocks.startXM + 10);
+    expect(count(view.scene, 'boulder')).toBeGreaterThan(0);
+    const tunnel = firstWith(session, (c) => c.kind === 'tunnel');
+    showAt(session, view, tunnel.startXM + 10);
+    expect(count(view.scene, 'barrier')).toBeGreaterThanOrEqual(tunnel.barriers.length);
+  });
+
+  it('the sky, the haze and the walls take the look of the place the rover is in', () => {
+    const { session, view } = world();
+    const dune = firstWith(session, (c) => c.place === 'dune-sea');
+    const frozen = firstWith(session, (c) => c.place === 'frozen-flats');
+    const sky = () => (view.scene.background as THREE.Color).getHex();
+    const at = (c: typeof dune) => {
+      const s = fakeAt(session, c.startXM + 60);
+      for (let i = 0; i < 300; i++) view.update(s, 1 / 60); // 5 s: the colours have eased
+    };
+    at(dune);
+    expect(sky()).toBe(new THREE.Color(placeLook('dune-sea').sky).getHex());
+    at(frozen);
+    expect(sky()).toBe(new THREE.Color(placeLook('frozen-flats').sky).getHex());
+    expect(view.scene.fog!.color.getHex()).toBe(sky());
+    expect(placeLook('dune-sea').sky).not.toBe(placeLook('frozen-flats').sky);
+  });
+
+  it('the colours ease from one place to the next instead of cutting', () => {
+    const { session, view } = world();
+    const dune = firstWith(session, (c) => c.place === 'dune-sea');
+    view.update(fakeAt(session, dune.startXM + 60), 0);
+    const start = (view.scene.background as THREE.Color).getHex();
+    const frozen = firstWith(session, (c) => c.place === 'frozen-flats');
+    view.update(fakeAt(session, frozen.startXM + 60), 1 / 60);
+    const next = (view.scene.background as THREE.Color).getHex();
+    expect(next).not.toBe(start);
+    expect(next).not.toBe(new THREE.Color(placeLook('frozen-flats').sky).getHex()); // one frame in: not there yet
+  });
+
+  it("a cannon charges when it wakes: its lamp glows and a sight line shows along the bag's lane", () => {
+    const { session, view } = world();
+    const chunk = firstWith(session, (c) => c.cannons.some((k) => k.kind === 'headOn'));
+    const cannon = chunk.cannons.find((k) => k.kind === 'headOn')!;
+    const sights = () => {
+      const found: THREE.Object3D[] = [];
+      view.scene.traverse((o) => {
+        if (o.name === 'cannonSight') found.push(o);
+      });
+      return found;
+    };
+    view.update(fakeAt(session, cannon.xM - 150), 1 / 60);
+    expect(sights().length).toBeGreaterThan(0);
+    expect(sights().every((o) => !o.visible)).toBe(true); // asleep: nothing shows
+    const awake = createRunSession({ content, rover: rover(), constants, seed, input: () => 0, initialState: { positionXM: cannon.xM - 80, speedMps: 10, throttleLevel: 1 }, course: session.course });
+    awake.stepOnce();
+    expect(awake.cannonAwake(cannon.id)).toBe(true);
+    view.update(awake, 1 / 60);
+    expect(sights().some((o) => o.visible)).toBe(true);
+  });
+
+  it('the rover rides in the dip of a mud patch, and level on rock', () => {
+    const { session, view } = world();
+    const chunk = firstWith(session, (c) => c.id.startsWith('clay-gully'));
+    const mud = chunk.tiles.find((t) => t.surfaceId === 'mud')!;
+    const cx = Math.round((mud.xM[0] + mud.xM[1]) / 2);
+    const cz = Math.round((mud.zM[0] + mud.zM[1]) / 2);
+    const inMud = createRunSession({ content, rover: rover(), constants, seed, input: () => 0, initialState: { positionXM: cx, positionZM: cz }, course: session.course });
+    view.update(inMud, 0);
+    expect(view.rover.position.y).toBeLessThan(-0.05);
+    const onRock = createRunSession({ content, rover: rover(), constants, seed, input: () => 0, initialState: { positionXM: chunk.startXM + 1, positionZM: 14 }, course: session.course });
+    view.update(onRock, 0);
+    expect(Math.abs(view.rover.position.y)).toBeLessThan(0.01);
+  });
+});
+
+describe('moment cues (R2, SHOWCASE_PLAN §10)', () => {
+  it('a burst puts particles in the scene, and they are gone after a second or two', () => {
+    const { session, view } = make(7);
+    view.cue({ particles: 'sandSpray' });
+    expect(view.burstCount).toBeGreaterThan(0);
+    for (let i = 0; i < 150; i++) view.update(session, 1 / 60); // 2.5 s
+    expect(view.burstCount).toBe(0);
+    view.cue({ particles: 'skidMarks' }); // the marks are drawn by the skid-mark system, not a burst
+    expect(view.burstCount).toBe(0);
+  });
+
+  it('a kick dips the camera for 0.2 s and settles back; a vent widens the view for a moment', () => {
+    const { session, view } = make(7, { speedMps: 16 });
+    view.update(session, 1 / 60);
+    const rest = view.camera.position.y;
+    expect(rest).toBeCloseTo(2.3, 9);
+    view.cue({ camera: 'kick' });
+    view.update(session, 1 / 60);
+    expect(view.camera.position.y).toBeLessThan(rest - 0.05);
+    for (let i = 0; i < 20; i++) view.update(session, 1 / 60);
+    expect(view.camera.position.y).toBeCloseTo(rest, 9);
+
+    for (let i = 0; i < 120; i++) view.update(session, 1 / 60);
+    const calm = view.camera.fov;
+    view.cue({ camera: 'wide' });
+    for (let i = 0; i < 5; i++) view.update(session, 1 / 60);
+    expect(view.camera.fov).toBeGreaterThan(calm + 1);
+    for (let i = 0; i < 240; i++) view.update(session, 1 / 60);
+    expect(view.camera.fov).toBeCloseTo(calm, 1);
+  });
+});
+
+describe('graphics quality (R2)', () => {
+  it('Graphics Low builds the ground in coarser cells: fewer vertices, the same places', () => {
+    const session = createRunSession({ content, rover: rover(), constants, seed: 7, input: () => 0 });
+    const high = createRunScene(session, content, 'all-terrain', { quality: 'high' });
+    const low = createRunScene(session, content, 'all-terrain', { quality: 'low' });
+    const vertices = (view: ReturnType<typeof createRunScene>) => {
+      let n = 0;
+      view.scene.traverse((o) => {
+        if (o.name.startsWith('ground-')) n += ((o as THREE.Mesh).geometry.getAttribute('position').count);
+      });
+      return n;
+    };
+    expect(vertices(low)).toBeLessThan(vertices(high) / 3);
+    expect(low.loadedChunkIndices()).toEqual(high.loadedChunkIndices());
+    high.dispose();
+    low.dispose();
   });
 });

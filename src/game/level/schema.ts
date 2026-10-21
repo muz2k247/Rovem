@@ -4,7 +4,7 @@ import {
   type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef, type ForkLineDef,
   type GravityZoneDef, type HillDef, type HintDef, type HintDone, type HintTrigger, type LevelDef, type LevelId, type PylonDef,
   type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type SurfaceZoneDef, type WaterDef,
-  type Pose,
+  type Pose, type StretchDef,
 } from './types.ts';
 
 // Level file validation (NFR-5). Throws `Content error at <path>: <problem>` like the rest of the content loaders.
@@ -177,9 +177,10 @@ const cannon = (raw: unknown, path: string): CannonDef => {
 
 const barrier = (raw: unknown, path: string): BarrierDef => {
   const o = obj(raw, path);
+  if (o.look !== undefined && o.look !== 'boulder') fail(`${path}.look`, 'expected "boulder"');
   return {
     id: str(o, 'id', path), xM: num(o, 'xM', path), zM: num(o, 'zM', path), headingDeg: num(o, 'headingDeg', path),
-    lengthM: pos(o, 'lengthM', path), widthM: pos(o, 'widthM', path),
+    lengthM: pos(o, 'lengthM', path), widthM: pos(o, 'widthM', path), ...(o.look === 'boulder' ? { look: 'boulder' as const } : {}),
   };
 };
 
@@ -237,6 +238,12 @@ const finish = (raw: unknown, path: string): FinishDef => {
   return { xM: num(o, 'xM', path), zM: num(o, 'zM', path), radiusM: pos(o, 'radiusM', path) };
 };
 
+const stretch = (raw: unknown, path: string): StretchDef => {
+  const o = obj(raw, path);
+  const startsAfterRoad = optStr(o, 'startsAfterRoad', path);
+  return { id: str(o, 'id', path), name: str(o, 'name', path), ...(startsAfterRoad ? { startsAfterRoad } : {}), cleanS: pos(o, 'cleanS', path) };
+};
+
 function each<T>(raw: unknown, path: string, parse: (item: unknown, path: string) => T): T[] {
   return list(raw, path).map((item, i) => parse(item, `${path}[${i}]`));
 }
@@ -280,6 +287,8 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     signs: each(o.signs, 'level.signs', sign),
     hints: each(o.hints, 'level.hints', hint),
     finish: finish(o.finish, 'level.finish'),
+    stretches: each(o.stretches, 'level.stretches', stretch),
+    ...(o.wreck === undefined ? {} : { wreck: pose(o.wreck, 'level.wreck') }),
   };
 
   if (def.roads.length === 0) fail('level.roads', 'a level needs at least one road');
@@ -293,6 +302,9 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
   unique(def.boosts.map((b) => b.id), 'level.boosts');
   unique(def.cannons.map((c) => c.id), 'level.cannons');
 
+  unique(def.stretches.map((s) => s.id), 'level.stretches');
+  if (def.stretches.length > 0 && (def.stretches.length < 4 || def.stretches.length > 6)) fail('level.stretches', 'a level names 4 to 6 stretches (SHOWCASE_PLAN §9)');
+
   const roadIds = new Set(def.roads.map((r) => r.id));
   const needRoad = (rid: string, path: string) => {
     if (!roadIds.has(rid)) fail(path, `unknown road "${rid}"`);
@@ -305,6 +317,20 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     if (r.after) needRoad(r.after, `level.roads[${i}].after`);
     if (r.surfaceId) needSurface(r.surfaceId, `level.roads[${i}].surfaceId`);
     if (r.runoffSurfaceId) needSurface(r.runoffSurfaceId, `level.roads[${i}].runoffSurfaceId`);
+  });
+  // Each stretch after the first begins where a road of the route ends, in route order.
+  let lastRouteIndex = -1;
+  def.stretches.forEach((s, i) => {
+    const path = `level.stretches[${i}]`;
+    if (i === 0) {
+      if (s.startsAfterRoad) fail(`${path}.startsAfterRoad`, 'the first stretch begins at the start');
+      return;
+    }
+    if (!s.startsAfterRoad) fail(`${path}.startsAfterRoad`, 'expected a road id');
+    const at = def.route.indexOf(s.startsAfterRoad);
+    if (at < 0) fail(`${path}.startsAfterRoad`, `road "${s.startsAfterRoad}" is not on the route`);
+    if (at <= lastRouteIndex) fail(`${path}.startsAfterRoad`, 'stretches must follow the route in order');
+    lastRouteIndex = at;
   });
   needSurface(def.defaultSurfaceId, 'level.defaultSurfaceId');
   def.surfaceZones.forEach((z, i) => needSurface(z.surfaceId, `level.surfaceZones[${i}].surfaceId`));

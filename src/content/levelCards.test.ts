@@ -5,13 +5,12 @@ import { levelCards, validateLevelCards } from './levelCards.ts';
 const copy = () => JSON.parse(JSON.stringify(levelCards));
 
 describe('level cards (LEVELS_BUILD_PLAN A2, A3, A7)', () => {
-  it('has the seven levels of A7, in play order, with the ids of the level files', () => {
+  it('has the levels in play order (Crash Site first, SHOWCASE_PLAN §7), with the ids of the level files', () => {
     expect(levelCards.levels.map((l) => l.name)).toEqual([
-      'First Tracks',
+      'Crash Site',
       'Push & Shove',
       'Crater Field',
       'Gravity Wells',
-      'Ring Road',
       'The Crossing',
       'Polar Pass',
     ]);

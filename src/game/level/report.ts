@@ -1,7 +1,11 @@
-import { MAX_REPORT_CARDS, type ReportCard, type ReportModel, type TryThis } from '../contracts.ts';
+import { levelsConfig } from '../../content/levelsConfig.ts';
+import type { Content } from '../../content/index.ts';
+import { MAX_REPORT_CARDS, type PartPickup, type ReportCard, type ReportModel, type TryThis } from '../contracts.ts';
 import type { RoverSpec } from '../../physics/types.ts';
 import { fill, newtons, twoDecimals, type LevelText, type TokenValues } from './text.ts';
 import type { LevelEvent, LevelResult } from './session.ts';
+import { explainStretches, suggestParts } from './stretchReport.ts';
+import type { StretchRecord } from './stretches.ts';
 import type { LevelDef, LevelId } from './types.ts';
 
 // The level report (LEVELS_BUILD_PLAN A3): the result, the speed trace, up to three "What happened" cards with the
@@ -9,11 +13,10 @@ import type { LevelDef, LevelId } from './types.ts';
 
 /** The cards each level cares about most (its new element), in order. The rest follow in the order they happened. */
 const LEVEL_CARD_ORDER: Record<LevelId, readonly string[]> = {
-  'first-tracks': ['mud', 'sand', 'ice', 'fork'],
+  'crash-site': ['slide', 'sand', 'fork', 'crash'],
   'push-and-shove': ['boost', 'hit'],
   'crater-field': ['descent', 'rollback'],
   'gravity-wells': ['gravity'],
-  'ring-road': ['slide'],
   'the-crossing': ['float', 'water'],
   'polar-pass': ['magnet'],
 };
@@ -32,6 +35,19 @@ export interface ReportInput {
   trace: readonly { timeS: number; speedMps: number }[];
   clockS: number;
   text: LevelText;
+  /** What the session recorded per stretch (P6). With none, the report has no strip. */
+  stretches?: readonly StretchRecord[];
+  /** The garage's parts, to offer the one that fits the cause (needed with `stretches`). */
+  content?: Content;
+  /** The numbers the finished level's part line may use (Crash Site: `grip`). */
+  partValues?: TokenValues;
+}
+
+/** The ship part a finished level brings home, with its line filled in; nothing for a level whose part is not built yet. */
+export function partPickup(levelId: string, text: LevelText, values: TokenValues): PartPickup | undefined {
+  const part = text.ship.parts.find((p) => p.levelId === levelId);
+  if (!part || !part.built) return undefined;
+  return { levelId, partName: part.name, line: fill(part.pickupLine, values) };
 }
 
 const first = <T>(items: readonly T[]): T | undefined => items[0];
@@ -97,7 +113,9 @@ export function buildLevelReport(input: ReportInput): ReportModel {
   if (magnet) card('magnet', 'magnet', magnet, { forceN: newtons(magnet.forceN!), distM: magnet.distM!.toFixed(1) });
   const fork = first(of('fork'));
   if (fork) {
-    const base = { yourRoad: fork.yourRoad!, yourS: twoDecimals(fork.yourS!), otherRoad: fork.otherRoad!, otherS: twoDecimals(fork.otherS!), outcome: '' };
+    // A road is called by its name in the level file ("Ridge"), lower case in the sentence, never by its id.
+    const roadLabel = (id: string) => (def.roads.find((r) => r.id === id)?.name ?? id).toLowerCase();
+    const base = { yourRoad: roadLabel(fork.yourRoad!), yourS: twoDecimals(fork.yourS!), otherRoad: roadLabel(fork.otherRoad!), otherS: twoDecimals(fork.otherS!), outcome: '' };
     if (fork.otherOutcome === 'merged') card('fork', 'fork', fork, base);
     else card('fork', 'fork-crash', fork, { ...base, outcome: text.outcomes[fork.otherOutcome!] ?? '' });
   }
@@ -125,6 +143,17 @@ export function buildLevelReport(input: ReportInput): ReportModel {
   else if (had('respawn', 'crash')) tryThis = { text: text.tryThis.crash!, action: { kind: 'retry' } };
   else tryThis = { text: text.tryThis.default!, action: { kind: 'retry' } };
 
+  // The stretch strip and its three lines replace the single "Try this" of the cards when the level names stretches (P6).
+  const strip =
+    input.stretches && input.stretches.length > 0 && result && input.content && input.rover
+      ? explainStretches({
+          levelId: def.id, records: input.stretches, events, roadName: (id) => def.roads.find((r) => r.id === id)?.name ?? id,
+          text: text.stretch, minGapS: levelsConfig.report.minGapS, minCauseS: levelsConfig.report.minCauseS,
+          suggest: suggestParts(input.content, input.rover),
+        })
+      : undefined;
+  const pickup = result && input.partValues ? partPickup(def.id, text, input.partValues) : undefined;
+
   return {
     result: {
       kind: 'level',
@@ -135,6 +164,8 @@ export function buildLevelReport(input: ReportInput): ReportModel {
     },
     speedTrace: input.trace.map((p) => ({ timeS: p.timeS, speedMps: p.speedMps })),
     cards: picked.map((c) => c.card),
-    tryThis,
+    tryThis: strip ? strip.tryThis : tryThis,
+    ...(strip ? { stretches: strip.stretches, explanation: strip.explanation } : {}),
+    ...(pickup ? { pickup } : {}),
   };
 }

@@ -45,14 +45,15 @@ describe('demo run content (D2)', () => {
     expect(content.run.sandbag.massKg).toBe(40);
   });
 
-  it('loads 8 field chunks of 100 m and the 50 m tunnel, so a tunnel comes every 250 m', () => {
+  it('loads the Endless sections of SHOWCASE_PLAN §11: seven places, each section at least 150 m (R2)', () => {
     expect(content.runChunks.fieldChunks.map((c) => c.id)).toEqual([
-      'mud-field', 'boost-alley', 'cannon-ice', 'kicker-run', 'crossfire', 'slalom', 'gauntlet', 'narrow-pass',
+      'rock-plain-1', 'rock-plain-2', 'rock-plain-3', 'dune-sea-1', 'dune-sea-2', 'frozen-flats-1', 'frozen-flats-2',
+      'clay-gully-1', 'clay-gully-2', 'clay-gully-3', 'vent-run-1', 'vent-run-2', 'launcher-alley-2', 'launcher-alley-3',
     ]);
-    expect(content.runChunks.fieldChunks.every((c) => c.lengthM === 100)).toBe(true);
-    expect(content.runChunks.tunnel.lengthM).toBe(50);
-    expect(content.run.fieldChunksBetweenTunnels * 100 + content.runChunks.tunnel.lengthM).toBe(250);
-    expect(content.runChunks.fieldChunks.map((c) => c.difficulty)).toEqual([1, 1, 1, 2, 2, 2, 3, 3]);
+    expect(content.runChunks.fieldChunks.every((c) => c.lengthM >= 150)).toBe(true);
+    expect(content.runChunks.tunnel.lengthM).toBe(150);
+    expect(content.runChunks.tunnel.place).toBe('gravity-caves');
+    expect(content.run.fieldChunksBetweenTunnels).toBe(2);
   });
 
   it('the tunnel has a low and a high gravity zone and an 8 m mud patch in each lane', () => {
@@ -65,7 +66,8 @@ describe('demo run content (D2)', () => {
 
   it('flags the text as placeholder', () => {
     expect(content.runText.placeholder).toBe(true);
-    expect(Object.keys(content.runText.tidbits)).toHaveLength(10);
+    expect(Object.keys(content.runText.tidbits)).toHaveLength(11);
+    expect(Object.keys(content.runText.titles)).toHaveLength(11);
   });
 
   it('names the bad path: run values', () => {
@@ -94,18 +96,16 @@ describe('demo run content (D2)', () => {
   });
 
   it('names the bad path: rectangles inside the chunk and the corridor', () => {
-    expect(bad((r) => (r.runChunks.fieldChunks[1].tiles[0].xM = [10, 120]))).toThrow(
-      /runChunks\.fieldChunks\[1\]\.tiles\[0\]\.xM.*chunk/,
-    );
+    expect(bad((r) => (r.runChunks.tunnel.tiles[0].xM = [10, 160]))).toThrow(/runChunks\.tunnel\.tiles\[0\]\.xM.*chunk/);
     expect(bad((r) => (r.runChunks.tunnel.barriers[1].zM = [12, 16]))).toThrow(/runChunks\.tunnel\.barriers\[1\]\.zM.*corridor/);
   });
 
   it('names the bad path: unknown surface, cannon kind, zone kind, difficulty', () => {
-    expect(bad((r) => (r.runChunks.fieldChunks[0].tiles[0].surfaceId = 'lava'))).toThrow(
-      /runChunks\.fieldChunks\[0\]\.tiles\[0\]\.surfaceId.*lava/,
+    expect(bad((r) => (r.runChunks.fieldChunks[3].tiles[0].surfaceId = 'lava'))).toThrow(
+      /runChunks\.fieldChunks\[3\]\.tiles\[0\]\.surfaceId.*lava/,
     );
-    expect(bad((r) => (r.runChunks.fieldChunks[2].cannons[0].kind = 'mortar'))).toThrow(
-      /runChunks\.fieldChunks\[2\]\.cannons\[0\]\.kind/,
+    expect(bad((r) => (r.runChunks.fieldChunks[12].cannons[0].kind = 'mortar'))).toThrow(
+      /runChunks\.fieldChunks\[12\]\.cannons\[0\]\.kind/,
     );
     expect(bad((r) => (r.runChunks.tunnel.gravityZones[0].kind = 'zero'))).toThrow(/runChunks\.tunnel\.gravityZones\[0\]\.kind/);
     expect(bad((r) => (r.runChunks.fieldChunks[3].difficulty = 4))).toThrow(/runChunks\.fieldChunks\[3\]\.difficulty/);
@@ -113,13 +113,57 @@ describe('demo run content (D2)', () => {
   });
 
   it('names the bad path: a cannon outside the chunk, duplicate chunk ids, a missing list', () => {
-    expect(bad((r) => (r.runChunks.fieldChunks[2].cannons[0].xM = 101))).toThrow(/runChunks\.fieldChunks\[2\]\.cannons\[0\]\.xM/);
-    expect(bad((r) => (r.runChunks.fieldChunks[1].id = 'mud-field'))).toThrow(/runChunks\.fieldChunks.*duplicate/i);
+    expect(bad((r) => (r.runChunks.fieldChunks[12].cannons[0].xM = 151))).toThrow(/runChunks\.fieldChunks\[12\]\.cannons\[0\]\.xM/);
+    expect(bad((r) => (r.runChunks.fieldChunks[1].id = 'rock-plain-1'))).toThrow(/runChunks\.fieldChunks.*duplicate/i);
     expect(bad((r) => delete r.runChunks.fieldChunks[0].boostPads)).toThrow(/runChunks\.fieldChunks\[0\]\.boostPads/);
   });
 
   it('needs a field chunk for every difficulty the course asks for', () => {
-    expect(bad((r) => r.runChunks.fieldChunks.splice(6))).toThrow(/runChunks\.fieldChunks.*difficulty 3/);
+    expect(bad((r) => (r.runChunks.fieldChunks = r.runChunks.fieldChunks.filter((c: { difficulty: number }) => c.difficulty < 3)))).toThrow(
+      /runChunks\.fieldChunks.*difficulty 3/,
+    );
+  });
+
+  describe('sections and polygon zones (R2)', () => {
+    it('accepts a zone as a rectangle or as a polygon, and the loaded zone has both', () => {
+      const dune = content.runChunks.fieldChunks.find((c) => c.id === 'dune-sea-1')!;
+      const sand = dune.tiles[0]!;
+      expect(sand.polygon.length).toBeGreaterThan(4);
+      expect(sand.xM[0]).toBe(Math.min(...sand.polygon.map((p) => p.xM))); // the ranges are the bounding box
+      expect(sand.zM[1]).toBe(Math.max(...sand.polygon.map((p) => p.zM)));
+      const rectMud = content.runChunks.tunnel.tiles[0]!; // still written as a rectangle in the file
+      expect(rectMud.polygon).toEqual([
+        { xM: 70, zM: 1.5 }, { xM: 78, zM: 1.5 }, { xM: 78, zM: 12 }, { xM: 70, zM: 12 },
+      ]);
+    });
+
+    it('rejects a zone given both ways, a polygon with fewer than 3 points or outside the section', () => {
+      const withTile = (tile: object) =>
+        bad((r) => {
+          r.runChunks.tunnel.tiles[0] = tile;
+        });
+      expect(withTile({ surfaceId: 'sand', xM: [1, 2], zM: [1, 2], polygon: [] })).toThrow(/runChunks\.tunnel\.tiles\[0\].*not both/);
+      expect(withTile({ surfaceId: 'sand', polygon: [{ xM: 1, zM: 1 }, { xM: 2, zM: 2 }] })).toThrow(/tiles\[0\]\.polygon.*3 points/);
+      expect(withTile({ surfaceId: 'sand', polygon: [{ xM: 1, zM: 1 }, { xM: 2, zM: 1 }, { xM: 2, zM: 20 }] })).toThrow(/polygon\[2\]\.zM.*corridor/);
+      expect(withTile({ surfaceId: 'sand', polygon: [{ xM: 1, zM: 1 }, { xM: 200, zM: 1 }, { xM: 2, zM: 4 }] })).toThrow(/polygon\[1\]\.xM.*chunk/);
+    });
+
+    it('rejects a section shorter than 150 m, a mud patch longer than 12 m, a bad entry post or line', () => {
+      expect(bad((r) => (r.runChunks.fieldChunks[0].lengthM = 149))).toThrow(/fieldChunks\[0\]\.lengthM.*150/);
+      expect(bad((r) => (r.runChunks.tunnel.tiles[0].xM = [70, 82.5]))).toThrow(/tunnel\.tiles\[0\].*mud patch is at most 12/);
+      expect(bad((r) => (r.runChunks.fieldChunks[0].entryPostXM = 151))).toThrow(/fieldChunks\[0\]\.entryPostXM/);
+      expect(bad((r) => delete r.runChunks.fieldChunks[0].place)).toThrow(/fieldChunks\[0\]\.place/);
+      expect(bad((r) => delete r.runChunks.fieldChunks[0].name)).toThrow(/fieldChunks\[0\]\.name/);
+      expect(bad((r) => (r.runChunks.fieldChunks[0].line = [{ xM: 0, zM: 0 }]))).toThrow(/fieldChunks\[0\]\.line.*2 points/);
+      expect(bad((r) => (r.runChunks.fieldChunks[0].line[2].xM = 1))).toThrow(/fieldChunks\[0\]\.line\[2\]\.xM.*further/);
+    });
+
+    it('needs at least two places, and a minimum bend radius for every listed surface', () => {
+      expect(bad((r) => r.runChunks.fieldChunks.forEach((c: { place: string }) => (c.place = 'rock-plain')))).toThrow(/at least 2 places/);
+      expect(bad((r) => (r.run.minBendRadiusM.sand = 0))).toThrow(/run\.minBendRadiusM\.sand/);
+      expect(bad((r) => delete r.run.sectionMinLengthM)).toThrow(/run\.sectionMinLengthM/);
+      expect(bad((r) => delete r.run.mudPatchMaxLengthM)).toThrow(/run\.mudPatchMaxLengthM/);
+    });
   });
 
   it('names the bad path: text', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
-import type { Content, GravityKind, RunChunk } from '../../content/index.ts';
+import type { Content, GravityKind } from '../../content/index.ts';
+import { testChunk, type ChunkSpec } from '../../../tests/helpers/chunks.ts';
 import { constants, rover, roverOf } from '../../../tests/helpers/physics.ts';
 import type { PhysicsState } from '../../physics/step.ts';
 import { createRunCourse } from './course.ts';
@@ -8,10 +9,10 @@ import { createRunSession } from './runSession.ts';
 
 // The comparison must equal what a real run down the other lane gives (DECISIONS 2026-10-16).
 
-const empty: RunChunk = { id: 'empty-a', difficulty: 1, lengthM: 100, tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [] };
+const SECTION_M = 100;
 const world: Content = {
   ...content,
-  runChunks: { fieldChunks: [empty, { ...empty, id: 'empty-b' }], tunnel: content.runChunks.tunnel },
+  runChunks: { fieldChunks: [testChunk({ id: 'empty-a', lengthM: SECTION_M }), testChunk({ id: 'empty-b', lengthM: SECTION_M })], tunnel: content.runChunks.tunnel },
 };
 const SEED = 3;
 
@@ -83,8 +84,8 @@ describe('tunnel comparison: stuck', () => {
 
 describe('a gravity zone with no second lane', () => {
   it('has no comparison', () => {
-    const lone: RunChunk = { ...empty, gravityZones: [{ kind: 'high', xM: [20, 60], zM: [-15, 15] }] };
-    const w: Content = { ...content, runChunks: { fieldChunks: [lone, { ...lone, id: 'lone-b' }], tunnel: { ...empty, id: 't', difficulty: 0, lengthM: 50 } } };
+    const spec: ChunkSpec = { lengthM: SECTION_M, gravityZones: [{ kind: 'high', xM: [20, 60], zM: [-15, 15] }] };
+    const w: Content = { ...content, runChunks: { fieldChunks: [testChunk({ ...spec, id: 'lone-a' }), testChunk({ ...spec, id: 'lone-b' })], tunnel: testChunk({ id: 't', lengthM: 50 }) } };
     const s = createRunSession({ content: w, rover: rover(), constants, seed: 1, input: () => 0 });
     for (let i = 0; i < 120 * 20 && s.stats.gravityZones.length === 0; i++) s.stepOnce();
     expect(s.stats.gravityZones[0]!.other).toBeUndefined();

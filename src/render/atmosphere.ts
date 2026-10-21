@@ -34,7 +34,7 @@ export interface AtmospherePreset {
 }
 
 const PRESETS: Record<AtmosphereId, AtmospherePreset> = {
-  // First Tracks: clear dusk.
+  // Crash Site: clear dusk (until the daylight look of SHOWCASE_PLAN §12 is made).
   'clear-dusk': {
     id: 'clear-dusk', skyTop: 0x1b2a55, skyHorizon: 0xe08a5a, fogColour: 0xb96f55, fogDensity: 0.006,
     sunColour: 0xffc78a, sunIntensity: 2.2, sunElevationDeg: 14, sunAzimuthDeg: 200,
@@ -62,7 +62,7 @@ const PRESETS: Record<AtmosphereId, AtmospherePreset> = {
     hemiSky: 0x4a5a90, hemiGround: 0x2a1a1a, hemiIntensity: 2.2, stars: true, aurora: false,
     motes: { count: 50, size: 0.09, opacity: 0.35, colour: 0xb0c0ff, heightM: 12 },
   },
-  // Ring Road: violet evening.
+  // (Ring Road's violet evening: the level is retired, the look stays available.)
   'violet-evening': {
     id: 'violet-evening', skyTop: 0x2a1a55, skyHorizon: 0xb06ac0, fogColour: 0x6a3a80, fogDensity: 0.007,
     sunColour: 0xffa0d0, sunIntensity: 1.8, sunElevationDeg: 10, sunAzimuthDeg: 300,

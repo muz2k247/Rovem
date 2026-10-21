@@ -1,0 +1,104 @@
+/* The ship on the Levels screen (Showcase R3, SHOWCASE_PLAN §12). Colours are the tokens on :root in styles.css. */
+
+.ship-panel {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 0 0 1rem;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.ship {
+  flex: 0 0 auto;
+  width: min(20rem, 45%);
+  height: auto;
+}
+
+.ship-hull {
+  fill: var(--bg);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.ship-window {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.ship-part {
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.ship-part-recovered {
+  fill: var(--cyan);
+  stroke: var(--cyan);
+  filter: drop-shadow(0 0 4px var(--cyan));
+}
+
+.ship-part-open {
+  fill: none;
+  stroke: var(--amber);
+}
+
+.ship-part-locked {
+  fill: none;
+  stroke: var(--muted);
+  stroke-dasharray: 4 3;
+  opacity: 0.55;
+}
+
+.ship-text h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.ship-count {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--muted);
+}
+
+.ship-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.2rem 1.5rem;
+  grid-template-columns: repeat(2, auto);
+}
+
+.ship-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.ship-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+}
+
+.ship-item-recovered .ship-dot {
+  background: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.ship-item-open .ship-dot {
+  border-color: var(--amber);
+}
+
+.ship-item-locked {
+  color: var(--muted);
+}
+
+.ship-state {
+  color: var(--muted);
+  font-size: 0.8rem;
+}

@@ -11,6 +11,7 @@
 | The terrain theme: an unnamed red planet where the student's ship crashed, replacing "a Mars-analog proving ground on Earth with a paved test track" | The story and the physics: a crash on Mars with g = 9.8 would be wrong physics (Mars is 3.7 m/s²) | E44, DECISIONS 2026-10-21 (D6) |
 | Natural terrain: surfaces sit where nature puts them, with blended edges | The friends' critique: perfect rectangles break immersion | DECISIONS 2026-10-21 (D10) |
 | Colours, HUD, sound and the story's look added | SHOWCASE_PLAN section 12 | DECISIONS 2026-10-21 |
+| Built in R2 (2026-10-21): the natural ground (1 m colour fringe, dips, ripples), a look for each Endless place, the glass HUD, the new sounds | Session R2 | DECISIONS 2026-10-21 (R2) |
 | Rover look: the v4 garage drawing in 3D, with the three slots visibly separate | A5 | LEVELS_BUILD_PLAN A5 |
 | The nine mood images kept as mood only; the moon and Milky Way landing backdrops and the sign-in screens moved to Superseded | Sign-in is future | E25, E38 |
 
@@ -23,10 +24,10 @@
 
 An **unnamed red planet**. The student's ship crashed on it; five parts were thrown across the land; each level recovers one. Gravity on open ground is 9.8 m/s², the same as Earth's (SRS 2.2); gravity caves multiply it by 0.5 or 2. Red ground and sky, rock plains, dunes, craters, canyons, pale blue ice in shade and dark mud in low gullies, **each surface where nature would put it**: ice in shade, sand in dunes, mud in dips. Fiction (caves, vents, launchers) is presented with confidence, never with disclaimers. There is no music.
 
-## 3 Natural terrain (Confirmed; polygons Planned, R2)
+## 3 Natural terrain (Confirmed; built for Endless and the levels' terrain in R2)
 
 - The physics uses simple smooth polygons for surfaces and gravity zones; rectangles stay valid as four-corner polygons so old data still loads.
-- The ground colour blends across a 1 m noise-warped fringe, so no edge looks cut out. The ground height matches: mud and ice lie in dips, dunes roll. (Provisional values.)
+- The ground colour blends across a 1 m noise-warped fringe, so no edge looks cut out. The ground height matches: mud and ice lie in dips, dunes roll. (Provisional values. Built in R2: the fringe is read from 9 samples on a 0.45 m ring round a point moved by noise of at most 0.15 m; mud dips 0.10 m, ice 0.05 m, sand ripples 0.07 m every 2.2 m; the rover rides the drawn ground and the physics stays flat.)
 - Open ground with natural edges (cliffs, rims, dunes, water). Built walls appear only where a fork needs two separate roads.
 - Surfaces must read from the driving view: dark road or rock, pale sand, pale blue ice, dark mud.
 - Each element gets a **warning** (you see it coming), a **moment** (sound, particles, camera) and a **pop-up** with the student's numbers (SHOWCASE_PLAN section 10).
@@ -40,15 +41,16 @@ An **unnamed red planet**. The student's ship crashed on it; five parts were thr
 - The Scavenger is a rusty, patched version of the same model built from its own parts, solid at a distance and fading to about 30% opacity within 8 m of the student (Planned, R4).
 - If the look still disappoints after the polish session: Blender driven by Claude through a free connector, our own model with named parts, exported as one `.glb` (recorded as own work in ASSETS). AI "3D from a picture" generators are rejected: they fuse the mesh and their licences vary.
 
-## 5 Colours, type and the HUD (Confirmed; polish Planned, R2)
+## 5 Colours, type and the HUD (Confirmed; built in R2)
 
+- Each Endless place has its own daylight (`render/placeLooks.ts`): the sky and haze, the canyon walls and the banner on its entry post; the colours ease over about a second as the rover passes the post.
 - Daylight on a red planet. HUD on dark glass panels, white text (body at least 1 rem), **one cyan accent** and amber for warnings. Wireframes v2 palette: ground #0D1117, panels #161B23 with #2B3340 borders, text #ECE8E1, Mars orange #E8743B, cyan #63C7E6, gold #F2C14E for stars.
 - Fonts: **Space Grotesk** (headings, numbers with tabular figures) and **IBM Plex Sans** (text), bundled.
 - Force arrows: push and brake orange, friction and drag cyan, weight and slope violet #B49CFF, upthrust green #6FD08C, turning force and magnet gold. Labels always name the force, so colour is never the only cue.
 - Every button is a real button or link, at least 44 px tall, and works with the keyboard.
 - Less to read while driving: pop-ups beside the rover (1.5 s) are the main channel; one caption card (lower middle, white text, title 1.25 rem, line 1 rem, 4 s) shows only the first time an element appears in a run, waits while the student is at the grip limit or in the air, and never shows two at once. No freeze-frames on hits.
 
-## 6 Sound (Confirmed; list Planned, R1–R2)
+## 6 Sound (Confirmed; the R1–R2 list is Built, 2026-10-21)
 
 Made in code with Web Audio; no sound files. The engine follows the throttle: silent when stopped, quiet when coasting, a lower default volume. Sounds: tyres per surface, skid, whoosh, thump, crunch, scrape, splash, rumble, hum. No music.
 

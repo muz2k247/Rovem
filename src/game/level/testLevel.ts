@@ -8,7 +8,7 @@ export const SURFACE_IDS = ['asphalt', 'sand', 'ice', 'mud'];
 export function testLevelRaw(): Record<string, unknown> {
   return JSON.parse(
     JSON.stringify({
-      id: 'first-tracks',
+      id: 'crash-site',
       name: 'Test level',
       placeholder: true,
       atmosphere: 'clear-dusk',

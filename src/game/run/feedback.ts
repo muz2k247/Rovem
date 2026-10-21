@@ -1,4 +1,4 @@
-import type { Content, EventKind, FormulaKind, GravityKind, RunText, TryThisKey } from '../../content/index.ts';
+import type { Content, FormulaKind, GravityKind, RunText, TryThisKey } from '../../content/index.ts';
 import type { GravityZoneUse, RunEnd, RunEvent, RunStats } from './runSession.ts';
 
 // What the student reads while and after driving (docs/DEMO_BUILD_PLAN.md A7). Pure: time is passed in.
@@ -10,42 +10,7 @@ export function speedText(speedMps: number, unit: SpeedUnit): string {
   return unit === 'kmh' ? `${(speedMps * 3.6).toFixed(2)} km/h` : `${speedMps.toFixed(2)} m/s`;
 }
 
-/** "16.00 → 21.74 m/s": two speeds, the unit once. */
-function speedChange(fromMps: number, toMps: number, unit: SpeedUnit): string {
-  const k = unit === 'kmh' ? 3.6 : 1;
-  return `${(fromMps * k).toFixed(2)} → ${speedText(toMps, unit)}`;
-}
-
 const degPerS = (radPerS: number) => (radPerS * 180) / Math.PI;
-
-const SURFACE_NAMES: Record<string, string> = { mud: 'Mud', sand: 'Sand', ice: 'Ice' };
-
-/** The main line of a caption: what happened · the number that changed. Undefined for the events that end a run. */
-export function captionMain(event: RunEvent, unit: SpeedUnit): string | undefined {
-  const whole = (n: number | undefined) => Math.round(n ?? 0);
-  switch (event.kind) {
-    case 'mud':
-    case 'sand':
-    case 'ice':
-      return `${SURFACE_NAMES[event.kind]} · friction ${whole(event.frictionN)} N`;
-    case 'boost':
-      return `Boost · ${speedChange(event.speedBeforeMps ?? 0, event.speedAfterMps ?? 0, unit)}`;
-    case 'headOnHit':
-      return `Sandbag hit · ${speedChange(event.speedBeforeMps ?? 0, event.speedAfterMps ?? 0, unit)}`;
-    case 'kickerHit':
-      return `Kicker hit · ${speedChange(event.speedBeforeMps ?? 0, event.speedAfterMps ?? 0, unit)}`;
-    case 'gravity':
-      return `Gravity ×${event.gravityMultiplier} · weight ${whole(event.weightN)} N`;
-    case 'slip':
-      return `Wheels slipping · grip ${whole(event.gripN)} N`;
-    case 'aboveTopSpeed':
-      return "Above top speed · motor can't push";
-    case 'slide':
-      return `Sliding · tyres bend your path ${whole(degPerS(event.turnLimitRadPerS ?? 0))}°/s at most`;
-    default:
-      return undefined;
-  }
-}
 
 // ---- Worked formulas: the formula filled in with the student's own numbers (DECISIONS 2026-10-16) ----
 
@@ -109,89 +74,6 @@ export function workedLine(event: RunEvent, unit: SpeedUnit = 'mps'): string | u
     default:
       return undefined;
   }
-}
-
-export interface Caption {
-  id: number;
-  kind: EventKind;
-  /** The main line, without the count. */
-  main: string;
-  /** "×n" when events of the same kind merged. */
-  count: number;
-  /** Main line with the count, ready to show. */
-  label: string;
-  /** The worked formula, only the first time this kind of event is ever seen (the first hit's, when hits merge). */
-  worked: string | undefined;
-  /** The speed before the first event of this caption: merged hits show the total from here. */
-  firstBeforeMps: number;
-  startedS: number;
-  lastS: number;
-  expiresS: number;
-  /** 4 s, or 8 s the first time. */
-  durationS: number;
-}
-
-export interface CaptionFeed {
-  captions: readonly Caption[];
-  nextId: number;
-}
-
-export const emptyFeed: CaptionFeed = { captions: [], nextId: 1 };
-
-export const CAPTION_SECONDS = 4;
-export const FIRST_CAPTION_SECONDS = 8;
-export const MERGE_WITHIN_S = 3;
-export const MAX_VISIBLE_CAPTIONS = 3;
-
-export interface PushOptions {
-  /** Event kinds the student has seen in any run (saved data). */
-  seenKinds: ReadonlySet<EventKind>;
-  unit: SpeedUnit;
-}
-
-const labelOf = (main: string, count: number) => (count > 1 ? `${main} ×${count}` : main);
-const isHit = (kind: EventKind) => kind === 'headOnHit' || kind === 'kickerHit';
-
-/**
- * Adds an event. The same kind within 3 s merges into one caption with "×n" and the latest numbers.
- * `firstTime` tells the caller to add the kind to its seen list.
- */
-export function pushCaption(
-  feed: CaptionFeed,
-  event: RunEvent,
-  nowS: number,
-  options: PushOptions,
-): { feed: CaptionFeed; firstTime: boolean } {
-  const main = captionMain(event, options.unit);
-  if (main === undefined) return { feed, firstTime: false };
-  const kind = event.kind as EventKind;
-  const live = feed.captions.filter((c) => c.expiresS > nowS);
-  const same = live.find((c) => c.kind === kind && nowS - c.lastS <= MERGE_WITHIN_S);
-  if (same) {
-    const count = same.count + 1;
-    // Merged hits show the total: "6 hits · 16.00 → 7.33 m/s".
-    const total = `${count} hits · ${speedChange(same.firstBeforeMps, event.speedAfterMps ?? 0, options.unit)}`;
-    const merged: Caption = isHit(kind)
-      ? { ...same, main: total, count, label: total, lastS: nowS, expiresS: nowS + same.durationS }
-      : { ...same, main, count, label: labelOf(main, count), lastS: nowS, expiresS: nowS + same.durationS };
-    return { feed: { captions: live.map((c) => (c === same ? merged : c)), nextId: feed.nextId }, firstTime: false };
-  }
-  const firstTime = !options.seenKinds.has(kind);
-  const durationS = firstTime ? FIRST_CAPTION_SECONDS : CAPTION_SECONDS;
-  const caption: Caption = {
-    id: feed.nextId, kind, main, count: 1, label: main, worked: firstTime ? workedLine(event, options.unit) : undefined,
-    firstBeforeMps: event.speedBeforeMps ?? 0,
-    startedS: nowS, lastS: nowS, expiresS: nowS + durationS, durationS,
-  };
-  return { feed: { captions: [...live, caption], nextId: feed.nextId + 1 }, firstTime };
-}
-
-/** At most 3, newest on top. */
-export function visibleCaptions(feed: CaptionFeed, nowS: number): Caption[] {
-  return feed.captions
-    .filter((c) => c.expiresS > nowS)
-    .sort((a, b) => b.lastS - a.lastS || b.id - a.id)
-    .slice(0, MAX_VISIBLE_CAPTIONS);
 }
 
 // ---- The run report ----

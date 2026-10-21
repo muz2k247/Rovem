@@ -54,6 +54,8 @@ export interface HudModel {
   timeS: number;
   /** One caption at a time (A4); null when none is showing. */
   caption: HudCaption | null;
+  /** The speed number goes red (the rover lost speed) or green (it gained it) for a moment after a launcher or a vent (R2, SHOWCASE_PLAN §10). */
+  speedTone?: 'loss' | 'gain';
   /** The F = ma line, or null while the speed is not changing (A4). */
   forceLine: string | null;
   forces: ForceArrow[];
@@ -95,12 +97,44 @@ export interface TryThis {
   action: TryThisAction;
 }
 
+/** One box of the report's strip (Showcase P6, SHOWCASE_PLAN §9): a named stretch and how your time on it compared with a clean drive. */
+export interface StretchResult {
+  id: string;
+  name: string;
+  timeS: number;
+  /** The clean drive's time on it. */
+  cleanS: number;
+  /** Clean drive minus yours: positive means you were faster (green), negative means you lost time. */
+  gainS: number;
+  entrySpeedMps: number;
+  exitSpeedMps: number;
+}
+
+/** The first two of the three lines under the strip (the third is `tryThis`): the biggest loss or gain, and the recorded cause behind it. */
+export interface StretchExplanation {
+  stretchId: string;
+  headline: string;
+  why: string;
+}
+
+/** A ship part brought home at the end of a level, with its line (SHOWCASE_PLAN §12). */
+export interface PartPickup {
+  levelId: string;
+  partName: string;
+  line: string;
+}
+
 export interface ReportModel {
   result: ReportResult;
   speedTrace: SpeedSample[];
   /** At most MAX_REPORT_CARDS. */
   cards: ReportCard[];
   tryThis: TryThis | null;
+  /** Added in R3 (P6): the stretch strip and its explanation, for a level whose file names stretches. */
+  stretches?: StretchResult[];
+  explanation?: StretchExplanation;
+  /** Added in R3: the ship part this level brings home, once the level is finished. */
+  pickup?: PartPickup;
 }
 
 /** One row of the Levels screen (A3). */

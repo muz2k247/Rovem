@@ -41,6 +41,8 @@ export interface LevelsConfig {
   track: { widthM: number; runoffWidthM: number };
   pacing: { levelLengthMinS: number; levelLengthMaxS: number; checkpointSpacingS: number };
   par: { factor: number; roundUpToS: number };
+  /** The stretch report (Showcase R3, SHOWCASE_PLAN §9): the smallest gap to a clean drive that is called a loss or a gain, and the shortest time a cause must last to be named. */
+  report: { minGapS: number; minCauseS: number };
   /** Engine rules added by Levels B2 (all positive; see the DECISIONS row of 2026-10-18). */
   rules: {
     crashMomentS: number;
@@ -172,6 +174,10 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
   const pr = sec('par');
   const par = { factor: num(pr, 'factor', p('par')), roundUpToS: num(pr, 'roundUpToS', p('par')) };
 
+  const rp = sec('report');
+  const report = { minGapS: num(rp, 'minGapS', p('report')), minCauseS: num(rp, 'minCauseS', p('report')) };
+  if (report.minGapS <= 0 || report.minCauseS <= 0) fail('levels.report', 'expected numbers above 0');
+
   const ru = sec('rules');
   const rules = {
     crashMomentS: num(ru, 'crashMomentS', p('rules')),
@@ -226,6 +232,7 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     track,
     pacing,
     par,
+    report,
     rules,
     captions,
     forceLine,

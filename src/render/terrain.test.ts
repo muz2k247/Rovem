@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { levelsConfig } from '../content/levelsConfig.ts';
 import { worldOf } from './levelTestKit.ts';
-import { buildTerrainTile, GROUND_COLOUR, SURFACE_COLOURS, TILE_M, terrainTileKeys, createTerrain } from './terrain.ts';
+import { buildTerrainTile, drawnHeightM, GROUND_COLOUR, SURFACE_COLOURS, TILE_M, terrainTileKeys, createTerrain } from './terrain.ts';
 
 const hill = { xM: 100, zM: 0, radiusM: 40, heightM: 4 };
 const colourAt = (geo: ReturnType<typeof buildTerrainTile>, i: number) => {
@@ -29,7 +29,8 @@ describe('terrain tiles', () => {
     expect(geo.getAttribute('position').count).toBe((n + 1) ** 2);
     for (const i of [0, 40, 100, geo.getAttribute('position').count - 1]) {
       const p = geo.getAttribute('position');
-      expect(p.getY(i)).toBeCloseTo(world.heightM(p.getX(i), -p.getZ(i)), 5);
+      expect(p.getY(i)).toBeCloseTo(drawnHeightM(world, p.getX(i), -p.getZ(i)), 5);
+      expect(Math.abs(p.getY(i) - world.heightM(p.getX(i), -p.getZ(i)))).toBeLessThan(0.15); // the surface only dips or ripples it a little
     }
     expect(geo.getIndex()!.count).toBe(n * n * 6);
   });
@@ -82,4 +83,44 @@ describe('terrain tiles', () => {
     expect(world.heightM(120, 0)).toBeCloseTo(-5, 6);
     expect(levelsConfig.crater.depthM).toBe(5);
   });
+});
+
+describe('natural edges and dips (R2, SHOWCASE_PLAN §5)', () => {
+  const mudPatch = { surfaceId: 'mud', polygon: [{ xM: 60, zM: -4 }, { xM: 76, zM: -4 }, { xM: 76, zM: 4 }, { xM: 60, zM: 4 }] };
+  const world = worldOf({ surfaceZones: [mudPatch] });
+  const geo = buildTerrainTile(world, 2, -1, 0.5, TILE_M); // x 64..96, z −32..0 in 0.5 m cells
+  const vertex = (x: number, z: number) => {
+    const p = geo.getAttribute('position');
+    const c = geo.getAttribute('color');
+    for (let i = 0; i < p.count; i++) {
+      if (Math.abs(p.getX(i) - x) < 0.01 && Math.abs(-p.getZ(i) - z) < 0.01) return { y: p.getY(i), r: c.getX(i), g: c.getY(i), b: c.getZ(i) };
+    }
+    throw new Error('no vertex');
+  };
+
+  it('mud lies in a dip below the road beside it', () => {
+    const inMud = vertex(70, -2);
+    const onRoad = vertex(70, -6);
+    expect(inMud.y).toBeLessThan(world.heightM(70, -2) - 0.05);
+    expect(onRoad.y - inMud.y).toBeGreaterThan(0.04);
+    expect(drawnHeightM(world, 70, -2)).toBeCloseTo(inMud.y, 5);
+  });
+
+  it('the colour blends across the edge instead of cutting: a mixed colour lies between the mud and the road', () => {
+    const mud = SURFACE_COLOURS.mud!;
+    const road = SURFACE_COLOURS.asphalt!;
+    const lo = Math.min(mud[0], road[0]);
+    const hi = Math.max(mud[0], road[0]);
+    let mixed = 0;
+    for (let z = -5; z <= -3; z += 0.5) {
+      const c = vertex(70, z);
+      if (c.r > lo + 0.005 && c.r < hi - 0.005) mixed++;
+    }
+    expect(mixed).toBeGreaterThanOrEqual(1);
+    expect(near(vertex(70, -1), mud)).toBe(true); // deep inside the patch it is pure mud
+  });
+
+  function near(c: { r: number; g: number; b: number }, rgb: readonly number[]) {
+    return Math.abs(c.r - rgb[0]!) < 0.1 && Math.abs(c.g - rgb[1]!) < 0.1 && Math.abs(c.b - rgb[2]!) < 0.1;
+  }
 });

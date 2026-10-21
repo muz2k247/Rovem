@@ -1,23 +1,21 @@
 import { content } from '../../content/index.ts';
-import firstTracks from '../../content/levels/first-tracks.json' with { type: 'json' };
+import crashSite from '../../content/levels/crash-site.json' with { type: 'json' };
 import pushAndShove from '../../content/levels/push-and-shove.json' with { type: 'json' };
 import craterField from '../../content/levels/crater-field.json' with { type: 'json' };
 import gravityWells from '../../content/levels/gravity-wells.json' with { type: 'json' };
-import ringRoad from '../../content/levels/ring-road.json' with { type: 'json' };
 import theCrossing from '../../content/levels/the-crossing.json' with { type: 'json' };
 import polarPass from '../../content/levels/polar-pass.json' with { type: 'json' };
 import { validateLevelDef } from './schema.ts';
 import { LEVEL_IDS, type LevelDef, type LevelId } from './types.ts';
 
-// The level files (LEVELS_BUILD_PLAN A9). Each level is one JSON file in `src/content/levels/`, all seven written in B4.
+// The level files (LEVELS_BUILD_PLAN A9). Each level is one JSON file in `src/content/levels/`, the v4 ones written in B4, Crash Site in R3.
 // A level with no file would be "Coming soon" on the Levels screen; the table stays partial so a level can be taken out.
 
 const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {
-  'first-tracks': firstTracks,
+  'crash-site': crashSite,
   'push-and-shove': pushAndShove,
   'crater-field': craterField,
   'gravity-wells': gravityWells,
-  'ring-road': ringRoad,
   'the-crossing': theCrossing,
   'polar-pass': polarPass,
 };

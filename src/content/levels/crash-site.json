@@ -1,0 +1,421 @@
+{
+  "id": "crash-site",
+  "name": "Crash Site",
+  "placeholder": true,
+  "atmosphere": "clear-dusk",
+  "parS": 105,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "wreck": {
+    "xM": 17,
+    "zM": 8.5,
+    "headingDeg": 12
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Start",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "bend-1",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 150,
+          "angleDeg": 40
+        }
+      ]
+    },
+    {
+      "id": "lead",
+      "after": "bend-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 200
+        }
+      ]
+    },
+    {
+      "id": "f1-dunes",
+      "name": "Dunes",
+      "surfaceId": "sand",
+      "runoffSurfaceId": "sand",
+      "after": "lead",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 260
+        }
+      ]
+    },
+    {
+      "id": "f1-ridge",
+      "name": "Ridge",
+      "surfaceId": "asphalt",
+      "after": "lead",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 120,
+          "angleDeg": 26
+        },
+        {
+          "kind": "straight",
+          "lengthM": 27.582431005967813
+        },
+        {
+          "kind": "arc",
+          "radiusM": 120,
+          "angleDeg": -52
+        },
+        {
+          "kind": "straight",
+          "lengthM": 27.582431005967813
+        },
+        {
+          "kind": "arc",
+          "radiusM": 120,
+          "angleDeg": 26
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "after": "f1-ridge",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 140
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "after": "m1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 80,
+          "angleDeg": -40
+        }
+      ]
+    },
+    {
+      "id": "ring",
+      "name": "The Ring",
+      "widthM": 15,
+      "after": "b2",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 32.5,
+          "angleDeg": 270
+        }
+      ]
+    },
+    {
+      "id": "exit",
+      "after": "ring",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 25,
+          "angleDeg": -90
+        }
+      ]
+    },
+    {
+      "id": "climb",
+      "after": "exit",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 270
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "bend-1",
+    "lead",
+    "f1-ridge",
+    "m1",
+    "b2",
+    "ring",
+    "exit",
+    "climb"
+  ],
+  "hills": [
+    {
+      "xM": -10,
+      "zM": 0,
+      "radiusM": 70,
+      "heightM": 4
+    },
+    {
+      "xM": 480.27,
+      "zM": 189.36,
+      "radiusM": 70,
+      "heightM": 3.5
+    },
+    {
+      "xM": 526.23,
+      "zM": 227.93,
+      "radiusM": 70,
+      "heightM": 3.5
+    },
+    {
+      "xM": 572.19,
+      "zM": 266.5,
+      "radiusM": 70,
+      "heightM": 3.5
+    },
+    {
+      "xM": 618.16,
+      "zM": 305.06,
+      "radiusM": 70,
+      "heightM": 3.5
+    }
+  ],
+  "craters": [
+    {
+      "xM": 807.47,
+      "zM": 471.98,
+      "floorRadiusM": 20,
+      "depthM": 5,
+      "wallAngleDeg": 60,
+      "rampAngleDeg": 60,
+      "rampHeadingDeg": 0
+    }
+  ],
+  "ridges": [
+    {
+      "xM": 749.97,
+      "zM": 446.98,
+      "headingDeg": 180,
+      "riseAngleDeg": 4,
+      "riseLengthM": 90,
+      "topLengthM": 140,
+      "fallAngleDeg": 4,
+      "widthM": 30
+    }
+  ],
+  "barriers": [
+    {
+      "id": "boulder-1",
+      "xM": 826.47,
+      "zM": 439.07,
+      "headingDeg": 30,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-2",
+      "xM": 829.85,
+      "zM": 456.88,
+      "headingDeg": 56,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-3",
+      "xM": 825.53,
+      "zM": 492.05,
+      "headingDeg": 138,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-4",
+      "xM": 795.85,
+      "zM": 496.91,
+      "headingDeg": 205,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-5",
+      "xM": 771.76,
+      "zM": 484.98,
+      "headingDeg": 250,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 422.82,
+      "zM": 141.15,
+      "headingDeg": 40
+    },
+    {
+      "id": "cp-2",
+      "xM": 813.11,
+      "zM": 439.98,
+      "headingDeg": 10
+    },
+    {
+      "id": "cp-3",
+      "xM": 839.95,
+      "zM": 470.85,
+      "headingDeg": 88
+    },
+    {
+      "id": "cp-4",
+      "xM": 815.88,
+      "zM": 503.37,
+      "headingDeg": 165
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "line": {
+        "xM": 449.63,
+        "zM": 163.65,
+        "headingDeg": 40,
+        "widthM": 12
+      },
+      "roadIds": [
+        "f1-dunes",
+        "f1-ridge"
+      ],
+      "mergeAt": {
+        "xM": 648.8,
+        "zM": 330.78,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-debris",
+      "xM": 95,
+      "zM": 2.5
+    },
+    {
+      "id": "s-ring",
+      "xM": 833.71,
+      "zM": 475.67
+    },
+    {
+      "id": "s-climb",
+      "xM": 599.97,
+      "zM": 449.98
+    }
+  ],
+  "signs": [
+    {
+      "id": "sign-ring-in",
+      "xM": 807.47,
+      "zM": 446.38,
+      "radiusM": 25
+    },
+    {
+      "id": "sign-ring-out",
+      "xM": 807.47,
+      "zM": 432.58,
+      "radiusM": 40
+    }
+  ],
+  "hints": [
+    {
+      "id": "hint-hold",
+      "textId": "hold-w",
+      "trigger": {
+        "kind": "start"
+      },
+      "doneWhen": "throttle"
+    },
+    {
+      "id": "hint-coast",
+      "textId": "coast",
+      "trigger": {
+        "kind": "coast"
+      },
+      "doneWhen": "release"
+    },
+    {
+      "id": "hint-steer",
+      "textId": "steer",
+      "trigger": {
+        "kind": "zone",
+        "xM": 80,
+        "zM": 0,
+        "radiusM": 12
+      },
+      "doneWhen": "steer"
+    },
+    {
+      "id": "hint-brake",
+      "textId": "brake",
+      "trigger": {
+        "kind": "zone",
+        "xM": 762.42,
+        "zM": 425.59,
+        "radiusM": 12
+      },
+      "doneWhen": "brake"
+    }
+  ],
+  "finish": {
+    "xM": 494.97,
+    "zM": 446.98,
+    "radiusM": 6
+  },
+  "stretches": [
+    {
+      "id": "plain",
+      "name": "The Plain",
+      "cleanS": 33.4
+    },
+    {
+      "id": "dunes",
+      "name": "The Dunes",
+      "startsAfterRoad": "lead",
+      "cleanS": 16.89
+    },
+    {
+      "id": "run-up",
+      "name": "The Run-up",
+      "startsAfterRoad": "f1-ridge",
+      "cleanS": 11.83
+    },
+    {
+      "id": "ring",
+      "name": "The Ring",
+      "startsAfterRoad": "b2",
+      "cleanS": 12.97
+    },
+    {
+      "id": "climb",
+      "name": "The Climb",
+      "startsAfterRoad": "exit",
+      "cleanS": 15.73
+    }
+  ]
+}

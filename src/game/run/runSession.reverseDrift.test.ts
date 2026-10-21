@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
 import type { Content, RunChunk } from '../../content/index.ts';
+import { testChunk, type ChunkSpec } from '../../../tests/helpers/chunks.ts';
 import { createState, step } from '../../physics/step.ts';
 import { constants, rover, surface } from '../../../tests/helpers/physics.ts';
 import { createRunCourse } from './course.ts';
@@ -14,13 +15,13 @@ const STRAIGHT: RunInputProvider = () => 0;
 const W = { throttleHeld: true, brakeHeld: false };
 const S = { throttleHeld: false, brakeHeld: true };
 const NONE = { throttleHeld: false, brakeHeld: false };
-const empty: RunChunk = { id: 'empty-a', difficulty: 1, lengthM: 100, tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [] };
+const SECTION_M = 100;
 
 /** A world whose every field chunk is the given template (two copies, so "never the same twice" still has a choice). */
-function worldOf(template: Partial<RunChunk>): Content {
-  const a: RunChunk = { ...empty, ...template, id: 'test-a' };
-  const b: RunChunk = { ...a, id: 'test-b' };
-  return { ...content, runChunks: { fieldChunks: [a, b], tunnel: { ...empty, id: 'test-tunnel', difficulty: 0, lengthM: 50 } } };
+function worldOf(template: ChunkSpec): Content {
+  const a: RunChunk = testChunk({ lengthM: SECTION_M, ...template, id: 'test-a' });
+  const b: RunChunk = testChunk({ lengthM: SECTION_M, ...template, id: 'test-b' });
+  return { ...content, runChunks: { fieldChunks: [a, b], tunnel: testChunk({ id: 'test-tunnel', lengthM: 50 }) } };
 }
 
 function unmirroredSeed(world: Content): number {

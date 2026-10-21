@@ -93,3 +93,12 @@ describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
     expect(bad((r) => delete r.rules)).toThrow(/levels.rules/);
   });
 });
+
+describe('levels.json: the stretch report (Showcase R3)', () => {
+  it('holds the two thresholds of the report, both above 0', () => {
+    expect(levelsConfig.report).toEqual({ minGapS: 0.5, minCauseS: 0.3 });
+    expect(bad((r) => (r.report.minGapS = 0))).toThrow(/levels\.report/);
+    expect(bad((r) => (r.report.minCauseS = -1))).toThrow(/levels\.report/);
+    expect(bad((r) => delete r.report.minGapS)).toThrow(/levels\.report\.minGapS/);
+  });
+});

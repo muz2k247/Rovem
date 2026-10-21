@@ -19,6 +19,7 @@
 }
 
 .report-screen > h2,
+.report-screen > .part-pickup,
 .report-screen > .report-buttons {
   grid-column: 1 / -1;
 }

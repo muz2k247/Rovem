@@ -54,8 +54,8 @@ export function checkLevelFile(id: LevelId): void {
       expect(def.parS).toBeGreaterThan(0);
     });
 
-    it('has at least two forks, each leaving its fork line and meeting again at the merge point (A7)', () => {
-      expect(def.forks.length).toBeGreaterThanOrEqual(2);
+    it('has at least one fork (the Showcase levels have one big choice, SHOWCASE_PLAN §2; the v4 levels have two), each leaving its fork line and meeting again at the merge point (A7)', () => {
+      expect(def.forks.length).toBeGreaterThanOrEqual(1);
       for (const f of def.forks) {
         const line = f.line;
         for (const rid of f.roadIds) {

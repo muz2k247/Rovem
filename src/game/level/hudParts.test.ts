@@ -119,7 +119,7 @@ describe('force arrows', () => {
 
   it('shows only forces that act: nothing under 20 N, no slope arrow on flat ground', () => {
     const acting = [arrow('push', 1000), arrow('friction', 15), arrow('slope', 0)];
-    expect(selectArrows('first-tracks', acting).map((a) => a.kind)).toEqual(['push']);
+    expect(selectArrows('crash-site', acting).map((a) => a.kind)).toEqual(['push']);
   });
 
   it('the impulse flash comes on top of the three', () => {

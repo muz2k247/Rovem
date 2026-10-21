@@ -4,22 +4,28 @@ import { content } from '../content/index.ts';
 import { levelsConfig } from '../content/levelsConfig.ts';
 import { physicsConstants, roverFromParts, STARTING_BUILD, type BuildSelection } from '../game/buildFromParts.ts';
 import { createKeyTracker } from '../game/controls.ts';
+import { cardForPopup } from '../game/cardText.ts';
+import { createDriveFeedback } from '../game/driveFeedback.ts';
+import type { FeedbackShown } from '../game/feedbackQueue.ts';
+import { popupForLevelEvent } from '../game/popups.ts';
 import type { HudModel, ReportModel, StarCount } from '../game/contracts.ts';
 import { controlsHintVisible } from '../game/run/endlessHud.ts';
 import type { PauseAction } from '../game/pauseMenu.ts';
 import { devKeyAction, devModeFromSearch, jumpTarget, zoomedHeightM } from '../game/level/devKeys.ts';
 import { levelKeyAction } from '../game/level/keys.ts';
 import { loadLevelDef } from '../game/level/levels.ts';
+import { levelText } from '../game/level/text.ts';
 import { createLevelSession, type LevelInput, type LevelSession } from '../game/level/session.ts';
 import type { LevelDef } from '../game/level/types.ts';
 import type { SpeedUnit } from '../game/run/feedback.ts';
-import { SLIDE_SOUND_RAD } from '../game/run/drift.ts';
+import { SLIDE_MARK_RAD, SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
-import { createEffectSounds, type EffectKind } from '../render/effectSounds.ts';
+import { createEffectSounds, effectForSound } from '../render/effectSounds.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { createLevelScene, type LevelScene } from '../render/levelScene.ts';
 import { roverLookFor } from '../render/roverModel.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
+import { FeedbackLayer } from './hud/FeedbackLayer.tsx';
 import { Hud } from './hud/Hud.tsx';
 import { crashShakeM, shouldRefreshHud } from './levelScreenLogic.ts';
 import { PauseMenu } from './PauseMenu.tsx';
@@ -66,13 +72,12 @@ export interface LevelScreenProps {
   def?: LevelDef;
 }
 
-/** The sound that goes with a level event, if any. */
-const soundFor = (e: { kind: string; hitKind?: string; cause?: string }): EffectKind | undefined => {
-  if (e.kind === 'boost') return 'boost';
-  if (e.kind === 'hit') return e.hitKind === 'kicker' ? 'kickerHit' : 'sandbagHit';
-  if (e.kind === 'respawn' && e.cause === 'crash') return 'thud';
-  return undefined;
-};
+/** The speed number stays red or green this long after a hit or a vent (physics seconds). Presentation value. */
+const SPEED_TONE_S = 0.8;
+/** The story's opening line (SHOWCASE_PLAN §12) stays over the wreck this long, or until Enter or a click. Presentation value. */
+const OPENING_LINE_S = 8;
+/** The pop-up stands this far to the right of the rover and above its roof, in pixels. */
+const POPUP_OFFSET_PX = { x: 36, y: -28 };
 
 /**
  * One attempt at one level: the game loop drives the level session, the three.js scene draws it, and the HUD, pause
@@ -88,6 +93,12 @@ export function LevelScreen(props: LevelScreenProps) {
   const [paused, setPaused] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [crashFlash, setCrashFlash] = useState(false);
+  const [shown, setShown] = useState<FeedbackShown>(null);
+  const [speedLinesKey, setSpeedLinesKey] = useState(0);
+  const [hitFlashKey, setHitFlashKey] = useState(0);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [opening, setOpening] = useState<string | null>(null);
+  const openingRef = useRef<HTMLDivElement>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
   const showSettingsRef = useRef(false);
@@ -119,13 +130,16 @@ export function LevelScreen(props: LevelScreenProps) {
     setPaused(false);
     setShowSettings(false);
     setCrashFlash(false);
+    // The story opens once, at the wreck, on the first start of the level; a retry goes straight to the driving.
+    let openingOn = levelDef.wreck !== undefined && attempt === 0;
+    setOpening(openingOn ? levelText.ship.openingLine : null);
 
     const rover = roverFromParts(content, build);
     const keys = createKeyTracker();
     // Dev server only (import.meta.env.DEV is false in the build, so this is removed): the I1 play-check feeds a recorded drive.
     const devAuto = import.meta.env.DEV ? window.__rovemAuto : undefined;
     const session: LevelSession = createLevelSession({
-      content, def: levelDef, rover, constants: physicsConstants(content),
+      content, def: levelDef, rover, constants: physicsConstants(content), elementCaptions: false,
       drive: (ctx) => (devAuto ? devAuto(ctx, session) : keys.read()),
     });
     if (import.meta.env.DEV) window.__rovemSession = session;
@@ -155,6 +169,33 @@ export function LevelScreen(props: LevelScreenProps) {
     let zones = false;
     let topDownHeightM = 80;
 
+    // Pop-ups beside the rover, caption cards the first time an element appears, and each element's moment (SHOWCASE_PLAN §10).
+    // The session leaves the elements' own captions out (elementCaptions: false). Hints, samples and checkpoints keep theirs, but
+    // a pop-up or card hides them while it is on screen: never two lines of text at once.
+    let speedTone: 'loss' | 'gain' | undefined;
+    let speedToneUntilS = 0;
+    const rockRollingMu = content.surfaces.find((x) => x.id === 'asphalt')!.rollingFriction;
+    const feedback = createDriveFeedback(
+      {
+        sound: (sound, gained) => {
+          const kind = effectForSound(sound, { gained });
+          if (kind) effects.play(kind);
+        },
+        scene: (moment) => view.cue(moment),
+        hud: (effect, tone) => {
+          if (effect === 'speedLines') setSpeedLinesKey((k) => k + 1);
+          if (effect === 'flash') setHitFlashKey((k) => k + 1);
+          if (effect === 'speedFlash') {
+            speedTone = tone === 'good' ? 'gain' : 'loss';
+            speedToneUntilS = session.clockS + SPEED_TONE_S;
+          }
+        },
+      },
+      (popup, eventKind) => cardForPopup(popup, eventKind, { runText: content.runText, levelCards: levelText.elementCards }),
+    );
+    let lastShownKey = '';
+    const popupPoint = new THREE.Vector3();
+
     let reported = false;
     let eventsHandled = 0;
     let frame = 0;
@@ -183,6 +224,10 @@ export function LevelScreen(props: LevelScreenProps) {
       },
     };
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Enter' && openingOn) {
+        openingOn = false;
+        setOpening(null);
+      }
       engine.start(); // audio may only start after a user gesture
       effects.start();
       const action = levelKeyAction(e.code);
@@ -230,9 +275,11 @@ export function LevelScreen(props: LevelScreenProps) {
 
       for (; eventsHandled < session.events.length; eventsHandled++) {
         const e = session.events[eventsHandled]!;
-        const sound = soundFor(e);
-        if (sound) effects.play(sound);
+        const popup = popupForLevelEvent(e, { massKg: rover.massKg, motorForceN: rover.driveForceMaxN, rockRollingMu, unit: propsRef.current.speedUnit ?? 'mps' });
+        // A launcher's card tells a bag from the front from one from behind.
+        if (popup) feedback.onPopup(popup, e.kind === 'hit' ? (e.hitKind === 'kicker' ? 'kickerHit' : 'headOnHit') : e.kind, e.timeS);
         if (e.kind === 'respawn' && e.cause === 'crash') {
+          effects.play('thud');
           crashStartedS = session.clockS;
           setCrashFlash(true);
         }
@@ -248,7 +295,14 @@ export function LevelScreen(props: LevelScreenProps) {
       }
 
       const justFinished = !reported && session.phase === 'finished';
-      const model = session.hud;
+      const hudModel = session.hud;
+      // A pop-up or a card comes first: the level's own caption (a hint, a sample, a checkpoint) waits until it has gone.
+      const now = reported ? null : feedback.queue.update(session.clockS, { atGripLimit: session.state.slipping || session.pose.slideRad >= SLIDE_MARK_RAD, inAir: false });
+      const model = {
+        ...hudModel,
+        ...(speedTone && session.clockS < speedToneUntilS ? { speedTone } : {}),
+        ...(now ? { caption: null } : {}),
+      };
       view.setShowForces(s.forceArrows);
       view.update(session, driver.paused || reported ? 0 : frameS, model);
       renderer.render(view.scene, view.camera);
@@ -260,6 +314,39 @@ export function LevelScreen(props: LevelScreenProps) {
       effects.setMuted(s.muted);
       effects.setSqueal(!driver.paused && !reported && (state.slipping || session.pose.slideRad >= SLIDE_SOUND_RAD) && state.speedMps > 0, state.speedMps / rover.topSpeedMps);
       engine.update(state.speedMps / rover.topSpeedMps, session.phase === 'driving' ? state.throttleLevel : 0);
+      effects.setRoll(session.world.surfaceIdAt(session.pose.centreXM, session.pose.centreZM), !driver.paused && !reported && session.phase === 'driving' ? state.speedMps / rover.topSpeedMps : 0);
+
+      // The opening line stands over the wreck until its time is up.
+      if (openingOn) {
+        const lineEl = openingRef.current;
+        if (session.clockS >= OPENING_LINE_S) {
+          openingOn = false;
+          setOpening(null);
+        } else if (lineEl && view.wreckAnchor) {
+          popupPoint.copy(view.wreckAnchor).project(view.camera);
+          const behind = popupPoint.z > 1;
+          const px = (popupPoint.x * 0.5 + 0.5) * host.clientWidth - lineEl.offsetWidth / 2;
+          const py = (-popupPoint.y * 0.5 + 0.5) * host.clientHeight - lineEl.offsetHeight;
+          const x = Math.max(8, Math.min(px, host.clientWidth - lineEl.offsetWidth - 8));
+          lineEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(Math.max(8, Math.min(py, host.clientHeight - lineEl.offsetHeight - 8)))}px)`;
+          lineEl.style.opacity = behind ? '0' : '1';
+        }
+      }
+
+      // Where the pop-up stands: beside the rover.
+      const shownKey = now === null ? '' : now.kind === 'popup' ? `p:${now.popup.element}:${now.popup.text}` : `c:${now.card.element}`;
+      if (shownKey !== lastShownKey) {
+        lastShownKey = shownKey;
+        setShown(now);
+      }
+      const popupEl = popupRef.current;
+      if (popupEl && now?.kind === 'popup') {
+        popupPoint.set(view.rover.position.x, view.rover.position.y + 1.4, view.rover.position.z).project(view.camera);
+        const px = (popupPoint.x * 0.5 + 0.5) * host.clientWidth + POPUP_OFFSET_PX.x;
+        const py = (-popupPoint.y * 0.5 + 0.5) * host.clientHeight + POPUP_OFFSET_PX.y;
+        const x = Math.max(8, Math.min(px, host.clientWidth - popupEl.offsetWidth - 8));
+        popupEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(Math.max(8, py))}px)`;
+      }
 
       if (justFinished) {
         reported = true;
@@ -329,6 +416,15 @@ export function LevelScreen(props: LevelScreenProps) {
     <main className="drive run">
       <div className="drive-canvas" ref={hostRef} />
       {hud && <Hud model={hud} showControlsHint={controlsHintVisible(hud.timeS)} levelControls onPause={() => controls.current.pause()} />}
+      <FeedbackLayer shown={shown} popupRef={popupRef} />
+      {opening && (
+        <div ref={openingRef} className="opening-line" role="note" onClick={() => setOpening(null)}>
+          <span>{opening}</span>
+          <small>Enter to skip</small>
+        </div>
+      )}
+      {speedLinesKey > 0 && <div key={`speed-lines-${speedLinesKey}`} className="speed-lines" aria-hidden="true" />}
+      {hitFlashKey > 0 && <div key={`hit-flash-${hitFlashKey}`} className="hit-flash" aria-hidden="true" />}
       {crashFlash && <div className="crash-flash" aria-hidden="true" />}
       {devModeFromSearch(window.location.search) && (
         <div className="dev-badge" role="note">dev: T top-down · Z zones · [ ] checkpoint · − = zoom</div>

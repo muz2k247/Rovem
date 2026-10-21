@@ -10,11 +10,10 @@ export const MAX_ARROWS = 3;
 
 /** The force each level adds (A7). Earlier levels' forces rank below it. */
 export const NEW_ELEMENT_FORCES: Record<LevelId, readonly ForceKind[]> = {
-  'first-tracks': ['friction'],
+  'crash-site': ['friction', 'turning'],
   'push-and-shove': ['impulse'],
   'crater-field': ['slope'],
   'gravity-wells': ['weight'],
-  'ring-road': ['turning'],
   'the-crossing': ['upthrust', 'drag'],
   'polar-pass': ['magnet'],
 };

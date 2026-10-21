@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { content, type EventKind, type Part, type Slot } from '../content/index.ts';
+import { content, type Part, type Slot } from '../content/index.ts';
 import { roverFromParts } from '../game/buildFromParts.ts';
 import { garageNumbers } from '../game/run/garageNumbers.ts';
 import { changeBanner, changeRows, compareRows, displayPartName, fieldLogEntries, garageRows } from '../game/run/garageView.ts';
@@ -12,19 +12,6 @@ const SLOTS: { slot: Slot; title: string; key: keyof DemoBuild; note?: string }[
   { slot: 'wheels', title: 'Wheels', key: 'wheelsId' },
   { slot: 'motor', title: 'Motor', key: 'motorId' },
 ];
-
-const EVENT_TITLES: Record<EventKind, string> = {
-  mud: 'Mud',
-  sand: 'Sand',
-  ice: 'Ice',
-  boost: 'Boost pad',
-  headOnHit: 'Sandbag hit',
-  kickerHit: 'Kicker hit',
-  gravity: 'Gravity zone',
-  slip: 'Wheels slipping',
-  aboveTopSpeed: 'Above top speed',
-  slide: 'Sliding',
-};
 
 function partDetail(part: Part): string {
   if (part.slot === 'chassis') return `${part.massKg} kg`;
@@ -204,7 +191,7 @@ export function GarageScreen({
               <ul className="field-log">
                 {log.map((entry) => (
                   <li key={entry.kind}>
-                    <strong>{EVENT_TITLES[entry.kind]}</strong>
+                    <strong>{content.runText.titles[entry.kind]}</strong>
                     <span>{entry.tidbit}</span>
                     {entry.formula && <em>{entry.formula}</em>}
                   </li>

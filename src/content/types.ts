@@ -180,7 +180,14 @@ export interface RunParams {
   drift: boolean;
   /** Demo only: the wall behind the start line (x < 0), clear of the chase camera. Engineering value, set by Claude (DECISIONS 2026-10-16). */
   startWallXM: number;
+  /** The most field sections between two Gravity Caves sections; the generator picks one after this many (DECISIONS 2026-10-21 R2). */
   fieldChunksBetweenTunnels: number;
+  /** Every Endless section is at least this long (SHOWCASE_PLAN §11, §16: 150 m). */
+  sectionMinLengthM: number;
+  /** A mud patch is at most this long (SHOWCASE_PLAN §5, §16: 12 m). */
+  mudPatchMaxLengthM: number;
+  /** The tightest bend a section's line may need, per surface id (D5: 1.5 × the tightest bend all-terrain wheels hold at 18 m/s). */
+  minBendRadiusM: Record<string, number>;
   /** Distance at which difficulty 1, 2 and 3 chunks start to be allowed. */
   difficultyStartsM: [number, number, number];
   gravityMultipliers: { low: number; high: number };
@@ -194,7 +201,15 @@ export interface RectM {
   zM: [number, number];
 }
 
-export interface ChunkTile extends RectM {
+/**
+ * A zone on the ground. The data may give it as a rectangle (xM, zM ranges, which stays valid) or as a `polygon`; either way the
+ * loaded zone has both: `polygon` is the shape the lookup uses, and the ranges are its bounding box.
+ */
+export interface ChunkZoneShape extends RectM {
+  polygon: PointM[];
+}
+
+export interface ChunkTile extends ChunkZoneShape {
   surfaceId: string;
 }
 
@@ -207,15 +222,27 @@ export interface ChunkCannon {
   zM: number;
 }
 
-export interface ChunkGravityZone extends RectM {
+export interface ChunkGravityZone extends ChunkZoneShape {
   kind: GravityKind;
 }
 
+/**
+ * One Endless section, a named place (SHOWCASE_PLAN §11). Coordinates are section-local: x from 0 to the length, z across the canyon.
+ * Several templates can share a place ("Dune Sea") at different difficulties.
+ */
 export interface RunChunk {
   id: string;
-  /** 1–3. The tunnel has none (0). */
+  /** The place id, shared by the variants of one place: the generator never puts the same place twice in a row. */
+  place: string;
+  /** The place's name, on the entry post and in the HUD ("Dune Sea"). */
+  name: string;
+  /** 1–3. The Gravity Caves section has 1 too. */
   difficulty: number;
   lengthM: number;
+  /** Where the entry post stands (section-local x). */
+  entryPostXM: number;
+  /** A line through the section that avoids every obstacle; the bend rule (D5) is checked on it. */
+  line: PointM[];
   tiles: ChunkTile[];
   barriers: RectM[];
   boostPads: RectM[];
@@ -229,7 +256,7 @@ export interface RunChunks {
 }
 
 /** The event kinds the student can meet (A7, A11). */
-export const EVENT_KINDS = ['mud', 'sand', 'ice', 'boost', 'headOnHit', 'kickerHit', 'gravity', 'slip', 'aboveTopSpeed', 'slide'] as const;
+export const EVENT_KINDS = ['mud', 'sand', 'ice', 'boost', 'headOnHit', 'kickerHit', 'gravity', 'slip', 'aboveTopSpeed', 'slide', 'scrape'] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 /** Effects that get a formula line in the report. */
@@ -244,6 +271,8 @@ export interface RunText {
   placeholder: boolean;
   briefing: { headline: string; hazards: string[] };
   tidbits: Record<EventKind, string>;
+  /** The name of each element on its caption card and in the field log (R2: "Vent", not "Boost pad"). */
+  titles: Record<EventKind, string>;
   formulas: Record<FormulaKind, string>;
   /** The question on the tunnel signs. */
   tunnelQuestion: string;
