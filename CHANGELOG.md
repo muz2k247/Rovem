@@ -6,6 +6,11 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs (Showcase S0: editable source documents, 2026-10-21)
+- `docs/specs/v2/`: the SRS (Draft 0.6), Physics Model Specification v2 (tests T1–T20, hand arithmetic recomputed), Data Model v2, Tech Stack v2, Architecture v2 (Mermaid and ASCII diagrams, module names checked against `src/`), Art Direction v2, and `component_values/` (one CSV per sheet, plus `levels.csv` and `showcase.csv`). Each document has a version line, a change log and a "Superseded (kept for the record)" section (the CSVs share one change log in `read_me.csv`). The v1 PDFs and the xlsx are kept unchanged.
+- PENDING_SPEC_EDITS E4–E47 marked applied (the file is history). CLAUDE.md "Sources of truth", the physics-checker and spec-sync agents, the milestone and sync-docs skills and the README point at the v2 files.
+- ROADMAP: S0 done; Open issues OI-16 (FR numbering), OI-17 (the jump's landing step), OI-18 (small docs-to-code gaps found). DECISIONS 2026-10-21 (S0): judgment calls.
+
 ### Docs (Showcase plan, 2026-10-21)
 - `docs/SHOWCASE_PLAN.md`, approved: five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), the crashed-ship story, the Scavenger rival in place of par, no forced stops, jumps, walls scrape and obstacles crash, the booster, Endless as named places, the report's stretches and recorded causes, Change one part. Session prompts S0 and R1–R8.
 - DECISIONS: two rows dated 2026-10-21. PENDING_SPEC_EDITS: E44 (setting), E45 (jumps), E46 (collisions), E47 (booster).

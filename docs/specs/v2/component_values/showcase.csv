@@ -1,0 +1,40 @@
+"Rovem Component Values v2: Showcase (new sheet). The values of SHOWCASE_PLAN section 16 with their status, the other Showcase numbers, and the hand-checked values of E45-E47. DECISIONS 2026-10-21."
+"All values are provisional (chosen by Claude unless the Set by column says otherwise) and tuned in playtesting. 'planned' means the session that builds it has not run: R1 collisions, R2 Endless places, R3 Crash Site, R4 Scavenger and booster, R5 Geyser Canyon, R6 jumps and Crater Field, R7 Crossing and Iron Ridge."
+,,,,,
+Group,Value,Number,Why,Set by,Status
+"Section 16","Normal bend radius","at least 62 m on rock, at least 100 m on sand","1.5 x the tightest bend all-terrain wheels hold at 18 m/s: 18^2 / (0.8 x 9.8) = 324 / 7.84 = 41.33 m; x 1.5 = 61.99 m","Claude, at k._muz's request",planned
+"Section 16","The Ring","inner edge 25 m, outer edge 40 m, about 270 deg","The starting rover's best line, r* = v_max^2 / (mu_g k_g g) = 256 / 7.84 = 32.65 m, lies between the edges, so the build decides the line; safe speed on the inner edge = sqrt(0.8 x 9.8 x 25) = 14.00 m/s, below the 16 m/s top speed",Claude,planned
+"Section 16","Mud patch length","at most 12 m, after a straight approach so every build arrives at 14 m/s or more","The worst build (Heavy chassis, Spiked wheels, Small motor, 267 kg) slows at (700 - 2511.94) / 267 = -6.79 m/s2 and stops in 14.44 m from 14 m/s (recomputed with step() on 2026-10-21); the starting rover slows at only 1.095 m/s2",Claude,planned
+"Section 16","Booster","2500 N, up to 1.5 s, stops at top speed, once per level attempt, Shift, not in the air","See the booster check rows below. The booster itself was k._muz's idea; the numbers are Claude's","k._muz (idea); Claude (numbers)",planned
+"Section 16","Scavenger target","4-8% slower than the starting rover's clean best drive; tuned by hand with a visible start delay (scavengerStartDelayS, 0 by default)","One mistake loses to it; a clean drive wins",Claude,planned
+"Section 16","Scavenger fade","within 8 m, to 30% opacity","Never hides the road",Claude,planned
+"Section 16","Split gates","3-4 per level","Gap information without nagging",Claude,planned
+"Section 16","Pop-up life","1.5 s","Readable at speed",Claude,planned
+"Section 16","Caption card","4 s, first time per element per run, at most one on screen","One idea at a time",Claude,planned
+"Section 16","Camera kick","0.2 s","Felt, not disorienting",Claude,planned
+"Section 16","Ground colour fringe","1 m, noise-warped","Natural edges; the physics edge stays a simple polygon",Claude,planned
+"Section 16","Endless section length","at least 150 m","Long enough to feel like a place",Claude,planned
+"Section 16","Crash Site length","about 90 s","Keeps the demo rematch short",Claude,planned
+"Section 16","Crash cost target","3-6 s, by checkpoint placement","A mistake matters, but does not end the level",Claude,planned
+"Section 16","Kept unchanged","surfaces; gravity x 0.5 and x 2; boost pad 1200 N s; sandbag 40 kg at 10 and 30 m/s; water; magnets; crash moment 0.5 s","See levels.csv and inputs.csv",,"provisional (as before)"
+"Section 3","Level length, stars","90-150 s; 3 stars: reach the ship part, collect all 3 samples, beat the Scavenger; 3 samples per level",,k._muz,confirmed
+"Section 3","Levels","Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge","Each teaches one idea no other level teaches",k._muz,confirmed
+"Section 11","Endless sections","Rock Plain, Dune Sea, Frozen Flats, Clay Gully, Vent Run, Launcher Alley, Gravity Caves","Named places picked by the seeded random generator; difficulty still grows with distance",Claude,planned
+,,,,,
+"Booster checks, recomputed 2026-10-21 by S0 with the real step() (throttle held; booster 2500 N along the gear through externalForceN, up to 1.5 s, stopping early at top speed). 'Cold' = the throttle level is 0 when the booster fires, so it builds from 0 over 1.0 s. 'Primed' = the student was already holding W, so the throttle level is 1. The plan's numbers are the primed case.",,,,,
+Group,Check,Value,Why,Set by,Status
+"Check (E47)","Impulse","2500 N x 1.5 s = 3750 N s",,hand,confirmed
+"Check (E47)","Starting build at rest in mud, primed, booster on","a = (2500 + 1000 - 0.6 x 2048.2) / 209 = 2271.08 / 209 = 10.8664 m/s2 until 16 m/s",,hand and step(),confirmed
+"Check (E47)","Leaves a 12 m mud patch from rest, primed","24 of 27 builds. The 3 that do not are Heavy chassis with Spiked wheels: stops at 4.04 m (267 kg), 5.71 m (277 kg), 8.33 m (292 kg)","Matches the plan (24 of 27; only Heavy + Spiked fail)",step(),confirmed
+"Check (E47)","Leaves a 12 m mud patch from rest, cold","22 of 27 builds. The 5 that do not: Heavy + Spiked (1.90 m, 2.42 m, 3.24 m) and Standard + Spiked with the Small motor (9.52 m) or Medium motor (11.38 m)","A student who just got stuck has been holding W, so 'primed' is the usual case; the plan does not say which it assumed, and its figures are the primed ones. Found by S0",step(),"confirmed (an assumption to state, not a conflict)"
+"Check (E47)","Heavy + All-terrain + Small motor (259 kg), primed","leaves the 12 m patch; if the mud never ended it would travel 22.38 m before stopping","Plan section 3a says 'about 22 m'",step(),confirmed
+"Check (E47)","Heavy + Spiked + Small motor (267 kg), primed","does not leave a 12 m patch (stops at 4.04 m)","E47",step(),confirmed
+"Check (E47)","Without the booster, from rest in mud with the throttle held","8 of 27 builds can drive out of a 12 m patch, all of them with Smooth wheels (Light x 3, Standard x 3, Heavy with the Medium or Large motor). The starting rover cannot: drive 1000 N is less than F_r = 1228.92 N, so it stays at rest","Why a rescue tool is needed for the other 19",step(),confirmed
+,,,,,
+"Jump and collision checks (E45, E46), recomputed 2026-10-21",,,,,
+Group,Check,Value,Why,Set by,Status
+"Check (E45)","v = 16 m/s, phi = 15 deg","v_y = 16 sin 15 deg = 4.14110 m/s; v_h = 16 cos 15 deg = 15.45481 m/s",,hand,confirmed
+"Check (E45)","g = 9.8 m/s2, landing at take-off height","T = 2 v_y / g = 0.845123 s; h = v_y^2 / 2g = 0.874936 m; length = v_h T = 13.0612 m",,hand,confirmed
+"Check (E45)","g = 4.9 m/s2","T = 1.690247 s; h = 1.749872 m; length = 26.1224 m",,hand,confirmed
+"Check (E45)","Stepping at 1/120 s, landing taken at the end of the first step with y <= 0 (not split inside the step)","g = 9.8: 102 steps = 0.8500 s, length 13.137 m. g = 4.9: 203 steps = 1.6917 s, length 26.144 m","The exact values above need the landing step split at the exact landing time, as step() already splits at v_max and at 0. Open question for R6: see Physics_Model_Spec_v2, Leaving the ground",hand and code-like loop,"planned (open for R6)"
+"Check (E46)","12 m/s into an edge","alpha = 30 deg: 12 cos 30 = 10.3923 m/s; alpha = 60 deg: 6.0000 m/s; alpha = 90 deg: 0",,hand,confirmed

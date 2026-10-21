@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 Work on milestone **$ARGUMENTS** of Rovem. If no milestone is given, use the first milestone in `docs/ROADMAP.md` that is not ✅ and whose dependencies are ✅.
 
-1. Read `CLAUDE.md` and `docs/DECISIONS.md` and the milestone's section in `docs/ROADMAP.md`. Read every FR, NFR, test and wireframe it cites, in `docs/specs/extracted/`.
+1. Read `CLAUDE.md` and `docs/DECISIONS.md` and the milestone's section in `docs/ROADMAP.md`. Read every FR, NFR, test and wireframe it cites, in `docs/specs/v2/`.
 2. If a dependency is not ✅, stop and say which one.
 3. Check the Open issues table for anything that blocks this milestone. If one does, ask about it before writing code.
 4. Give a short plan: files to create or change, tests to write, and any value you would need that no source gives. Wait for approval only if a decision is open; otherwise continue.

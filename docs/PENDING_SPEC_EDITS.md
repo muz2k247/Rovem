@@ -1,12 +1,13 @@
 # Pending spec edits
 
-Exact text changes for the source documents in `docs/specs/`, which can't be edited from the repository. k._muz makes the edit in the source document, exports it over the old file (same name), regenerates `docs/specs/extracted/`, and deletes the entry here.
+**History file since 2026-10-21.** The source documents are now editable Markdown in `docs/specs/v2/` (session S0), so nothing waits here any more. Every entry below carries "Applied in docs/specs/v2 (2026-10-21)", with a note where it went into a Superseded section only. The file is kept as the record of what each change was and why.
 
 Entry format: an ID, the document and section, the exact current text, and the exact replacement text.
 
-E1–E3 were made and exported on 2026-10-12. E4–E47 below block no milestone; `docs/DECISIONS.md` governs until they are made.
+E1–E3 were made and exported on 2026-10-12. E4–E47 were applied in S0. New changes are made directly in `docs/specs/v2/` with a change-log line, and a DECISIONS row if they are a decision.
 
 ### E4: Physics Model Specification, "Driving states and acceleration" table, column "When"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS OI-1.
 - Stopped: "v = 0 and either F_d ≤ F_r or the brake is held" → "v = 0 and either F_d ≤ F_r or u_b > 0"
 - Driving: "Throttle applied, v below v_max" → "u_t > 0 and u_b = 0, except At top speed; a may be negative when F_d < F_r"
@@ -16,25 +17,30 @@ Source: DECISIONS OI-1.
 - Add below the table: "The state is chosen from the control levels, not the keys, so a level still falling after release keeps acting until it reaches 0."
 
 ### E5: Physics Model Specification, Controls, "Locks"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS OI-2.
 - Current: "In Mission 2 the throttle drops to 0 at the power-cut line and stays locked (FR-39)."
 - Replacement: "In Mission 2 the throttle level drops to 0 at once, from the step after the power-cut line is reached, without the release ramp, and stays locked (FR-39)."
 
 ### E6: Physics Model Specification, Automated tests, T10, column "Expected"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS OI-3.
 - Current: "to 0.001 s or 0.001 m"
 - Replacement: "each within 0.0005 s or 0.0005 m of the sheet value"
 
 ### E7: SRS Draft 0.5, section 7 Open Items
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS OI-5.
 - Current row: "Knowledge values, unlock costs and power-ups | Set (3.8); confirmed in playtesting"
 - Replacement: two rows, "Knowledge values and unlock costs | Confirmed (3.8)" and "Power-ups | Set (3.8); confirmed in playtesting"
 
 ### E8: Component Values sheet, Pass check sheet, column "M3 passes"
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 Source: DECISIONS OI-9 (2026-10-13).
 - Add a note under the table: "M3 passes means the build can pass: stopping distance from the brake line ≤ 23 m, so a student who brakes at the right point after the line stops with the whole rover inside the zone. A single attempt is judged by the Physics Model Specification rule (zone start + 2 m ≤ x ≤ zone end)."
 
 ### E9: Physics Model Specification, "Driving states and acceleration", first paragraph
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS OI-10 (2026-10-13).
 - Current: "The wheels slip, and the screen shows it, whenever u_t × F_d,max or u_b × F_b,max exceeds F_lim (FR-9)."
 - Replacement: "The wheels slip, and the screen shows it, when the force the current state uses is requested above F_lim: u_t × F_d,max in Driving and At top speed, u_b × F_b,max in Braking (FR-9). A Stopped, Coasting or Cruising rover never shows slip." (If E19 is made, drop "or Cruising".)
@@ -43,14 +49,17 @@ Source: DECISIONS OI-10 (2026-10-13).
 Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full design is in `docs/DESIGN.md`. E24 supersedes E8, because the Mission 3 pass column is rebuilt. Make E8 only if E24 is not made.
 
 ### E10: SRS Draft 0.5, 3.3 Controls, FR-6
+**Applied in docs/specs/v2 (2026-10-21), in the live text: SRS_v0.6 FR-6.**
 - Current: "The student can steer left and right, apply throttle and apply brake. There is no reverse."
 - Replacement: "The student can steer left and right, apply throttle and apply brake, and reverse. Holding the brake after the rover stops makes it reverse; in reverse the throttle key brakes and, once stopped, drives forward again. Reverse top speed is half the motor's top speed."
 
 ### E11: SRS Draft 0.5, 3.4, driving states table
+**Applied in docs/specs/v2 (2026-10-21), in the live text: SRS_v0.6 section 3.4.**
 - Delete the row "Cruising | Mission 3 only, while the tow line holds the rover, before the first brake input after the brake line | Zero: the tow balances friction, so speed stays at the set speed".
 - Add below the table: "Speed is the size of the velocity. The rover also has a direction of travel, forward or reverse; the states and formulas are the same in both."
 
 ### E12: SRS Draft 0.5, 3.5 Missions, mission table
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Mission 1:
   - Name: "1. Motion Trial" → "1. Canyon Dash".
   - Objective, current: "From rest, reach the target within the time limit by a longer route on fast ground or a shortcut across slow ground."
@@ -63,6 +72,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
   - Decision that matters: "Mass, brakes and grip, and when to brake" → "Mass, brakes and grip, entry speed, and when to brake".
 
 ### E13: SRS Draft 0.5, 3.5 Missions, mission parameters table
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Replace the row "Mission 3 approach speed | 15 m/s, held by a tow line | …" with: "Mission 3 speed trap | 14 m/s or more at the brake line, brake not applied | 14 m/s is the slowest motor's top speed, so every build can enter. From 14 m/s every build can stop in time, so the challenge is when to brake and how fast to risk entering."
 - Mission 3 brake line row, Reason:
   - Current: "The starting build needs 18.8 m to stop. 4 of the 9 heavy builds need more than 23 m; they pass with Brake boost or lighter parts".
@@ -71,14 +81,17 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Add a row: "Mission 1 medals | Bronze ≤ 9.00 s (pass), silver ≤ 8.50 s, gold ≤ 8.10 s | 20, 14 and 5 of 27 builds can reach them; gold needs unlocked parts."
 
 ### E14: SRS Draft 0.5, 3.5, FR-30
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Current: "In Mission 3 a tow line pulls the rover at its set speed. The first brake input after the brake line releases the tow and starts braking; braking before the brake line has no effect. After the release, letting go of the brake lets the rover coast. The throttle stays locked."
 - Replacement: "In Mission 3 the student drives the run-up. The rover must reach the brake line at 14 m/s or more with the brake not applied, or the attempt fails. From the brake line the throttle is locked; brake inputs count from then on, and letting go of the brake lets the rover coast."
 
 ### E15: SRS Draft 0.5, 3.7, FR-34
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Current: "Optional unlock questions are available on the build screen and earn Knowledge for customization."
 - Replacement: "Optional unlock questions are available at question terminals in the hub and earn Knowledge for customization."
 
 ### E16: SRS Draft 0.5, new and changed requirements
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17). FR-45 to FR-49 as numbered here clashed with E37 and E46; see SRS_v0.6 change log and ROADMAP OI-16.**
 - FR-12:
   - Current: "The MVP contains these three missions, played on one terrain that has several surface types."
   - Replacement: "The MVP contains these three missions and a free-roam hub, played on one terrain that has several surface types."
@@ -90,9 +103,11 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Add FR-49, Start grid: "A judged trial from rest starts on a start grid. The student stops in the grid box and makes the run prediction, and the trial starts after a 3-second countdown."
 
 ### E17: SRS Draft 0.5, 3.9, FR-24
+**Applied in docs/specs/v2 (2026-10-21), in the live text: SRS_v0.6 FR-24 (as rewritten).**
 - Add after "and a mission's completion when the mission is cleared.": "It also saves the best medal earned in each mission."
 
 ### E18: Physics Model Specification, Controls
+**Applied in docs/specs/v2 (2026-10-21), in the live text: Physics_Model_Spec_v2 section 3.**
 - "Locks" sentence:
   - Current: "In Mission 3 the throttle is locked for the whole attempt (FR-30)."
   - Replacement: "In Mission 3 the throttle level drops to 0 at once from the step after the brake line is reached, and stays locked (FR-30). A lock applies in both directions."
@@ -100,9 +115,11 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Add: "During a start-grid countdown, both levels are held at 0."
 
 ### E19: Physics Model Specification, Driving states and acceleration, table
+**Applied in docs/specs/v2 (2026-10-21), in the live text: Physics_Model_Spec_v2 section 4 (Cruising row removed).**
 - Delete the row "Cruising | Mission 3, before the tow is released | 0: the tow line balances friction and holds the set speed".
 
 ### E20: Physics Model Specification, Mission measurement and pass rules
+**Applied in docs/specs/v2 (2026-10-21), in the live text: Physics_Model_Spec_v2 section 12 (regression) and Superseded S1.**
 - Mission 1 row, Start:
   - Current: "From rest. Routes: 100 m on asphalt, or an 85 m shortcut on sand".
   - Replacement: "From rest at the start pose after the countdown. Routes: 100 m on asphalt, or an 85 m shortcut on sand, each the shortest drivable line".
@@ -117,6 +134,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
   - Replacement: "In Mission 3, releasing the brake after the brake line lets the rover coast (FR-30). The speed trap is set at the Large motor's 14 m/s top speed, so every build can enter."
 
 ### E21: Physics Model Specification, Power-ups and Automated tests
+**Applied in docs/specs/v2 (2026-10-21), in the live text: Physics_Model_Spec_v2 T10 and Superseded S3.**
 - Pickup position, Motor boost and Lighter load: "Near the start of each route, beside …" → "In the canyon before the start grid, side by side".
 - Pickup position, Mission 3 Brake boost and Grip tyres: "One of two lanes before the brake line" / "The other lane before the brake line" → "One of two lanes of the run-up" / "The other lane of the run-up".
 - "Checked against all 27 builds", Mission 3 line:
@@ -125,15 +143,18 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - T10, Setup: "All 27 builds, all three missions" → "All 27 builds. The Mission 3 column is the stopping distance from 15 m/s with the brake building up from 0, kept as a physics regression".
 
 ### E22: Physics Model Specification, new section "Game-layer rules"
+**Applied in docs/specs/v2 (2026-10-21), then replaced by E46 (Physics_Model_Spec_v2, 11.1 and 11.2).**
 - Add: "Collisions are handled by the game layer, not by step(). A step that ends with the rover's footprint (2 m long by the model width, 1.7 m) overlapping a rock is undone, and v is set to 0; the clock still advances. step() accepts an optional external force along the direction of travel, default 0, reserved for future modifiers and unused in the MVP."
 
 ### E23: Data Model, player_mission
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Row text:
   - Current: "When it was unlocked and when it was completed (empty until then)".
   - Replacement: "When it was unlocked, when it was completed (empty until then), and the best medal earned (empty until the first pass)".
 - Merge rules (FR-43): add "best medal: keep the better one".
 
 ### E24: Component Values sheet
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Inputs:
   - Add the Mission 1 medal thresholds (silver 8.5 s, gold 8.1 s), the Mission 3 speed trap (14 m/s), the reverse top speed ratio (0.5), the rover width for the rock footprint (1.7 m) and the hub boost pad (top speed × 2, F_d,max × 1.5).
   - Remove the Mission 3 approach speed of 15 m/s as a mission value. Keep it as the Simulation sheet's regression speed.
@@ -144,6 +165,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Replace "23 of 27 pass" in Read me and Spread.
 
 ### E25: Wireframes, Mission 1
+**Applied in docs/specs/v2 (2026-10-21), into the Superseded section or the sheet regression only (Game design v2 was superseded 2026-10-17).**
 - Mission select: replaced by the hub in M9. The prototype keeps it.
 - Predict: shown on the start grid, before the countdown.
 - Build: the "Unlock question" button moves to the hub terminals (M9).
@@ -151,6 +173,7 @@ Source: DECISIONS 2026-10-13 "Game design v2" and the rows under it; the full de
 - Results: add the medal.
 
 ### E26: SRS Draft 0.5, sections affected by the advisor's ruling — **resolved 2026-10-17: replaced by E37 and E43** (kept for the reasoning)
+**Applied in docs/specs/v2 (2026-10-21): recorded as resolved by E37 and E43 (SRS_v0.6).**
 Source: DECISIONS 2026-10-14 (advisor's ruling: no multiple-choice questions; learning by play; demo first).
 - No text is changed yet. The ruling affects these sections, and what they say stays in force for the MVP (design v2) until k._muz decides the direction after the advisor has seen the demo:
   - FR-17–FR-19, FR-21: question format (three required scenario questions per mission, reasoning questions, pre-written answers, wrong-answer explanation and variant).
@@ -163,22 +186,26 @@ Source: DECISIONS 2026-10-14 (advisor's ruling: no multiple-choice questions; le
 - Once the direction is decided, replace this entry with exact current/replacement text per section.
 
 ### E27: Physics Model Specification, "Driving states and acceleration", new rule "Above top speed"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.1.
 - Add after the states table: "If the throttle level is above 0 and v is above the top speed in the current direction at the start of a step, the motor gives no force: the state is Coasting, F_d is reported as 0 and a = −F_r ÷ m. If v would fall below the top speed during the step, the step is split at t₁ = (v_max − v) ÷ a. For the rest of the step the rover holds v_max if min(u_t × F_d,max, F_lim) ≥ F_r; otherwise it continues with a₂ = (min(u_t × F_d,max, F_lim) − F_r) ÷ m."
 - In "The fixed time step", step 3, add: "A rover above its top speed is handled by the rule above."
 
 ### E28: Physics Model Specification, new section "Momentum events"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.2.
 - Add: "Momentum events are applied by the game layer after step(), never inside it. Velocity along the heading is u = +v when moving forward and u = −v in reverse. After an event the new speed is |u′| and the direction is set by the sign of u′ (unchanged if u′ = 0); nothing else changes.
   - Collision where the two bodies move off together: m₁u₁ + m₂u₂ = (m₁ + m₂)u′, where m₁ is the rover, m₂ the other body and u₂ its velocity along the rover's heading. The other body then leaves with no sideways or along-track force, so the rover keeps u′.
   - Impulse: J = m(u′ − u), so u′ = u + J ÷ m."
 
 ### E29: Physics Model Specification, new section "Gravity zones"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-14; `docs/DEMO_BUILD_PLAN.md` A5.3.
 - Add: "g may differ by region. The game layer passes the g that applies at the rover's front for each step; step() has no other change. R = mg, so F_r = μ_r × k_r × R and F_lim = μ_g × k_g × R scale with g, while the mass m does not. In the demo g = 9.8 × 0.5 (low) or 9.8 × 2 (high) inside a gravity zone, and 9.8 elsewhere (values in content)."
 - Add to Automated tests: "Doubling g doubles F_r and F_lim, and leaves m unchanged."
 
 ### E30: Component Values sheet, Inputs, surface table
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-14 (mud).
 - Add a row after Ice: "Mud | 0.6 | 0.5" (rolling friction μ_r, grip μ_g; provisional).
 - Hand check for the starting build (209 kg) at g = 9.8: F_r = 1228.92 N, which is more than the Medium motor's 1000 N, so the rover slows at 1.095311 m/s² from top speed.
@@ -188,25 +215,30 @@ Source: DECISIONS 2026-10-14 (mud).
 Source for all: DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`. Values are provisional (A10). None blocks a session; DECISIONS and the build plan govern until they are made.
 
 ### E31: Physics Model Specification, "Build quantities" and new section "Slopes"
+**Applied in docs/specs/v2 (2026-10-21).**
 - Current: "R = mg"
 - Replacement: "R = m g cos θ − U, never below 0, where θ is the slope angle along the motion (0 on flat ground) and U the upthrust (0 out of water). F_r = μ_r × k_r × R and F_lim = μ_g × k_g × R use this R. On flat dry ground R = mg."
 - Add a section "Slopes": "On a slope the weight has a part along the ground, m g sin θ, pointing downhill; θ is measured along the direction of motion and is positive uphill. The game layer finds θ from the terrain under the rover's centre and passes it to the step. The rover follows the ground: its horizontal move is d cos θ for a step distance d, and the distance along the path stays d. The ground's sideways tilt is ignored, and the rover never leaves the ground (crests are shaped with a radius of at least 50 m)."
 - Add to Automated tests: "Standard build on a 12° ramp at full throttle: a = (1000 − 2048.2 sin 12° − 0.02 × 2048.2 cos 12°) ÷ 209 = 2.5554 m/s². On flat ground every result equals the result without slopes (T1–T10 unchanged)."
 
 ### E32: Physics Model Specification, "Reverse", new rule "Rolling back"
+**Applied in docs/specs/v2 (2026-10-21).**
 - Add after the reverse rules: "The direction (forward or reverse) is the gear: it decides which key drives and which brakes. A rover can also move opposite to its gear, rolling back, when a slope or an outside push drives it backward. Pushing forces act along the gear whatever the motion: the drive force, the slope part of the weight, and outside pushes such as a magnet. Resisting forces always oppose the motion and never reverse it: the brake, rolling friction and water drag; a step in which they would take the speed past 0 stops at 0, as before. At rest at the start of a step, after the control and gear rules, let N be the sum of the pushing forces along the gear. If |N| ≤ F_r the rover stays at rest. If N > F_r it moves along its gear with a = (N − F_r) ÷ m. If N < −F_r it rolls back with a = (|N| − F_r) ÷ m. While rolling back, the keys keep their meaning. The above-top-speed rule applies only to motion along the gear."
 - Add to Automated tests: "Standard build at rest on a 25° slope, no keys: it rolls back with a = (2048.2 sin 25° − 0.02 × 2048.2 cos 25°) ÷ 209 = 3.9640 m/s²."
 
 ### E33: Physics Model Specification, new section "Water"
+**Applied in docs/specs/v2 (2026-10-21).**
 - Add: "In water of depth h, the rover is pushed up by the upthrust U = ρ_water × g × V_sub (Archimedes' principle), with ρ_water = 1000 kg/m³ and V_sub = V_rover × min(h ÷ H, 1); V_rover = 0.20 m³ and H = 1.0 m for every build (provisional). U lowers the ground push R (E31), so grip and rolling friction fall. Water drag F_w = b × v acts against the motion, with b = 150 N·s/m × min(h ÷ H, 1) (provisional; a stated simplification, since real drag grows faster with speed). If U ≥ m g the rover floats: R = 0, so there is no grip, no drive force and no turning; only drag slows it. Pressure at depth, P = ρ g h, is shown to the student but not simulated."
 - Add to Automated tests: "Standard build, depth 0.50 m, 4.00 m/s, sand bed, full throttle: U = 980 N, R = 1068.2 N, F_d = F_lim = 534.1 N (slipping), F_r = 128.18 N, F_w = 300 N, a = 0.50677 m/s². A Light-chassis build in 1.0 m of water floats."
 
 ### E34: Physics Model Specification, new section "Magnets and sideways forces"; the turning limit
+**Applied in docs/specs/v2 (2026-10-21).**
 - Add: "Magnet pylons (game layer; called super electromagnets in the game, a stated exaggeration) push or pull the rover along the line from the pylon to the rover's centre: like poles repel, unlike poles attract. Size: 1600 N within 5 m, 1600 × (5 ÷ d)² N beyond, 0 beyond 25 m (provisional; the falloff is a game rule and is not shown to students). The part along the gear is the step's outside push. The sideways part F⊥ bends the direction of travel by F⊥ ÷ (m v) per second, and is ignored below 0.5 m/s."
 - Turning (drifting): "The direction of travel turns toward the way the rover is driving by at most μ_g × k_g × R ÷ (m v) per second (equal to μ_g × k_g × g ÷ v on flat dry ground)."
 - Add: "Circular motion: a bend of radius r needs m v² ÷ r towards its centre, and the tyres give at most μ_g × k_g × R, so the safe speed on flat ground is √(μ_g × k_g × g × r). Mass cancels."
 
 ### E35: SRS Draft 0.5, 1.1 Purpose, 1.2 Scope, 1.3 Learning objectives
+**Applied in docs/specs/v2 (2026-10-21).**
 - 1.1, current: "teaches Grade 9 Kinematics and Dynamics through building and driving a rover." Replacement: "teaches Grade 9 physics (the newest Punjab Textbook Board book) through building and driving a rover."
 - 1.2, current from "The MVP has one terrain, three missions" to "and Knowledge to unlock parts and missions." Replacement (revised 2026-10-18): "The game has seven levels, each adding one new idea to those before it, and an endless mode that mixes them all. A student plays as a guest on one device. Questions, Knowledge and accounts are future work (section 6)."
 - 1.3, add after "Combine these ideas to solve a practical problem.":
@@ -219,18 +251,22 @@ Source for all: DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`. Values are pr
 - 1.3, current: "checked against the Grade 9 Kinematics and Dynamics chapters by a Grade 9 physics teacher." Replacement: "checked against the Grade 9 physics book by a Grade 9 physics teacher (the objectives added for Game v4 are to be re-checked)."
 
 ### E36: SRS Draft 0.5, 2.2 Constraints
+**Applied in docs/specs/v2 (2026-10-21).**
 - Add: "The interface uses two bundled fonts, Space Grotesk and IBM Plex Sans (SIL Open Font Licence 1.1). They are bundled with the game rather than loaded from a font service, so the game needs no outside connection to show text. The licence allows free use, including commercial use, and bundling with software, with no fee; its only conditions are that the fonts are not sold on their own and that a modified font is renamed. Rovem does neither."
 
 ### E37: SRS Draft 0.5, section 3 (resolves E26)
+**Applied in docs/specs/v2 (2026-10-21).**
 - Mark FR-4, FR-12, FR-13, FR-17 to FR-23, FR-26, FR-30 to FR-40, FR-43 and FR-44 "Superseded by Game v4 (DECISIONS 2026-10-17)", keeping their text.
 - Replace 3.1 with: "FR-45 The student moves Home → Levels → a level (intro, drive, report) → the next level. Levels open in order; the endless mode opens after the first level. FR-46 Each level introduces one idea, lasts about 90–150 s, has checkpoints, and ends at a finish line; a crash returns the rover to the last checkpoint. FR-47 Each level awards up to three stars: finishing, beating the par time, and the level's challenge. The best stars and time are saved on the device."
 - Replace FR-14 to FR-16 in 3.6 with: "FR-48 During a run, the game shows only what teaches something at that moment: force arrows for the level's forces, one short caption with the student's number, and the net-force line while the speed changes. FR-49 After a run, the game shows a speed–time graph, up to three moments that mattered with the student's numbers and an optional worked formula, and one suggestion that can be tried at once."
 - Keep 3.2 (FR-1 to FR-3; all parts available), 3.3 and 3.4, and add to 3.4: "FR-50 The physics also covers slopes, rolling back, water (upthrust and drag), magnets, momentum events and gravity zones, as in the Physics Model Specification."
 
 ### E38: Wireframes, Mission 1
+**Applied in docs/specs/v2 (2026-10-21).**
 - Add a note on the first page: "Screen layouts superseded 2026-10-17 by wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh): Home, Levels, Garage, Level intro, Driving, Pause, Settings, Report. The images remain mood references only." E25 is superseded with it.
 
 ### E39: Architecture Diagram
+**Applied in docs/specs/v2 (2026-10-21).**
 - Screens, current: "sign-in or guest play, mission select, build rover with part effects, question and prediction dialogs, driving view showing speed and direction, results with explanation, concepts cleared". Replacement: "home, level select, garage with part effects, level intro, driving view with force arrows and captions, pause and settings, report with a speed–time graph". Requirements: FR-1, FR-2, FR-27, FR-45, FR-48, FR-49.
 - Game flow and rules, replacement: "Runs a level (checkpoints and respawn, finish, stars and par, level unlocking) and the endless run, and turns each step into the HUD and report data." Requirements: FR-5, FR-45 to FR-49.
 - Physics model: add "slopes, rolling back, water, magnets, momentum events and gravity zones" (FR-50).
@@ -240,31 +276,38 @@ Source for all: DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`. Values are pr
 - "How to read it", second paragraph: replace "questions, prediction, the run, then results" with "the level intro, the run, then the report".
 
 ### E40: Tech Stack and Mission 1 Plan
+**Applied in docs/specs/v2 (2026-10-21): Tech_Stack_v2.**
 - Milestones: add "M5b to M8 superseded 2026-10-17 by Game v4 (sessions P0, A1–A3, B1–B4, I1; `docs/ROADMAP.md`). Deployment (M8) and accounts (M12) stay as later work."
 - Libraries: add "Fonts: @fontsource/space-grotesk and @fontsource/ibm-plex-sans (OFL 1.1), bundled."
 
 ### E41: Component Values sheet, new sheet "Levels"
+**Applied in docs/specs/v2 (2026-10-21).**
 - Add a sheet with the LEVELS_BUILD_PLAN A10 table (value, number, set by, status) and the check values of E31–E34.
 - The Pass check and Simulation sheets stay unchanged: they remain the physics regression (balance 20/9/23/17).
 
 ### E42: Data Model, waiting for the accounts milestone
+**Applied in docs/specs/v2 (2026-10-21).**
 - The question, Knowledge and mission tables are not used by Game v4. When accounts return (M12), replace them with a level-progress table (level id, best stars, best time, opened) and an endless table (best distance). No text changes until then.
 
 ### E43: SRS Draft 0.5, section 6 Future Work
+**Applied in docs/specs/v2 (2026-10-21).**
 - Remove "Momentum and impulse…", "Weight vs. mass through different gravity…" and "More components, terrains and missions." (all now in the game).
 - Add: "Scenario questions and Knowledge (the former 3.7 and 3.8), if a form other than multiple choice is agreed with the advisor." "Wind (the Dust Storm level): a sideways force." "Accounts and cloud sync (the former FR-25, FR-41 to FR-44)."
 
 ### E44: Wireframes, Mission 1, "Proposed terrain theme"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-21 (Showcase round, D6).
 - Current: "A Mars-analog proving ground on Earth: red ground and sky, with a paved test track. Gravity stays 9.8 m/s² (SRS 2.2). The Moon and alien looks fit later levels, where a planet's gravity would be a modifier (SRS Section 6)."
 - Replacement: "An unnamed red planet where the student's ship has crashed: red ground and sky, rock plains, dunes, craters, canyons, ice in shade, mud in gullies. Gravity on open ground is 9.8 m/s², the same as Earth's (SRS 2.2); gravity anomalies (caves) multiply it by 0.5 or 2."
 
 ### E45: Physics Model Specification, new section "Leaving the ground (jumps)"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-19 (jumps approved); rule in `docs/SHOWCASE_PLAN.md` P1. Applied by the game layer and a pure function outside step(); step() is unchanged.
 - Add: "The rover leaves the ground only at a ramp lip defined in the level data. At the lip, with speed v along a ramp of angle φ, the velocity splits into v_h = v cos φ and v_y = v sin φ. In the air v_h is constant and v_y falls by g Δt each step, where g is that of the gravity zone the rover is in; the height rises by v_y Δt − ½ g Δt². No drive, brake, rolling friction or steering acts in the air; the control levels keep updating. The clock runs, and the distance grows by the horizontal distance flown. On landing, the velocity component into the ground is removed and the component along the ground is kept (on flat ground the speed becomes v_h); there is no damage. Landing outside drivable ground returns the rover to the last checkpoint. Air resistance is ignored."
 - Add to Automated tests: "v = 16 m/s, φ = 15°, landing at take-off height: g = 9.8 → air time 0.84512 s, top height 0.87494 m, length 13.061 m; g = 4.9 → 1.69025 s, 1.74987 m, 26.122 m."
 
 ### E46: Physics Model Specification, "Game-layer rules" (replaces the rock sentence of E22); SRS FR-48 (replaces E16's FR-48)
+**Applied in docs/specs/v2 (2026-10-21): Physics_Model_Spec_v2 11.2; SRS_v0.6 FR-51 (renumbered from FR-48, which E37 also used).**
 Source: DECISIONS 2026-10-21 (plan approved, item 5); `docs/SHOWCASE_PLAN.md` §4 and P2.
 - Physics Model Specification, current (E22): "A step that ends with the rover's footprint (2 m long by the model width, 1.7 m) overlapping a rock is undone, and v is set to 0; the clock still advances."
 - Replacement: "Edges (walls, cliffs, the edge of the ground): when a step ends with the footprint crossing an edge, the rover is placed against it and the velocity component into the edge is removed: v′ = v cos α along the edge, where α is the angle between the travel direction and the edge; the heading turns along the edge. Friction along the edge is ignored. Obstacles (boulders, barriers): a step that ends with the footprint overlapping an obstacle is undone and v = 0; the clock still advances. In a level this is a crash: after the crash moment the rover returns at rest to the last checkpoint. In the endless run the run ends."
@@ -273,6 +316,7 @@ Source: DECISIONS 2026-10-21 (plan approved, item 5); `docs/SHOWCASE_PLAN.md` §
 - Replacement: "Walls are solid: driving into one removes the part of the velocity into the wall, and the rover scrapes along it. Obstacles are solid: hitting one is a crash, which returns the rover to the last checkpoint in a level and ends the endless run. There is no damage."
 
 ### E47: Physics Model Specification, new section "Booster"
+**Applied in docs/specs/v2 (2026-10-21).**
 Source: DECISIONS 2026-10-21 (plan approved, item 7); `docs/SHOWCASE_PLAN.md` §3a and P9. step() is unchanged: the booster uses its existing outside-force input.
 - Add: "Once per level attempt the student may fire a booster. While it burns, an outside force F_b = 2500 N acts along the gear (passed to step() as part of the external force, with any magnet force), for at most 1.5 s. It is not limited by grip, because it does not act through the tyres. It stops early at the end of the step in which the speed reaches the top speed in the current direction. It does not act in the air. Impulse delivered = F_b × burn time (at most 3750 N·s)."
 - Add to Automated tests: "Standard build at rest in mud (μ_r 0.6), throttle held, booster fired: a = (2500 + 1000 − 0.6 × 2048.2) ÷ 209 = 10.866 m/s² until 16 m/s. Heavy chassis, all-terrain wheels, small motor (259 kg) at rest in mud: it leaves a 12 m patch. Heavy chassis with spiked wheels and the small motor (267 kg): it does not."

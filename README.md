@@ -6,7 +6,11 @@ A browser-based 3D game that teaches Grade 9 physics (the newest Punjab Textbook
 
 **Status:** build phase. Current work: see [`docs/ROADMAP.md`](docs/ROADMAP.md). Changes: see [`CHANGELOG.md`](CHANGELOG.md).
 
-## Current focus: Game v4, concept levels
+## Current focus: the Showcase round
+
+Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0 (done) and R1–R8 are in the roadmap. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
+
+## Base: Game v4, concept levels
 
 After the advisor saw the demo (an endless canyon run), the game became **seven short levels, each adding one new element to those before it, plus the Endless Canyon** as a high-score mode (approved 2026-10-17; revised to seven cumulative levels 2026-10-18). Design and plan: [`docs/LEVELS_BUILD_PLAN.md`](docs/LEVELS_BUILD_PLAN.md); summary in [`docs/DESIGN.md`](docs/DESIGN.md).
 
@@ -45,11 +49,11 @@ All values except Knowledge rewards and unlock costs are provisional and will be
 
 ## Physics
 
-Textbook formulas, not a physics engine. g = 9.8 m/s². The simulation advances in fixed 1/120 s steps, independent of the frame rate, with no random values. The garage and the actual run use the same code. Automated tests compare the results with hand calculations and with all 135 values in the Component Values sheet's Simulation sheet. Game v4 adds slopes and rolling back, water (upthrust and drag), magnets, momentum events and gravity zones; every simplification is stated in the build plan (A11).
+Textbook formulas, not a physics engine. g = 9.8 m/s². The simulation advances in fixed 1/120 s steps, independent of the frame rate, with no random values. The garage and the actual run use the same code. Automated tests compare the results with hand calculations and with all 135 values in `docs/specs/v2/component_values/simulation.csv`. Game v4 adds slopes and rolling back, water (upthrust and drag), magnets, momentum events and gravity zones; every simplification is stated in the build plan (A11).
 
 ## Art
 
-Original low-poly models built in code: a Mars-like world with a paved track, sand, ice, mud, water, craters and magnet pylons, and a rover whose chassis, wheels and motor are visibly separate. Screens follow the wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). The images in the Mission 1 wireframes PDF are mood references only and are not used in the game. Outside assets (so far only the two OFL fonts, Space Grotesk and IBM Plex Sans) are listed with their licences in `docs/ASSETS.md`.
+Original low-poly models built in code: an unnamed red planet with Earth gravity on open ground (DECISIONS 2026-10-21), sand, ice, mud, water, craters and magnet pylons, and a rover whose chassis, wheels and motor are visibly separate. Screens follow the wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). The images in the Mission 1 wireframes PDF are mood references only and are not used in the game. Outside assets (so far only the two OFL fonts, Space Grotesk and IBM Plex Sans) are listed with their licences in `docs/ASSETS.md`.
 
 ## Tech stack (provisional)
 
@@ -103,21 +107,23 @@ scripts/     balance report
 
 | Document | Purpose |
 |---|---|
-| `docs/specs/Rovem_SRS_Draft_0.5.pdf` | Requirements: the primary source of truth |
-| `docs/specs/Rovem_Physics_Model_Spec.pdf` | Formulas, time step, controls, tests T1–T10 |
-| `docs/specs/Rovem_Data_Model.pdf` | Database tables and rules |
-| `docs/specs/Rovem_Component_Values.xlsx` | Part, surface, mission and power-up values; simulation results |
-| `docs/specs/Rovem_Tech_Stack_and_Mission_1_Plan.pdf` | Stack and prototype milestones |
-| `docs/specs/Rovem_Architecture_Diagram.pdf` | System overview |
-| `docs/specs/Rovem_Wireframes_Mission_1.pdf` | Art direction (screens superseded by wireframes v2) |
-| `docs/specs/extracted/` | Plain-text copies of the above, for search |
+| `docs/specs/v2/SRS_v0.6.md` | Requirements: the primary source of truth (editable Markdown, 2026-10-21) |
+| `docs/specs/v2/Physics_Model_Spec_v2.md` | Formulas, time step, controls, game-layer rules, tests T1–T20 |
+| `docs/specs/v2/Data_Model_v2.md` | What is saved now; the future cloud model |
+| `docs/specs/v2/component_values/` | Part, surface, level and Showcase values (CSV); simulation results |
+| `docs/specs/v2/Tech_Stack_v2.md` | Stack and hosting |
+| `docs/specs/v2/Architecture_v2.md` | Module layers, with planned modules marked |
+| `docs/specs/v2/Art_Direction_v2.md` | Look, colours, sound (screens: wireframes v2) |
+| `docs/specs/v2/README.md` | What each v2 file is, and how to print a PDF |
+| `docs/specs/*.pdf`, `*.xlsx`, `extracted/` | The v1 documents, kept unchanged as history |
 | `docs/ROADMAP.md` | Milestones, status, open issues |
 | `docs/DECISIONS.md` | Confirmed decisions |
 | `docs/DESIGN.md` | Approved design: Game v4 (top), Demo v3 (kept as Endless), game design v2 (superseded) |
 | `docs/LEVELS_BUILD_PLAN.md` | Game v4: design, values, worktree rules and session prompts |
 | `docs/DEMO_BUILD_PLAN.md` | Demo v3 design and session prompts |
 | `docs/ASSETS.md` | Licences of any outside assets |
-| `docs/PENDING_SPEC_EDITS.md` | Text changes waiting to be made in the source documents |
+| `docs/SHOWCASE_PLAN.md` | The current plan: five levels, the Scavenger, sessions S0 and R1–R8 |
+| `docs/PENDING_SPEC_EDITS.md` | History: E4–E47, all applied in `docs/specs/v2/` |
 | `CHANGELOG.md` | Changes by version |
 | `CLAUDE.md` | Working guide for Claude Code |
 

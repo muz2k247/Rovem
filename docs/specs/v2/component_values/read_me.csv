@@ -1,0 +1,40 @@
+"Rovem: Component, Level and Showcase Values (v2, replaces the Read me sheet of Rovem_Component_Values.xlsx)"
+"Version 2, 2026-10-21. All input values are proposals, set by reasoning and simulation, to be confirmed in playtesting, unless a Status says confirmed."
+,
+Change log
+"What changed from the xlsx (v1, 2026-10-12)","Why","Source"
+"One CSV per sheet: inputs, builds, simulation, pass_check, progression, spread; plus new levels.csv and showcase.csv","The xlsx cannot be edited from the repository, which is why changes piled up in PENDING_SPEC_EDITS.md","DECISIONS 2026-10-21 (S0); SHOWCASE_PLAN Part 7"
+"inputs.csv: Mud added; constants decided outside the sheet added (turn rate, reverse top speed, rover width, engineering guards); every row has a Status; part availability replaced by 'all parts open'; mission and power-up values marked regression or superseded; Game design v2 values added as superseded","E24, E30; all parts open","DECISIONS 2026-10-13, 2026-10-14, 2026-10-17"
+"pass_check.csv: rows unchanged; notes added on what 'M3 passes' means and on the unbuilt Mission 3 redesign","E8, E24","DECISIONS 2026-10-13 (OI-9)"
+"progression.csv: rows unchanged; marked SUPERSEDED","Knowledge paused 2026-10-14, not used by Game v4","DECISIONS 2026-10-14, 2026-10-17"
+"builds.csv, simulation.csv, spread.csv: byte-for-byte unchanged","They are the physics regression (the 135 values of test T10)","Physics Model Specification v2, T10"
+"levels.csv (new): the Game v4 values, the Demo v3 values kept in the game, the level-engine values and the hand-checked values of E27-E34","E41","LEVELS_BUILD_PLAN A10; DECISIONS 2026-10-14, 2026-10-17, 2026-10-18"
+"showcase.csv (new): the Showcase values (plan section 16) with status, and the hand-checked values of E45-E47","S0","SHOWCASE_PLAN section 16; DECISIONS 2026-10-21"
+,
+Legend
+"Status words: confirmed = fixed by the SRS or by k._muz. provisional = set, tuned in playtesting. engineering = a guard or presentation number. superseded = kept for the record, not used. regression = kept because the balance report and test T10 still use it. planned = not built yet."
+,
+Files
+"inputs.csv: constants, parts, surfaces, the old mission parameters and power-ups (regression), and the superseded Game design v2 values."
+"builds.csv: every chassis x wheels x motor combination, calculated with the Physics Model Specification formulas (unchanged)."
+"simulation.csv: results of the step-by-step simulation in the Physics Model Specification (1/120 s steps; throttle and brake levels read at the end of each step; finish time is the end of the step that reaches the line). Unchanged. Test T10 compares all 135 values."
+"pass_check.csv: which builds pass each old mission (regression; balance 20/9/23/17)."
+"progression.csv: Knowledge earned and spent (SUPERSEDED)."
+"spread.csv: lowest and highest value of each result (unchanged)."
+"levels.csv: Game v4 and Demo v3 values, and the hand-checked values for the physics rules added since the sheet."
+"showcase.csv: the Showcase values."
+,
+Formulas used (Physics Model Specification v2)
+"m = chassis + wheels + motor mass;  R = m g cos(theta) - U (m g on flat dry ground);  rolling friction F_r = mu_r x k_r x R;  grip limit F_lim = mu_g x k_g x R"
+"Max acceleration a = (min(F_d,max, F_lim) - F_r) / m;  max braking deceleration = (min(F_b,max, F_lim) + F_r) / m"
+"Old Mission 1: if top speed is reached first, t = v_max / a + (S - v_max^2 / 2a) / v_max; otherwise t = sqrt(2S / a)"
+"Old Mission 2: ice time t = sqrt(2L / a_ice); coasting distance on sand S = v^2 / (2 mu_r k_r g) with v^2 = 2 a_ice L, so mass and motor cancel"
+"Old Mission 3: brake force builds up linearly over T_b (capped by grip), then stays at full; distance = build-up distance + v^2 / 2a"
+,
+Notes
+"Builds sheet times for the old Mission 1 and 2 ignore the throttle build-up; the Simulation sheet includes it (about 0.1-0.5 s more)."
+"g = 9.8 m/s^2 as in the textbook. Question numericals (if questions return) state g = 10 m/s^2."
+"One rover model, so one maximum brake force for every build."
+"Spread counts the faster Mission 1 route from the Simulation sheet (17 of 27 builds), as the SRS states. Builds column U uses the closed-form times, which ignore throttle build-up, and shows 18."
+"The old Mission 3 was on asphalt with the rover towed at 15 m/s and released at the first brake input after the brake line (superseded 2026-10-13 by a drive-in speed trap, itself superseded 2026-10-17). In the regression, stopping distance is measured from 15 m/s with the brake building up from 0 (E21)."
+"Old Mission 2 coasting distance is measured from the rover's position at the end of the step that reaches the power-cut line."

@@ -13,7 +13,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | # | Milestone | Status | Needs |
 |---|---|---|---|
 | SC | **Showcase round** (`docs/SHOWCASE_PLAN.md`; approved 2026-10-21) | 🟨 Planned 2026-10-21 | v4 I1 |
-| S0 | New editable source documents (`docs/specs/v2/`) | ⬜ | — |
+| S0 | New editable source documents (`docs/specs/v2/`) | ✅ 2026-10-21 (DECISIONS 2026-10-21 S0; spec-sync run) | — |
 | R1 | Fixes, crashes (walls scrape, obstacles crash), tools | ⬜ | S0 |
 | R2 | Endless as places, natural terrain, warnings and pop-ups, colours | ⬜ | R1 |
 | R3 | Story frame, Crash Site, report stretches | ⬜ | R2 |
@@ -123,7 +123,7 @@ The design is in `docs/DESIGN.md` (Demo v3) and the detail, with the session pro
 - `src/content/`: constants, parts, surfaces, power-ups and the parameters of all three missions as JSON with schemas, copied from the Component Values sheet (Inputs sheet), plus the 60°/s turn rate from `docs/DECISIONS.md`. Key bindings are not content; they go in `src/game/` in M4.
 - Build quantities, control levels, driving states, the fixed-step `step()` with step splitting, slip flag, steering.
 - Mission measurement for all three missions on a straight path, with no screen (Physics Spec, "Mission measurement and pass rules"). The playable versions of Missions 2 and 3 come in M10 and M11.
-- `tests/fixtures/simulation.json`: the 135 values from `docs/specs/extracted/component_values_simulation.csv`.
+- `tests/fixtures/simulation.json`: the 135 values from `docs/specs/v2/component_values/simulation.csv` (originally the extracted v1 copy).
 - `npm run balance`: simulate all 27 builds on all three missions with full throttle (and, in Mission 3, full brake from the line) and print a pass/fail table.
 - State choice per DECISIONS OI-1; instant power cut per OI-2; T10 tolerance per OI-3.
 - Test: at v = v_max, release throttle: a = (F_d − F_r)/m < 0 while u_t falls; reaches −F_r/m when u_t = 0; no step has a > 0 at v_max.
@@ -339,9 +339,9 @@ The lines below were written for the tow design. **They are superseded (2026-10-
 
 Conflicts and gaps between sources. Never resolve one silently: add it here and ask k._muz.
 
-**OI-11 (M5a): a rock also undoes the heading.** DECISIONS (2026-10-13, rocks) says the step is undone "(position and distance)". The code also restores the heading. Reason: steering turns the rover about its front, so a turn alone can swing the rear into a rock. If the heading were kept, the rover could stop overlapping a rock; every later step would then end overlapping and be undone, and the rover would be stuck for good. Restoring the whole pose keeps the rover clear of rocks after every step (tested). Proposal: confirm, and change the DECISIONS row and E22 to "position, heading and distance". Built this way until k._muz decides.
+**OI-11 (M5a): CLOSED 2026-10-21: the rock rule is superseded by Physics_Model_Spec_v2 11.2 (obstacles restore position, distance and heading). Original text:** a rock also undoes the heading. DECISIONS (2026-10-13, rocks) says the step is undone "(position and distance)". The code also restores the heading. Reason: steering turns the rover about its front, so a turn alone can swing the rear into a rock. If the heading were kept, the rover could stop overlapping a rock; every later step would then end overlapping and be undone, and the rover would be stuck for good. Restoring the whole pose keeps the rover clear of rocks after every step (tested). Proposal: confirm, and change the DECISIONS row and E22 to "position, heading and distance". Built this way until k._muz decides.
 
-**OI-12 (M5a → M5b): where the steering assist acts.** DESIGN §6 says the assist steers "during judged sections". The M5a test course has no judged section, so the assist currently steers wherever the level has a `path`, while the toggle is on. Two further choices in M5a: a held steer key overrides the assist for that step, and the assist does nothing in reverse. Needs a decision before M5b: assist only in the Dash, or everywhere along the level's path?
+**OI-12 (M5a → M5b): CLOSED 2026-10-17: the steering assist is superseded (SRS V2-C). Original text:** where the steering assist acts. DESIGN §6 says the assist steers "during judged sections". The M5a test course has no judged section, so the assist currently steers wherever the level has a `path`, while the toggle is on. Two further choices in M5a: a held steer key overrides the assist for that step, and the assist does nothing in reverse. Needs a decision before M5b: assist only in the Dash, or everywhere along the level's path?
 
 **OI-14 (M5a, from physics-checker): two edge cases of "the levels carry on" at a flip.** The code follows the DECISIONS rule to the letter. The question is whether that is the intended feel.
 1. *Instant reverse after a stop that wasn't a brake stop.* The pause in DESIGN §6 comes from the brake level falling to 0. If the rover stopped any other way, nothing makes it pause. Example: the rover drives into a rock with W held, so u_t ≈ 1 and u_b = 0, and the rock sets v = 0. The student switches to S, and the rover reverses at once with u_t ≈ 1. Options: (a) keep it; (b) set u_t to 0 at a flip.
@@ -353,7 +353,13 @@ Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`
 
 **OI-15 (Demo D4): CLOSED 2026-10-15.** A kicker bag hit a rover in its lane the moment it fired, even a fast one, because A4 woke the kicker at front x ≥ cannon x + 2 and the bag started inside the rover. k._muz decided: wake it only when the rear edge is at cannon x + 3 (`sandbag.kickerWakeRearOffsetM` = 3 in `run.json`). Fixed in `runSession.ts` with two tests; see DECISIONS 2026-10-15. Boost stacking stays as it is.
 
-Spec edits E4–E47 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
+**OI-16 (S0): FR numbering.** E16 (Game design v2) and E37 (Game v4) both proposed FR-45 to FR-49 with different meanings, and E46 reused FR-48. None had been published. `SRS_v0.6.md` gives FR-45–FR-50 to Game v4 (E37), E46's collisions FR-51, the Showcase FR-52–FR-58, and keeps the v2 proposals as V2-A to V2-E in its Superseded section. Proposal: confirm. Built this way until k._muz decides.
+
+**OI-17 (S0, for R6): the jump's landing step.** E45's test values (0.84512 s, 13.061 m at g = 9.8) are exact. Stepping at 1/120 s and landing at the end of the first step with y ≤ 0 gives 0.8500 s and 13.137 m. `Physics_Model_Spec_v2.md` 11.3 assumes the landing step is split at the exact landing time, as `step()` splits at v_max and at 0. Proposal: confirm in R6.
+
+**OI-18 (S0): small gaps between the docs and the code, found while checking; none changed (docs only).** (1) `levels.json` still has `ringRoad.laps = 2`, a leftover of the closed-circuit design. (2) `step()` still accepts the `towed` input and returns "Cruising", unused by the game. (3) `game/` and `save/` import each other through one type (`StarCount`). Proposal: clean up in a later code session.
+
+Spec edits E4–E47 were applied in S0 (2026-10-21): the source documents are now `docs/specs/v2/`; `docs/PENDING_SPEC_EDITS.md` is history.
 
 ## Demo captures
 

@@ -578,7 +578,7 @@ Paste one prompt per session, in a fresh Claude Code session in `D:\ROVEM`. Run 
 
 ### S0: new editable source documents (docs only, no code)
 
-> Read `CLAUDE.md`, `docs/SHOWCASE_PLAN.md`, `docs/DECISIONS.md`, `docs/PENDING_SPEC_EDITS.md` and every file in `docs/specs/extracted/`. Open the original PDFs in `docs/specs/` where the extracted text misses tables or diagrams.
+> (Historical: the S0 prompt, as run on 2026-10-21.) Read `CLAUDE.md`, `docs/SHOWCASE_PLAN.md`, `docs/DECISIONS.md`, `docs/PENDING_SPEC_EDITS.md` and every file in `docs/specs/extracted/`. Open the original PDFs in `docs/specs/` where the extracted text misses tables or diagrams.
 >
 > **Goal:** the source documents become editable Markdown in the repo, brought up to date with every decision. Today they are exported PDFs and a spreadsheet with no editable source here, which is why changes piled up in `PENDING_SPEC_EDITS.md` (E4–E47). k._muz gave permission on 2026-10-21 to replace them.
 >

@@ -1,0 +1,30 @@
+Step-by-step simulation results,,,,,,,
+"Output of the simulation (1/120 s steps, throttle build-up 1.0 s, brake build-up 0.5 s, full throttle, straight path). Values, not formulas: rerun the simulation after changing inputs.",,,,,,,
+Chassis,Wheels,Motor,"M1 time, asphalt route (s)","M1 time, sand shortcut (s)",M2 ice time (s),M2 coasting distance (m),M3 stopping distance (m)
+Light chassis,Smooth wheels,Small motor,8.05,8.017,8.392,25.704,19.842
+Light chassis,Smooth wheels,Medium motor,8.058,8.175,8.375,25.743,19.993
+Light chassis,Smooth wheels,Large motor,8.675,8.542,8.358,25.732,20.217
+Light chassis,All-terrain wheels,Small motor,8.208,8.142,7.65,18.762,16.919
+Light chassis,All-terrain wheels,Medium motor,8.15,7.967,7.617,18.752,17.102
+Light chassis,All-terrain wheels,Large motor,8.575,8.35,7.6,18.77,17.376
+Light chassis,Spiked wheels,Small motor,8.408,9.342,6.6,16.183,15.563
+Light chassis,Spiked wheels,Medium motor,8.267,8.1,6.55,16.168,16.26
+Light chassis,Spiked wheels,Large motor,8.65,8.067,6.517,16.154,17.299
+Standard chassis,Smooth wheels,Small motor,8.6,8.358,8.417,25.709,20.441
+Standard chassis,Smooth wheels,Medium motor,8.4,8.267,8.392,25.743,20.591
+Standard chassis,Smooth wheels,Large motor,8.758,8.6,8.367,25.709,20.814
+Standard chassis,All-terrain wheels,Small motor,8.783,9.233,7.683,18.775,18.057
+Standard chassis,All-terrain wheels,Medium motor,8.5,8.15,7.642,18.77,18.767
+Standard chassis,All-terrain wheels,Large motor,8.8,8.433,7.617,18.777,19.829
+Standard chassis,Spiked wheels,Small motor,9.033,11.425,6.642,16.173,18.331
+Standard chassis,Spiked wheels,Medium motor,8.633,8.95,6.583,16.182,19.015
+Standard chassis,Spiked wheels,Large motor,8.875,8.408,6.542,16.169,20.036
+Heavy chassis,Smooth wheels,Small motor,9.442,9.667,8.45,25.692,22.012
+Heavy chassis,Smooth wheels,Medium motor,8.908,8.458,8.417,25.74,22.733
+Heavy chassis,Smooth wheels,Large motor,9.05,8.7,8.383,25.701,23.811
+Heavy chassis,All-terrain wheels,Small motor,9.675,11.267,7.725,18.752,22.29
+Heavy chassis,All-terrain wheels,Medium motor,9.042,9.117,7.675,18.775,22.988
+Heavy chassis,All-terrain wheels,Large motor,9.125,8.558,7.642,18.786,24.033
+Heavy chassis,Spiked wheels,Small motor,10.008,16.017,6.708,16.178,22.391
+Heavy chassis,Spiked wheels,Medium motor,9.217,10.7,6.625,16.161,23.058
+Heavy chassis,Spiked wheels,Large motor,9.225,9.167,6.575,16.172,24.053

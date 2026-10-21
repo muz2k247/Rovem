@@ -16,23 +16,24 @@ Rovem is a desktop-browser 3D game that teaches Grade 9 physics (the newest Punj
 
 ## Sources of truth
 
-All source documents are in `docs/specs/`. Plain-text copies are in `docs/specs/extracted/` (`.txt` for PDFs, `.csv` for each spreadsheet sheet). Search and read the extracted copies. If an extracted copy and its original seem to disagree, the original wins; open it.
+The source documents are editable Markdown in `docs/specs/v2/` (session S0, 2026-10-21; `docs/specs/v2/README.md` says what each file is and which old file it replaces). The v1 PDFs and the xlsx in `docs/specs/` are kept **unchanged as history** (the edit-deny in `.claude/settings.json` stays, because they are history), with plain-text copies in `docs/specs/extracted/`. Read the v2 files; use the v1 copies only for history.
 
 | Priority | Document | File | Governs |
 |---|---|---|---|
-| 1 | Software Requirements Specification, Draft 0.5 | `Rovem_SRS_Draft_0.5.pdf` | Scope, behaviour, FR/NFR IDs |
-| 2 | Physics Model Specification | `Rovem_Physics_Model_Spec.pdf` | Formulas, time step, control timings, measurement rules, tests T1–T10 |
-| 3 | Data Model | `Rovem_Data_Model.pdf` | Database tables, access rules, sync and merge |
-| 4 | Component Values sheet (proposal) | `Rovem_Component_Values.xlsx` | Part, surface, mission and power-up numbers; expected simulation results |
-| 5 | Tech Stack and Mission 1 Plan (provisional) | `Rovem_Tech_Stack_and_Mission_1_Plan.pdf` | Libraries, hosting, milestones M1–M8 |
-| 6 | Architecture Diagram | `Rovem_Architecture_Diagram.pdf` | Module boundaries |
-| 7 | Wireframes, Mission 1 | `Rovem_Wireframes_Mission_1.pdf` | Art direction (screen layout superseded 2026-10-17 by wireframes v2; PENDING E38) |
+| 1 | Software Requirements Specification, Draft 0.6 | `docs/specs/v2/SRS_v0.6.md` | Scope, behaviour, FR/NFR IDs |
+| 2 | Physics Model Specification v2 | `docs/specs/v2/Physics_Model_Spec_v2.md` | Formulas, time step, control timings, game-layer rules, tests T1–T20 |
+| 3 | Data Model v2 | `docs/specs/v2/Data_Model_v2.md` | What is saved now; the future cloud tables, access rules, sync and merge |
+| 4 | Component Values v2 (proposal) | `docs/specs/v2/component_values/` (CSVs, incl. `levels.csv`, `showcase.csv`) | Part, surface, level and Showcase numbers; expected simulation results |
+| 5 | Tech Stack v2 (provisional) | `docs/specs/v2/Tech_Stack_v2.md` | Libraries, hosting; milestones are in `docs/ROADMAP.md` |
+| 6 | Architecture v2 | `docs/specs/v2/Architecture_v2.md` | Module boundaries, with planned modules marked |
+| 7 | Art Direction v2 | `docs/specs/v2/Art_Direction_v2.md` | Look, colours, sound; screen layouts are wireframes v2 |
 
 Rules:
 - A higher-priority source wins, but **never resolve a conflict silently**. Log it under "Open issues" in `docs/ROADMAP.md` and ask k._muz.
-- Only these documents, `docs/DECISIONS.md` and the approved `docs/DESIGN.md` hold decisions. Where DECISIONS or DESIGN differs from a source document, it governs until the matching `docs/PENDING_SPEC_EDITS.md` edit is made. Earlier chat suggestions are not decisions.
+- Only these documents, `docs/DECISIONS.md` and the approved `docs/DESIGN.md` hold decisions. Where DECISIONS or DESIGN differs from a v2 source document, DECISIONS governs until the v2 file is edited. Earlier chat suggestions are not decisions.
 - In everything you write, keep apart what is **confirmed**, what is **provisional** (set, but to be tuned in playtesting), and what is **future scope**.
-- The PDFs and the spreadsheet cannot be edited from here. When one needs to change, add the exact replacement text, with document and section, to `docs/PENDING_SPEC_EDITS.md` and tell k._muz.
+- The v2 Markdown sources are edited directly; every change gets a change-log line and, if it is a decision, a DECISIONS row.
+- `docs/PENDING_SPEC_EDITS.md` (E4–E47) is kept as history; all its entries were applied in S0.
 
 ## Key terms
 
@@ -57,7 +58,7 @@ Rules:
 
 ## Values: never invent
 
-- **Confirmed** (SRS 3.8): 10 Knowledge per required question; 5 per power-up or unlock question; earned only the first time a question is cleared. Missions 2 and 3 cost 20 each. Each of the 6 locked parts costs 15. Mission 1 and the 3 starting parts cost 0.
+- **Confirmed** (SRS_v0.6.md X4; Knowledge is superseded and paused, the values are kept for the record): 10 Knowledge per required question; 5 per power-up or unlock question; earned only the first time a question is cleared. Missions 2 and 3 cost 20 each. Each of the 6 locked parts costs 15. Mission 1 and the 3 starting parts cost 0.
 - **Provisional** (set; tuned in playtesting): every part, surface, mission and power-up value in the Component Values sheet; the time step (1/120 s), throttle build-up (1.0 s), brake build-up (0.5 s) and maximum brake force (1500 N) from the Physics Model Specification. Use them exactly as written.
 - **Decided outside the specs** (see `docs/DECISIONS.md`): key bindings, steering turn rate, prediction band edges, the `unlockCost` name; and from Game design v2 (2026-10-13): reverse top speed 0.5 × v_max, rover footprint width 1.7 m, Mission 1 medal thresholds, the Mission 3 speed trap (14 m/s) and hub boost pads (top speed × 2, F_d,max × 1.5). Those marked provisional there are tuned in playtesting.
 - **Demo values** (DECISIONS 2026-10-14; all provisional; list in `docs/DEMO_BUILD_PLAN.md` A10, kept in `src/content/run.json`): mud (μ_r 0.6, μ_g 0.5), gravity ×0.5 and ×2, boost impulse 1200 N·s, sandbag 40 kg at 10 m/s head-on and 30 m/s kicker, a tunnel every 250 m, the score rule (the unlock ladder of 200–2000 m was dropped 2026-10-17: all parts are open). Approved by k._muz: mud, gravity, boost, cannon speeds, tunnel spacing. Chosen by Claude at k._muz's request: score rule, sandbag mass, tunnel mud length. The demo sets reverse top speed to 1.0 × v_max (`reverseTopSpeedFactor` in `run.json`; the v2 value stays in `constants.json`) and has a `drift` switch (on); start wall x = −10 m (DECISIONS 2026-10-16). Engineering numbers (fire interval, trigger distance, range, corridor width, warm-up, difficulty distances, chunk layouts) were set by Claude. Use them exactly as written.
@@ -75,18 +76,18 @@ Rules:
 - F_d = min(u_t·F_d,max, F_lim) and F_b = min(u_b·F_b,max, F_lim). The wheels slip, and the screen shows it, when the requested force exceeds F_lim, counting only the force the current state uses (drive in Driving/At top speed, brake in Braking; DECISIONS OI-10).
 - Driving states: Stopped, Driving, At top speed, Cruising (old Mission 3 tow; removed in M11), Coasting, Braking. One per step. Chosen from control levels, not keys (DECISIONS OI-1).
 - Reverse (DECISIONS 2026-10-13): direction forward or reverse; v ≥ 0 stays the speed and the rover moves along heading × direction. In reverse the brake key drives and the throttle key brakes. At the start of a step with v = 0, holding only the current brake key flips the direction, and the levels carry on. Reverse top speed = 0.5 × v_max (content data; the demo overrides it to 1.0 × v_max via `run.json`). Steering is mirrored in reverse. Locks apply in both directions.
-- Demo additions (DECISIONS 2026-10-14; text in PENDING E27–E29; formulas in `docs/DEMO_BUILD_PLAN.md` A5):
+- Demo additions (DECISIONS 2026-10-14; text in Physics_Model_Spec_v2 sections 4, 9, 10; formulas in `docs/DEMO_BUILD_PLAN.md` A5):
   - **Above top speed:** with throttle level > 0 and v above the top speed in the current direction at the start of a step, the motor gives no force: state Coasting, `driveForceN` 0, a = −F_r/m. A step that falls to v_max is split at t₁ = (v_max − v)/a. Existing tests stay unchanged.
   - **Momentum** (`src/physics/momentum.ts`, applied by the game layer after `step()`): `shareMomentum` is m₁u₁ + m₂u₂ = (m₁ + m₂)u′; `applyImpulse` is u′ = u + J/m. u is signed velocity along the heading; the new speed is |u′|, and the direction follows the sign of u′.
   - **Gravity zones:** the game layer passes a different `gravityMps2` to `step()`; R, F_r and F_lim scale with g, mass does not. `step()` needs no other change.
-- Level additions (v4; DECISIONS 2026-10-17; formulas and check values in `docs/LEVELS_BUILD_PLAN.md` A6; spec text in PENDING E31–E34). Every new input defaults to "no effect", so T1–T10, the existing tests and the balance counts stay unchanged:
+- Level additions (v4; DECISIONS 2026-10-17; formulas and check values in `docs/LEVELS_BUILD_PLAN.md` A6; spec text in Physics_Model_Spec_v2 sections 6–8). Every new input defaults to "no effect", so T1–T10, the existing tests and the balance counts stay unchanged:
   - **Ground push:** R = m g cos θ − U, never below 0. F_r and F_lim use this R.
   - **Slopes:** slope pull m g sin θ downhill, θ along the motion (game layer: from the terrain gradient). The rover follows the ground; the ground's sideways tilt is ignored. (v4 said "never flies": superseded 2026-10-21 by jumps, below.)
   - **Rolling back:** at rest, N = drive + slope pull + magnet along the gear. |N| ≤ F_r: stays; N > F_r: moves along the gear; N < −F_r: rolls back (`rollingBack` true; keys keep their meaning). Brake, rolling friction and water drag only oppose motion and never reverse it.
   - **Water:** upthrust U = ρ_water g V_sub; water drag b v against the motion. U ≥ mg means floating: no grip, no drive, no turning.
   - **Magnets** (game layer): force along the pylon–rover line; the part along the gear goes in `externalForceN`; the sideways part bends the travel direction by F⊥ ÷ (m v) (ignored below 0.5 m/s). In-game text shows only the Grade 9 rules, never the 1/d² formula.
   - **Turning limit:** μ_g k_g R ÷ (m v) (equal to the demo's μ_g k_g g ÷ v on flat dry ground).
-- Showcase additions (DECISIONS 2026-10-21; rules in `docs/SHOWCASE_PLAN.md` Part 4; spec text in PENDING E45–E47). All are outside `step()`, so T1–T10, the existing tests and the balance counts stay unchanged:
+- Showcase additions (DECISIONS 2026-10-21; rules in `docs/SHOWCASE_PLAN.md` Part 4; spec text in Physics_Model_Spec_v2 sections 11.2–11.4). All are outside `step()`, so T1–T10, the existing tests and the balance counts stay unchanged:
   - **Collisions** (game layer, pure `src/physics/collision.ts`): **walls and edges** remove the velocity component into the wall, v′ = v cos α along it, and the rover scrapes along. **Obstacles** (boulders, barriers): the step is undone and v = 0; the clock advances; a level returns the rover to the last checkpoint after the crash moment, and the Endless run ends. Supersedes the 2026-10-13 rock rule (step undone, v = 0, reverse out).
   - **Jumps** (game layer, pure `src/physics/air.ts`): only at ramps in the level data. In the air v_h is constant and v_y falls by g Δt (the zone's g); no drive, brake, friction or steering. On landing the velocity component into the ground is removed. No air resistance.
   - **Booster:** 2500 N along the gear through `externalForceN`, for up to 1.5 s, stopping at top speed; not limited by grip; not in the air.
@@ -142,10 +143,10 @@ docs/
   DESIGN.md           approved design: Game v4 (top), Demo v3 (kept as Endless), game design v2 (superseded)
   LEVELS_BUILD_PLAN.md  Game v4: design (Part A), worktree rules (Part B), session prompts (Part C)
   DEMO_BUILD_PLAN.md  the demo's design (Part A) and session prompts (Part B)
-  PENDING_SPEC_EDITS.md  exact text changes waiting to be made in the PDFs/sheet
+  PENDING_SPEC_EDITS.md  history: E4–E47, all applied in docs/specs/v2/ (S0)
   ASSETS.md           licence record for every outside asset
   captures/           demo screenshots and clips, one per milestone
-  specs/              source documents; extracted/ holds plain-text copies
+  specs/              v1 PDFs and xlsx kept as history; extracted/ holds their plain-text copies; v2/ holds the editable Markdown sources and component_values/ CSVs
 src/
   physics/            build quantities, controls, states, step(); tests beside each file
   content/            parts, surfaces, missions, power-ups, questions (JSON) + schemas; levels/ from M5a;
@@ -186,7 +187,7 @@ npm run preview     # serve the built dist/ (run npm run build first)
 - `/sync-docs`: bring the docs back in line with the code and specs.
 - `physics-checker` agent: independent review of physics code against the spec. Run it after any `src/physics/` change and before closing B1 and I1 (earlier: M2, M5a).
 - `spec-sync` agent: finds drift between docs, specs and code.
-- `settings.json`: allows the npm scripts without prompting; blocks reading `.env` and editing the source PDFs and sheet.
+- `settings.json`: allows the npm scripts without prompting; blocks reading `.env` and editing the v1 PDFs and sheet (history).
 
 ## Conventions
 
@@ -216,8 +217,8 @@ npm run preview     # serve the built dist/ (run npm run build first)
 
 ## Testing
 
-- **Physics** (NFR-4): T1–T9 against hand calculations with relative error below 1e-9. T10 checks all 135 values in the Simulation sheet (`docs/specs/extracted/component_values_simulation.csv`) each within 0.0005 of the sheet's 3-decimal value. Write each test before its code.
-- **Balance**: the counts must match the Pass check sheet: 20/27 builds pass Mission 1, 9/27 Mission 2, 23/27 Mission 3, and 17 builds are faster on the shortcut. From M5b, Mission 1 medals must also match: 20/14/5 can reach bronze/silver/gold. The Mission 3 count of 23/27 is replaced in M11 by targets k._muz sets before M11 (DESIGN §5); until then it stays as the tow-model check. A mismatch is an Open issue. Do not tune a value to make it pass.
+- **Physics** (NFR-4): T1–T9 against hand calculations with relative error below 1e-9. T10 checks all 135 values in the Simulation sheet (`docs/specs/v2/component_values/simulation.csv`) each within 0.0005 of the sheet's 3-decimal value. Write each test before its code.
+- **Balance**: the counts must match `docs/specs/v2/component_values/pass_check.csv`: 20/27 builds pass Mission 1, 9/27 Mission 2, 23/27 Mission 3, and 17 builds are faster on the shortcut. From M5b, Mission 1 medals must also match: 20/14/5 can reach bronze/silver/gold. The counts are fixed as the sheet regression (M11 is superseded, DECISIONS 2026-10-17); they must not change. A mismatch is an Open issue. Do not tune a value to make it pass.
 - **Game rules** (v4, Showcase): level unlocking in order and the developer link, stars and the Scavenger, checkpoints and respawn, crashes and wall scrapes, the booster, the report's recorded causes, every sample reachable with the starting build and no build ever trapped, as LEVELS_BUILD_PLAN A7 says, against hand-worked cases. (v2's Knowledge and merge rules are superseded.)
 - **Questions**: every numerical answer checked by hand with g = 10 m/s².
 
@@ -238,11 +239,11 @@ npm run preview     # serve the built dist/ (run npm run build first)
 | A milestone task starts or finishes | `docs/ROADMAP.md` status; `CHANGELOG.md` |
 | A milestone is completed | Move its `[Unreleased]` entries in `CHANGELOG.md` into a new version heading (`0.<milestone>.0`) |
 | A script, dependency or folder is added | `CLAUDE.md` (Commands or Layout) and `README.md` |
-| k._muz confirms a decision | `docs/DECISIONS.md`; if it changes a spec, `docs/PENDING_SPEC_EDITS.md` |
-| A value changes after playtesting | `src/content/`, `docs/DECISIONS.md`, and a note in `docs/PENDING_SPEC_EDITS.md` for the sheet |
+| k._muz confirms a decision | `docs/DECISIONS.md`; if it changes a spec, edit the v2 file with a change-log line |
+| A value changes after playtesting | `src/content/`, `docs/DECISIONS.md`, and the matching CSV in `docs/specs/v2/component_values/` with a change-log line |
 | An outside asset is added | `docs/ASSETS.md` |
 | Sources conflict | `docs/ROADMAP.md` → Open issues, then ask |
-| A spec PDF is replaced with a new version | Copy it into `docs/specs/`, regenerate `extracted/`, update the file table above |
+| A source document changes | Edit the v2 Markdown file (change-log line first); update `docs/specs/v2/README.md` if a file is added |
 
 Do not edit a file that doesn't need it. A doc that is still accurate stays as it is.
 
