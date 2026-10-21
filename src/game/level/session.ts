@@ -159,7 +159,8 @@ interface HintState {
 /** What the last driving step worked out, for the HUD (arrows and the F = ma line). */
 interface Snapshot {
   gearRad: number;
-  motion: 1 | -1;
+  /** +1, or −1 while the rover rolls back: the sign from a force along the gear to a force along the motion. */
+  vsGear: 1 | -1;
   gMps2: number;
   normalN: number;
   frictionN: number;
@@ -534,11 +535,13 @@ export function createLevelSession(options: LevelSessionOptions) {
       slopeRad: slopeGear, upthrustN: upN, waterDragNsPerM: dragNsPerM,
     });
     const motion = motionSign(next.direction, next.rollingBack);
+    // The way the rover travels compared with its gear: +1, or −1 while it rolls back. Forces and slopes are worked out along the gear, so this is the sign that turns them into "along the motion" (not `motion`, which is against the heading and is −1 in reverse gear too).
+    const vsGear: 1 | -1 = next.rollingBack ? -1 : 1;
     const q = buildQuantities(rover, surface, { gravityMps2: g }, { slopeRad: slopeGear, upthrustN: upN });
 
     // Travel direction (drifting): it follows the way the rover moves, no faster than the tyres can bend the path (μ_g k_g R ÷ m v),
     // plus the magnet's sideways push (F⊥ ÷ m v). A floating rover has R = 0: its path cannot be bent by the tyres at all.
-    const sideBend = sidewaysBendRadPerS(sideN * motion, rover.massKg, prev.speedMps, cfg.magnet.sidewaysCutoffMps);
+    const sideBend = sidewaysBendRadPerS(sideN * vsGear, rover.massKg, prev.speedMps, cfg.magnet.sidewaysCutoffMps);
     const turnLimit = run.drift
       ? travelTurnLimitFromNormalRadPerS(surface.grip, rover.gripFactor, q.normalForceN, rover.massKg, prev.speedMps)
       : Infinity;
@@ -688,7 +691,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     wasSlipping = next.slipping;
 
     // Slopes: a steep one pulls; a long descent turns height into speed; a rover that cannot hold rolls back.
-    const slopeMotion = slopeGear * motion;
+    const slopeMotion = slopeGear * vsGear;
     const steepRad = cfg.rules.steepSlopeDeg * DEG;
     const pullN = slopePullN(rover.massKg, g, Math.abs(slopeGear));
     if (slopeMotion >= steepRad && !steepNow) {
@@ -758,7 +761,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     // What the HUD needs: the forces of this step.
     const gripN = q.gripLimitN;
     snap = {
-      gearRad: gear, motion, gMps2: g, normalN: q.normalForceN, frictionN: q.rollingForceN, gripN, driveN: next.driveForceN, brakeN: next.brakeForceN,
+      gearRad: gear, vsGear, gMps2: g, normalN: q.normalForceN, frictionN: q.rollingForceN, gripN, driveN: next.driveForceN, brakeN: next.brakeForceN,
       slopeGearRad: slopeGear, slopePushN: -slopePullN(rover.massKg, g, slopeGear), dragN: dragNsPerM * prev.speedMps, upN,
       magnetAlongN: alongN,
       magnetVector: alongN !== 0 || sideN !== 0
@@ -780,7 +783,7 @@ export function createLevelSession(options: LevelSessionOptions) {
 
   /** The forces along the path, signed along the motion (positive speeds the rover up). */
   function forceTerms(s: Snapshot): ForceTerm[] {
-    const along = s.motion;
+    const along = s.vsGear;
     const terms: ForceTerm[] = [];
     if (s.brakeN > 0) terms.push({ name: 'Brake', forceN: -s.brakeN });
     else terms.push({ name: 'Push', forceN: along * s.driveN });

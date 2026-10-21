@@ -278,6 +278,30 @@ describe('magnets', () => {
   });
 });
 
+describe('forces in reverse gear (physics-checker, I1)', () => {
+  const BRAKE: LevelInput = { throttleHeld: false, brakeHeld: true, steer: 0 };
+  const pylon = (x: number, z: number) => ({ id: 'p', xM: x, zM: z, pole: 'N' as const });
+
+  it('an attracting pylon bends the path of a reversing rover toward itself', () => {
+    // On ice, where the tyres bend the path little, S at rest flips to reverse and the rover backs along −x from x = 60.
+    // The pylon is 4 m to the +z side of that line, ahead of it: its sideways pull must bend the path to +z.
+    const ice = [{ surfaceId: 'ice', polygon: [{ xM: 0, zM: -20 }, { xM: 100, zM: -20 }, { xM: 100, zM: 20 }, { xM: 0, zM: 20 }] }];
+    const s = make({ surfaceZones: ice, pylons: [pylon(48, 4)] }, { drive: () => BRAKE, initialState: { positionXM: 60 } });
+    run(s, 3);
+    expect(s.state.direction).toBe('reverse');
+    expect(s.state.rollingBack).toBe(false);
+    expect(s.state.positionXM).toBeLessThan(57);
+    expect(s.state.positionZM).toBeGreaterThan(0.05);
+  });
+
+  it('the F = ma line shows the push as a positive force while reversing on flat ground', () => {
+    const s = make({}, { drive: () => BRAKE });
+    run(s, 2);
+    expect(s.state.direction).toBe('reverse');
+    expect(s.hud.forceLine).toMatch(/^Push \d+ N/);
+  });
+});
+
 describe('boosts and cannons', () => {
   it('a boost pad gives J ÷ m = 1200 ÷ 209 = 5.74 m/s once, and the event records it', () => {
     const s = make({ boosts: [{ id: 'b', xM: 20, zM: 0, radiusM: 2 }] }, { drive: () => NONE, initialState: { speedMps: 10 } });

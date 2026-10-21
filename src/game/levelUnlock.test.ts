@@ -92,7 +92,7 @@ describe('level summaries for the Levels screen (A3)', () => {
     let p = recordLevelResult(emptyLevelProgress(), ids[0]!, { stars: 2, timeS: 97.5 });
     p = finish(p, ids[1]!, 1);
     const rows = levelSummaries(levelCards.levels, p, false);
-    expect(rows).toHaveLength(8);
+    expect(rows).toHaveLength(7);
     expect(rows[0]).toEqual({
       id: ids[0],
       number: 1,
@@ -106,6 +106,13 @@ describe('level summaries for the Levels screen (A3)', () => {
     expect(rows[3]!.locked).toBe(true);
     expect(rows[3]!.stars).toBe(0);
     expect(rows[3]!.bestTimeS).toBeNull();
+  });
+
+  it('marks a level with no file as coming soon, even under the developer link', () => {
+    const built = new Set(ids.slice(0, 5));
+    const rows = levelSummaries(levelCards.levels, emptyLevelProgress(), true, built);
+    expect(rows.slice(0, 5).every((r) => r.comingSoon === undefined)).toBe(true);
+    expect(rows.slice(5).every((r) => r.comingSoon === true)).toBe(true);
   });
 
   it('marks nothing locked under the developer link', () => {

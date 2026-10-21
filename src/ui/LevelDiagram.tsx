@@ -4,7 +4,6 @@ import type { LevelDiagram as DiagramId } from '../content/levelCards.ts';
 // The rover is the orange dot; the track is cyan.
 
 const SKETCHES: Record<DiagramId, string> = {
-  straight: 'M8 30 H112 M100 20 V40 H112 V20 Z',
   fork: 'M8 30 H40 C60 30 62 12 84 12 H112 M40 30 C60 30 62 48 84 48 H112',
   pads: 'M8 30 H112 M34 22 L42 30 L34 38 M50 22 L58 30 L50 38 M86 20 V40',
   ring: 'M60 8 C96 8 96 52 60 52 C24 52 24 8 60 8 Z',

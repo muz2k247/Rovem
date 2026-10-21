@@ -1,5 +1,11 @@
 # Rovem: Levels build plan (Game v4)
 
+> **Partly superseded 2026-10-21 by [`docs/SHOWCASE_PLAN.md`](SHOWCASE_PLAN.md)** (DECISIONS 2026-10-21).
+> - **Superseded:** the seven-level lineup (A7, A9), stop lines and stop lessons, the par-time rule (A2), the rock rule (now walls scrape and obstacles crash), "the rover never leaves the ground" (now jumps at ramps), the E1 order, and the two-worktree way of working (B).
+> - **Still in force:** the engine, the physics rules of A6, the garage, the HUD contracts, and the A7 checks ("every sample reachable, no build trapped").
+>
+> Everything below is kept unchanged, with its reasoning.
+
 **Status: direction approved by k._muz in chat on 2026-10-17.** Values in Part A are *provisional*: chosen by Claude after a game-design review at k._muz's request ("look at them from a professional game dev perspective, and only then finalise them"), tuned in playtesting. Screens follow the clickable wireframes v2: https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh (private until k._muz shares it).
 
 **How to read this file.** Part A is the design: what the game does and every number. Part B is how two implementor sessions build it at the same time without stepping on each other. Part C is the prompts, in order. Part D is the exact doc changes the first session makes. Where this file and an older doc disagree, this file governs until Part D has been applied.
@@ -459,14 +465,14 @@ Done: DECISIONS (Game v4 row; ladder superseded), DESIGN, ROADMAP, CLAUDE.md, RE
 I1 cannot see the chat, so every "Needs from the other track" item is copied here as it arrives.
 
 **From A1 (`e723c84`, 2026-10-18)**
-1. A1 used 8 level ids. Since 2026-10-18 there are 7, in this order: `first-tracks`, `push-and-shove`, `crater-field`, `gravity-wells`, `ring-road`, `the-crossing`, `polar-pass` (`fork-in-the-road` is gone; B2 was told). Update `levelCards.json` (order, hooks and intro text for the A7 levels, still `"placeholder": true`), the unlock order and their tests; check the Levels grid still looks right with 7 cards + Endless + Dust Storm.
-2. `LevelScreen.tsx`: call `recordLevelResult` (`src/save/levelProgress.ts`) and save; take the settings and pass them to `<Hud>` and `<PauseMenu mode="level">`; use `effectiveVolume`. Wire Next level, Retry and Home in `App.tsx`.
-3. Par times: set them (A2 rule), record them in DECISIONS, and pass `parS` to `LevelIntroScreen`.
-4. Remove the unused `run.unlocks` data from `run.json`, `schema.ts` (about line 303), `types.ts` and `runContent.test.ts`.
-5. Show "Coming soon" for any level that is not finished.
-6. Merge `src/content/levelCards.json` (names, hooks, intro text) with `levelText.json` into one file, kept `"placeholder": true`.
-7. Check the frame rate of the force arrows on the Intel UHD laptop (labels update every 4th frame).
+1. A1 used 8 level ids. Since 2026-10-18 there are 7, in this order: `first-tracks`, `push-and-shove`, `crater-field`, `gravity-wells`, `ring-road`, `the-crossing`, `polar-pass` (`fork-in-the-road` is gone; B2 was told). Update `levelCards.json` (order, hooks and intro text for the A7 levels, still `"placeholder": true`), the unlock order and their tests; check the Levels grid still looks right with 7 cards + Endless + Dust Storm. **Done in I1 (2026-10-19):** the cards, their order and the tests follow the 7 ids; the grid shows 7 cards, Endless and Dust Storm.
+2. `LevelScreen.tsx`: call `recordLevelResult` (`src/save/levelProgress.ts`) and save; take the settings and pass them to `<Hud>` and `<PauseMenu mode="level">`; use `effectiveVolume`. Wire Next level, Retry and Home in `App.tsx`. **Done in I1:** `LevelScreen` takes the settings, saves through `recordLevelResult`, uses Track A's `Hud`, `PauseMenu`, `SettingsPanel` and `ReportScreen`; Next level, Retry, Levels and Home are wired in `App.tsx`.
+3. Par times: set them (A2 rule), record them in DECISIONS, and pass `parS` to `LevelIntroScreen`. **Done in I1:** DECISIONS 2026-10-19 (I1) holds the table; `parS` reaches the intro.
+4. Remove the unused `run.unlocks` data from `run.json`, `schema.ts` (about line 303), `types.ts` and `runContent.test.ts`. **Done in I1.**
+5. Show "Coming soon" for any level that is not finished. **Done in I1** (`LevelSummary.comingSoon`; all seven levels have files, so none shows it today).
+6. Merge `src/content/levelCards.json` (names, hooks, intro text) with `levelText.json` into one file, kept `"placeholder": true`. **Done in I1:** the cards live in `levelText.json`; `levelCards.ts` reads them from there.
+7. Check the frame rate of the force arrows on the Intel UHD laptop (labels update every 4th frame). **Not done in I1: needs the Intel UHD laptop (k._muz).**
 
 **From B1 (`f9499eb`, 2026-10-18)**
-8. B1 asked for "Ground push" in `forcePanel.ts` to use `normalForceN`. A1 deleted `forcePanel.ts`. Check that Track A's `src/game/forces.ts` and Track B's level arrows both use `normalForceN` for ground push wherever the ground slopes or the rover is in water. Keep one arrow builder, not two.
-9. Magnet notes for B2 (passed on in the B2 prompt): flip the sign of `sidewaysN` when `motionSign` is −1; in a split step, `accelerationMps2` is the value at the start of the step.
+8. B1 asked for "Ground push" in `forcePanel.ts` to use `normalForceN`. A1 deleted `forcePanel.ts`. Check that Track A's `src/game/forces.ts` and Track B's level arrows both use `normalForceN` for ground push wherever the ground slopes or the rover is in water. Keep one arrow builder, not two. **Checked in I1:** the level session builds every force from `buildQuantities(..., { slopeRad, upthrustN })` (`normalForceN`); Endless's `forces.ts` calls the same function on flat, dry ground, where R = mg, so there is one builder.
+9. Magnet notes for B2 (passed on in the B2 prompt): flip the sign of `sidewaysN` when `motionSign` is −1; in a split step, `accelerationMps2` is the value at the start of the step. **Checked in I1:** `session.ts` multiplies the sideways force by the motion sign and uses the start-of-step acceleration.

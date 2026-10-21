@@ -1,6 +1,15 @@
 # Rovem — Game design
 
-This file holds three designs. **Game v4: concept levels** is the current work. **Demo v3** (the endless canyon run) is built and kept as the game's Endless Canyon mode. **Game design v2** (from the heading "Game design v2 (superseded 2026-10-17)" down) is superseded; its text and reasoning are kept.
+**Current design (2026-10-21): the Showcase round, in [`docs/SHOWCASE_PLAN.md`](SHOWCASE_PLAN.md)**, approved by k._muz (DECISIONS 2026-10-21). It builds on Game v4's engine and physics. It **supersedes** v4's seven-level lineup, stop lines, par rule and E1 order:
+- five levels as natural places: Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge;
+- a crashed-ship story with one part per level;
+- the Scavenger rival in place of par;
+- no forced stops; jumps; walls scrape and obstacles crash; a booster;
+- Endless as named places.
+
+The v4 text below is kept with its reasoning; where it differs from the Showcase plan, the plan governs.
+
+This file holds three earlier designs. **Game v4: concept levels** was the current work until 2026-10-21. **Demo v3** (the endless canyon run) is built and kept as the game's Endless Canyon mode. **Game design v2** (from the heading "Game design v2 (superseded 2026-10-17)" down) is superseded; its text and reasoning are kept.
 
 ## Game v4: concept levels (approved 2026-10-17)
 

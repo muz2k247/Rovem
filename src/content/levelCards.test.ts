@@ -1,28 +1,27 @@
 import { describe, expect, it } from 'vitest';
+import { LEVEL_IDS } from '../game/level/types.ts';
 import { levelCards, validateLevelCards } from './levelCards.ts';
 
 const copy = () => JSON.parse(JSON.stringify(levelCards));
 
 describe('level cards (LEVELS_BUILD_PLAN A2, A3, A7)', () => {
-  it('has the eight levels in order, with the names of A2', () => {
+  it('has the seven levels of A7, in play order, with the ids of the level files', () => {
     expect(levelCards.levels.map((l) => l.name)).toEqual([
       'First Tracks',
-      'Fork in the Road',
       'Push & Shove',
-      'Ring Road',
-      'Gravity Wells',
       'Crater Field',
+      'Gravity Wells',
+      'Ring Road',
       'The Crossing',
       'Polar Pass',
     ]);
-    expect(new Set(levelCards.levels.map((l) => l.id)).size).toBe(8);
+    expect(levelCards.levels.map((l) => l.id)).toEqual([...LEVEL_IDS]);
   });
 
-  it('gives each level 2 or 3 short "New here" sentences and a challenge', () => {
+  it('gives each level 2 or 3 short "New here" sentences', () => {
     for (const l of levelCards.levels) {
       expect(l.newHere.length).toBeGreaterThanOrEqual(2);
       expect(l.newHere.length).toBeLessThanOrEqual(3);
-      expect(l.challenge).not.toBe('');
     }
   });
 

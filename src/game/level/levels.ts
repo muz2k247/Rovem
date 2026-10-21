@@ -38,3 +38,12 @@ export function loadLevelDef(id: string, files: Partial<Record<LevelId, unknown>
   if (def.id !== id) throw new Error(`Content error at level.id: file for "${id}" says "${def.id}"`);
   return def;
 }
+
+/** The par time of a level in seconds (the third star), or null if the level has no file. */
+export function levelParS(id: string, files: Partial<Record<LevelId, unknown>> = LEVEL_FILES): number | null {
+  try {
+    return loadLevelDef(id, files).parS;
+  } catch {
+    return null;
+  }
+}

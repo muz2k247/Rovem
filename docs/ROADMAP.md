@@ -2,7 +2,7 @@
 
 Every milestone ends with something that can be run or tested. A milestone is done only when every "Done when" item is true and all tests pass.
 
-M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions. *(Superseded 2026-10-17: the game is now Game v4, concept levels plus Endless (seven since 2026-10-18); see below.)*
+M1–M8 follow the Tech Stack and Mission 1 Plan, extended by Game design v2 (`docs/DESIGN.md`; M5 is split into M5a and M5b), and together make up the **Mission 1 prototype**, played as a guest. The prototype is the first goal, not a smaller MVP: the MVP still has all three missions and all 21 questions. *(Superseded 2026-10-17: the game became Game v4, concept levels plus Endless; since 2026-10-21 it is the Showcase round, five levels plus Endless; see below.)*
 
 **2026-10-14: M5b–M14 and Q1–Q3 were paused** while the demo was built (DECISIONS 2026-10-14). **2026-10-17: they are superseded by Game v4: concept levels** (DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`). Their text below is kept unchanged as the record of the earlier plan.
 
@@ -12,7 +12,17 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 
 | # | Milestone | Status | Needs |
 |---|---|---|---|
-| v4 | **Game v4: concept levels** (`docs/LEVELS_BUILD_PLAN.md`) | 🟨 Planned 2026-10-17 | Demo |
+| SC | **Showcase round** (`docs/SHOWCASE_PLAN.md`; approved 2026-10-21) | 🟨 Planned 2026-10-21 | v4 I1 |
+| S0 | New editable source documents (`docs/specs/v2/`) | ⬜ | — |
+| R1 | Fixes, crashes (walls scrape, obstacles crash), tools | ⬜ | S0 |
+| R2 | Endless as places, natural terrain, warnings and pop-ups, colours | ⬜ | R1 |
+| R3 | Story frame, Crash Site, report stretches | ⬜ | R2 |
+| R4 | The Scavenger, Change one part, the booster | ⬜ | R3 |
+| R5 | Geyser Canyon and demo rehearsal (**demo cut**) | ⬜ | R4 |
+| R6 | Jumps and Crater Field | ⬜ | R5 |
+| R7 | The Crossing and Iron Ridge | ⬜ | R6 |
+| R8 | Launch ending and polish | ⬜ | R7 |
+| v4 | **Game v4: concept levels** (`docs/LEVELS_BUILD_PLAN.md`) | ✅ Built through I1 (2026-10-19); its lineup, stop lines and par ⛔ superseded 2026-10-21 by the Showcase round | Demo |
 | P0 | Contracts, shared values, fonts, screen slots (main) | ✅ 2026-10-17 | — |
 | A1 | Track A: Home, Levels, Intro, Pause, Settings; new HUD and force arrows | ✅ 2026-10-17 (branch `levels/a-ui`) | P0 |
 | A2 | Track A: new rover and garage | ✅ 2026-10-18 (branch `levels/a-ui`) | A1 |
@@ -21,9 +31,9 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | B2 | Track B: level engine | ✅ 2026-10-18 | B1 |
 | B3 | Track B: level scene | ✅ 2026-10-18 | B2 |
 | B4 | Track B: the seven levels, in play order (revised 2026-10-18; was eight, in priority order) | ✅ 2026-10-19 | B3 |
-| I1 | Integration on main, par times, play-check | ⬜ | A3, B4 merged |
-| A2b | Track A: rover polish (only if k._muz is still unhappy with A2) | ⬜ | A2 |
-| E1 | Endless Canyon on the level engine, with every element (approved 2026-10-18) | ⬜ | I1 |
+| I1 | Integration on main, par times, play-check | ✅ 2026-10-19 (DECISIONS 2026-10-19 I1; captures in `docs/captures/i1/`) | A3, B4 merged |
+| A2b | Track A: rover polish (only if k._muz is still unhappy with A2) | ✅ 2026-10-18 (commit 10f90d8, merged; k._muz's verdict on the look is open) | A2 |
+| E1 | Endless Canyon on the level engine, with every element (approved 2026-10-18) | ⛔ Superseded 2026-10-21 by R2 (Endless as places, new elements now) | I1 |
 | M1 | Repository and checks | ✅ | — |
 | M2 | Physics core and content data | ✅ | M1 |
 | M3 | Build screen | ✅ | M2 |
@@ -51,11 +61,31 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | M13 | Playtesting and tuning | ⛔ Superseded | M11 |
 | M14 | Supervisor pitch | ⛔ Superseded | M13 |
 
+## Showcase round
+
+Approved 2026-10-21 (DECISIONS 2026-10-21). Design, values, the physics and engine changes, and the prompts: `docs/SHOWCASE_PLAN.md`.
+
+**Why:** k._muz's first hand playtest (2026-10-19) found the v4 levels bland, the physics invisible and the forced stops annoying. The friends' critique was that rectangular surface strips break immersion. The goal is to turn the working demo into a showcase demo.
+
+**The story:** a crashed ship on an unnamed red planet. There are five levels as natural places, one ship part each, and a race against the Scavenger. Endless becomes named places.
+
+**How the sessions run:**
+- One session at a time, in `D:\ROVEM` on `main` (no worktrees).
+- S0 (docs) runs first, then R1–R8.
+- The **demo cut is after R5**: Endless, the story, Crash Site, Geyser Canyon, the Scavenger, the report and Change one part.
+- Every session ends with typecheck, test and balance green (20/9/23/17, unchanged), docs updated, and a suggested commit message.
+
+**Done when:** all five levels and the launch ending play start to finish, every build can finish every level, and k._muz's playtest list is cleared.
+
 ## Game v4: concept levels
+
+*(Built through I1, 2026-10-19. Superseded 2026-10-21 by the Showcase round: its lineup, stop lines, par rule and E1 order. Its engine and physics rules carry on. The text below is kept as the record.)*
 
 Planned 2026-10-17 (DECISIONS 2026-10-17). Design, values, file ownership, merge rules and prompts: `docs/LEVELS_BUILD_PLAN.md`. Screens: wireframes v2 (https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh). Two tracks run in parallel git worktrees after P0: Track A (`levels/a-ui`: A1–A3) and Track B (`levels/b-levels`: B1–B4); then the merges of LEVELS_BUILD_PLAN B5 and the integration session I1 on main. Every session ends with typecheck, test, balance (20/9/23/17, unchanged) and build passing, a CHANGELOG entry and a push. Levels land in the build-priority order of LEVELS_BUILD_PLAN A2.
 
 **Done when:** LEVELS_BUILD_PLAN A14 is all true.
+
+**Still open after I1 (2026-10-19):** (1) 30+ fps on Intel UHD Graphics with Graphics Low, including the force-arrow labels (needs k._muz's laptop; Part E item 7). (2) k._muz reviews `levelText.json` (placeholder text, now including the level cards). (3) The par times come from a scripted driver, not a person: retune after k._muz plays. (4) k._muz's verdict on the rover's look after A2b is open. (5) Two physics-checker notes for k._muz to rule on (DECISIONS 2026-10-19 I1, item 5). (6) E1: Endless on the level engine with every element.
 
 ## Demo v3: endless canyon run
 
@@ -323,7 +353,7 @@ Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`
 
 **OI-15 (Demo D4): CLOSED 2026-10-15.** A kicker bag hit a rover in its lane the moment it fired, even a fast one, because A4 woke the kicker at front x ≥ cannon x + 2 and the bag started inside the rover. k._muz decided: wake it only when the rear edge is at cannon x + 3 (`sandbag.kickerWakeRearOffsetM` = 3 in `run.json`). Fixed in `runSession.ts` with two tests; see DECISIONS 2026-10-15. Boost stacking stays as it is.
 
-Spec edits E4–E30 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
+Spec edits E4–E47 are waiting in `docs/PENDING_SPEC_EDITS.md`. They block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ## Demo captures
 
@@ -334,3 +364,4 @@ Record a short clip or screenshot at the end of each milestone, for M14.
 | M1 | [Spinning-cube placeholder screen](captures/m1-placeholder.png) | 2026-10-13 |
 | M2 | `npm run balance` output (27-build table and counts), saved as `docs/captures/m2-balance.txt` | 2026-10-13 |
 | M4 | [Driving scene at 60 fps](captures/m4-drive-60fps.png) | 2026-10-13 |
+| I1 | [All seven levels played in Chrome: intro, three drive frames and report each, plus Home, Levels, pause, settings and garage](captures/i1/) | 2026-10-19 |

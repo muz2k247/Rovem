@@ -4,7 +4,7 @@ Exact text changes for the source documents in `docs/specs/`, which can't be edi
 
 Entry format: an ID, the document and section, the exact current text, and the exact replacement text.
 
-E1–E3 were made and exported on 2026-10-12. E4–E43 below block no milestone; `docs/DECISIONS.md` governs until they are made.
+E1–E3 were made and exported on 2026-10-12. E4–E47 below block no milestone; `docs/DECISIONS.md` governs until they are made.
 
 ### E4: Physics Model Specification, "Driving states and acceleration" table, column "When"
 Source: DECISIONS OI-1.
@@ -253,3 +253,26 @@ Source for all: DECISIONS 2026-10-17; `docs/LEVELS_BUILD_PLAN.md`. Values are pr
 ### E43: SRS Draft 0.5, section 6 Future Work
 - Remove "Momentum and impulse…", "Weight vs. mass through different gravity…" and "More components, terrains and missions." (all now in the game).
 - Add: "Scenario questions and Knowledge (the former 3.7 and 3.8), if a form other than multiple choice is agreed with the advisor." "Wind (the Dust Storm level): a sideways force." "Accounts and cloud sync (the former FR-25, FR-41 to FR-44)."
+
+### E44: Wireframes, Mission 1, "Proposed terrain theme"
+Source: DECISIONS 2026-10-21 (Showcase round, D6).
+- Current: "A Mars-analog proving ground on Earth: red ground and sky, with a paved test track. Gravity stays 9.8 m/s² (SRS 2.2). The Moon and alien looks fit later levels, where a planet's gravity would be a modifier (SRS Section 6)."
+- Replacement: "An unnamed red planet where the student's ship has crashed: red ground and sky, rock plains, dunes, craters, canyons, ice in shade, mud in gullies. Gravity on open ground is 9.8 m/s², the same as Earth's (SRS 2.2); gravity anomalies (caves) multiply it by 0.5 or 2."
+
+### E45: Physics Model Specification, new section "Leaving the ground (jumps)"
+Source: DECISIONS 2026-10-19 (jumps approved); rule in `docs/SHOWCASE_PLAN.md` P1. Applied by the game layer and a pure function outside step(); step() is unchanged.
+- Add: "The rover leaves the ground only at a ramp lip defined in the level data. At the lip, with speed v along a ramp of angle φ, the velocity splits into v_h = v cos φ and v_y = v sin φ. In the air v_h is constant and v_y falls by g Δt each step, where g is that of the gravity zone the rover is in; the height rises by v_y Δt − ½ g Δt². No drive, brake, rolling friction or steering acts in the air; the control levels keep updating. The clock runs, and the distance grows by the horizontal distance flown. On landing, the velocity component into the ground is removed and the component along the ground is kept (on flat ground the speed becomes v_h); there is no damage. Landing outside drivable ground returns the rover to the last checkpoint. Air resistance is ignored."
+- Add to Automated tests: "v = 16 m/s, φ = 15°, landing at take-off height: g = 9.8 → air time 0.84512 s, top height 0.87494 m, length 13.061 m; g = 4.9 → 1.69025 s, 1.74987 m, 26.122 m."
+
+### E46: Physics Model Specification, "Game-layer rules" (replaces the rock sentence of E22); SRS FR-48 (replaces E16's FR-48)
+Source: DECISIONS 2026-10-21 (plan approved, item 5); `docs/SHOWCASE_PLAN.md` §4 and P2.
+- Physics Model Specification, current (E22): "A step that ends with the rover's footprint (2 m long by the model width, 1.7 m) overlapping a rock is undone, and v is set to 0; the clock still advances."
+- Replacement: "Edges (walls, cliffs, the edge of the ground): when a step ends with the footprint crossing an edge, the rover is placed against it and the velocity component into the edge is removed: v′ = v cos α along the edge, where α is the angle between the travel direction and the edge; the heading turns along the edge. Friction along the edge is ignored. Obstacles (boulders, barriers): a step that ends with the footprint overlapping an obstacle is undone and v = 0; the clock still advances. In a level this is a crash: after the crash moment the rover returns at rest to the last checkpoint. In the endless run the run ends."
+- Add to Automated tests: "12 m/s into an edge at α = 30° → 10.392 m/s; α = 60° → 6.000 m/s; α = 90° → 0."
+- SRS FR-48, current (E16): "Rocks are solid. Driving into one stops the rover without damage; the student reverses out."
+- Replacement: "Walls are solid: driving into one removes the part of the velocity into the wall, and the rover scrapes along it. Obstacles are solid: hitting one is a crash, which returns the rover to the last checkpoint in a level and ends the endless run. There is no damage."
+
+### E47: Physics Model Specification, new section "Booster"
+Source: DECISIONS 2026-10-21 (plan approved, item 7); `docs/SHOWCASE_PLAN.md` §3a and P9. step() is unchanged: the booster uses its existing outside-force input.
+- Add: "Once per level attempt the student may fire a booster. While it burns, an outside force F_b = 2500 N acts along the gear (passed to step() as part of the external force, with any magnet force), for at most 1.5 s. It is not limited by grip, because it does not act through the tyres. It stops early at the end of the step in which the speed reaches the top speed in the current direction. It does not act in the air. Impulse delivered = F_b × burn time (at most 3750 N·s)."
+- Add to Automated tests: "Standard build at rest in mud (μ_r 0.6), throttle held, booster fired: a = (2500 + 1000 − 0.6 × 2048.2) ÷ 209 = 10.866 m/s² until 16 m/s. Heavy chassis, all-terrain wheels, small motor (259 kg) at rest in mud: it leaves a 12 m patch. Heavy chassis with spiked wheels and the small motor (267 kg): it does not."

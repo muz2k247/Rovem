@@ -1,10 +1,9 @@
-import cardsJson from './levelCards.json' with { type: 'json' };
+import cardsJson from './levelText.json' with { type: 'json' };
 
-// The words on the Levels and Level intro screens (LEVELS_BUILD_PLAN A3): name, hook, goal, "New here" and the
-// challenge star. Placeholder text until k._muz has reviewed it. The level files and `levelText.json` (Track B)
-// hold the in-level captions; the integration session merges the two (A1 report, "Needs from the other track").
+// The words on the Levels and Level intro screens (LEVELS_BUILD_PLAN A3): name, hook, goal and "New here". They live in
+// `levelText.json` beside the in-level captions (merged in I1) and are placeholder text until k._muz has reviewed them.
 
-export const LEVEL_DIAGRAMS = ['straight', 'fork', 'pads', 'ring', 'lanes', 'crater', 'river', 'pylons'] as const;
+export const LEVEL_DIAGRAMS = ['fork', 'pads', 'ring', 'lanes', 'crater', 'river', 'pylons'] as const;
 export type LevelDiagram = (typeof LEVEL_DIAGRAMS)[number];
 
 export interface LevelCard {
@@ -14,8 +13,6 @@ export interface LevelCard {
   goal: string;
   /** 2 or 3 short sentences, no formula. */
   newHere: string[];
-  /** The third star (A7). */
-  challenge: string;
   diagram: LevelDiagram;
   /** Controls shown on the intro besides the usual ones. */
   extraControls: string[];
@@ -80,7 +77,6 @@ export function validateLevelCards(raw: unknown): LevelCards {
       hook: text(o, 'hook', p),
       goal: text(o, 'goal', p),
       newHere: newHere as string[],
-      challenge: text(o, 'challenge', p),
       diagram: diagram as LevelDiagram,
       extraControls: extra as string[],
     };

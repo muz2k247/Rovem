@@ -167,11 +167,6 @@ export interface SandbagParams {
   rangeM: number;
 }
 
-export interface RunUnlock {
-  partId: string;
-  atBestDistanceM: number;
-}
-
 /** In `run.json`. All provisional (DECISIONS 2026-10-14). */
 export interface RunParams {
   /** The canyon runs along +x, |z| ≤ this. */
@@ -191,7 +186,6 @@ export interface RunParams {
   gravityMultipliers: { low: number; high: number };
   boostImpulseNs: number;
   sandbag: SandbagParams;
-  unlocks: RunUnlock[];
 }
 
 /** A rectangle in chunk-local metres: x from 0 to the chunk length, z across the canyon. */

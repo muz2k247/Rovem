@@ -186,6 +186,19 @@ kbd {
   cursor: not-allowed;
 }
 
+/* Dust Storm is a slim banner across the last row, so seven levels + Endless fill two rows of four. */
+.level-card.dust {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.level-card.dust .card-foot {
+  margin: 0 0 0 auto;
+}
+
 .level-card strong {
   font: 700 1.15rem 'Space Grotesk', system-ui, sans-serif;
 }

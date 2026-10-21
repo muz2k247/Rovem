@@ -112,4 +112,6 @@ export interface LevelSummary {
   stars: StarCount;
   bestTimeS: number | null;
   locked: boolean;
+  /** Added in I1: the level has no file yet, so its card says "Coming soon" and cannot be opened (A2: unfinished levels). */
+  comingSoon?: boolean;
 }

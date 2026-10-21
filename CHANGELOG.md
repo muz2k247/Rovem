@@ -6,6 +6,29 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs (Showcase plan, 2026-10-21)
+- `docs/SHOWCASE_PLAN.md`, approved: five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), the crashed-ship story, the Scavenger rival in place of par, no forced stops, jumps, walls scrape and obstacles crash, the booster, Endless as named places, the report's stretches and recorded causes, Change one part. Session prompts S0 and R1–R8.
+- DECISIONS: two rows dated 2026-10-21. PENDING_SPEC_EDITS: E44 (setting), E45 (jumps), E46 (collisions), E47 (booster).
+- CLAUDE.md, ROADMAP, DESIGN and LEVELS_BUILD_PLAN updated. The v4 lineup, stop lines, par rule, rock rule and E1 are marked superseded, with their reasoning kept.
+
+### Added (Levels I1: integration)
+- The level screen uses Track A's HUD, pause menu, settings panel and report. Esc pauses (Resume, Back to checkpoint, Restart level, Garage, Settings, Level select, Home); a finished level is saved at once (best stars and time); the report has Next level (not after Polar Pass), Retry and Levels, and its Try this opens the garage with the part fitted. The settings apply live, except Graphics, which applies from the next start.
+- Home → Continue and the Levels cards open the level intro; the intro shows the par time and the three star rules (beacon, 3 samples, par). A level with no file shows "Coming soon" (`LevelSummary.comingSoon`, optional).
+- Play-check of all seven levels in Chrome (screenshots in `docs/captures/i1/`): `runPilot` can record its inputs (`record`), and on the dev server only, `window.__rovemAuto` feeds a recorded drive to the session and `window.__rovemSession` exposes it (removed from the build).
+- Tests: reverse-gear magnet bend and F = ma line sign (`session.test.ts`); coming-soon rows (`levelUnlock.test.ts`).
+
+### Changed (Levels I1)
+- The level cards (names, hooks, goals, New here, controls) moved into `levelText.json`; `levelCards.json` is gone; the cards follow the seven levels of A7 and the `challenge` field is removed.
+- Dust Storm is a slim banner under the Levels grid, so seven levels and Endless fill two rows.
+- DECISIONS 2026-10-19 (I1): the par times (145, 115, 125, 135, 120, 105 and 125 s, by the A2 rule from the scripted driver) and the judgment calls. No physics or A10 value changed; T1–T10, the old tests and the balance counts (20/9/23/17) are unchanged.
+- CLAUDE.md: the repository layout lines for `levelText.json` and `game/level/`.
+
+### Fixed (Levels I1)
+- `session.ts`: in reverse gear a magnet's sideways pull bent the path the wrong way, and the F = ma line, steep-slope and descent captions used the wrong sign. They now use the way the rover travels compared with its gear (found by physics-checker).
+
+### Removed (Levels I1)
+- `run.unlocks` (the Endless ladder data) from `run.json`, its schema, type and test; `ui/levelHudStub.tsx` (Track B's stand-in HUD and report).
+
 ### Added (Levels B4: the seven levels)
 - The seven level files in `src/content/levels/` (`first-tracks`, `push-and-shove`, `crater-field`, `gravity-wells`, `ring-road`, `the-crossing`, `polar-pass`), registered in `src/game/level/levels.ts`: roads with forks, stop lights, terrain, water, gravity zones, pylons, cannons, pads, signs, checkpoints and 3 samples each, with the A10 values and provisional par times. `levelText.json` already holds their words (`"placeholder": true`).
 - Tests: every level has a file (`levelFile.<id>.test.ts`) that checks it against the A7 rules with a scripted driver: at least two forks; the start, finish and samples on a road; checkpoints on dry, grippy, gentle ground away from every magnet; the starting build collects all 3 samples inside 75 to 150 s and beats the par time; holding W along the middle misses a star; all 27 builds finish the safe route and, from every checkpoint, the extreme builds do too; plus each level's own rules (A10 numbers, safe speeds on signs, rolling back, floating, slingshots, the pass and the gate). The driver is test-only: `game/level/testPilot.ts`, `levelPlans.ts`, `levelChecks.ts`.
@@ -16,7 +39,7 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ### Added (Levels B3: level scene)
 - `src/render/levelScene.ts` with its helpers: `terrain.ts` (tiled ground from the physics heights, coloured by surface), `water.ts` (flush surface, dug bed, rover riding half hidden, splashes), `track.ts` (canyon walls, centre dashes and reflector posts, instanced), `pylons.ts` (towers, glowing coils, field lines whose dots flow in for attract and out for repel), `landmarks.ts` (barriers, boost pads, cannons and sandbags, the 3 samples, checkpoint and finish arches, stop lights, bend signs, gravity-zone curtains), `atmosphere.ts` (the seven looks of A8: sky, fog, sun angle, stars, aurora, dust and mist) and `levelCamera.ts` (a chase camera that follows the ground and stays over the road). Force arrows come from the shared `forceArrows.ts`.
-- `src/ui/LevelScreen.tsx` hosts a level: game loop, keys (Space flips the pole, R returns to the checkpoint, Esc pauses), sounds, crash moment, and the HUD and report drawn from the P0 contracts. `ui/levelHudStub.tsx` stands in for Track A's HUD and report until I1.
+- `src/ui/LevelScreen.tsx` hosts a level: game loop, keys (Space flips the pole, R returns to the checkpoint, Esc pauses), sounds, crash moment, and the HUD and report drawn from the P0 contracts. `ui/levelHudStub.tsx` stands in for Track A's HUD and report until I1. *(Deleted in I1.)*
 - `game/level/keys.ts` (level keys); the session gains `floating`, `heldStopLineId` and `signInfo()`; the level file's `atmosphere` is validated against the seven ids.
 - Tests: new ones for terrain, water, walls and marks, pylons, atmosphere, camera, landmarks, the assembled scene, keys and screen logic.
 
@@ -40,6 +63,7 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 ### Changed (Levels B1)
 - The M4 step-trace test also sets aside `rollingBack` (always false there). T1–T10, all other tests and the balance counts (20/9/23/17) are unchanged.
 - DECISIONS 2026-10-18: how the new rules are applied, with the judgment calls A6 leaves open.
+
 ### Added (Levels A3: report)
 - The report screen (`src/ui/report/`), built from `ReportModel`: result (stars, time and par for a level; distance for Endless), a speed–time graph with numbered markers (`graph.ts` does the scaling, tested), up to 3 What happened cards with a Show the maths toggle, one Try this with a button that acts (opens the garage with the part fitted, or retries) and the buttons. Endless uses it now, with the top 3 picked as before; the old `ReportOverlay` is gone. `src/game/run/reportModel.ts`: the 10 Hz speed trace recorder, `endlessReportModel`, `tryThisAction`, `buildWithPart`. `feedback.ts`: `ReportEffect.markerTimeS`, `RunReport.tryThisKey` and `tryThisKey()` (`tryThisLine` is unchanged in what it returns).
 
@@ -68,7 +92,7 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 - Screens (LEVELS_BUILD_PLAN A3): Home (Continue, Levels, Endless Canyon, Garage, Settings, controls line), Levels (4-column cards, NEXT badge, locks, stars, best time, Endless card with best distance, locked Dust Storm card), Level intro (goal, New here, sketch, three star rules, controls, Back / Change rover / Start with Enter), Settings (Master / Engine / Effects volume and Mute, Force arrows, Show the maths, Camera shake, Graphics Low/High, controls list, Replay tutorial, Reset progress pressed twice) and the Pause menu as an overlay. The game now opens on Home.
 - `src/save/settings.ts` (key `rovem.settings.v1`) and `src/save/levelProgress.ts` (key `rovem.levels.v1`; only the best stars and best time per level). Both fall back to defaults if storage fails.
 - `src/game/levelUnlock.ts`: levels open in order, Endless opens after the first level, the hidden `?unlock=all` link opens everything and is never saved; Continue picks the next unfinished level.
-- `src/content/levelCards.json` (+ `levelCards.ts`): names, hooks, goals, New here text and challenge stars for the Levels and intro screens; placeholder text until k._muz reviews it.
+- `src/content/levelCards.json` (+ `levelCards.ts`): names, hooks, goals, New here text and challenge stars for the Levels and intro screens; placeholder text until k._muz reviews it. *(`levelCards.json` merged into `levelText.json` and the `challenge` field removed in I1.)*
 - `src/ui/hud/Hud.tsx`: the new driving HUD (speed in m/s with km/h, badges, level name and progress bar, time and pause button, one caption, the F = ma line, controls hint for the first 10 s). `src/game/captionQueue.ts` (one caption at a time, each at least 2.5 s), `src/game/forceLine.ts` (F = ma line rule and the "Balanced: constant speed" message), `src/game/forces.ts` (push or brake, and friction, from the physics numbers), `src/game/run/endlessHud.ts`.
 - Force arrows in the Endless scene (`runScene.setForceArrows`); Graphics Low hides the dust; engine and effect sounds take a volume.
 - Optional field `HudModel.scoreText` (the Endless score line).
@@ -80,7 +104,7 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 - `DemoProgress` lost `showForces`, `soundOn` and `partsSeen`; old saves still load (the extra fields are ignored). The page uses the A3 palette (dark ground #0D1117, panels #161B23, orange, cyan and gold accents) as CSS variables.
 
 ### Removed (Levels A1)
-- The Endless distance ladder in code (`unlocks.ts`, the NEW badge and unlock bars): all parts are open (DECISIONS 2026-10-17). The `unlocks` list stays in `run.json` and its schema until I1 (`schema.ts` is Track B's).
+- The Endless distance ladder in code (`unlocks.ts`, the NEW badge and unlock bars): all parts are open (DECISIONS 2026-10-17). The `unlocks` list stays in `run.json` and its schema until I1 (`schema.ts` is Track B's). *Removed in I1.*
 - The force panel (`forcePanel.ts`, `ForcePanelView`), the old captions stack and the score/distance HUD row.
 
 ### Docs (Game v4 levels revised, 2026-10-18)
