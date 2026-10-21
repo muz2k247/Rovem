@@ -51,7 +51,11 @@ export function ReportScreen({
                 <span>
                   Time <strong>{result.timeS.toFixed(2)} s</strong>
                 </span>
-                <span>Par {result.parS.toFixed(2)} s</span>
+                {result.scavengerS !== undefined ? (
+                  <span>{levelText.scavenger.resultLine.replace("{timeS}", result.scavengerS.toFixed(2))}</span>
+                ) : (
+                  <span>Par {result.parS.toFixed(2)} s</span>
+                )}
               </>
             ) : (
               <span>
@@ -68,8 +72,13 @@ export function ReportScreen({
         </div>
         <div className="report-side">
           {model.stretches && model.stretches.length > 0 && (
-            <StretchStrip stretches={model.stretches} explanation={model.explanation} legend={levelText.stretch.legend} />
+            <StretchStrip
+              stretches={model.stretches}
+              explanation={model.explanation}
+              legend={result.kind === "level" && result.scavengerS !== undefined ? levelText.stretch.legendScavenger : levelText.stretch.legend}
+            />
           )}
+          {model.versusLast && <p className="versus-last">{model.versusLast.line}</p>}
           <ReportCards cards={model.cards} />
           {tryThis && (
             <div className="try-this">

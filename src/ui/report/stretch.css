@@ -87,3 +87,12 @@
 .stretch-headline {
   font: 700 1.05rem 'Space Grotesk', system-ui, sans-serif;
 }
+
+/* "vs your last run" under the strip (R4). */
+.versus-last {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.8rem;
+  border-left: 4px solid var(--cyan, #63c7e6);
+  color: #fff;
+  font-size: 1rem;
+}

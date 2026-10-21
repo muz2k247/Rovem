@@ -82,6 +82,7 @@
     "surface-sand": { "title": "Sand", "line": "Friction here: {frictionN} N. On asphalt: {asphaltN} N." },
     "surface-ice": { "title": "Ice", "line": "Friction here is only {frictionN} N, but the tyres can pass on at most {gripN} N." },
     "slip": { "title": "Wheels slip", "line": "The tyres can pass on only {gripN} N here. Your motor asks for {askN} N." },
+    "booster": { "title": "Booster", "line": "{forceN} N × {durationS} s = {impulseNs} N·s of impulse." },
     "boost": { "title": "Boost", "line": "Impulse {impulseNs} N·s ÷ {massKg} kg = +{dv} m/s." },
     "hit-headOn": { "title": "Head-on hit", "line": "{massKg} × {u1} + {bagKg} × {u2} = ({massKg} + {bagKg}) × {u3}: {before} → {after} m/s." },
     "hit-kicker": { "title": "Kicked from behind", "line": "{massKg} × {u1} + {bagKg} × {u2} = ({massKg} + {bagKg}) × {u3}: {before} → {after} m/s." },
@@ -142,10 +143,21 @@
   "elementCards": {
     "slope": { "title": "Slope", "line": "A slope pulls a rover back with a force that grows with the steepness and with the weight. Your motor has to push harder than the pull to climb." },
     "water": { "title": "Water", "line": "Water pushes up on anything in it. When that upthrust is bigger than the weight, the rover floats, and its wheels can no longer grip." },
-    "magnet": { "title": "Magnet", "line": "A magnet pulls or pushes without touching. Unlike poles attract and like poles repel." }
+    "magnet": { "title": "Magnet", "line": "A magnet pulls or pushes without touching. Unlike poles attract and like poles repel." },
+    "booster": { "title": "Booster", "line": "A rocket pushes with a force for a time. Force × time is the impulse, and impulse is what changes a rover's momentum: it gets a stuck rover moving." }
   },
   "stretch": {
     "legend": "Against a clean drive (green: you were faster)",
+    "legendScavenger": "Against the Scavenger (green: you were faster)",
+    "lastRun": {
+      "changed": "the {slot} ({from} → {to})",
+      "and": "and",
+      "head": "vs your last run: you changed {changes}.",
+      "nothing": "vs your last run: you changed nothing.",
+      "move": "{name}: {delta}.",
+      "noMove": "No stretch moved by {minGapS} s or more.",
+      "total": "Whole level: {delta}."
+    },
     "headlineLoss": "You lost {lostS} s on {name}.",
     "headlineGain": "You gained {gainS} s on {name}.",
     "headlineEven": "Every stretch was within {minGapS} s of a clean drive.",
@@ -153,8 +165,10 @@
       "crash": "You hit {obstacle}: back to the checkpoint.",
       "hit": "A sandbag hit took {lostMps} m/s off your speed.",
       "grip": "You were past your grip limit for {gripS} s: your wheels grip with up to {gripN} N.",
+      "gripRival": "The Scavenger's {wheels} grip with up to {theirN} N there.",
       "scrape": "You scraped the wall {n} time(s) and lost {lostMps} m/s against it.",
       "rollback": "You rolled backwards for {rollS} s: the slope pulled harder than your motor and friction could hold.",
+      "surfaceRival": "The Scavenger's {wheels} meet {theirN} N there.",
       "surface": "You spent {surfaceS} s on {surface}, where the ground pulls back with {frictionN} N. On rock it pulls back with {rockN} N.",
       "fork": "You took the {yourRoad} road in {yourS} s. The {otherRoad} road would have taken {otherS} s.",
       "none": "No crash, slide or wall scrape was recorded here. You went in at {inMps} m/s and came out at {outMps} m/s.",
@@ -174,6 +188,22 @@
     },
     "obstacles": { "default": "an obstacle", "crash-site": "a boulder" },
     "surfaces": { "sand": "sand", "mud": "mud", "ice": "ice" }
+  },
+  "split": {
+    "behind": "+{gapS} s behind the Scavenger",
+    "ahead": "−{gapS} s: ahead of the Scavenger"
+  },
+  "scavenger": {
+    "cardTitle": "The Scavenger",
+    "cardLine": "An old robot rover races you over the same ground. It drives: {build}.",
+    "star": "Beat the Scavenger",
+    "delayZero": "It starts beside you.",
+    "delayLater": "It starts {delayS} s after you.",
+    "delayHeadStart": "It has a {delayS} s head start.",
+    "marker": "Scavenger {distM} m",
+    "resultLine": "Scavenger {timeS} s",
+    "beaten": "You beat the Scavenger by {gapS} s.",
+    "lost": "The Scavenger beat you by {gapS} s."
   },
   "ship": {
     "openingLine": "Your ship came down hard. Five parts lie scattered across this red planet. Find them all.",

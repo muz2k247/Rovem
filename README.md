@@ -78,6 +78,7 @@ npm run typecheck  # type check
 npm run build      # type check, then production build into dist/
 npm run balance    # simulate all 27 builds against the mission limits (needs Node 24)
 npm run maps       # write a top-down SVG of every built level to docs/captures/maps/ (needs Node 24)
+npm run rival      # all 27 builds over every route: the builds near the Scavenger's target pace, with a proposal (needs Node 24; --level=<id>, --all)
 npm run preview    # serve the built dist/ (run npm run build first)
 ```
 
@@ -98,7 +99,7 @@ src/
   ui/        React screens; hud/ and report/ components
   save/      progress and settings storage on the device
 tests/       shared test fixtures and helpers, and the sheet regression test (T10)
-scripts/     balance report
+scripts/     balance report, maps, rival
 ```
 
 `src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The demo added the garage, run screen and run scene (D5–D6) and the demo save (D4). Game v4 adds `src/game/level/`, `src/ui/hud/` and `src/ui/report/` (LEVELS_BUILD_PLAN B3). Other folders are created as the work needs them.

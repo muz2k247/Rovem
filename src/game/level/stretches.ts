@@ -11,6 +11,8 @@ export interface StretchCauses {
   gripLimitS: number;
   /** What the tyres could give (μ_g k_g R, in newtons) at the last moment counted in `gripLimitS`. */
   gripLimitN: number;
+  /** The ground that last moment was on, so the Scavenger's grip can be worked out on the same ground. */
+  gripSurfaceId?: string;
   crashes: number;
   scrapes: number;
   /** The speed the wall scrapes took off, added up (m/s). */
@@ -84,11 +86,12 @@ export function createStretchTracker(defs: readonly StretchDef[]) {
       finishSpeedMps = speedMps;
     },
     /** Time past the grip limit; `gripLimitN` is what the tyres could give at that moment. */
-    addGripLimit(dtS: number, gripLimitN: number): void {
+    addGripLimit(dtS: number, gripLimitN: number, surfaceId?: string): void {
       const c = cur();
       if (!c) return;
       c.gripLimitS += dtS;
       c.gripLimitN = gripLimitN;
+      if (surfaceId !== undefined) c.gripSurfaceId = surfaceId;
     },
     addRollingBack(dtS: number): void {
       const c = cur();

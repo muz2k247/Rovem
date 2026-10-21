@@ -15,6 +15,10 @@ export interface CardText {
 /** The words of the stretch report (Showcase P6, SHOWCASE_PLAN §9). */
 export interface StretchText {
   legend: string;
+  /** The legend when the strip compares with the Scavenger. */
+  legendScavenger: string;
+  /** "vs your last run" (R4): the pieces of the line, see `lastRun.ts`. */
+  lastRun: Record<string, string>;
   headlineLoss: string;
   headlineGain: string;
   headlineEven: string;
@@ -23,6 +27,20 @@ export interface StretchText {
   /** What a crash is called in each level ("a boulder"); `default` for the others. */
   obstacles: Record<string, string>;
   surfaces: Record<string, string>;
+}
+
+/** The Scavenger's words (R4): its card, the countdown line and the result. */
+export interface ScavengerText {
+  cardTitle: string;
+  cardLine: string;
+  star: string;
+  delayZero: string;
+  delayLater: string;
+  delayHeadStart: string;
+  marker: string;
+  resultLine: string;
+  beaten: string;
+  lost: string;
 }
 
 /** One of the five ship parts (SHOWCASE_PLAN §12). `built` is true once the level that brings it home is a Showcase level. */
@@ -48,6 +66,9 @@ export interface LevelText {
   elementCards: Record<string, { title: string; line: string }>;
   tryThis: Record<string, string>;
   stretch: StretchText;
+  /** The gap shown at a split gate: `{gapS}` is the size. */
+  split: { behind: string; ahead: string };
+  scavenger: ScavengerText;
   ship: ShipText;
 }
 
@@ -98,6 +119,8 @@ export function validateLevelText(raw: unknown): LevelText {
   const st = obj(root.stretch, 'levelText.stretch');
   const stretch: StretchText = {
     legend: str(st, 'legend', 'levelText.stretch'),
+    legendScavenger: str(st, 'legendScavenger', 'levelText.stretch'),
+    lastRun: strings(st.lastRun, 'levelText.stretch.lastRun'),
     headlineLoss: str(st, 'headlineLoss', 'levelText.stretch'),
     headlineGain: str(st, 'headlineGain', 'levelText.stretch'),
     headlineEven: str(st, 'headlineEven', 'levelText.stretch'),
@@ -107,6 +130,10 @@ export function validateLevelText(raw: unknown): LevelText {
     surfaces: strings(st.surfaces, 'levelText.stretch.surfaces'),
   };
   if (stretch.obstacles.default === undefined) fail('levelText.stretch.obstacles.default', 'expected a string');
+  const sp = strings(root.split, 'levelText.split');
+  if (sp.behind === undefined || sp.ahead === undefined) fail('levelText.split', 'expected behind and ahead');
+  const sc = obj(root.scavenger, 'levelText.scavenger');
+  const scavenger = Object.fromEntries(['cardTitle', 'cardLine', 'star', 'delayZero', 'delayLater', 'delayHeadStart', 'marker', 'resultLine', 'beaten', 'lost'].map((k) => [k, str(sc, k, 'levelText.scavenger')])) as unknown as ScavengerText;
   const sh = obj(root.ship, 'levelText.ship');
   const partsRaw = sh.parts;
   if (!Array.isArray(partsRaw) || partsRaw.length === 0) fail('levelText.ship.parts', 'expected a non-empty list');
@@ -128,6 +155,8 @@ export function validateLevelText(raw: unknown): LevelText {
     elementCards,
     tryThis: strings(root.tryThis, 'levelText.tryThis'),
     stretch,
+    split: { behind: sp.behind, ahead: sp.ahead },
+    scavenger,
     ship,
   };
 }

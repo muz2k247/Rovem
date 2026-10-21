@@ -43,6 +43,13 @@ export interface LevelsConfig {
   par: { factor: number; roundUpToS: number };
   /** The stretch report (Showcase R3, SHOWCASE_PLAN §9): the smallest gap to a clean drive that is called a loss or a gain, and the shortest time a cause must last to be named. */
   report: { minGapS: number; minCauseS: number };
+  /** The booster (Showcase R4, SHOWCASE_PLAN §3a): a push of `forceN` along the gear for up to `maxDurationS`, once per level attempt; it stops at top speed. */
+  booster: { forceN: number; maxDurationS: number };
+  /**
+   * The Scavenger (R4, SHOWCASE_PLAN §8): it fades to `fadeOpacity` within `fadeWithinM` of the rover; a split shows for `splitShowS`;
+   * its run is simulated for at most `maxRunS` (a Scavenger that has not finished by then is a level-file error).
+   */
+  scavenger: { fadeWithinM: number; fadeOpacity: number; splitShowS: number; maxRunS: number };
   /** Engine rules added by Levels B2 (all positive; see the DECISIONS row of 2026-10-18). */
   rules: {
     crashMomentS: number;
@@ -178,6 +185,18 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
   const report = { minGapS: num(rp, 'minGapS', p('report')), minCauseS: num(rp, 'minCauseS', p('report')) };
   if (report.minGapS <= 0 || report.minCauseS <= 0) fail('levels.report', 'expected numbers above 0');
 
+  const bo = sec('booster');
+  const booster = { forceN: num(bo, 'forceN', p('booster')), maxDurationS: num(bo, 'maxDurationS', p('booster')) };
+
+  const sc = sec('scavenger');
+  const scavenger = {
+    fadeWithinM: num(sc, 'fadeWithinM', p('scavenger')),
+    fadeOpacity: num(sc, 'fadeOpacity', p('scavenger')),
+    splitShowS: num(sc, 'splitShowS', p('scavenger')),
+    maxRunS: num(sc, 'maxRunS', p('scavenger')),
+  };
+  if (scavenger.fadeOpacity >= 1) fail('levels.scavenger.fadeOpacity', 'must be below 1');
+
   const ru = sec('rules');
   const rules = {
     crashMomentS: num(ru, 'crashMomentS', p('rules')),
@@ -233,6 +252,8 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     pacing,
     par,
     report,
+    booster,
+    scavenger,
     rules,
     captions,
     forceLine,

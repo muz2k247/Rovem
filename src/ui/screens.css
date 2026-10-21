@@ -502,6 +502,7 @@ kbd {
 .hud2-progress,
 .hud2-time,
 .hud2-caption,
+.hud2-split,
 .hud2-forceline,
 .hud2-hint,
 .popup,
@@ -571,6 +572,23 @@ kbd {
   background: var(--cyan);
   border-color: var(--cyan);
   color: #08141a;
+}
+
+.badge.booster-ready {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #08141a;
+}
+
+.badge.booster-firing {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #1a1008;
+}
+
+.badge.booster-used {
+  background: transparent;
+  color: #cfd6e4;
 }
 
 .badge.pole-N {
@@ -975,4 +993,57 @@ kbd {
   margin-top: 0.25rem;
   color: var(--muted);
   font: 400 0.8rem 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+/* The Scavenger (R4): the gap at a split gate, and the edge marker that points to it when it is off screen. */
+.hud2-split {
+  top: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.45rem 1rem;
+  font: 700 1.15rem 'Space Grotesk', system-ui, sans-serif;
+  color: #fff;
+  border-left: 4px solid var(--cyan);
+}
+
+.hud2-split.behind {
+  border-left-color: var(--amber);
+}
+
+.scavenger-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: #fff;
+  font: 600 1rem 'Space Grotesk', system-ui, sans-serif;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.scavenger-marker .arrow {
+  display: inline-block;
+  color: var(--amber);
+}
+
+.scavenger-start {
+  position: absolute;
+  left: 50%;
+  bottom: 6rem;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 0.5rem 1rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: #fff;
+  font: 600 1.1rem 'Space Grotesk', system-ui, sans-serif;
+  pointer-events: none;
 }

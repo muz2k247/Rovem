@@ -13,8 +13,11 @@ import { controlsHintVisible } from '../game/run/endlessHud.ts';
 import type { PauseAction } from '../game/pauseMenu.ts';
 import { devKeyAction, devModeFromSearch, jumpTarget, zoomedHeightM } from '../game/level/devKeys.ts';
 import { levelKeyAction } from '../game/level/keys.ts';
+import type { LastRun } from '../game/level/lastRun.ts';
+import { createScavengerRun } from '../game/level/scavenger.ts';
 import { loadLevelDef } from '../game/level/levels.ts';
-import { levelText } from '../game/level/text.ts';
+import { fill, levelText } from '../game/level/text.ts';
+import { delayLine } from './LevelIntroScreen.tsx';
 import { createLevelSession, type LevelInput, type LevelSession } from '../game/level/session.ts';
 import type { LevelDef } from '../game/level/types.ts';
 import type { SpeedUnit } from '../game/run/feedback.ts';
@@ -63,6 +66,10 @@ export interface LevelScreenProps {
   nextLevelId: string | null;
   /** Called once when the rover reaches the beacon, for the caller to save the best stars and time. */
   onFinished: (result: LevelFinish) => void;
+  /** The last finished run of this level in this session (kept in memory by the caller, never saved): the report compares with it. */
+  lastRun?: LastRun | undefined;
+  /** Called once when the rover reaches the part, with the run for the next report's "vs your last run". */
+  onRunRecorded?: (levelId: string, run: LastRun) => void;
   onNext: () => void;
   onLevels: () => void;
   onHome: () => void;
@@ -76,6 +83,8 @@ export interface LevelScreenProps {
 const SPEED_TONE_S = 0.8;
 /** The story's opening line (SHOWCASE_PLAN §12) stays over the wreck this long, or until Enter or a click. Presentation value. */
 const OPENING_LINE_S = 8;
+/** The Scavenger's start line (its build and delay) stays on screen this long, in physics seconds. Presentation value. */
+const START_LINE_S = 5;
 /** The pop-up stands this far to the right of the rover and above its roof, in pixels. */
 const POPUP_OFFSET_PX = { x: 36, y: -28 };
 
@@ -99,6 +108,9 @@ export function LevelScreen(props: LevelScreenProps) {
   const popupRef = useRef<HTMLDivElement>(null);
   const [opening, setOpening] = useState<string | null>(null);
   const openingRef = useRef<HTMLDivElement>(null);
+  const [startLine, setStartLine] = useState<string | null>(null);
+  const markerRef = useRef<HTMLDivElement>(null);
+  const [markerText, setMarkerText] = useState<string | null>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
   const showSettingsRef = useRef(false);
@@ -133,13 +145,27 @@ export function LevelScreen(props: LevelScreenProps) {
     // The story opens once, at the wreck, on the first start of the level; a retry goes straight to the driving.
     let openingOn = levelDef.wreck !== undefined && attempt === 0;
     setOpening(openingOn ? levelText.ship.openingLine : null);
+    setStartLine(null);
+    setMarkerText(null);
 
     const rover = roverFromParts(content, build);
     const keys = createKeyTracker();
     // Dev server only (import.meta.env.DEV is false in the build, so this is removed): the I1 play-check feeds a recorded drive.
     const devAuto = import.meta.env.DEV ? window.__rovemAuto : undefined;
+    // The Scavenger's honest run is driven headless now (a few milliseconds of simulation) and played back by the scene. A level file whose
+    // Scavenger cannot finish is a content error: the level still plays, without a rival, and the error is shown in the console.
+    let scavenger: ReturnType<typeof createScavengerRun>;
+    try {
+      scavenger = createScavengerRun(content, levelDef);
+    } catch (e) {
+      console.error(e);
+    }
+    if (scavenger) {
+      const names = [scavenger.build.chassisId, scavenger.build.wheelsId, scavenger.build.motorId].map((id) => content.parts.find((p) => p.id === id)?.name ?? id);
+      setStartLine(`${fill(levelText.scavenger.cardLine, { build: names.join(', ') })} ${delayLine(scavenger.delayS)}`);
+    }
     const session: LevelSession = createLevelSession({
-      content, def: levelDef, rover, constants: physicsConstants(content), elementCaptions: false,
+      content, def: levelDef, rover, constants: physicsConstants(content), elementCaptions: false, ...(scavenger ? { scavenger } : {}),
       drive: (ctx) => (devAuto ? devAuto(ctx, session) : keys.read()),
     });
     if (import.meta.env.DEV) window.__rovemSession = session;
@@ -197,6 +223,8 @@ export function LevelScreen(props: LevelScreenProps) {
     const popupPoint = new THREE.Vector3();
 
     let reported = false;
+    let lastStartLine = scavenger !== undefined;
+    let lastMarkerText = '';
     let eventsHandled = 0;
     let frame = 0;
     let lastMs = performance.now();
@@ -249,6 +277,11 @@ export function LevelScreen(props: LevelScreenProps) {
         else session.devJumpToCheckpoint(jumpTarget(session.checkpointIndex, levelDef.checkpoints.length, devAction === 'nextCheckpoint' ? 1 : -1));
         view.setTopDown(topDown, topDownHeightM);
         view.setZoneOutlines(zones);
+        return;
+      }
+      if (action === 'booster') {
+        e.preventDefault();
+        if (!e.repeat) session.fireBooster();
         return;
       }
       if (action === 'flipPole' || action === 'respawn') {
@@ -348,12 +381,52 @@ export function LevelScreen(props: LevelScreenProps) {
         popupEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(Math.max(8, py))}px)`;
       }
 
+      // The Scavenger's start line stays for the first seconds; its edge marker points to it while it is off screen.
+      if (lastStartLine && session.clockS >= START_LINE_S) {
+        lastStartLine = false;
+        setStartLine(null);
+      }
+      const markerEl = markerRef.current;
+      const marker = reported ? undefined : view.scavengerMarker();
+      if (markerEl) {
+        if (!marker) markerEl.style.opacity = '0';
+        else {
+          // The marker is for a Scavenger that is off screen: while it is in view, the rover itself shows where it is.
+          popupPoint.copy(marker.position).project(view.camera);
+          const behind = popupPoint.z > 1;
+          let nx = popupPoint.x;
+          let ny = popupPoint.y;
+          if (behind) {
+            nx = -nx;
+            ny = -ny;
+          }
+          const onScreen = !behind && Math.abs(nx) <= 0.95 && Math.abs(ny) <= 0.9;
+          // Off screen: clamp the point to the screen's edge, along the line from its centre.
+          if (onScreen) markerEl.style.opacity = '0';
+          const k = onScreen ? 1 : 1 / Math.max(Math.abs(nx) / 0.9, Math.abs(ny) / 0.8, 1e-6);
+          const px = (nx * k * 0.5 + 0.5) * host.clientWidth - markerEl.offsetWidth / 2;
+          const py = (-ny * k * 0.5 + 0.5) * host.clientHeight - markerEl.offsetHeight / 2 - (onScreen ? 36 : 0);
+          markerEl.style.transform = `translate(${Math.round(Math.max(8, Math.min(px, host.clientWidth - markerEl.offsetWidth - 8)))}px, ${Math.round(Math.max(8, Math.min(py, host.clientHeight - markerEl.offsetHeight - 8)))}px)`;
+          if (!onScreen) markerEl.style.opacity = '1';
+          const text = fill(levelText.scavenger.marker, { distM: Math.round(marker.distanceM) });
+          if (text !== lastMarkerText) {
+            lastMarkerText = text;
+            setMarkerText(text);
+          }
+        }
+      }
+
       if (justFinished) {
         reported = true;
         keys.clear();
         const result = session.result!;
+        const last = propsRef.current.lastRun;
         propsRef.current.onFinished({ levelId: levelDef.id, timeS: result.timeS, stars: result.stars, starFlags: result.starFlags });
-        setReport(session.report());
+        setReport(session.report({ build, ...(last ? { last } : {}) }));
+        const record = session.lastRunRecord(build);
+        if (record) propsRef.current.onRunRecorded?.(levelDef.id, record);
+        setStartLine(null);
+        setMarkerText(null);
       }
       if (shouldRefreshHud(frame++, justFinished)) setHud(reported ? null : model);
     });
@@ -423,6 +496,11 @@ export function LevelScreen(props: LevelScreenProps) {
           <small>Enter to skip</small>
         </div>
       )}
+      {startLine && <div className="scavenger-start" role="note">{startLine}</div>}
+      <div ref={markerRef} className="scavenger-marker" style={{ opacity: 0 }} aria-hidden="true">
+        <span className="arrow">◆</span>
+        {markerText}
+      </div>
       {speedLinesKey > 0 && <div key={`speed-lines-${speedLinesKey}`} className="speed-lines" aria-hidden="true" />}
       {hitFlashKey > 0 && <div key={`hit-flash-${hitFlashKey}`} className="hit-flash" aria-hidden="true" />}
       {crashFlash && <div className="crash-flash" aria-hidden="true" />}
@@ -446,11 +524,22 @@ export function LevelScreen(props: LevelScreenProps) {
       {report && (
         <ReportScreen
           model={report}
-          title={stars === 3 ? 'Perfect run' : stars === 2 ? 'Nice drive' : 'Level complete'}
+          title={
+            report.result.kind === 'level' && report.result.scavengerS !== undefined
+              ? report.result.starFlags[2]
+                ? fill(levelText.scavenger.beaten, { gapS: (report.result.scavengerS - report.result.timeS).toFixed(2) })
+                : fill(levelText.scavenger.lost, { gapS: (report.result.timeS - report.result.scavengerS).toFixed(2) })
+              : stars === 3
+                ? 'Perfect run'
+                : stars === 2
+                  ? 'Nice drive'
+                  : 'Level complete'
+          }
           unit={props.speedUnit ?? 'mps'}
           actions={[
             ...(props.nextLevelId ? [{ label: 'Next level', onClick: props.onNext, primary: true }] : []),
             { label: 'Retry', onClick: retry, primary: !props.nextLevelId },
+            { label: 'Change one part', onClick: () => props.onGarage() },
             { label: 'Levels', onClick: props.onLevels },
           ]}
           onTryThis={(action) => (action.kind === 'retry' ? retry() : props.onGarage(action.partId))}

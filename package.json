@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "balance": "node scripts/balance.ts",
-    "maps": "node scripts/maps.ts"
+    "maps": "node scripts/maps.ts",
+    "rival": "node scripts/rival.ts"
   },
   "engines": {
     "node": ">=24"

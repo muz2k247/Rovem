@@ -37,6 +37,7 @@ export const MOMENTS: Readonly<Record<PopupElement, Moment>> = {
   crash: { sound: 'crunch', particles: 'debris', camera: 'shake', hud: ['flash'] },
   slip: { sound: 'squeal', hud: ['badge'] },
   topSpeed: { hud: ['badge'] },
+  booster: { sound: 'whoosh', particles: 'steam', camera: 'wide', hud: ['speedLines'] },
 };
 
 export const momentFor = (element: PopupElement): Moment => MOMENTS[element];

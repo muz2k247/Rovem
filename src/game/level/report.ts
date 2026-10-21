@@ -4,6 +4,9 @@ import { MAX_REPORT_CARDS, type PartPickup, type ReportCard, type ReportModel, t
 import type { RoverSpec } from '../../physics/types.ts';
 import { fill, newtons, twoDecimals, type LevelText, type TokenValues } from './text.ts';
 import type { LevelEvent, LevelResult } from './session.ts';
+import type { BuildSelection } from '../buildFromParts.ts';
+import { versusLastRun, type LastRun } from './lastRun.ts';
+import type { ScavengerRun } from './scavenger.ts';
 import { explainStretches, suggestParts } from './stretchReport.ts';
 import type { StretchRecord } from './stretches.ts';
 import type { LevelDef, LevelId } from './types.ts';
@@ -41,6 +44,13 @@ export interface ReportInput {
   content?: Content;
   /** The numbers the finished level's part line may use (Crash Site: `grip`). */
   partValues?: TokenValues;
+  /** The rival of this attempt: the strip compares with its times, the third star is to beat it, and a build cause may name its build. */
+  scavenger?: ScavengerRun;
+  /** What the Scavenger's build has on a surface (grip limit, rolling friction), for those causes: on the same ground as yours. */
+  scavengerQuantities?: { gripN: (surfaceId: string) => number; rollingN: (surfaceId: string) => number };
+  /** The build the student drove, and the last finished run of this level in this session (kept in memory only). */
+  build?: BuildSelection;
+  last?: LastRun;
 }
 
 /** The ship part a finished level brings home, with its line filled in; nothing for a level whose part is not built yet. */
@@ -49,6 +59,8 @@ export function partPickup(levelId: string, text: LevelText, values: TokenValues
   if (!part || !part.built) return undefined;
   return { levelId, partName: part.name, line: fill(part.pickupLine, values) };
 }
+
+export type { LastRun };
 
 const first = <T>(items: readonly T[]): T | undefined => items[0];
 
@@ -144,13 +156,26 @@ export function buildLevelReport(input: ReportInput): ReportModel {
   else tryThis = { text: text.tryThis.default!, action: { kind: 'retry' } };
 
   // The stretch strip and its three lines replace the single "Try this" of the cards when the level names stretches (P6).
+  // With a Scavenger the strip compares with its time on each stretch; without one, with the clean drive named in the level file.
+  const records = input.stretches && input.scavenger ? input.stretches.map((r, i) => ({ ...r, cleanS: input.scavenger!.stretchTimesS[i] ?? r.cleanS })) : input.stretches;
+  const rival =
+    input.scavenger && input.scavengerQuantities && input.content
+      ? {
+          wheelsName: (input.content.parts.find((p) => p.id === input.scavenger!.build.wheelsId)?.name ?? '').toLowerCase(),
+          gripN: input.scavengerQuantities.gripN, rollingN: input.scavengerQuantities.rollingN,
+        }
+      : undefined;
   const strip =
-    input.stretches && input.stretches.length > 0 && result && input.content && input.rover
+    records && records.length > 0 && result && input.content && input.rover
       ? explainStretches({
-          levelId: def.id, records: input.stretches, events, roadName: (id) => def.roads.find((r) => r.id === id)?.name ?? id,
+          levelId: def.id, records, events, ...(rival ? { rival } : {}), roadName: (id) => def.roads.find((r) => r.id === id)?.name ?? id,
           text: text.stretch, minGapS: levelsConfig.report.minGapS, minCauseS: levelsConfig.report.minCauseS,
           suggest: suggestParts(input.content, input.rover),
         })
+      : undefined;
+  const versusLast =
+    result && records && records.length > 0 && input.content && input.build && input.last
+      ? versusLastRun({ content: input.content, build: input.build, last: input.last, records, totalS: result.timeS, text: text.stretch, minGapS: levelsConfig.report.minGapS })
       : undefined;
   const pickup = result && input.partValues ? partPickup(def.id, text, input.partValues) : undefined;
 
@@ -161,11 +186,13 @@ export function buildLevelReport(input: ReportInput): ReportModel {
       stars: result ? result.stars : 0,
       starFlags: result ? result.starFlags : [false, false, false],
       parS: def.parS,
+      ...(input.scavenger ? { scavengerS: input.scavenger.finishAtS } : {}),
     },
     speedTrace: input.trace.map((p) => ({ timeS: p.timeS, speedMps: p.speedMps })),
     cards: picked.map((c) => c.card),
     tryThis: strip ? strip.tryThis : tryThis,
     ...(strip ? { stretches: strip.stretches, explanation: strip.explanation } : {}),
     ...(pickup ? { pickup } : {}),
+    ...(versusLast ? { versusLast } : {}),
   };
 }

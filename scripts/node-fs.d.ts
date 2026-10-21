@@ -4,3 +4,6 @@ declare module 'node:fs' {
   export function writeFileSync(path: URL | string, data: string): void;
   export function readFileSync(path: URL | string, encoding: 'utf8'): string;
 }
+
+// The command line of `scripts/rival.ts` (`--level=…`, `--all`).
+declare const process: { argv: string[] };

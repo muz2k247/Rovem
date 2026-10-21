@@ -3,6 +3,7 @@ import { content } from '../../content/index.ts';
 import { levelsConfig } from '../../content/levelsConfig.ts';
 import { loadLevelDef } from './levels.ts';
 import { levelPlans, naivePlan } from './levelPlans.ts';
+import { createScavengerRun } from './scavenger.ts';
 import { allBuilds, representativeBuilds, runPilot } from './testPilot.ts';
 import type { LevelDef, LevelId } from './types.ts';
 import { createLevelWorld, type LevelWorld } from './world.ts';
@@ -104,7 +105,9 @@ export function checkLevelFile(id: LevelId): void {
     });
 
     it('the starting build finishes with all 3 samples in 60 to 150 s (A7), and beats the par time', () => {
-      const r = runPilot({ content, def, plan: plans.stars });
+      // A level with a Scavenger: the third star is to beat it, and the starting build's best drive must manage that.
+      const scavenger = createScavengerRun(content, def);
+      const r = runPilot({ content, def, plan: plans.stars, ...(scavenger ? { scavenger } : {}) });
       expect(r.finished).toBe(true);
       expect(r.samples.sort()).toEqual(def.samples.map((s) => s.id).sort());
       expect(r.timeS).toBeGreaterThan(60); // was 75 s before the stops were removed (R1); the Showcase levels are 90–150 s (SHOWCASE_PLAN §5) and are rebuilt later

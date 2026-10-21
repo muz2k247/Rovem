@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { content } from '../content/index.ts';
 import { levelCards } from '../content/levelCards.ts';
 import { STARTING_BUILD, type BuildSelection } from '../game/buildFromParts.ts';
 import type { StarCount } from '../game/contracts.ts';
-import { builtLevelIds, levelParS } from '../game/level/levels.ts';
+import { builtLevelIds, levelParS, levelScavengerInfo } from '../game/level/levels.ts';
+import type { LastRun } from '../game/level/lastRun.ts';
 import { levelText } from '../game/level/text.ts';
 import { shipParts } from '../game/ship.ts';
 import { buildWithPart } from '../game/run/reportModel.ts';
@@ -71,6 +72,8 @@ export function App() {
   const [screen, setScreen] = useState<Screen>(firstScreen);
   const [devBuild, setDevBuild] = useState<BuildSelection>(STARTING_BUILD);
   const [runCount, setRunCount] = useState(0);
+  // The last finished run of each level, for the next report's "vs your last run". Kept in memory for this visit only; never saved (SHOWCASE_PLAN §9).
+  const lastRuns = useRef(new Map<string, LastRun>());
 
   const update = (next: DemoProgress) => {
     setProgress(next);
@@ -145,6 +148,7 @@ export function App() {
           card={card}
           number={index + 1}
           parS={levelParS(card.id)}
+          scavenger={levelScavengerInfo(card.id)}
           onBack={toLevels}
           onChangeRover={() => toGarage({ kind: 'intro', levelId: card.id })}
           onStart={() => setScreen({ name: 'level', levelId: card.id })}
@@ -182,6 +186,8 @@ export function App() {
           speedUnit={progress.speedUnit}
           nextLevelId={next}
           onFinished={(r) => finishLevel(r.levelId, r)}
+          lastRun={lastRuns.current.get(levelId)}
+          onRunRecorded={(id, run) => lastRuns.current.set(id, run)}
           onNext={() => next && setScreen({ name: 'levelIntro', levelId: next })}
           onLevels={toLevels}
           onHome={toHome}

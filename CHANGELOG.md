@@ -6,6 +6,26 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R4: the Scavenger, the retry loop and the booster; 2026-10-22)
+- **The Scavenger** (SHOWCASE_PLAN §8, P5): level data `scavenger` (build, route, `startDelayS`); at level load the autopilot drives its honest run headless on the same physics (`game/level/scavenger.ts`, cached) and the scene plays it back (`render/scavengerGhost.ts`): a rusty, patched rover built from its own parts, solid at 8 m and further and 30% opaque at 4 m and closer, never collides, an edge marker while it is off screen, split gates with the gap on the HUD, its build and delay on the level card and as a start line, it stands at the part and blinks if you beat it. The third star is "beat the Scavenger" (the par time stays in levels with none). Crash Site's Scavenger is Standard chassis + Smooth wheels + Medium motor with a start delay of 4 s (ROADMAP OI-33).
+- **`game/level/autopilot.ts`**: the scripted driver of the level tests, moved into the game (`testPilot.ts` re-exports it); `allRoutes`, `onStep`.
+- **`npm run rival`** (`scripts/rival.ts`): all 27 builds over every route of every built level; the builds within +4% to +8% of the starting rover's clean best, with where each loses time and a proposal; `--level=<id>`, `--all`.
+- **The report compares with the Scavenger** (the strip's gaps are its stretch times; its result line replaces Par) and **names its build** for a grip or rolling-friction cause only. **Retry loop:** the end screen has Retry and Change one part; the next report adds "vs your last run", naming the parts that changed (`game/level/lastRun.ts`; kept in the App's memory, never saved).
+- **The booster** (§3a, P9, E47): Shift, once per attempt, 2500 N along the gear for up to 1.5 s (180 steps) through `step()`'s `externalForceN`, ending at top speed; a BOOST badge, a pop-up (Booster: 2500 N × 1.5 s = 3750 N·s of impulse), a card, an F = ma term and an arrow; `levels.json` `booster` and `scavenger`. Tests: the mud rescue (24 of 27 builds primed, 22 cold), T20 values, the stop at top speed (`booster.test.ts`).
+- Tests: `scavenger.test.ts`, `lastRun.test.ts`, `render/scavengerGhost.test.ts`, the Shift key and the controls text.
+- `docs/captures/showcase/r4-*`: screenshots of the demo loop.
+
+### Changed (Showcase R4)
+- `levelChecks.ts`: the starting build's best drive must beat the Scavenger when a level has one. `controlsText`: levels list the Shift key. The old rock/par wording of the report's result line is the Scavenger's time when there is one.
+- ROADMAP OI-31 partly fixed.
+
+### Fixed (Showcase R4)
+- The booster's check values in the Physics Model Specification and `showcase.csv` were 0.04 to 0.25 m too long (S0 ran 181 steps; the booster burns 180). ROADMAP OI-36.
+
+### Docs (Showcase R4)
+- ROADMAP: R4 built, Open issues OI-33 to OI-37; DECISIONS 2026-10-22 (R4); Physics Model Specification (11.4, T20, change-log row 19), `showcase.csv`, Architecture, Tech Stack; CLAUDE.md layout and commands; README.
+
+
 ### Added (Showcase R3: story frame, Crash Site, report stretches; 2026-10-22)
 - **Crash Site** (`levels/crash-site.json`): a start plain, a dune fork (sand against a ridge road), a 270° Ring 25–40 m wide round a crater with five boulders and a rock lip, and a climb; 3 samples, 4 checkpoints, about 90 s (90.8 s scripted with the starting build, par 105 s). `npm run maps` writes its picture. First Tracks and Ring Road are retired.
 - **Stretches** (P6): level data `stretches` (4–6 for Crash Site); the session records the time, entry and exit speed and the cause events of each (`game/level/stretches.ts`). `levels.json` gained `report` (`minGapS` 0.5, `minCauseS` 0.3).

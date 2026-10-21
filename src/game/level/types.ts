@@ -200,6 +200,26 @@ export interface StretchDef {
   cleanS: number;
 }
 
+/**
+ * The Scavenger (SHOWCASE_PLAN §8): an old robot rover that drives an honest run of this level at load, with its own build and route.
+ * Levels without one keep the v4 par time as the third star.
+ */
+export interface ScavengerDef {
+  /** Part ids, as in the garage. */
+  build: { chassisId: string; wheelsId: string; motorId: string };
+  /** The roads it drives, in order (each starting where the one before ends); the main route with a fork's road swapped. */
+  roads: string[];
+  /** Points its path passes through, if the roads alone are not enough. */
+  via?: PointM[];
+  /** The autopilot's bend margin (fraction of the safe bend speed). Default 0.9. */
+  bendMargin?: number;
+  /**
+   * `scavengerStartDelayS` (SHOWCASE_PLAN §8): the one tuning knob, shown to the student. 0 starts it beside you; positive: it starts
+   * that many seconds after you; negative: a head start. Its driving is never slowed in secret.
+   */
+  startDelayS: number;
+}
+
 export interface LevelDef {
   id: LevelId;
   name: string;
@@ -230,6 +250,8 @@ export interface LevelDef {
   finish: FinishDef;
   /** 4–6 named stretches for the report (P6), or none. */
   stretches: StretchDef[];
+  /** The rival (R4); left out: the third star is the par time. */
+  scavenger?: ScavengerDef;
   /** The smoking wreck beside the start (Crash Site): where the opening line stands. */
   wreck?: Pose;
 }

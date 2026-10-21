@@ -9,6 +9,11 @@
     "zM": 0,
     "headingDeg": 0
   },
+  "scavenger": {
+    "build": { "chassisId": "chassis-standard", "wheelsId": "wheels-smooth", "motorId": "motor-medium" },
+    "roads": ["start", "bend-1", "lead", "f1-dunes", "m1", "b2", "ring", "exit", "climb"],
+    "startDelayS": 4
+  },
   "wreck": {
     "xM": 17,
     "zM": 8.5,

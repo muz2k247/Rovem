@@ -9,13 +9,15 @@ export const LEVEL_KEYS = {
   /** Back to the last checkpoint. */
   respawn: KEY_BINDINGS.restart,
   pause: ['Escape'],
+  /** Fire the booster, once per level attempt (SHOWCASE_PLAN §3a). */
+  booster: ['ShiftLeft', 'ShiftRight'],
 } as const;
 
-export type LevelKeyAction = 'flipPole' | 'respawn' | 'pause';
+export type LevelKeyAction = 'flipPole' | 'respawn' | 'pause' | 'booster';
 
 /** What a key press asks of the level, if anything. Driving keys are not here: the key tracker reads them. */
 export function levelKeyAction(code: string): LevelKeyAction | undefined {
-  for (const action of ['flipPole', 'respawn', 'pause'] as const) {
+  for (const action of ['flipPole', 'respawn', 'pause', 'booster'] as const) {
     if ((LEVEL_KEYS[action] as readonly string[]).includes(code)) return action;
   }
   return undefined;

@@ -154,14 +154,14 @@ src/
                       demo: run.json, runChunks.json, runText.json (D2); v4: levels.json, garage.json (A2: corner radius, part sentences), levelText.json (the level cards' names, hooks and intro text, plus the in-level captions, hints and report text; merged in I1), levels/*.json
   game/               rules; contracts.ts (HudModel, ReportModel, ForceArrow; v4 P0); v4 A1: levelUnlock, forceLine, forces, pauseMenu, resetConfirm, controlsText; R2: popups (the pop-up text from the student's build), moments (the table of each element's sound, particles, camera and HUD effect), feedbackQueue (one pop-up or card at a time), driveFeedback, cardText
     run/              Endless Canyon (D3–D6, R2): rng, course (the named places, polygon zones), runSession, feedback, endlessHud, garageNumbers (the garage's five numbers), garageView, drift, sectionJump (the dev keys)
-    level/            v4 level engine (B2): session, world, report, arrows; levels.ts loads the six level files (Crash Site replaced First Tracks and Ring Road in R3); R3: stretches (time, speeds and cause events per stretch), stretchReport (the biggest loss or gain and its cause); ship.ts (recovered, open and locked ship parts); testPilot/levelPlans/levelChecks are test-only (B4)
-  render/             three.js scenes (run, level, garage), terrain, water, pylons, track, force arrows, rover model (nine part looks, A2); sounds (Web Audio); R2: groundBlend (the 1 m colour fringe, dips, ripples), runGround, runScenery (entry posts and each element's warning), placeLooks, bursts (particles)
+    level/            v4 level engine (B2): session, world, report, arrows; levels.ts loads the six level files (Crash Site replaced First Tracks and Ring Road in R3); R3: stretches (time, speeds and cause events per stretch), stretchReport (the biggest loss or gain and its cause); ship.ts (recovered, open and locked ship parts); R4: autopilot (the scripted driver, moved out of the tests), scavenger (the headless ghost run and its playback), lastRun ("vs your last run"; the session's memory of the last finished run); the booster is in session.ts and keys.ts; testPilot (re-exports the autopilot)/levelPlans/levelChecks are test-only (B4)
+  render/             three.js scenes (run, level, garage), terrain, water, pylons, track, force arrows, rover model (nine part looks, A2); sounds (Web Audio); R2: groundBlend (the 1 m colour fringe, dips, ripples), runGround, runScenery (entry posts and each element's warning), placeLooks, bursts (particles); R4: scavengerGhost (the rusty rover, its fade, the split gates)
   ui/                 React screens and dialogs; hud/ and report/ components (v4 A1, A3)
   save/               progress storage; demoProgress.ts (key rovem.demo.v1); settings.ts (rovem.settings.v1); levelProgress.ts (rovem.levels.v1)
   main.tsx
 tests/fixtures/       expected values, e.g. the 135 Simulation sheet results; the M4 step trace
 tests/helpers/        test-only helpers that load real content (kept out of src/physics/)
-scripts/              balance report over all 27 builds; maps.ts (a top-down SVG per level)
+scripts/              balance report over all 27 builds; maps.ts (a top-down SVG per level); rival.ts (the Scavenger's candidate builds, R4)
 supabase/             migrations and functions (accounts milestone only)
 CHANGELOG.md
 README.md
@@ -180,6 +180,7 @@ npm run typecheck   # tsc --noEmit
 npm run build       # typecheck, then production build into dist/
 npm run balance     # simulate all 27 builds against the mission limits (Node runs the .ts directly)
 npm run maps        # write a top-down SVG of every built level to docs/captures/maps/
+npm run rival       # all 27 builds over every route of every level; the builds near the Scavenger's target (+4% to +8%), with the proposed one (--level=<id>, --all)
 npm run preview     # serve the built dist/ (run npm run build first)
 ```
 

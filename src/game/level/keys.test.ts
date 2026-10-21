@@ -16,3 +16,10 @@ describe('level keys', () => {
     expect(KEY_BINDINGS.restart).toContain('KeyR');
   });
 });
+
+describe('the booster key (SHOWCASE_PLAN §3a)', () => {
+  it('Shift, either one, fires the booster', () => {
+    expect(levelKeyAction('ShiftLeft')).toBe('booster');
+    expect(levelKeyAction('ShiftRight')).toBe('booster');
+  });
+});

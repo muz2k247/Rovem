@@ -37,6 +37,18 @@ export function loadLevelDef(id: string, files: Partial<Record<LevelId, unknown>
   return def;
 }
 
+/** What the level card says about the Scavenger: the names of its three parts and its start delay; null if the level has none (R4). */
+export function levelScavengerInfo(id: string, files: Partial<Record<LevelId, unknown>> = LEVEL_FILES): { buildNames: string[]; delayS: number } | null {
+  try {
+    const sd = loadLevelDef(id, files).scavenger;
+    if (!sd) return null;
+    const nameOf = (partId: string) => content.parts.find((p) => p.id === partId)?.name ?? partId;
+    return { buildNames: [nameOf(sd.build.chassisId), nameOf(sd.build.wheelsId), nameOf(sd.build.motorId)], delayS: sd.startDelayS };
+  } catch {
+    return null;
+  }
+}
+
 /** The par time of a level in seconds (the third star), or null if the level has no file. */
 export function levelParS(id: string, files: Partial<Record<LevelId, unknown>> = LEVEL_FILES): number | null {
   try {

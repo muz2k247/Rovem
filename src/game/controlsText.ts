@@ -1,4 +1,5 @@
 import { KEY_BINDINGS } from './controls.ts';
+import { LEVEL_KEYS } from './level/keys.ts';
 
 // The controls as text (LEVELS_BUILD_PLAN A3), built from the one key mapping in controls.ts so a changed key
 // changes the text too.
@@ -10,6 +11,8 @@ const LABELS: Record<string, string> = {
   ArrowRight: '→',
   Escape: 'Esc',
   Space: 'Space',
+  ShiftLeft: 'Shift',
+  ShiftRight: 'Shift',
 };
 
 export function keyLabel(code: string): string {
@@ -34,7 +37,10 @@ export function controlsList(options: { levels?: boolean; extra?: readonly strin
     { keys: steer, does: 'Steer' },
     { keys: keyLabel('Escape'), does: 'Pause' },
   ];
-  if (options.levels) list.push({ keys: alternatives(KEY_BINDINGS.restart), does: 'Back to the last checkpoint' });
+  if (options.levels) {
+    list.push({ keys: alternatives(KEY_BINDINGS.restart), does: 'Back to the last checkpoint' });
+    list.push({ keys: keyLabel(LEVEL_KEYS.booster[0]), does: 'Booster: a big push, once per try' });
+  }
   for (const line of options.extra ?? []) {
     const [keys, does] = line.split(': ');
     if (keys && does) list.push({ keys, does });

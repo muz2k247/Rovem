@@ -9,7 +9,7 @@ import { createState, motionSign, step, type PhysicsState } from '../../physics/
 import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/types.ts';
 import { slopePullN } from '../../physics/ground.ts';
 import { floats, upthrustN, waterDragNsPerM } from '../../physics/water.ts';
-import { surfaceSpec } from '../buildFromParts.ts';
+import { surfaceSpec, type BuildSelection } from '../buildFromParts.ts';
 import type { ForceArrow, HudModel, MagnetPole, ReportModel } from '../contracts.ts';
 import { footprintOverlapsCircle, pointAlongPath } from '../geometry.ts';
 import {
@@ -18,7 +18,8 @@ import {
 import { selectArrows, worldDirection } from './arrows.ts';
 import { createCaptionQueue } from './captions.ts';
 import { createForceLine, type ForceTerm } from './forceLine.ts';
-import { buildLevelReport } from './report.ts';
+import { buildLevelReport, type LastRun } from './report.ts';
+import type { ScavengerRun } from './scavenger.ts';
 import { createStretchTracker, type StretchRecord, type StretchTracker } from './stretches.ts';
 import { fill, levelText, newtons, twoDecimals, type TokenValues } from './text.ts';
 import type { ForkLineDef, HintDef, LevelDef } from './types.ts';
@@ -70,10 +71,12 @@ export interface LevelSessionOptions {
    * checkpoints, fork results and the crash messages stay.
    */
   elementCaptions?: boolean;
+  /** The rival the student races (R4): the third star is to beat it, and the gates show the gap. Left out: the third star is the par time. */
+  scavenger?: ScavengerRun;
 }
 
 /** The captions an element's pop-up and card replace on screen (R2). The others (descent, rolling back, pressure, bend signs ...) stay. */
-const ELEMENT_CAPTION_IDS = /^(boost|surface-.+|gravity-.+|slip|slope-up|slide|water-in|float|magnet-attract|magnet-repel|hit-.+)$/;
+const ELEMENT_CAPTION_IDS = /^(boost|booster|surface-.+|gravity-.+|slip|slope-up|slide|water-in|float|magnet-attract|magnet-repel|hit-.+)$/;
 
 export type LevelPhase = 'driving' | 'respawning' | 'finished' | 'ended';
 export type RespawnCause = 'crash' | 'stuck' | 'floated' | 'manual';
@@ -81,7 +84,7 @@ export type WhatIfOutcome = 'merged' | 'wall' | 'barrier' | 'stuck' | 'floated' 
 
 export type LevelEventKind =
   | 'surface' | 'slip' | 'boost' | 'hit' | 'gravity' | 'slope' | 'descent' | 'rollback' | 'slide' | 'water' | 'float'
-  | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish';
+  | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish' | 'booster' | 'split';
 
 /** Something that happened, with the numbers that changed. Captions and the report are made from these. */
 export interface LevelEvent {
@@ -134,6 +137,12 @@ export interface LevelEvent {
   yourS?: number;
   otherS?: number;
   otherOutcome?: WhatIfOutcome;
+  /** A split or the finish against the Scavenger: your time minus its time there. Positive: you are behind. */
+  gapS?: number;
+  /** The stretch a split begins. */
+  stretchName?: string;
+  /** The booster: how long it can push for. */
+  durationS?: number;
 }
 
 export interface LevelResult {
@@ -141,6 +150,8 @@ export interface LevelResult {
   /** Beacon reached, all 3 samples, par time beaten (A2). */
   starFlags: [boolean, boolean, boolean];
   stars: 0 | 1 | 2 | 3;
+  /** Set when the level has a Scavenger: whether the student beat it (the third star) and when it reached the part, on the student's clock. */
+  scavenger?: { beaten: boolean; finishAtS: number };
 }
 
 interface Bag {
@@ -187,6 +198,8 @@ interface Snapshot {
   /** Pushes the rover along its gear: −m g sin θ (negative when the gear points uphill). */
   slopePushN: number;
   dragN: number;
+  /** The booster's push along the gear this step. */
+  boostN: number;
   upN: number;
   magnetAlongN: number;
   magnetVector: { x: number; z: number } | undefined;
@@ -213,6 +226,7 @@ export function createLevelSession(options: LevelSessionOptions) {
   const traceEvery = Math.round(SPEED_TRACE_STEP_S / dtS);
   const quiet = whatIf !== undefined; // a what-if drive keeps no captions, hints, samples or forks
   const elementCaptions = options.elementCaptions ?? true;
+  const scavenger = quiet ? undefined : options.scavenger;
 
   // Where each stretch after the first begins: the end of the route road it names, across the road and its run-off (P6).
   const stretchGates: ForkLineDef[] = def.stretches.map((st) => {
@@ -266,6 +280,11 @@ export function createLevelSession(options: LevelSessionOptions) {
   let releasedSinceS: number | undefined;
   let snap: Snapshot | undefined;
   let captionNow: HudModel['caption'] = null;
+  let boosterUsed = false;
+  /** Steps of push the booster has left (counted in whole steps, so 1.5 s is exactly 180 steps and no rounding adds one). */
+  let boosterStepsLeft = 0;
+  let splitNow: { text: string; behind: boolean } | undefined;
+  let splitUntilS = 0;
   let keys: LevelInput = { throttleHeld: false, brakeHeld: false, steer: 0 };
   const queue = createCaptionQueue({ minShowS: cfg.captions.minShowS, showS: cfg.rules.captionShowS });
   const forceLine = createForceLine();
@@ -290,7 +309,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     events.push(event);
     if (event.kind === 'scrape') tracker.addScrape((event.speedBeforeMps ?? 0) - (event.speedAfterMps ?? 0));
     else if (event.kind === 'respawn' && event.cause === 'crash') tracker.addCrash();
-    else if (event.kind === 'boost') tracker.addBoost();
+    else if (event.kind === 'boost' || event.kind === 'booster') tracker.addBoost();
     else if (event.kind === 'hit') tracker.addHit((event.speedAfterMps ?? 0) - (event.speedBeforeMps ?? 0));
     return event;
   }
@@ -572,12 +591,26 @@ export function createLevelSession(options: LevelSessionOptions) {
       modes.set(p.id, { mode: m.forceN >= cfg.rules.magnetCaptionMinN ? (attract ? 'attract' : 'repel') : 'none', forceN: m.forceN, distM });
     }
 
+    // The booster (§3a): a push along the gear that stops at top speed, so it can never make the rover faster than its motor allows.
+    // It goes in through the same outside-force input as the magnets; `step()` does not change.
+    const topMps = prev.direction === 'forward' ? rover.topSpeedMps : baseConstants.reverseTopSpeedFraction * rover.topSpeedMps;
+    let boostN = 0;
+    if (boosterStepsLeft > 0) {
+      if (prev.speedMps >= topMps && !prev.rollingBack) boosterStepsLeft = 0;
+      else {
+        boostN = cfg.booster.forceN;
+        boosterStepsLeft -= 1;
+      }
+    }
+
     // The student's pedals, then the physics step.
     const input = drive({ stepIndex, clockS: t, state: prev, travelRad });
     keys = input;
-    const next = step(prev, input, rover, surface, { ...baseConstants, gravityMps2: g }, alongN, {
+    const stepped = step(prev, input, rover, surface, { ...baseConstants, gravityMps2: g }, alongN + boostN, {
       slopeRad: slopeGear, upthrustN: upN, waterDragNsPerM: dragNsPerM,
     });
+    // The step that takes the speed past the top speed is cut back to it (the push is a rocket: it only gets the rover up to its motor's limit).
+    const next = boostN > 0 && !stepped.rollingBack && stepped.speedMps > topMps ? { ...stepped, speedMps: topMps } : stepped;
     const motion = motionSign(next.direction, next.rollingBack);
     // The way the rover travels compared with its gear: +1, or −1 while it rolls back. Forces and slopes are worked out along the gear, so this is the sign that turns them into "along the motion" (not `motion`, which is against the heading and is −1 in reverse gear too).
     const vsGear: 1 | -1 = next.rollingBack ? -1 : 1;
@@ -633,8 +666,16 @@ export function createLevelSession(options: LevelSessionOptions) {
       const nextStretch = tracker.current + 1;
       if (nextStretch < stretchGates.length && crossedForkLine(stretchGates[nextStretch]!, { x: prev.positionXM, z: prev.positionZM }, front)) {
         tracker.enter(nextStretch, t, state.speedMps);
+        const gateS = scavenger?.gateS(nextStretch);
+        if (scavenger && gateS !== null && gateS !== undefined) {
+          const gapS = t - (scavenger.delayS + gateS);
+          const stretchName = def.stretches[nextStretch]!.name;
+          emit({ kind: 'split', gapS, stretchName });
+          splitNow = { text: splitText(gapS), behind: gapS > 0 };
+          splitUntilS = t + cfg.scavenger.splitShowS;
+        }
       }
-      if ((next.slipping && !floating) || sliding) tracker.addGripLimit(dtS, q.gripLimitN);
+      if ((next.slipping && !floating) || sliding) tracker.addGripLimit(dtS, q.gripLimitN, surfaceId);
       if (state.rollingBack) tracker.addRollingBack(dtS);
       const underId = world.surfaceIdAt(front.x, front.z);
       tracker.addSurface(underId, dtS, underId === 'asphalt' ? undefined : () => {
@@ -700,11 +741,16 @@ export function createLevelSession(options: LevelSessionOptions) {
 
     // The beacon.
     if (footprintOverlapsCircle(front.x, front.z, state.headingRad, footprint.lengthM, footprint.widthM, def.finish.xM, def.finish.zM, def.finish.radiusM) && !whatIf) {
-      const flags: [boolean, boolean, boolean] = [true, collected.length === def.samples.length, t <= def.parS];
-      result = { timeS: t, starFlags: flags, stars: flags.filter(Boolean).length as 0 | 1 | 2 | 3 };
+      // The third star: beat the Scavenger (it reaches the part at `finishAtS` on this clock), or, in a level with none, the par time.
+      const beaten = scavenger ? t < scavenger.finishAtS : t <= def.parS;
+      const flags: [boolean, boolean, boolean] = [true, collected.length === def.samples.length, beaten];
+      result = {
+        timeS: t, starFlags: flags, stars: flags.filter(Boolean).length as 0 | 1 | 2 | 3,
+        ...(scavenger ? { scavenger: { beaten, finishAtS: scavenger.finishAtS } } : {}),
+      };
       phase = 'finished';
       tracker.finish(t, state.speedMps);
-      emit({ kind: 'finish' });
+      emit({ kind: 'finish', ...(scavenger ? { gapS: t - scavenger.finishAtS } : {}) });
       return;
     }
 
@@ -826,7 +872,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     const gripN = q.gripLimitN;
     snap = {
       gearRad: gear, vsGear, gMps2: g, normalN: q.normalForceN, frictionN: q.rollingForceN, gripN, driveN: next.driveForceN, brakeN: next.brakeForceN,
-      slopeGearRad: slopeGear, slopePushN: -slopePullN(rover.massKg, g, slopeGear), dragN: dragNsPerM * prev.speedMps, upN,
+      slopeGearRad: slopeGear, slopePushN: -slopePullN(rover.massKg, g, slopeGear), dragN: dragNsPerM * prev.speedMps, boostN, upN,
       magnetAlongN: alongN,
       magnetVector: alongN !== 0 || sideN !== 0
         ? { x: alongN * Math.cos(gear) - sideN * Math.sin(gear), z: alongN * Math.sin(gear) + sideN * Math.cos(gear) }
@@ -845,6 +891,18 @@ export function createLevelSession(options: LevelSessionOptions) {
 
   let forceLineText: string | null = null;
 
+  /** "+0.42 s behind the Scavenger" / "0.42 s ahead of the Scavenger" (levelText.json → split). */
+  function splitText(gapS: number): string {
+    const t = gapS > 0 ? levelText.split.behind : levelText.split.ahead;
+    return fill(t, { gapS: twoDecimals(Math.abs(gapS)) });
+  }
+
+  /** What the Scavenger's build has on flat rock and on each surface, for the report's build causes. */
+  function scavengerQuantities(run: ScavengerRun) {
+    const on = (surfaceId: string) => buildQuantities(run.rover, specs.get(surfaceId)!, { gravityMps2: baseConstants.gravityMps2 }, { slopeRad: 0, upthrustN: 0 });
+    return { gripN: (surfaceId: string) => on(surfaceId).gripLimitN, rollingN: (surfaceId: string) => on(surfaceId).rollingForceN };
+  }
+
   /** The forces along the path, signed along the motion (positive speeds the rover up). */
   function forceTerms(s: Snapshot): ForceTerm[] {
     const along = s.vsGear;
@@ -855,6 +913,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     if (s.slopePushN !== 0) terms.push({ name: 'Slope pull', forceN: along * s.slopePushN });
     if (s.dragN > 0) terms.push({ name: 'Water drag', forceN: -s.dragN });
     if (s.magnetAlongN !== 0) terms.push({ name: 'Magnet', forceN: along * s.magnetAlongN });
+    if (s.boostN !== 0) terms.push({ name: 'Booster', forceN: along * s.boostN });
     return terms;
   }
 
@@ -952,6 +1011,7 @@ export function createLevelSession(options: LevelSessionOptions) {
         extraLabel: `tyres give up to ${newtons(s.gripN)} N`,
       });
     }
+    if (s.boostN > 0) out.push({ kind: 'impulse', forceN: s.boostN, directionWorld: worldDirection(s.gearRad), extraLabel: 'booster' });
     if (s.upN > 0) out.push({ kind: 'upthrust', forceN: s.upN, directionWorld: { x: 0, y: 1, z: 0 } });
     if (s.inWater && s.dragN > 0) out.push({ kind: 'drag', forceN: s.dragN, directionWorld: travelDir(-1) });
     if (s.magnetVector) {
@@ -976,6 +1036,8 @@ export function createLevelSession(options: LevelSessionOptions) {
       caption: captionNow,
       forceLine: phase === 'driving' ? forceLineText : null,
       forces: actingForces(),
+      ...(quiet ? {} : { booster: { state: boosterStepsLeft > 0 ? ('firing' as const) : boosterUsed ? ('used' as const) : ('ready' as const), leftS: boosterStepsLeft * dtS } }),
+      ...(splitNow && clockS() < splitUntilS ? { split: splitNow } : {}),
     };
   }
 
@@ -1000,6 +1062,10 @@ export function createLevelSession(options: LevelSessionOptions) {
     forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), startSpeedMps: 0, done: false }]));
     hints = def.hints.map((h) => ({ def: h, shown: false, done: false }));
     deepShown = false;
+    boosterUsed = false;
+    boosterStepsLeft = 0;
+    splitNow = undefined;
+    splitUntilS = 0;
     tracker = createStretchTracker(quiet ? [] : def.stretches);
     tracker.start(0);
     placeAt(def.start);
@@ -1087,6 +1153,30 @@ export function createLevelSession(options: LevelSessionOptions) {
       emit({ kind: 'pole', pole });
       say('pole', { pole });
     },
+    /**
+     * Shift: fire the booster (§3a). One use per attempt: a restart refills it, a return to a checkpoint does not. Returns whether it fired.
+     * It pushes with `booster.forceN` along the gear for up to `booster.maxDurationS`, and stops early at top speed.
+     */
+    fireBooster(): boolean {
+      if (phase !== 'driving' || quiet || boosterUsed) return false;
+      boosterUsed = true;
+      boosterStepsLeft = Math.round(cfg.booster.maxDurationS / dtS);
+      emit({ kind: 'booster', forceN: cfg.booster.forceN, durationS: cfg.booster.maxDurationS, impulseNs: cfg.booster.forceN * cfg.booster.maxDurationS, massKg: rover.massKg });
+      say('booster', { forceN: newtons(cfg.booster.forceN), durationS: cfg.booster.maxDurationS, impulseNs: newtons(cfg.booster.forceN * cfg.booster.maxDurationS) });
+      return true;
+    },
+    /** Has the booster been fired in this attempt? */
+    get boosterUsed(): boolean {
+      return boosterUsed;
+    },
+    /** Where each stretch after the first begins (the split gates): the line the rover's front crosses. */
+    get splitGates(): readonly ForkLineDef[] {
+      return stretchGates.slice(1);
+    },
+    /** The rival of this attempt, if the level has one. */
+    get scavenger(): ScavengerRun | undefined {
+      return scavenger;
+    },
     /** R: back to the last checkpoint at once. The clock keeps running. */
     requestRespawn(): void {
       if (phase === 'driving') manualRespawn = true;
@@ -1097,14 +1187,23 @@ export function createLevelSession(options: LevelSessionOptions) {
       lastCheckpoint = Math.max(-1, Math.min(def.checkpoints.length - 1, index));
       respawnNow('manual');
     },
-    report(): ReportModel {
+    /** The report. `ctx` gives the build driven and the last finished run of this level in this session, for "vs your last run" (never saved). */
+    report(ctx: { build?: BuildSelection; last?: LastRun } = {}): ReportModel {
       const flat = buildQuantities(rover, specs.get('asphalt')!, { gravityMps2: baseConstants.gravityMps2 }, { slopeRad: 0, upthrustN: 0 });
       return buildLevelReport({
         def, rover, result, events, trace, clockS: clockS(), text: levelText, stretches: tracker.records(clockS()), content,
         partValues: { grip: newtons(flat.gripLimitN) },
+        ...(scavenger ? { scavenger, scavengerQuantities: scavengerQuantities(scavenger) } : {}),
+        ...(ctx.build ? { build: ctx.build } : {}),
+        ...(ctx.last ? { last: ctx.last } : {}),
       });
     },
     stepOnce: onStep,
+    /** Your finished times per stretch and the build, for the next report's "vs your last run". */
+    lastRunRecord(build: BuildSelection): LastRun | undefined {
+      if (!result) return undefined;
+      return { build, totalS: result.timeS, stretches: tracker.records(clockS()).map((r) => ({ id: r.id, name: r.name, timeS: r.timeS })) };
+    },
     /** Runs the steps that fit in one frame. Returns how many ran. */
     advanceFrame: (frameS: number) => loop.advance(frameS),
     reset: init,

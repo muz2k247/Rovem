@@ -17,6 +17,7 @@ import { createRoverModel, wheelTurnRad, type RoverLook } from './roverModel.ts'
 import { createTerrain, groundOffsetOf, SURFACE_COLOURS } from './terrain.ts';
 import { createTrack } from './track.ts';
 import { createWreck, type Wreck } from './wreck.ts';
+import { createScavengerGhost, createSplitGates, type ScavengerGhost } from './scavengerGhost.ts';
 import { createCameraBlend } from './runScene.ts';
 import { createSplashes, createWater, roverRideHeightM, waterBedDropM } from './water.ts';
 
@@ -66,6 +67,10 @@ export interface LevelScene {
   readonly burstCount: number;
   /** The scene's part of a moment (SHOWCASE_PLAN §10): a burst of particles at the rover and a camera cue. */
   cue(moment: { particles?: MomentParticles; camera?: MomentCamera }): void;
+  /** Where the Scavenger's edge marker points (three.js coordinates) and how far it is from the rover; undefined where the level has no Scavenger. */
+  scavengerMarker(): { position: THREE.Vector3; distanceM: number } | undefined;
+  /** Opacity of the Scavenger right now (1 when there is none). */
+  readonly scavengerOpacity: number;
   /** Developer tool (`?dev=1`): a camera straight above the rover, x to the right and z up the picture, `heightM` above the ground. */
   setTopDown(on: boolean, heightM?: number): void;
   /** Developer tool (`?dev=1`): outlines of the zones the physics uses. */
@@ -113,6 +118,12 @@ export function createLevelScene(session: LevelSession, content: Content, option
     o.castShadow = quality === 'high';
   });
   scene.add(rover);
+
+  // The Scavenger and the split gates, in a level that has a Scavenger.
+  const ghost: ScavengerGhost | undefined = session.scavenger ? createScavengerGhost(session.scavenger, world, quality) : undefined;
+  if (ghost) scene.add(ghost.group);
+  const gates = session.scavenger ? createSplitGates(world, session.splitGates) : undefined;
+  if (gates) scene.add(gates);
 
   const arrows = createForceArrows();
   scene.add(arrows.group);
@@ -183,6 +194,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
     });
     water?.update(clockS);
     wreck?.update(clockS);
+    ghost?.update({ clockS: s.clockS, frameS, playerFrontXM: pose.frontXM, playerFrontZM: pose.frontZM, beaten: s.result?.scavenger?.beaten === true });
     const inWater = pose.waterDepthM > 0;
     splashes?.update(frameS, {
       xM: pose.frontXM, yM: rideY + (s.floating ? 0.45 : world.heightM(pose.centreXM, pose.centreZM) - rideY), zM: pose.frontZM,
@@ -250,6 +262,10 @@ export function createLevelScene(session: LevelSession, content: Content, option
     get burstCount() {
       return bursts.liveCount;
     },
+    scavengerMarker: () => (ghost ? ghost.marker() : undefined),
+    get scavengerOpacity() {
+      return ghost ? ghost.opacity : 1;
+    },
     cue(moment) {
       const p = lastPose;
       const fx = Math.cos(p.headingRad);
@@ -293,6 +309,11 @@ export function createLevelScene(session: LevelSession, content: Content, option
         scene.remove(wreck.group);
         wreck.dispose();
       }
+      if (ghost) {
+        scene.remove(ghost.group);
+        ghost.dispose();
+      }
+      if (gates) scene.remove(gates);
       terrain.dispose();
       track.dispose();
       landmarks.dispose();

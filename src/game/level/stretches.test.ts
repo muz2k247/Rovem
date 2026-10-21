@@ -50,7 +50,7 @@ describe('stretch tracker (P6)', () => {
     const t = createStretchTracker(defs);
     t.start(0);
     t.addGripLimit(0.25, 1300);
-    t.addGripLimit(0.25, 1310);
+    t.addGripLimit(0.25, 1310, 'sand');
     t.addRollingBack(0.5);
     t.addScrape(2.5);
     t.addScrape(1);
@@ -61,6 +61,7 @@ describe('stretch tracker (P6)', () => {
     const c = t.records(2)[0]!.causes;
     expect(c.gripLimitS).toBe(0.5);
     expect(c.gripLimitN).toBe(1310);
+    expect(c.gripSurfaceId).toBe('sand'); // the ground of the last moment counted
     expect(c.rollingBackS).toBe(0.5);
     expect(c.scrapes).toBe(2);
     expect(c.scrapeSpeedLostMps).toBe(3.5);

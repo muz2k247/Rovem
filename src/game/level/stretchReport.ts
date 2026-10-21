@@ -10,9 +10,9 @@ import { fill, newtons, twoDecimals, type StretchText } from './text.ts';
 // 1. The headline is your biggest loss, or your biggest gain if you won everywhere.
 // 2. The "why" names only a cause the session recorded in that stretch, with at most two numbers from your run. A crash says
 //    "You hit a boulder: back to the checkpoint" and never blames the parts.
-// 3. The Scavenger's build is mentioned only for build causes (R4 adds that; until then the comparison is a clean drive).
+// 3. The Scavenger's build is mentioned only for build causes: grip and rolling friction.
 // 4. One "try" line.
-// ("vs your last run" is R4.)
+// ("vs your last run" is `lastRun.ts`.)
 
 export interface StretchReportInput {
   levelId: string;
@@ -26,6 +26,8 @@ export interface StretchReportInput {
   minCauseS: number;
   /** The garage parts the "try" line may offer (see `suggestParts`). */
   suggest: PartSuggestions;
+  /** The Scavenger's wheels, for a build cause (grip or rolling friction) and for no other (SHOWCASE_PLAN §9 rule 3). */
+  rival?: { wheelsName: string; gripN: (surfaceId: string) => number; rollingN: (surfaceId: string) => number };
 }
 
 export interface PartSuggestions {
@@ -86,7 +88,7 @@ export function explainStretches(input: StretchReportInput): StretchReport | und
       explanation: {
         stretchId: r.id,
         headline: fill(text.headlineLoss, { lostS: twoDecimals(-worst.s.gainS), name: r.name }),
-        why: fill(text.why[key]!, cause.values),
+        why: fill(text.why[key]!, cause.values) + rivalNote(input, key, cause.values),
       },
       tryThis: { text: text.try[key]!, action: actionFor(key, input.suggest) },
     };
@@ -116,13 +118,22 @@ function actionFor(key: CauseKey, suggest: PartSuggestions): TryThisAction {
   return retry;
 }
 
+/** The Scavenger's build, said once, and only after a grip or a rolling-friction cause. */
+function rivalNote(input: StretchReportInput, key: CauseKey, values: Record<string, string | number>): string {
+  const rival = input.rival;
+  if (!rival) return '';
+  if (key === 'grip') return ` ${fill(input.text.why.gripRival!, { wheels: rival.wheelsName, theirN: newtons(rival.gripN(String(values.gripSurfaceId))) })}`;
+  if (key === 'surface') return ` ${fill(input.text.why.surfaceRival!, { wheels: rival.wheelsName, theirN: newtons(rival.rollingN(String(values.surfaceId))) })}`;
+  return '';
+}
+
 /** The first cause, in this order, that the session recorded in the stretch. A crash comes first and is never put down to the parts. */
 function pickCause(input: StretchReportInput, r: StretchRecord, next: StretchRecord | undefined): { key: CauseKey; values: Record<string, string | number> } {
   const { text, minCauseS } = input;
   const c = r.causes;
   if (c.crashes > 0) return { key: 'crash', values: { obstacle: text.obstacles[input.levelId] ?? text.obstacles.default! } };
   if (c.hits > 0 && c.hitSpeedChangeMps < 0) return { key: 'hit', values: { lostMps: twoDecimals(-c.hitSpeedChangeMps) } };
-  if (c.gripLimitS >= minCauseS) return { key: 'grip', values: { gripS: twoDecimals(c.gripLimitS), gripN: newtons(c.gripLimitN) } };
+  if (c.gripLimitS >= minCauseS) return { key: 'grip', values: { gripS: twoDecimals(c.gripLimitS), gripN: newtons(c.gripLimitN), gripSurfaceId: c.gripSurfaceId ?? 'asphalt' } };
   if (c.scrapes > 0) return { key: 'scrape', values: { n: c.scrapes, lostMps: twoDecimals(c.scrapeSpeedLostMps) } };
   if (c.rollingBackS >= minCauseS) return { key: 'rollback', values: { rollS: twoDecimals(c.rollingBackS) } };
   const soft = Object.entries(c.surfaceS)
@@ -131,7 +142,7 @@ function pickCause(input: StretchReportInput, r: StretchRecord, next: StretchRec
   if (soft) {
     const [id, s] = soft;
     const info = c.surfaceInfo[id]!;
-    return { key: 'surface', values: { surfaceS: twoDecimals(s), surface: text.surfaces[id] ?? id, frictionN: newtons(info.frictionN), rockN: newtons(info.rockN) } };
+    return { key: 'surface', values: { surfaceId: id, surfaceS: twoDecimals(s), surface: text.surfaces[id] ?? id, frictionN: newtons(info.frictionN), rockN: newtons(info.rockN) } };
   }
   const from = r.enteredAtS ?? 0;
   const to = next?.enteredAtS ?? Infinity;

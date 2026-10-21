@@ -4,7 +4,7 @@ import type { PopupElement } from './popups.ts';
 
 // "Every event has its moment" (SHOWCASE_PLAN §10, R2): a sound, and at least one more thing the student sees or feels.
 
-const ELEMENTS: PopupElement[] = ['sand', 'mud', 'ice', 'bend', 'vent', 'launcher', 'cave', 'slope', 'water', 'magnet', 'scrape', 'crash', 'slip', 'topSpeed'];
+const ELEMENTS: PopupElement[] = ['sand', 'mud', 'ice', 'bend', 'vent', 'launcher', 'cave', 'slope', 'water', 'magnet', 'scrape', 'crash', 'slip', 'topSpeed', 'booster'];
 /** The rows of the §10 table that name a sound. Slope is "slowing; rolling back" and has none. */
 const WITH_SOUND = ELEMENTS.filter((e) => !['slope', 'topSpeed'].includes(e));
 

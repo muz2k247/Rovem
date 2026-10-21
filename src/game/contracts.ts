@@ -59,6 +59,10 @@ export interface HudModel {
   /** The F = ma line, or null while the speed is not changing (A4). */
   forceLine: string | null;
   forces: ForceArrow[];
+  /** The booster's pip (R4, SHOWCASE_PLAN §3a): ready, firing (with the time left) or used. Absent where there is no booster. */
+  booster?: { state: 'ready' | 'firing' | 'used'; leftS: number };
+  /** The gap to the Scavenger, shown for a few seconds after a split gate (R4). */
+  split?: { text: string; behind: boolean };
 }
 
 export type StarCount = 0 | 1 | 2 | 3;
@@ -68,9 +72,11 @@ export type ReportResult =
       kind: 'level';
       timeS: number;
       stars: StarCount;
-      /** Reach the beacon, collect all 3 samples, beat the par time (A2, revised 2026-10-18). */
+      /** Reach the part, collect all 3 samples, beat the Scavenger (R4; a level with no Scavenger still has the par time, A2). */
       starFlags: [boolean, boolean, boolean];
       parS: number;
+      /** When the Scavenger reached the part, on the student's clock; absent in a level with none. */
+      scavengerS?: number;
     }
   | { kind: 'endless'; distanceM: number };
 
@@ -124,6 +130,14 @@ export interface PartPickup {
   line: string;
 }
 
+/** "vs your last run" (SHOWCASE_PLAN §9 rule 5): the parts that changed and the stretches that moved most. Kept for the session, never saved. */
+export interface VersusLast {
+  /** Display names of what changed, e.g. "wheels (Smooth wheels → Spiked wheels)"; empty if nothing did. */
+  changed: string[];
+  /** The whole line. */
+  line: string;
+}
+
 export interface ReportModel {
   result: ReportResult;
   speedTrace: SpeedSample[];
@@ -135,6 +149,8 @@ export interface ReportModel {
   explanation?: StretchExplanation;
   /** Added in R3: the ship part this level brings home, once the level is finished. */
   pickup?: PartPickup;
+  /** Added in R4: how this run compares with the last finished run of the level in this session, naming the parts that changed. */
+  versusLast?: VersusLast;
 }
 
 /** One row of the Levels screen (A3). */

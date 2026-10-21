@@ -25,6 +25,7 @@
 | 15 | Power-ups moved to Superseded | Not in the game | E21, DECISIONS 2026-10-17 |
 | 16 | New tests T11–T20 with hand arithmetic, recomputed on 2026-10-21 | Every new rule needs a test | E27–E34, E45–E47 |
 | 17 | New section "Open questions": the landing step, the held-brake hold force, code that still carries the tow input | Found while writing | S0 |
+| 19 | 11.4 and T20: the booster is Built (R4, 2026-10-22). The check distances are recomputed for a burn of exactly 180 steps (1.5 s): S0 had run 181 steps, so its distances were 0.04 to 0.25 m too long. The counts (24 primed, 22 cold) are unchanged | Session R4 | E47, `src/game/level/session.ts`, `booster.test.ts` |
 | 18 | 11.2: the edge rule is Built (R1, 2026-10-21): walls scrape in levels and Endless, barriers crash or end the run. Added what happens when no place against the wall is found. T19 is Built | Session R1 | E46, `src/physics/collision.ts` |
 
 ## 1 Constants and units
@@ -161,9 +162,9 @@ The footprint is 2 m long by 1.7 m wide, its front edge centred on the physics p
 
 **Open for R6 (S0 found it, did not decide it).** E45's test values are the exact kinematic ones. Taking the landing at the end of the first 1/120 s step with y ≤ 0 gives 102 steps = 0.8500 s and 13.137 m at g = 9.8, and 203 steps = 1.6917 s and 26.144 m at g = 4.9, not the exact 0.84512 s and 13.061 m. To make the test values exact, the landing step must be split at the exact landing time t_land = 2 v_y ÷ g, as `step()` already splits at v_max and at 0. This document assumes the split. k._muz or the R6 session should confirm.
 
-### 11.4 Booster (E47; Planned, session R4)
+### 11.4 Booster (E47; Built, session R4, 2026-10-22)
 
-Once per level attempt the student may fire a booster (key Shift). While it burns, an outside force F_boost = 2500 N acts along the gear, passed to `step()` as part of `externalForceN` together with any magnet force, for at most 1.5 s. It is not limited by grip, because it does not act through the tyres. It stops at the end of the step in which the speed reaches the top speed in the current direction, so it cannot make a rover faster than its motor allows. It works on the ground and in water, not in the air. Restarting the level refills it; returning to a checkpoint does not. The impulse delivered is F_boost × burn time, at most 3750 N·s. Endless has no booster. (E47 called the force F_b; it is renamed here because F_b is the brake force.)
+Once per level attempt the student may fire a booster (key Shift). While it burns, an outside force F_boost = 2500 N acts along the gear, passed to `step()` as part of `externalForceN` together with any magnet force, for at most 1.5 s. It is not limited by grip, because it does not act through the tyres. It stops at the end of the step in which the speed reaches the top speed in the current direction (built: the step that would pass the top speed is cut back to it, and the booster ends), so it cannot make a rover faster than its motor allows. The burn is counted in whole steps: 1.5 s is 180 steps at 1/120 s. It works on the ground and in water, not in the air. Restarting the level refills it; returning to a checkpoint does not. The impulse delivered is F_boost × burn time, at most 3750 N·s. Endless has no booster. (E47 called the force F_b; it is renamed here because F_b is the brake force.)
 
 ## 12 Measurement for the sheet regression only
 
@@ -202,7 +203,7 @@ Tests T1–T9 and T11–T20 compare the code with hand calculations at a relativ
 | T17 Magnet and bend | d = 8 m; bends of 12, 25, 30, 40 m | 625 N; safe speeds 9.70, 14.00, 15.34, 17.71 m/s (E34) | Built |
 | T18 Jump | v = 16 m/s, φ = 15°, landing at take-off height | g = 9.8: 0.84512 s, 0.87494 m, 13.061 m; g = 4.9: 1.69025 s, 1.74987 m, 26.122 m (E45) | Planned (R6) |
 | T19 Edge | 12 m/s into an edge | α = 30° → 10.392 m/s; 60° → 6.000; 90° → 0 (E46) | Built (`src/physics/collision.test.ts`, R1) |
-| T20 Booster | Starting build at rest in mud, primed, booster on | a = 10.8664 m/s². Heavy + All-terrain + Small (259 kg) leaves a 12 m patch; Heavy + Spiked + Small (267 kg) does not; 24 of 27 builds leave it when primed, 22 when cold (E47) | Planned (R4) |
+| T20 Booster | Starting build at rest in mud, primed, booster on | a = 10.8664 m/s². Heavy + All-terrain + Small (259 kg) leaves a 12 m patch; Heavy + Spiked + Small (267 kg) does not; 24 of 27 builds leave it when primed, 22 when cold (E47) | Built (R4) |
 
 ### Hand arithmetic (recomputed 2026-10-21)
 
@@ -221,14 +222,14 @@ T5: v = 4.588688995 × 1 s; x = ½ × 4.588688995 × 1² = 2.294344498. T6: a = 
 **T17.** 1600 × (5 ÷ 8)² = 1600 × 0.390625 = 625. Safe speed √(0.8 × 1 × 9.8 × r): r = 12 → √94.08 = 9.70; 25 → √196 = 14.00; 30 → √235.2 = 15.34; 40 → √313.6 = 17.71.
 **T18.** sin 15° = 0.2588190, cos 15° = 0.9659258. v_y = 16 × 0.2588190 = 4.141105; v_h = 16 × 0.9659258 = 15.454813. g = 9.8: T = 2 × 4.141105 ÷ 9.8 = 0.845123; h = 4.141105² ÷ (2 × 9.8) = 17.148 ÷ 19.6 = 0.874936; length = 15.454813 × 0.845123 = 13.0612 (also v² sin 2φ ÷ g = 256 × 0.5 ÷ 9.8 = 13.0612). g = 4.9: T = 1.690247; h = 1.749872; length = 26.1224.
 **T19.** 12 cos 30° = 12 × 0.8660254 = 10.3923; 12 cos 60° = 6.0000; 12 cos 90° = 0.
-**T20.** Mud F_r = 0.6 × 2048.2 = 1228.92; F_lim = 0.5 × 2048.2 = 1024.1, above 1000. a = (2500 + 1000 − 1228.92) ÷ 209 = 2271.08 ÷ 209 = 10.8664. Heavy + All-terrain + Small: m = 220 + 24 + 15 = 259, F_r = 0.6 × 2538.2 = 1522.92, booster plus drive 3200 N, it travels 22.38 m before stopping if the mud never ended. Heavy + Spiked + Small: m = 267, F_r = 0.6 × 1.6 × 2616.6 = 2511.94, booster plus drive 3200 N, it stops at 4.04 m. The 24-of-27 and 22-of-27 counts come from running the real `step()` over all 27 builds (primed: throttle level 1 when fired; cold: 0). The plan's figures (24 of 27, about 22 m) are the primed case.
+**T20.** Mud F_r = 0.6 × 2048.2 = 1228.92; F_lim = 0.5 × 2048.2 = 1024.1, above 1000. a = (2500 + 1000 − 1228.92) ÷ 209 = 2271.08 ÷ 209 = 10.8664. Heavy + All-terrain + Small: m = 220 + 24 + 15 = 259, F_r = 0.6 × 2538.2 = 1522.92, booster plus drive 3200 N, it travels 22.13 m before stopping if the mud never ended. Heavy + Spiked + Small: m = 267, F_r = 0.6 × 1.6 × 2616.6 = 2511.94, booster plus drive 3200 N, it stops at 4.00 m. The 24-of-27 and 22-of-27 counts come from running the real `step()` over all 27 builds (primed: throttle level 1 when fired; cold: 0). The plan's figures (24 of 27, about 22 m) are the primed case.
 
 ## 14 Open questions
 
 1. **The landing step** (section 11.3): split at the exact landing time, or end-of-step. Decide in R6.
 2. **The held-brake hold force** (section 6): kept as built; k._muz to rule (DECISIONS 2026-10-19 I1).
 3. **Code that still carries the tow.** `step()` still accepts the `towed` input and returns the state "Cruising" (tested in `step.test.ts`), although no game rule uses it. The spec lists them only in Superseded. Whether to delete them is a code change for a later session.
-4. **The booster test counts** depend on whether the throttle is primed (section 13, T20). The R4 session should test both.
+4. **The booster test counts** depend on whether the throttle is primed (section 13, T20). R4 tests both (`booster.test.ts`): 24 primed, 22 cold.
 
 ---
 

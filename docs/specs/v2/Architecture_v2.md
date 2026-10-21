@@ -14,6 +14,7 @@
 | Planned modules added: `physics/air.ts`, `physics/collision.ts`, the autopilot, the Scavenger ghost, report stretches, the booster, `npm run maps` and `npm run rival` | Showcase sessions R1–R8 | SHOWCASE_PLAN Parts 3–5 |
 | R1 (2026-10-21) built `physics/collision.ts`, `npm run maps`, `game/level/mapSvg.ts`, `game/level/devKeys.ts` and `render/devOverlay.ts`; the stop lines are gone (a fork has a drive-through `line`) | Session R1 | SHOWCASE_PLAN §4, §5, §13 |
 | R2 (2026-10-21) built the Endless places (`game/run/course.ts` with polygon zones, `sectionJump.ts`), the pop-up, card and moment modules (`game/popups.ts`, `feedbackQueue.ts`, `moments.ts`, `driveFeedback.ts`, `cardText.ts`) and the ground and scenery modules (`render/groundBlend.ts`, `runGround.ts`, `runScenery.ts`, `placeLooks.ts`, `bursts.ts`); `game/captionQueue.ts` and the Endless caption feed were removed | Session R2 | SHOWCASE_PLAN §10, §11, §12, P3 |
+| R4 (2026-10-22) built `game/level/autopilot.ts` (moved out of `testPilot.ts`), `scavenger.ts` (the headless ghost run, its playback and gate times), `lastRun.ts` ("vs your last run"), the booster in `session.ts` and `keys.ts`, `render/scavengerGhost.ts` (the rusty rover, its fade and the split gates) and `scripts/rival.ts`; level data `scavenger`; `levels.json` `booster` and `scavenger` | Session R4 | SHOWCASE_PLAN §3a, §8, §9, P5, P9 |
 | Real dependency check: one two-way link between `game/` and `save/` (types), found while checking | Say what is true | S0, section 4 |
 
 ## 1 The big picture
@@ -39,8 +40,8 @@ flowchart TB
     end
     air["physics/air.ts jumps (planned R6)"]
     coll["physics/collision.ts walls scrape"]
-    auto["game/level/autopilot.ts the Scavenger's driver (planned R4)"]
-    ghost["Scavenger ghost, report stretches, booster (planned R3-R4)"]
+    auto["game/level/autopilot.ts the Scavenger's driver (R4)"]
+    ghost["Scavenger ghost, report stretches, booster (R3-R4)"]
   end
   web["Web server: Nginx sends the game files (decided, not done)"]
   cloud["Cloud: accounts and sync on Supabase (future M12)"]
@@ -86,7 +87,7 @@ flowchart TB
         |     game/level/  the level engine   |
         |     game/run/    the Endless run    |
         |     [autopilot, Scavenger ghost,    |
-        |      report stretches, booster]     |   <- planned R3-R4
+        |      report stretches, booster]     |   <- R3-R4, built
         +--------+------------+---------+-----+
                  |            |         |
         +--------v---+  +-----v-----+ +-v--------+
@@ -127,20 +128,20 @@ flowchart TB
 *Planned:* `air.ts` (jumps, R6).
 
 **`src/content/`** (Built): `parts.json`, `surfaces.json`, `constants.json`, `levels.json` (shared Game v4 values), `levels/*.json` (`crash-site.json` and the other Game v4 level files, and `testCourse.json`; First Tracks and Ring Road were retired in R3), `levelText.json` (level cards, captions, report words), `run.json`, `runChunks.json` (the Endless places: sections with polygon zones, an entry post and a line), `runText.json` (Endless), `garage.json`, `missions.json` and `powerUps.json` (regression only), and `schema.ts`, `types.ts`, `levelsConfig.ts`, `levelCards.ts`, `garage.ts`, `index.ts` (validation and loading).
-*Built (R3):* `crash-site.json`, level data `stretches` and `wreck`, `levels.json` `report`, and the `ship` and `stretch` text. *Planned:* level files `geyser-canyon`, `crater-field` (merged), `the-crossing` (reshaped), `iron-ridge`; level data `ramps`; `levels.json` booster and Scavenger values.
+*Built (R3):* `crash-site.json`, level data `stretches` and `wreck`, `levels.json` `report`, and the `ship` and `stretch` text. *Built (R4):* level data `scavenger` (build, route, `startDelayS`), `levels.json` `booster` and `scavenger`, the `scavenger`, `split` and `stretch.lastRun` text. *Planned:* level files `geyser-canyon`, `crater-field` (merged), `the-crossing` (reshaped), `iron-ridge`; level data `ramps`.
 
 **`src/game/`** (Built): `contracts.ts` (the types shared with the screens), `controls.ts`, `controlsText.ts`, `forceLine.ts`, `forces.ts`, `levelUnlock.ts`, `ship.ts` (which ship parts are recovered, open or locked), `pauseMenu.ts`, `resetConfirm.ts`, `geometry.ts`, `balance.ts`, `buildFromParts.ts`, `partEffects.ts`, `steeringAssist.ts` (kept, unused), `driveSession.ts`, `hud.ts`, `level.ts` (the rover's footprint for rocks, from M5a), and from R2 `popups.ts` (the pop-up text worked from the student's build, for Endless and levels), `moments.ts` (each element's sound, particles, camera and HUD effect, as a table), `feedbackQueue.ts` (one pop-up or card at a time, with the timings), `driveFeedback.ts` (an event to its pop-up, moment and first-time card), `cardText.ts` (the card's name and sentence); **`game/level/`**, the level engine: `session.ts`, `world.ts`, `schema.ts`, `types.ts`, `levels.ts`, `report.ts`, `stretches.ts` (time, entry and exit speed and the cause events for each stretch), `stretchReport.ts` (the biggest loss or gain and its recorded cause), `arrows.ts`, `captions.ts`, `forceLine.ts`, `keys.ts`, `devKeys.ts` (the `?dev=1` keys), `mapSvg.ts` (the picture `npm run maps` writes), `text.ts`, `index.ts`, and the test-only `testPilot.ts`, `levelPlans.ts`, `levelChecks.ts`, `testLevel.ts`; **`game/run/`**, the Endless Canyon: `runSession.ts`, `course.ts`, `rng.ts`, `drift.ts`, `feedback.ts`, `reportModel.ts`, `endlessHud.ts`, `garageView.ts`, `garageNumbers.ts`, `pausableRun.ts`, `tunnelCompare.ts`, `sectionJump.ts` (the `?dev=1` jump between places). `course.ts` makes the named places (a section has a name, an entry post, a line and zones as polygons), picked by the seeded generator.
-*Planned:* `game/level/autopilot.ts` (the Scavenger's driver, made from `testPilot.ts`; R4); the Scavenger's ghost trace in `session.ts` and `report.ts` (R4; the stretches and cause events were built in R3); the booster in `session.ts` and `keys.ts` (R4).
+*Built (R4):* `game/level/autopilot.ts` (the Scavenger's driver, moved out of `testPilot.ts`, which re-exports it for the tests), `scavenger.ts` (the headless ghost run, cached; `poseAt` for the scene; gate and stretch times), `lastRun.ts`, the Scavenger's splits, third star and report comparison in `session.ts` and `report.ts`, and the booster in `session.ts` and `keys.ts`.
 
 **`src/render/`** (Built): `levelScene.ts`, `devOverlay.ts` (zone outlines for `?dev=1`), `runScene.ts`, `garageScene.ts`, `driveScene.ts`, `roverModel.ts`, `roverAttitude.ts`, `terrain.ts`, `water.ts`, `track.ts`, `pylons.ts`, `landmarks.ts`, `wreck.ts` (the smoking wreck at Crash Site's start), `atmosphere.ts`, `levelCamera.ts`, `forceArrows.ts`, `skidMarks.ts`, `engineSound.ts`, `effectSounds.ts` (one-shot sounds and the tyre bed for each surface), `groundBlend.ts` (the 1 m colour fringe with a noise-warped edge, dips and ripples), `runGround.ts` (one ground mesh for each Endless section), `runScenery.ts` (entry posts, boulders, vents, mud, ice, cave crystals and dust, cannons), `placeLooks.ts` (the colours of each place), `bursts.ts` (particles for the moments), `SceneCanvas.tsx`, `spinningCube.ts`, `levelTestKit.ts`.
-*Planned:* the Scavenger's model and edge marker (R4), the launch ending (R8).
+*Built (R4):* `scavengerGhost.ts` (the Scavenger's model, the fade and the split gates; the edge marker is in `ui/LevelScreen.tsx`). *Planned:* the launch ending (R8).
 
 **`src/ui/`** (Built): `App.tsx`, `HomeScreen.tsx`, `LevelsScreen.tsx`, `ShipSilhouette.tsx`, `LevelIntroScreen.tsx`, `LevelScreen.tsx`, `GarageScreen.tsx`, `GaragePreview.tsx`, `RunScreen.tsx`, `SettingsScreen.tsx`, `SettingsPanel.tsx`, `PauseMenu.tsx`, `Stars.tsx`, `LevelDiagram.tsx`, `BuildScreen.tsx` and `DriveScreen.tsx` (the old test drive, kept), `screens.ts`, `levelScreenLogic.ts`, `hud/Hud.tsx`, `hud/FeedbackLayer.tsx` (the pop-up beside the rover and the caption card), `report/` (`StretchStrip.tsx`, `ReportScreen.tsx`, `ReportCards.tsx`, `SpeedGraph.tsx`, `graph.ts`).
-*Planned:* the Scavenger on the report strip and Change one part (R4). The ship silhouette and the plain report strip were built in R3.
+*Built (R4):* the Scavenger on the report strip, "vs your last run", Change one part, the booster pip and the split text on the HUD, the Scavenger card and the edge marker. The ship silhouette and the plain report strip were built in R3.
 
 **`src/save/`** (Built): `levelProgress.ts`, `settings.ts`, `demoProgress.ts`.
 
-**`scripts/`** (Built): `balance.ts`, `maps.ts` (with `node-fs.d.ts`, the two Node file functions it uses, so no `@types/node` is needed). *Planned:* `rival` (R4).
+**`scripts/`** (Built): `balance.ts`, `maps.ts`, `rival.ts` (R4) (with `node-fs.d.ts`, the Node file functions and the command line they use, so no `@types/node` is needed).
 
 ## 4 Checked dependencies (2026-10-21)
 

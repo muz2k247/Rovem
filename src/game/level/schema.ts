@@ -4,7 +4,7 @@ import {
   type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef, type ForkLineDef,
   type GravityZoneDef, type HillDef, type HintDef, type HintDone, type HintTrigger, type LevelDef, type LevelId, type PylonDef,
   type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type SurfaceZoneDef, type WaterDef,
-  type Pose, type StretchDef,
+  type Pose, type ScavengerDef, type StretchDef,
 } from './types.ts';
 
 // Level file validation (NFR-5). Throws `Content error at <path>: <problem>` like the rest of the content loaders.
@@ -244,6 +244,19 @@ const stretch = (raw: unknown, path: string): StretchDef => {
   return { id: str(o, 'id', path), name: str(o, 'name', path), ...(startsAfterRoad ? { startsAfterRoad } : {}), cleanS: pos(o, 'cleanS', path) };
 };
 
+const scavenger = (raw: unknown, path: string): ScavengerDef => {
+  const o = obj(raw, path);
+  const b = obj(o.build, `${path}.build`);
+  const roads = list(o.roads, `${path}.roads`).map((r, i) => (typeof r === 'string' ? r : fail(`${path}.roads[${i}]`, 'expected a road id')));
+  if (roads.length === 0) fail(`${path}.roads`, 'the Scavenger needs a route');
+  const via = o.via === undefined ? undefined : list(o.via, `${path}.via`).map((p, i) => ({ xM: num(obj(p, `${path}.via[${i}]`), 'xM', `${path}.via[${i}]`), zM: num(obj(p, `${path}.via[${i}]`), 'zM', `${path}.via[${i}]`) }));
+  const bendMargin = optPos(o, 'bendMargin', path);
+  return {
+    build: { chassisId: str(b, 'chassisId', `${path}.build`), wheelsId: str(b, 'wheelsId', `${path}.build`), motorId: str(b, 'motorId', `${path}.build`) },
+    roads, ...(via ? { via } : {}), ...(bendMargin !== undefined ? { bendMargin } : {}), startDelayS: num(o, 'startDelayS', path),
+  };
+};
+
 function each<T>(raw: unknown, path: string, parse: (item: unknown, path: string) => T): T[] {
   return list(raw, path).map((item, i) => parse(item, `${path}[${i}]`));
 }
@@ -288,6 +301,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     hints: each(o.hints, 'level.hints', hint),
     finish: finish(o.finish, 'level.finish'),
     stretches: each(o.stretches, 'level.stretches', stretch),
+    ...(o.scavenger === undefined ? {} : { scavenger: scavenger(o.scavenger, 'level.scavenger') }),
     ...(o.wreck === undefined ? {} : { wreck: pose(o.wreck, 'level.wreck') }),
   };
 
@@ -332,6 +346,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     if (at <= lastRouteIndex) fail(`${path}.startsAfterRoad`, 'stretches must follow the route in order');
     lastRouteIndex = at;
   });
+  def.scavenger?.roads.forEach((r, i) => needRoad(r, `level.scavenger.roads[${i}]`));
   needSurface(def.defaultSurfaceId, 'level.defaultSurfaceId');
   def.surfaceZones.forEach((z, i) => needSurface(z.surfaceId, `level.surfaceZones[${i}].surfaceId`));
   def.forks.forEach((f, i) => {

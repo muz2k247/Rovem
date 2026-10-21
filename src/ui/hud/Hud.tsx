@@ -35,6 +35,11 @@ export function Hud({
               </span>
             )}
             {badges.slip && <span className="badge slip">WHEELS SLIP</span>}
+            {model.booster && (
+              <span className={`badge booster booster-${model.booster.state}`} aria-label={`Booster ${model.booster.state}`}>
+                {model.booster.state === 'ready' ? 'BOOST ●' : model.booster.state === 'firing' ? 'BOOST ▶' : 'BOOST ○'}
+              </span>
+            )}
             {badges.pole && (
               <span className={`badge pole pole-${badges.pole}`} aria-label={`Magnet pole ${badges.pole}`}>
                 {badges.pole}
@@ -64,6 +69,12 @@ export function Hud({
           </button>
         </div>
       </div>
+
+      {model.split && (
+        <div className={`hud2-split ${model.split.behind ? 'behind' : 'ahead'}`} aria-live="polite">
+          {model.split.text}
+        </div>
+      )}
 
       {model.caption && (
         <div className="hud2-caption" aria-live="polite">
