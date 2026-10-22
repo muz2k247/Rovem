@@ -175,7 +175,7 @@ describe('a crash is never blamed on the parts (rule 2)', () => {
     const crash = (levelId: string) =>
       explainStretches(input(records(() => rec('a', 'A', 10, 10), () => rec('c', 'C', 12, 19, { crashes: 1 })), { levelId }))!.explanation.why;
     expect(crash('crash-site')).toBe('You hit a boulder: back to the checkpoint.');
-    expect(crash('push-and-shove')).toBe('You hit an obstacle: back to the checkpoint.');
+    expect(crash('geyser-canyon')).toBe('You hit an obstacle: back to the checkpoint.');
   });
 });
 
@@ -200,8 +200,13 @@ describe('the part pickup (SHOWCASE_PLAN §12)', () => {
     expect(p.line).toBe('On the Ring, grip gave you up to 1639 N of sideways force. These brakes use friction too: they stop the ship on the runway.');
   });
 
+  it('brings home the thruster with the vent impulse in the line', () => {
+    const p = partPickup('geyser-canyon', levelText, { impulse: '1200' })!;
+    expect(p.partName).toBe('Thruster');
+    expect(p.line).toBe('Each vent gave you 1200 N·s of push. A thruster throws gas back, and the ship gains equal momentum forward.');
+  });
+
   it('brings home nothing from a level that is not a Showcase level yet', () => {
-    expect(partPickup('push-and-shove', levelText, {})).toBeUndefined();
     expect(partPickup('crater-field', levelText, {})).toBeUndefined();
   });
 });

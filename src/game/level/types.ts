@@ -5,7 +5,7 @@ import type { CannonKind, GravityKind, PointM } from '../../content/index.ts';
 // Every number a level needs is in its file; shared values (water, magnets, arrows) are in `levels.json`.
 
 // Crash Site (Showcase R3) replaces First Tracks and Ring Road. The other four are the v4 files, rebuilt in R5–R7 (SHOWCASE_PLAN §7).
-export const LEVEL_IDS = ['crash-site', 'push-and-shove', 'crater-field', 'gravity-wells', 'the-crossing', 'polar-pass'] as const;
+export const LEVEL_IDS = ['crash-site', 'geyser-canyon', 'crater-field', 'gravity-wells', 'the-crossing', 'polar-pass'] as const;
 export type LevelId = (typeof LEVEL_IDS)[number];
 
 export interface Pose {

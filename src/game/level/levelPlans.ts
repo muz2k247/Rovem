@@ -45,12 +45,13 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
       stars: { roads: roads('f1-ridge'), via: [debris, ring, climb] },
     };
   },
-  'push-and-shove': (def) => {
-    const [lane, mud, kick] = [samplePoint(def, 's-lane'), samplePoint(def, 's-mud'), samplePoint(def, 's-kick')];
-    const roads = (lane: string, pad: string) => ['start', 'bend-a', 'lead-1', lane, 'm1', pad, 'm2', 'finale'];
+  'geyser-canyon': (def) => {
+    const [mouth, alcove, outpost] = [samplePoint(def, 's-mouth'), samplePoint(def, 's-alcove'), samplePoint(def, 's-outpost')];
+    // The rim road is the quiet way for every build; the vent lane is a choice the level file's tests make on their own.
+    const roads = (lane: string) => ['start', 'bend-1', 'lead', lane, 'm1', 'b2', 'approach', 'outpost', 'gate'];
     return {
-      safe: { roads: roads('f1-long', 'f2-dry') },
-      stars: { roads: roads('f1-short', 'f2-pad'), via: [lane, mud, kick] },
+      safe: { roads: roads('f1-rim') },
+      stars: { roads: roads('f1-vents'), via: [mouth, alcove, outpost] },
     };
   },
   'crater-field': (def) => {

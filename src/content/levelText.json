@@ -14,14 +14,14 @@
       "diagram": "ring"
     },
     {
-      "id": "push-and-shove",
-      "name": "Push & Shove",
-      "hook": "Boost pads and cannons change your speed in an instant.",
-      "goal": "Run the cannon range to the next beacon.",
+      "id": "geyser-canyon",
+      "name": "Geyser Canyon",
+      "hook": "Vents blast you forward. Launchers fire sandbags. Which road is faster?",
+      "goal": "Get the thruster from the outpost.",
       "newHere": [
-        "A sudden push, called an impulse, changes your speed by the impulse divided by your mass.",
-        "When two things collide, their total momentum (mass times velocity) stays the same.",
-        "A heavier rover changes speed less in the same hit."
+        "A short, strong push, called an impulse, changes your speed by the impulse divided by your mass. The same vent speeds up a light rover more than a heavy one.",
+        "When a sandbag hits you, you and the bag share momentum. From the front it slows you; from behind it speeds you up.",
+        "Two roads at the fork: the vent lane is fast but under fire, the rim road is quiet but sandy."
       ],
       "diagram": "pads"
     },
@@ -210,7 +210,7 @@
     "recoveredTitle": "Part recovered: {name}",
     "parts": [
       { "levelId": "crash-site", "name": "Landing brakes", "built": true, "pickupLine": "On the Ring, grip gave you up to {grip} N of sideways force. These brakes use friction too: they stop the ship on the runway." },
-      { "levelId": "geyser-canyon", "name": "Thruster", "built": false, "pickupLine": "Each vent gave you {impulse} N·s of push. A thruster throws gas back, and the ship gains equal momentum forward." },
+      { "levelId": "geyser-canyon", "name": "Thruster", "built": true, "pickupLine": "Each vent gave you {impulse} N·s of push. A thruster throws gas back, and the ship gains equal momentum forward." },
       { "levelId": "crater-field", "name": "Lift engine", "built": false, "pickupLine": "In the Heavy Cave your weight was {weight} N, but your mass stayed {mass} kg. To lift off, this engine must push harder than the ship's weight." },
       { "levelId": "the-crossing", "name": "Splashdown floats", "built": false, "pickupLine": "The river pushed up on you with {upthrust} N. On Earth, the capsule lands in the sea and floats for the same reason." },
       { "levelId": "iron-ridge", "name": "Docking clamps", "built": false, "pickupLine": "You switched attract and repel to ride the pylons. These clamps are electromagnets: current on, they hold; current off, they let go." }

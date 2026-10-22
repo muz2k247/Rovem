@@ -8,7 +8,7 @@ describe('level cards (LEVELS_BUILD_PLAN A2, A3, A7)', () => {
   it('has the levels in play order (Crash Site first, SHOWCASE_PLAN §7), with the ids of the level files', () => {
     expect(levelCards.levels.map((l) => l.name)).toEqual([
       'Crash Site',
-      'Push & Shove',
+      'Geyser Canyon',
       'Crater Field',
       'Gravity Wells',
       'The Crossing',

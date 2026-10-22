@@ -11,9 +11,9 @@ describe('the ship (SHOWCASE_PLAN §12)', () => {
     expect(parts.map((p) => p.name)).toEqual(['Landing brakes', 'Thruster', 'Lift engine', 'Splashdown floats', 'Docking clamps']);
   });
 
-  it('with nothing finished: the built level’s part is open, the others are locked', () => {
+  it('with nothing finished: the built levels’ parts are open, the others are locked', () => {
     const v = shipParts(parts, emptyLevelProgress());
-    expect(v.map((p) => p.state)).toEqual(['open', 'locked', 'locked', 'locked', 'locked']);
+    expect(v.map((p) => p.state)).toEqual(['open', 'open', 'locked', 'locked', 'locked']);
     expect(partsRecovered(v)).toBe(0);
   });
 
@@ -21,7 +21,7 @@ describe('the ship (SHOWCASE_PLAN §12)', () => {
     let p = recordLevelResult(emptyLevelProgress(), 'crash-site', { stars: 1, timeS: 95 });
     p = recordLevelResult(p, 'crater-field', { stars: 3, timeS: 80 });
     const v = shipParts(parts, p);
-    expect(v.map((x) => x.state)).toEqual(['recovered', 'locked', 'locked', 'locked', 'locked']);
+    expect(v.map((x) => x.state)).toEqual(['recovered', 'open', 'locked', 'locked', 'locked']);
     expect(partsRecovered(v)).toBe(1);
   });
 

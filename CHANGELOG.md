@@ -6,6 +6,12 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R5: Geyser Canyon; 2026-10-22)
+- **`geyser-canyon.json`** replaces `push-and-shove.json` (level id `geyser-canyon`): a vent at the canyon mouth and two sand drifts, the fork between the vent lane (5 vents, 3 head-on launchers, a kicker) and the longer sandy rim road, the alcove bend (r = 30 m), the outpost (kicker, sample, head-on launcher) and the gate (the finale kicker). Five report stretches; the Scavenger is Standard + Smooth + Large motor, 4 s delay. The Thruster ship part is built, with the vent impulse in its pick-up line. Tests: `levelFile.geyser-canyon.test.ts` (plus the shared A7 checks: every sample reachable, no build trapped, a checkpoint about every 30 s). ROADMAP OI-38 to OI-40.
+### Changed (Showcase R5)
+- Levels 3–5 (Crater Field, Gravity Wells, The Crossing, Polar Pass) are "coming soon" on the Levels screen unless the address has `?unlock=all`.
+- Removed `push-and-shove.json`, its test and its map.
+
 ### Added (Showcase R4: the Scavenger, the retry loop and the booster; 2026-10-22)
 - **The Scavenger** (SHOWCASE_PLAN §8, P5): level data `scavenger` (build, route, `startDelayS`); at level load the autopilot drives its honest run headless on the same physics (`game/level/scavenger.ts`, cached) and the scene plays it back (`render/scavengerGhost.ts`): a rusty, patched rover built from its own parts, solid at 8 m and further and 30% opaque at 4 m and closer, never collides, an edge marker while it is off screen, split gates with the gap on the HUD, its build and delay on the level card and as a start line, it stands at the part and blinks if you beat it. The third star is "beat the Scavenger" (the par time stays in levels with none). Crash Site's Scavenger is Standard chassis + Smooth wheels + Medium motor with a start delay of 4 s (ROADMAP OI-33).
 - **`game/level/autopilot.ts`**: the scripted driver of the level tests, moved into the game (`testPilot.ts` re-exports it); `allRoutes`, `onStep`.

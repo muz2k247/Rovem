@@ -41,7 +41,7 @@ const PRESETS: Record<AtmosphereId, AtmospherePreset> = {
     hemiSky: 0x6a6f9a, hemiGround: 0x5a3a2c, hemiIntensity: 1.6, stars: false, aurora: false,
     motes: { count: 70, size: 0.1, opacity: 0.45, colour: 0xffd0a0, heightM: 12 },
   },
-  // Push & Shove: dusty orange haze.
+  // Geyser Canyon (was Push & Shove): dusty orange haze.
   'orange-haze': {
     id: 'orange-haze', skyTop: 0x6a3a2a, skyHorizon: 0xe09a5a, fogColour: 0xd88a4a, fogDensity: 0.013,
     sunColour: 0xffb066, sunIntensity: 2, sunElevationDeg: 26, sunAzimuthDeg: 160,

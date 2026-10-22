@@ -58,4 +58,4 @@ Group,Check,Value,Set by,Status,Source
 "Check (E34)","Magnet at d = 8 m","1600 x (5 / 8)^2 = 625 N",hand,confirmed,E34
 "Check (E34)","Safe speed on flat dry asphalt, starting build, v = sqrt(mu_g k_g g r)","r = 12 m: 9.70 m/s; 25 m: 14.00 m/s; 30 m: 15.34 m/s; 40 m: 17.71 m/s (faster than the 16 m/s top speed)",hand,confirmed,"E34; LEVELS_BUILD_PLAN A6"
 "Check (E34)","Turning limit omega = mu_g k_g g / v at 16 m/s, All-terrain wheels, g = 9.8","asphalt 0.49 rad/s = 28.07 deg/s; mud 0.30625 rad/s = 17.55 deg/s; ice 0.06125 rad/s = 3.51 deg/s",hand,confirmed,"DECISIONS 2026-10-16"
-"Showcase R3","Level registry","crash-site, push-and-shove, crater-field, gravity-wells, the-crossing, polar-pass (first-tracks and ring-road retired; Crash Site replaces both)",Claude,"provisional (the others are reshaped in R5-R7)","DECISIONS 2026-10-22 (R3)"
+"Showcase R3","Level registry","crash-site, geyser-canyon, crater-field, gravity-wells, the-crossing, polar-pass (first-tracks and ring-road retired; Crash Site replaces both)",Claude,"provisional (the others are reshaped in R5-R7)","DECISIONS 2026-10-22 (R3)"

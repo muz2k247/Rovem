@@ -40,8 +40,11 @@ type Screen =
 /** A new course seed. Chosen here, in the UI, never inside the physics (DEMO_BUILD_PLAN A3). */
 const newSeed = () => Math.floor(Math.random() * 0x7fffffff);
 
-// Only levels with a file can be played; a card without one says "Coming soon" (LEVELS_BUILD_PLAN A2).
-const builtIds: ReadonlySet<string> = new Set(builtLevelIds());
+// Only levels with a file can be played; a card without one says "Coming soon" (LEVELS_BUILD_PLAN A2). In the Showcase round a level
+// is playable once its ship part is built (R5: Crash Site and Geyser Canyon); the older v4 files behind it open with `?unlock=all` (SHOWCASE_PLAN §7).
+const showcaseIds = new Set(levelText.ship.parts.filter((p) => p.built).map((p) => p.levelId));
+const developerLink = developerUnlockFromSearch(window.location.search);
+const builtIds: ReadonlySet<string> = new Set(builtLevelIds().filter((id) => developerLink || showcaseIds.has(id)));
 const levelIds = levelCards.levels.map((l) => l.id).filter((id) => builtIds.has(id));
 const firstLevelId = levelIds[0]!;
 

@@ -17,7 +17,7 @@ import type { LevelDef, LevelId } from './types.ts';
 /** The cards each level cares about most (its new element), in order. The rest follow in the order they happened. */
 const LEVEL_CARD_ORDER: Record<LevelId, readonly string[]> = {
   'crash-site': ['slide', 'sand', 'fork', 'crash'],
-  'push-and-shove': ['boost', 'hit'],
+  'geyser-canyon': ['boost', 'hit'],
   'crater-field': ['descent', 'rollback'],
   'gravity-wells': ['gravity'],
   'the-crossing': ['float', 'water'],

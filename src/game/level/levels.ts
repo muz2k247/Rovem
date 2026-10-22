@@ -1,6 +1,6 @@
 import { content } from '../../content/index.ts';
 import crashSite from '../../content/levels/crash-site.json' with { type: 'json' };
-import pushAndShove from '../../content/levels/push-and-shove.json' with { type: 'json' };
+import geyserCanyon from '../../content/levels/geyser-canyon.json' with { type: 'json' };
 import craterField from '../../content/levels/crater-field.json' with { type: 'json' };
 import gravityWells from '../../content/levels/gravity-wells.json' with { type: 'json' };
 import theCrossing from '../../content/levels/the-crossing.json' with { type: 'json' };
@@ -13,7 +13,7 @@ import { LEVEL_IDS, type LevelDef, type LevelId } from './types.ts';
 
 const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {
   'crash-site': crashSite,
-  'push-and-shove': pushAndShove,
+  'geyser-canyon': geyserCanyon,
   'crater-field': craterField,
   'gravity-wells': gravityWells,
   'the-crossing': theCrossing,

@@ -1,0 +1,427 @@
+{
+  "id": "geyser-canyon",
+  "name": "Geyser Canyon",
+  "placeholder": true,
+  "atmosphere": "orange-haze",
+  "parS": 115,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "scavenger": {
+    "build": {
+      "chassisId": "chassis-standard",
+      "wheelsId": "wheels-smooth",
+      "motorId": "motor-large"
+    },
+    "roads": [
+      "start",
+      "bend-1",
+      "lead",
+      "f1-vents",
+      "m1",
+      "b2",
+      "approach",
+      "outpost",
+      "gate"
+    ],
+    "startDelayS": 4
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Canyon mouth",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 220
+        }
+      ]
+    },
+    {
+      "id": "bend-1",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 150,
+          "angleDeg": 30
+        }
+      ]
+    },
+    {
+      "id": "lead",
+      "after": "bend-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 170
+        }
+      ]
+    },
+    {
+      "id": "f1-vents",
+      "name": "Vent lane",
+      "after": "lead",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 360
+        }
+      ]
+    },
+    {
+      "id": "f1-rim",
+      "name": "Rim road",
+      "surfaceId": "sand",
+      "runoffSurfaceId": "sand",
+      "after": "lead",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 22.834920517832835
+        },
+        {
+          "kind": "straight",
+          "lengthM": 111.0910905065217
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -45.66984103566567
+        },
+        {
+          "kind": "straight",
+          "lengthM": 111.0910905065217
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 22.834920517832835
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "after": "f1-vents",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 180
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "name": "Alcove",
+      "after": "m1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 30,
+          "angleDeg": -80
+        }
+      ]
+    },
+    {
+      "id": "approach",
+      "after": "b2",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 130
+        }
+      ]
+    },
+    {
+      "id": "outpost",
+      "name": "Outpost",
+      "after": "approach",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 300
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "name": "Gate",
+      "after": "outpost",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 150
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "bend-1",
+    "lead",
+    "f1-vents",
+    "m1",
+    "b2",
+    "approach",
+    "outpost",
+    "gate"
+  ],
+  "hills": [],
+  "surfaceZones": [
+    {
+      "surfaceId": "sand",
+      "polygon": [
+        {
+          "xM": 95,
+          "zM": 9
+        },
+        {
+          "xM": 125,
+          "zM": 9
+        },
+        {
+          "xM": 125,
+          "zM": -9
+        },
+        {
+          "xM": 95,
+          "zM": -9
+        }
+      ]
+    },
+    {
+      "surfaceId": "sand",
+      "polygon": [
+        {
+          "xM": 138,
+          "zM": 9
+        },
+        {
+          "xM": 160,
+          "zM": 9
+        },
+        {
+          "xM": 160,
+          "zM": -9
+        },
+        {
+          "xM": 138,
+          "zM": -9
+        }
+      ]
+    }
+  ],
+  "boosts": [
+    {
+      "id": "vent-0",
+      "xM": 45,
+      "zM": 0,
+      "radiusM": 3
+    },
+    {
+      "id": "vent-1",
+      "xM": 468.21,
+      "zM": 120.1,
+      "radiusM": 3
+    },
+    {
+      "id": "vent-2",
+      "xM": 494.19,
+      "zM": 135.1,
+      "radiusM": 3
+    },
+    {
+      "id": "vent-3",
+      "xM": 554.81,
+      "zM": 170.1,
+      "radiusM": 3
+    },
+    {
+      "id": "vent-4",
+      "xM": 580.79,
+      "zM": 185.1,
+      "radiusM": 3
+    },
+    {
+      "id": "vent-5",
+      "xM": 650.07,
+      "zM": 225.1,
+      "radiusM": 3
+    }
+  ],
+  "cannons": [
+    {
+      "id": "k1",
+      "kind": "kicker",
+      "xM": 689.04,
+      "zM": 247.6,
+      "directionDeg": 30
+    },
+    {
+      "id": "h1",
+      "kind": "headOn",
+      "xM": 520.17,
+      "zM": 150.1,
+      "directionDeg": 210
+    },
+    {
+      "id": "h1b",
+      "kind": "headOn",
+      "xM": 606.77,
+      "zM": 200.1,
+      "directionDeg": 210
+    },
+    {
+      "id": "h1c",
+      "kind": "headOn",
+      "xM": 693.37,
+      "zM": 250.1,
+      "directionDeg": 210
+    },
+    {
+      "id": "k2",
+      "kind": "kicker",
+      "xM": 1057.13,
+      "zM": 238.17,
+      "directionDeg": -50
+    },
+    {
+      "id": "h2",
+      "kind": "headOn",
+      "xM": 1185.69,
+      "zM": 84.96,
+      "directionDeg": 130,
+      "triggerM": 60
+    },
+    {
+      "id": "k3",
+      "kind": "kicker",
+      "xM": 1240.33,
+      "zM": 19.85,
+      "directionDeg": -50
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 398.92,
+      "zM": 80.1,
+      "headingDeg": 30
+    },
+    {
+      "id": "cp-2",
+      "xM": 823.28,
+      "zM": 325.1,
+      "headingDeg": 30
+    },
+    {
+      "id": "cp-3",
+      "xM": 980,
+      "zM": 330.1,
+      "headingDeg": -50
+    },
+    {
+      "id": "cp-4",
+      "xM": 1037.85,
+      "zM": 261.15,
+      "headingDeg": -50
+    },
+    {
+      "id": "cp-5",
+      "xM": 1153.55,
+      "zM": 123.26,
+      "headingDeg": -50
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "line": {
+        "xM": 442.22,
+        "zM": 105.1,
+        "headingDeg": 30,
+        "widthM": 12
+      },
+      "roadIds": [
+        "f1-vents",
+        "f1-rim"
+      ],
+      "mergeAt": {
+        "xM": 753.99,
+        "zM": 285.1,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-mouth",
+      "xM": 110,
+      "zM": 0
+    },
+    {
+      "id": "s-alcove",
+      "xM": 929.44,
+      "zM": 380.79
+    },
+    {
+      "id": "s-outpost",
+      "xM": 1121.41,
+      "zM": 161.57
+    }
+  ],
+  "signs": [
+    {
+      "id": "sign-alcove",
+      "xM": 909.88,
+      "zM": 375.1,
+      "radiusM": 30
+    }
+  ],
+  "hints": [],
+  "finish": {
+    "xM": 1307.82,
+    "zM": -60.59,
+    "radiusM": 6
+  },
+  "stretches": [
+    {
+      "id": "mouth",
+      "name": "The Mouth",
+      "cleanS": 29.28
+    },
+    {
+      "id": "floor",
+      "name": "The Canyon Floor",
+      "startsAfterRoad": "lead",
+      "cleanS": 33.37
+    },
+    {
+      "id": "alcove",
+      "name": "The Alcove",
+      "startsAfterRoad": "m1",
+      "cleanS": 2.94
+    },
+    {
+      "id": "outpost",
+      "name": "The Outpost",
+      "startsAfterRoad": "b2",
+      "cleanS": 25.98
+    },
+    {
+      "id": "gate",
+      "name": "The Gate",
+      "startsAfterRoad": "outpost",
+      "cleanS": 6.97
+    }
+  ]
+}

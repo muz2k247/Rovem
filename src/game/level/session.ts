@@ -1192,7 +1192,7 @@ export function createLevelSession(options: LevelSessionOptions) {
       const flat = buildQuantities(rover, specs.get('asphalt')!, { gravityMps2: baseConstants.gravityMps2 }, { slopeRad: 0, upthrustN: 0 });
       return buildLevelReport({
         def, rover, result, events, trace, clockS: clockS(), text: levelText, stretches: tracker.records(clockS()), content,
-        partValues: { grip: newtons(flat.gripLimitN) },
+        partValues: { grip: newtons(flat.gripLimitN), impulse: newtons(run.boostImpulseNs) },
         ...(scavenger ? { scavenger, scavengerQuantities: scavengerQuantities(scavenger) } : {}),
         ...(ctx.build ? { build: ctx.build } : {}),
         ...(ctx.last ? { last: ctx.last } : {}),

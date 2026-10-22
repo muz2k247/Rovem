@@ -124,7 +124,7 @@ describe('force arrows', () => {
 
   it('the impulse flash comes on top of the three', () => {
     const acting = [arrow('push', 1000), arrow('friction', 41), arrow('slope', 426), arrow('impulse', 2000)];
-    const shown = selectArrows('push-and-shove', acting).map((a) => a.kind);
+    const shown = selectArrows('geyser-canyon', acting).map((a) => a.kind);
     expect(shown).toHaveLength(4);
     expect(shown[3]).toBe('impulse');
   });
