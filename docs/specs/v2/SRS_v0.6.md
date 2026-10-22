@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| FR-45 changed (2026-10-22, R6b): every built level and the endless mode open from the first visit; in-order unlocking stays behind a switch in `levels.json` (off) | The advisor must see the whole game in one sitting | SHOWCASE_PLAN §12a, DECISIONS 2026-10-22 (R6b) |
 | FR-48 and FR-57 marked Built (2026-10-21, R2): the Endless places, pop-ups, cards, moments and colours | Session R2 | SHOWCASE_PLAN §10–§12, DECISIONS 2026-10-21 (R2) |
 | FR-51 (collisions) marked Built; the stops of the Game v4 level files marked removed (2026-10-21, R1) | Session R1 | E46, SHOWCASE_PLAN §4–§5 |
 | The game is five levels as natural places plus Endless; the story is a crashed ship; each level ends at a ship part; the Scavenger rival replaces par. Sections 1.1–1.3, 3.1, 3.5 rewritten | Showcase round | E35, E37, DECISIONS 2026-10-17, 2026-10-18, 2026-10-21 |
@@ -96,7 +97,7 @@ Primary users are Grade 9 students. Secondary users are teachers and evaluators 
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-45 | The student moves Home → Levels → a level (intro, drive, report) → the next level. Levels open in order; the endless mode opens after the first level. A hidden developer link (`?unlock=all`) opens everything for demos and is never saved. | Confirmed (E37) |
+| FR-45 | The student moves Home → Levels → a level (intro, drive, report) → the next level. **Every built level and the endless mode are open from the first visit** (switch `unlockInOrder: false` in `levels.json`); a level not yet built shows "Coming soon". Stars still reward finishing each level. With the switch on, the old rule applies: levels open in order and the endless mode opens after the first level. A hidden developer link (`?unlock=all`) also opens the old Game v4 files for builders and is never saved. *Superseded 2026-10-22 (R6b): "Levels open in order; the endless mode opens after the first level." Its reason was that a skip button is not logical in a game; the new reason is that the advisor and the executives must see the whole game in one sitting, and a stuck student can try another idea.* | Confirmed (E37); changed 2026-10-22 (R6b) |
 | FR-46 | Each level introduces one idea no other level teaches, lasts about 90–150 s, has drive-through checkpoints, and ends at a ship part. A crash returns the rover to the last checkpoint at rest; the clock keeps running. A level has no game over: a mistake costs time. There are no forced stops. | Confirmed (E37; DECISIONS 2026-10-19, 2026-10-21) |
 | FR-47 | Each level awards up to three stars: reach the ship part, collect all 3 samples, beat the Scavenger. Samples are collected by driving through them, never by stopping. Only the best stars and the best time per level are saved on the device. | Confirmed; the Scavenger star is *Planned* (R4): today the third star is the par time (Game v4). E37 said "beating the par time, and the level's challenge"; changed 2026-10-18 and 2026-10-21 |
 | FR-5 | The student can change the build and retry any level as many times as they like. | Confirmed |

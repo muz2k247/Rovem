@@ -1,10 +1,10 @@
 import type { GravityKind, PointM } from '../../content/index.ts';
 import {
-  ATMOSPHERE_IDS, LEVEL_IDS,
+  ATMOSPHERE_IDS, EDGE_STYLES, LEVEL_IDS,
   type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef, type ForkLineDef,
   type GravityZoneDef, type HillDef, type HintDef, type HintDone, type HintTrigger, type LevelDef, type LevelId, type PylonDef,
   type RampDef, type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type SurfaceZoneDef, type WaterDef,
-  type Pose, type ScavengerDef, type StretchDef,
+  type EdgeRule, type Pose, type ScavengerDef, type StretchDef,
 } from './types.ts';
 
 // Level file validation (NFR-5). Throws `Content error at <path>: <problem>` like the rest of the content loaders.
@@ -83,6 +83,16 @@ function segment(raw: unknown, path: string): RoadSegment {
   return fail(`${path}.kind`, 'expected "straight" or "arc"');
 }
 
+function edgeRule(raw: unknown, path: string): EdgeRule {
+  const o = obj(raw, path);
+  const side = oneOf(o, 'side', path, ['left', 'right', 'both'] as const);
+  const style = oneOf(o, 'style', path, EDGE_STYLES);
+  const fromM = o.fromM === undefined ? undefined : num(o, 'fromM', path);
+  const toM = o.toM === undefined ? undefined : num(o, 'toM', path);
+  if (fromM !== undefined && toM !== undefined && toM <= fromM) fail(path, 'expected fromM < toM');
+  return { side, style, ...(fromM !== undefined ? { fromM } : {}), ...(toM !== undefined ? { toM } : {}) };
+}
+
 function road(raw: unknown, path: string): RoadDef {
   const o = obj(raw, path);
   const segments = list(o.segments, `${path}.segments`).map((s, i) => segment(s, `${path}.segments[${i}]`));
@@ -109,6 +119,7 @@ function road(raw: unknown, path: string): RoadDef {
     ...(surfaceId ? { surfaceId } : {}),
     ...(runoffSurfaceId ? { runoffSurfaceId } : {}),
     ...(gap ? { gap } : {}),
+    ...(o.edges === undefined ? {} : { edges: list(o.edges, `${path}.edges`).map((e, i) => edgeRule(e, `${path}.edges[${i}]`)) }),
     ...(start ? { start } : {}),
     ...(after ? { after } : {}),
     segments,
@@ -322,6 +333,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     stretches: each(o.stretches, 'level.stretches', stretch),
     ...(o.scavenger === undefined ? {} : { scavenger: scavenger(o.scavenger, 'level.scavenger') }),
     ...(o.wreck === undefined ? {} : { wreck: pose(o.wreck, 'level.wreck') }),
+    ...(o.edgeStyle === undefined ? {} : { edgeStyle: oneOf(o, 'edgeStyle', 'level', EDGE_STYLES) }),
   };
 
   if (def.roads.length === 0) fail('level.roads', 'a level needs at least one road');

@@ -78,6 +78,8 @@ export interface LevelsConfig {
     colours: Record<ForceKind, string>;
   };
   developerUnlockQuery: string;
+  /** Showcase R6b (SHOWCASE_PLAN §12a): true = levels open in order (LEVELS_BUILD_PLAN A2); false = every built level and Endless are open from the first visit. */
+  unlockInOrder: boolean;
 }
 
 type Obj = Record<string, unknown>;
@@ -104,6 +106,12 @@ function nums(o: Obj, key: string, path: string): number[] {
     if (typeof x !== 'number' || !Number.isFinite(x) || x <= 0) fail(`${path}.${key}[${i}]`, 'expected a positive number');
   });
   return v as number[];
+}
+
+function flag(o: Obj, key: string, path: string): boolean {
+  const v = o[key];
+  if (typeof v !== 'boolean') fail(`${path}.${key}`, 'expected true or false');
+  return v;
 }
 
 function text(o: Obj, key: string, path: string): string {
@@ -259,6 +267,7 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     forceLine,
     arrows,
     developerUnlockQuery: text(root, 'developerUnlockQuery', 'levels'),
+    unlockInOrder: flag(root, 'unlockInOrder', 'levels'),
   };
 }
 

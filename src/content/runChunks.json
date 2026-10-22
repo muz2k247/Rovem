@@ -326,6 +326,7 @@
     {
       "id": "clay-gully-1",
       "place": "clay-gully",
+      "edge": "rock",
       "name": "Clay Gully",
       "difficulty": 1,
       "lengthM": 150,
@@ -365,6 +366,7 @@
     {
       "id": "clay-gully-2",
       "place": "clay-gully",
+      "edge": "rock",
       "name": "Clay Gully",
       "difficulty": 2,
       "lengthM": 150,
@@ -423,6 +425,7 @@
     {
       "id": "clay-gully-3",
       "place": "clay-gully",
+      "edge": "rock",
       "name": "Clay Gully",
       "difficulty": 3,
       "lengthM": 150,
@@ -483,6 +486,7 @@
     {
       "id": "vent-run-1",
       "place": "vent-run",
+      "edge": "cliff",
       "name": "Vent Run",
       "difficulty": 1,
       "lengthM": 150,
@@ -505,6 +509,7 @@
     {
       "id": "vent-run-2",
       "place": "vent-run",
+      "edge": "cliff",
       "name": "Vent Run",
       "difficulty": 2,
       "lengthM": 150,
@@ -536,6 +541,7 @@
     {
       "id": "launcher-alley-2",
       "place": "launcher-alley",
+      "edge": "rock",
       "name": "Launcher Alley",
       "difficulty": 2,
       "lengthM": 150,
@@ -561,6 +567,7 @@
     {
       "id": "launcher-alley-3",
       "place": "launcher-alley",
+      "edge": "rock",
       "name": "Launcher Alley",
       "difficulty": 3,
       "lengthM": 150,
@@ -589,6 +596,7 @@
   "tunnel": {
     "id": "gravity-caves",
     "place": "gravity-caves",
+    "edge": "rock",
     "name": "Gravity Caves",
     "difficulty": 1,
     "lengthM": 150,

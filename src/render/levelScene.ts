@@ -7,11 +7,13 @@ import type { LevelSession } from '../game/level/session.ts';
 import { levelText } from '../game/level/text.ts';
 import { createAtmosphere } from './atmosphere.ts';
 import { createBursts, type BurstKind } from './bursts.ts';
+import { fogRangeM, ROCK_RANGE_M } from './cull.ts';
 import { createDevOverlay, type DevOverlay } from './devOverlay.ts';
 import { createDust } from './driveScene.ts';
 import { createForceArrows } from './forceArrows.ts';
 import { createLandmarks } from './landmarks.ts';
 import { levelCameraPose } from './levelCamera.ts';
+import { createLevelEdges } from './levelEdgeScene.ts';
 import { createPylons } from './pylons.ts';
 import { createRoverModel, wheelTurnRad, type RoverLook } from './roverModel.ts';
 import { createTerrain, groundOffsetOf, SURFACE_COLOURS } from './terrain.ts';
@@ -21,10 +23,14 @@ import { createScavengerGhost, createSplitGates, type ScavengerGhost } from './s
 import { createCameraBlend } from './runScene.ts';
 import { createSplashes, createWater, roverRideHeightM, waterBedDropM } from './water.ts';
 
-// The 3D view of one level (LEVELS_BUILD_PLAN A7, A8): terrain, canyon walls, water, pylons, signs, arches, the sky and
+// The 3D view of one level (LEVELS_BUILD_PLAN A7, A8): terrain, the edges beyond the road (R6b), water, pylons, signs, arches, the sky and
 // the rover, all placed from the session on the same ground the physics uses. It draws; it never decides what the physics
 // did. Axes as in the run scene: physics x is three x, physics z is three −z, y is up. Every number here is presentation.
 
+/** The far ground under the mountain ring (R6b): a plane that follows the camera, this far below the ground at the rover. */
+const FAR_GROUND_M = 1400;
+const FAR_GROUND_DROP_M = 18;
+const FAR_GROUND_COLOUR = 0x7a3a24;
 const FOV_AT_REST_DEG = 58;
 const FOV_PER_MPS_DEG = 1.1;
 const FOV_EASE_PER_S = 3;
@@ -59,7 +65,7 @@ export interface LevelScene {
   readonly wreckAnchor: THREE.Vector3 | undefined;
   /** How many force arrows are drawn right now. */
   readonly forceArrowCount: number;
-  readonly stats: { terrainVertices: number; terrainTiles: number; moteCount: number; shadows: boolean };
+  readonly stats: { terrainVertices: number; terrainTiles: number; moteCount: number; shadows: boolean; edgeRocks: number; mountainLayers: number };
   setShowForces(on: boolean): void;
   /** Camera shake for the crash moment: the amplitude in metres (0 = none). */
   setShake(amplitudeM: number): void;
@@ -91,6 +97,13 @@ export function createLevelScene(session: LevelSession, content: Content, option
   scene.add(terrain.group);
   const track = createTrack(world, { quality });
   scene.add(track.group);
+  // What stands beyond the edge: the rock step, the rim of a cliff and boulders (the ground itself is in the terrain), and the far ground.
+  const edges = createLevelEdges(world, { quality });
+  scene.add(edges.group);
+  const farGround = new THREE.Mesh(new THREE.PlaneGeometry(FAR_GROUND_M, FAR_GROUND_M), new THREE.MeshStandardMaterial({ color: FAR_GROUND_COLOUR, roughness: 1 }));
+  farGround.name = 'farGround';
+  farGround.rotation.x = -Math.PI / 2;
+  scene.add(farGround);
   const landmarks = createLandmarks(world, {
     signLines: (id) => {
       const info = session.signInfo(id);
@@ -126,6 +139,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
   if (gates) scene.add(gates);
 
   const arrows = createForceArrows();
+  arrows.prepare();
   scene.add(arrows.group);
   let showForces = options.showForces ?? true;
   let arrowCount = 0;
@@ -180,7 +194,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
     arrowCount = 0;
     arrows.group.position.set(pose.centreXM, rideY + ARROWS_LIFT_M, -pose.centreZM);
     if (showForces) {
-      arrows.update(hud.forces);
+      arrows.update(hud.forces, frameS);
       arrowCount = hud.forces.filter((f) => f.forceN >= 20).length;
     } else {
       arrows.update([]);
@@ -249,7 +263,13 @@ export function createLevelScene(session: LevelSession, content: Content, option
       camera.lookAt(target.x, world.heightM(target.x, target.z), -target.z);
     } else camera.up.set(0, 1, 0);
 
-    atmosphere.update(frameS, { x: camera.position.x, y: world.heightM(target.x, target.z), z: camera.position.z });
+    const groundAtRover = world.heightM(target.x, target.z);
+    farGround.position.set(camera.position.x, groundAtRover - FAR_GROUND_DROP_M, camera.position.z);
+    // Past the fog's reach things are fog-coloured: leave them undrawn (and the far rocks, too small to see).
+    const hiddenBeyondM = fogRangeM((scene.fog as THREE.FogExp2).density);
+    terrain.update(camera.position.x, camera.position.z, hiddenBeyondM);
+    edges.update(camera.position.x, camera.position.z, hiddenBeyondM, ROCK_RANGE_M[quality]);
+    atmosphere.update(frameS, { x: camera.position.x, y: groundAtRover, z: camera.position.z });
   };
   update(session);
 
@@ -286,7 +306,14 @@ export function createLevelScene(session: LevelSession, content: Content, option
       if (moment.camera === 'kick') kickLeftS = CAMERA_KICK_S;
       if (moment.camera === 'wide') fovWiden = FOV_WIDEN_DEG;
     },
-    stats: { terrainVertices: terrain.vertexCount, terrainTiles: terrain.tileCount, moteCount: atmosphere.moteCount, shadows: atmosphere.sun.castShadow },
+    stats: {
+      terrainVertices: terrain.vertexCount,
+      terrainTiles: terrain.tileCount,
+      moteCount: atmosphere.moteCount,
+      shadows: atmosphere.sun.castShadow,
+      edgeRocks: edges.rockCount,
+      mountainLayers: atmosphere.mountainLayers,
+    },
     setShowForces(on) {
       showForces = on;
     },
@@ -306,7 +333,10 @@ export function createLevelScene(session: LevelSession, content: Content, option
     },
     update,
     dispose() {
-      scene.remove(terrain.group, track.group, landmarks.group, rover, arrows.group);
+      scene.remove(terrain.group, track.group, edges.group, farGround, landmarks.group, rover, arrows.group);
+      edges.dispose();
+      farGround.geometry.dispose();
+      (farGround.material as THREE.Material).dispose();
       if (wreck) {
         scene.remove(wreck.group);
         wreck.dispose();

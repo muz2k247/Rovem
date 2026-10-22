@@ -75,6 +75,7 @@
       "name": "Ridge",
       "surfaceId": "asphalt",
       "after": "lead",
+      "edges": [{ "side": "left", "fromM": 10, "toM": 263, "style": "cliff" }],
       "segments": [
         {
           "kind": "arc",
@@ -149,6 +150,7 @@
     {
       "id": "climb",
       "after": "exit",
+      "edges": [{ "side": "both", "fromM": 30, "style": "cliff" }],
       "segments": [
         {
           "kind": "straight",

@@ -4,7 +4,13 @@ import type { ForceArrow } from '../game/contracts.ts';
 import type { MomentCamera, MomentParticles } from '../game/moments.ts';
 import type { CourseChunk } from '../game/run/course.ts';
 import type { Graphics } from '../save/settings.ts';
+import { cullByDistance, ROCK_RANGE_M } from './cull.ts';
 import { createBursts, type BurstKind } from './bursts.ts';
+import {
+  buildEdgeStrip, buildStartSurround, createEndlessEdgeField, createEndlessEdgeFeatures, ENDLESS_EDGE_STEP_M, endlessSpans, startWallSpans,
+  type EndlessEdges,
+} from './endlessEdges.ts';
+import { createEndlessSky } from './endlessSky.ts';
 import { createForceArrows } from './forceArrows.ts';
 import { lookAt, placeLook } from './placeLooks.ts';
 import { buildChunkGround, groundHeightAt } from './runGround.ts';
@@ -109,8 +115,12 @@ export function cameraPose(xM: number, zM: number, headingRad: number, wallInner
   };
 }
 
-const WALL_THICKNESS_M = 3; // the corridor width itself comes from content (run.corridorHalfWidthM)
-const WALL_HEIGHT_M = 6;
+/** The far ground under the mountain ring sits this far below the track and follows the rover. */
+const FAR_GROUND_DROP_M = 18;
+/** A cave's roof reaches this far past the corridor wall, into the rock face, so no daylight shows between roof and rock. */
+const ROOF_OVERHANG_M = 4;
+/** A cave lane whose outer edge is within this of the corridor wall (the side blocks stand between) has its roof carried out to the rock. */
+const ROOF_NEAR_WALL_M = 4;
 const ROOF_HEIGHT_M = 4.6;
 const BAG_BARREL_HEIGHT_M = 2;
 const BAG_DROP_DISTANCE_M = 4;
@@ -131,7 +141,6 @@ const ROCK_DUST = 0xb9a58c;
 const postGeometry = new THREE.ConeGeometry(0.14, 1, 5);
 
 const materials = {
-  wall: mat(0x7a3a24),
   barrier: mat(0xe0703c),
   barrierBand: mat(0xf1f1ec),
   tunnelWall: mat(0x59546a),
@@ -140,6 +149,8 @@ const materials = {
   post: mat(0xe0703c),
   bag: mat(0x6b4a2a),
   start: mat(0x7a4a38),
+  /** The ground beyond the corridor wall: vertex colours, both sides drawn (the strips on the two sides wind opposite ways). */
+  edgeGround: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, side: THREE.DoubleSide }),
 };
 
 export interface RunScene {
@@ -180,6 +191,11 @@ export interface RunSceneOptions {
 
 interface ChunkExtras {
   own: SceneryDisposables;
+  /** The meshes of the ground beyond the walls and the edge features: built for this chunk, freed with it. */
+  edgeGeometries: THREE.BufferGeometry[];
+  edges: EndlessEdges | undefined;
+  /** The big meshes of this chunk that are left undrawn once the fog hides them. */
+  cull: THREE.Mesh[];
   steam: SteamPuff[];
   dust: CaveDust[];
   cannons: CannonParts[];
@@ -189,14 +205,12 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
   const { course } = session;
   const run = content.run;
   const WALL_INNER_M = run.corridorHalfWidthM;
-  const WALL_OUTER_M = WALL_INNER_M + WALL_THICKNESS_M;
   const roverLengthM = content.constants.roverLengthM;
   const roverWidthM = content.constants.roverWidthM;
   const cellM = GROUND_CELL_M[options.quality ?? 'high'];
   const scene = new THREE.Scene();
   // Daylight on a red planet (SHOWCASE_PLAN §12). The sky and the haze take the colour of the place the rover is in.
   const skyColour = new THREE.Color(lookAt(session.section).sky);
-  const wallColour = new THREE.Color(lookAt(session.section).wall);
   scene.background = skyColour;
   const fog = new THREE.Fog(skyColour, 90, 260);
   scene.fog = fog;
@@ -204,22 +218,58 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
   const sun = new THREE.DirectionalLight(0xfff2dc, 2.4);
   sun.position.set(30, 50, 20);
   scene.add(sun);
-  materials.wall.color.copy(wallColour);
 
-  // The red ground follows the rover, so the horizon is always red.
+  // The sky: a dome and a ring of distant mountains in the colours of the place the rover is in (R6b, SHOWCASE_PLAN §12a).
+  const sky = createEndlessSky({ quality: options.quality ?? 'high', sky: skyColour });
+  scene.add(sky.group);
+
+  // The far ground under the mountain ring follows the rover, so the horizon is always red. It lies below the track: the ground
+  // beyond the corridor walls is built to EDGE.outM and hangs a skirt down to it.
   const far = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), mat(MARS_RED));
   far.rotation.x = -Math.PI / 2;
-  far.position.y = -0.12;
+  far.position.y = -FAR_GROUND_DROP_M;
   scene.add(far);
 
-  // The start area: a strip of rock under the rover's back, the canyon walls along it, and the wall behind the start line.
+  // What stands beyond the corridor walls: the field says how high the ground rises (or falls) at each point; the strips draw it,
+  // and the rock step, rim rocks and boulders stand on the scrape line (the corridor edge, `course.barrierHit`).
+  const quality = options.quality ?? 'high';
+  const edgeField = createEndlessEdgeField(course, WALL_INNER_M, session.startWallXM);
+  const startRock = lookAt(undefined);
+
+  // The start area: a strip of rock under the rover's back, the ground beyond the corridor walls along it, and the hillside behind
+  // the start line (named startWall: its face stands on the line the rover stops at).
   const startGroup = new THREE.Group();
   startGroup.name = 'startArea';
   const wallX = session.startWallXM;
   startGroup.add(boxAt(materials.start, [wallX, 0], [-WALL_INNER_M, WALL_INNER_M], -0.02, 0.02, 'startPad'));
-  startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, 0], [WALL_INNER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'startSide'));
-  startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, 0], [-WALL_OUTER_M, -WALL_INNER_M], 0, WALL_HEIGHT_M, 'startSide'));
-  startGroup.add(boxAt(materials.wall, [wallX - WALL_THICKNESS_M, wallX], [-WALL_OUTER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'startWall'));
+  const startRockRgb = (() => {
+    const c = new THREE.Color(startRock.rock);
+    return [c.r, c.g, c.b] as const;
+  })();
+  const startCellM = quality === 'high' ? 1.5 : 3;
+  const startOwn: { dispose(): void }[] = [];
+  const startWallMesh = new THREE.Mesh(buildStartSurround(edgeField, startCellM, startRockRgb), materials.edgeGround);
+  startWallMesh.name = 'startWall';
+  startGroup.add(startWallMesh);
+  startOwn.push(startWallMesh.geometry);
+  for (const side of [1, -1] as const) {
+    const strip = new THREE.Mesh(
+      buildEdgeStrip({ field: edgeField, side, x0: wallX, x1: 0, cellM: startCellM, quality, rockRgb: () => startRockRgb }),
+      materials.edgeGround,
+    );
+    strip.name = 'startSide';
+    startGroup.add(strip);
+    startOwn.push(strip.geometry);
+  }
+  const startEdges = createEndlessEdgeFeatures(
+    edgeField,
+    [...endlessSpans(edgeField, wallX, 0, ENDLESS_EDGE_STEP_M[quality]), ...startWallSpans(edgeField, ENDLESS_EDGE_STEP_M[quality])],
+    { kerb: startRock.wall, rock: startRock.wall },
+    quality,
+  );
+  startEdges.group.name = 'startEdges';
+  startGroup.add(startEdges.group);
+  startOwn.push(startEdges);
   scene.add(startGroup);
 
   const chunkGroups = new Map<number, THREE.Group>();
@@ -246,8 +296,7 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     const group = new THREE.Group();
     group.name = `chunk-${c.index}`;
     const own = newDisposables();
-    const ex: ChunkExtras = { own, steam: [], dust: [], cannons: [] };
-    const span = [c.startXM, c.endXM] as const;
+    const ex: ChunkExtras = { own, edgeGeometries: [], edges: undefined, cull: [], steam: [], dust: [], cannons: [] };
     const placeStyle = placeLook(c.place);
 
     // The ground: one mesh, colours blended across the fringe, mud and ice in dips (P3).
@@ -255,8 +304,24 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     own.geometries.push(ground.geometry);
     own.materials.push(ground.material as THREE.Material);
     group.add(ground);
-    group.add(boxAt(materials.wall, span, [WALL_INNER_M, WALL_OUTER_M], 0, WALL_HEIGHT_M, 'canyonWall'));
-    group.add(boxAt(materials.wall, span, [-WALL_OUTER_M, -WALL_INNER_M], 0, WALL_HEIGHT_M, 'canyonWall'));
+    ex.cull.push(ground);
+    // Beyond the corridor walls: the hillside, rock face or cliff drop of this place, and the things that mark the edge.
+    const rockOf = (xM: number) => rockRgb(xM);
+    for (const side of [1, -1] as const) {
+      const strip = new THREE.Mesh(buildEdgeStrip({ field: edgeField, side, x0: c.startXM, x1: c.endXM, cellM, quality, rockRgb: rockOf }), materials.edgeGround);
+      strip.name = `edgeStrip-${c.index}`;
+      strip.receiveShadow = false;
+      group.add(strip);
+      ex.cull.push(strip);
+      ex.edgeGeometries.push(strip.geometry);
+    }
+    ex.edges = createEndlessEdgeFeatures(
+      edgeField,
+      endlessSpans(edgeField, c.startXM, c.endXM, ENDLESS_EDGE_STEP_M[quality]),
+      { kerb: placeStyle.wall, rock: placeStyle.wall },
+      quality,
+    );
+    group.add(ex.edges.group);
     // Posts every 10 m near the walls: things close to the track show speed.
     for (let x = Math.ceil(c.startXM / 10) * 10; x < c.endXM; x += 10) {
       for (const side of [1, -1]) {
@@ -279,7 +344,12 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     }
     for (const zone of c.gravityZones) {
       const low = zone.kind === 'low';
-      group.add(boxAt(low ? materials.roofLow : materials.roofHigh, zone.xM, zone.zM, ROOF_HEIGHT_M, 0.3, 'roof'));
+      // The roof reaches out over the cave's side blocks and into the rock face on the outer side(s), so the cave is closed.
+      const roofZ: [number, number] = [
+        zone.zM[0] <= -WALL_INNER_M + ROOF_NEAR_WALL_M ? -WALL_INNER_M - ROOF_OVERHANG_M : zone.zM[0],
+        zone.zM[1] >= WALL_INNER_M - ROOF_NEAR_WALL_M ? WALL_INNER_M + ROOF_OVERHANG_M : zone.zM[1],
+      ];
+      group.add(boxAt(low ? materials.roofLow : materials.roofHigh, zone.xM, roofZ, ROOF_HEIGHT_M, 0.3, 'roof'));
       addCaveDressing(group, zone, ex.dust, own);
       const text = `${low ? 'LOW' : 'HIGH'} GRAVITY ×${run.gravityMultipliers[zone.kind]}`;
       const question = content.runText.tunnelQuestion;
@@ -315,6 +385,8 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
       for (const t of ex.own.textures) t.dispose();
       for (const m of ex.own.materials) m.dispose();
       for (const g of ex.own.geometries) g.dispose();
+      for (const g of ex.edgeGeometries) g.dispose();
+      ex.edges?.dispose();
       for (const cp of ex.cannons) cannonX.delete(cp.cannon.id);
     }
     extras.delete(index);
@@ -348,14 +420,13 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
   arrows.group.name = 'forceArrows';
   scene.add(arrows.group);
   const ARROWS_HEIGHT_M = 0.9;
-  const camera = new THREE.PerspectiveCamera(FOV_AT_REST_DEG, 1, 0.1, 400);
+  const camera = new THREE.PerspectiveCamera(FOV_AT_REST_DEG, 1, 0.1, 520);
   const dust = createDust(scene);
   const dustPoints = scene.getObjectByName('dust') as THREE.Points | undefined;
   if (dustPoints) (dustPoints.material as THREE.PointsMaterial).size = 0.22; // smaller than the test course: near puffs hid the track
   const dustColour = new THREE.Color();
   const bursts = createBursts(scene);
   const targetSky = new THREE.Color();
-  const targetWall = new THREE.Color();
   let lastDistanceM = 0;
   let wheelAngle = 0;
   let steerEased = 0;
@@ -383,17 +454,19 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     const x = state.positionXM;
     const z = state.positionZM;
     syncChunks(x);
+    // Past the fog's far end things are fog-coloured: leave them undrawn (and the far rocks, too small to see).
+    for (const ex of extras.values()) {
+      cullByDistance(ex.cull, camera.position.x, camera.position.z, fog.far);
+      ex.edges?.update(camera.position.x, camera.position.z, fog.far, ROCK_RANGE_M[quality]);
+    }
     far.position.x = x;
     far.position.z = -z;
 
-    // The look of the place: the sky, the haze and the walls ease toward the colours of the section the rover is in.
+    // The look of the place: the sky, the mountains and the haze ease toward the colours of the section the rover is in.
     const place = lookAt(s.section);
     targetSky.setHex(place.sky);
-    targetWall.setHex(place.wall);
     const k = frameS > 0 ? Math.min(1, LOOK_EASE_PER_S * frameS) : 1;
     skyColour.lerp(targetSky, k);
-    wallColour.lerp(targetWall, k);
-    materials.wall.color.copy(wallColour);
     fog.color.copy(skyColour);
 
     // The rover rides the drawn ground: mud and ice dips, sand ripples.
@@ -507,6 +580,7 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     const camZ = Math.min(limit, Math.max(-limit, pose.position.z + shakeZ));
     camera.position.set(pose.position.x + shakeX, CAMERA_UP_M + shakeY + kickY, -camZ);
     camera.lookAt(pose.look.x, 0.8, -pose.look.z);
+    sky.update(camera.position, skyColour);
   };
   update(session);
 
@@ -561,6 +635,9 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
       skid.dispose();
       bursts.dispose();
       for (const index of [...chunkGroups.keys()]) removeChunk(index);
+      scene.remove(sky.group, startGroup);
+      sky.dispose();
+      for (const o of startOwn) o.dispose();
     },
   };
 }

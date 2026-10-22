@@ -3,6 +3,7 @@
   "name": "Geyser Canyon",
   "placeholder": true,
   "atmosphere": "orange-haze",
+  "edgeStyle": "rock",
   "parS": 115,
   "start": {
     "xM": 0,
@@ -33,6 +34,7 @@
     {
       "id": "start",
       "name": "Canyon mouth",
+      "edges": [{ "side": "both", "style": "hill" }],
       "start": {
         "xM": 0,
         "zM": 0,
@@ -83,6 +85,7 @@
       "surfaceId": "sand",
       "runoffSurfaceId": "sand",
       "after": "lead",
+      "edges": [{ "side": "left", "fromM": 20, "toM": 370, "style": "cliff" }],
       "segments": [
         {
           "kind": "arc",

@@ -20,6 +20,7 @@ import type {
   PowerUp,
   PowerUpVariable,
   RectM,
+  EdgeStyle,
   RunChunk,
   RunChunks,
   RunParams,
@@ -408,6 +409,7 @@ function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly 
   return {
     id: str(o, 'id', path),
     place: str(o, 'place', path),
+    ...(o.edge === undefined ? {} : { edge: oneOf(o, 'edge', path, EDGE_STYLE_IDS) as EdgeStyle }),
     name: str(o, 'name', path),
     difficulty,
     lengthM,
@@ -434,6 +436,7 @@ function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly 
 }
 
 const CANNON_KINDS: readonly CannonKind[] = ['headOn', 'kicker'];
+const EDGE_STYLE_IDS: readonly EdgeStyle[] = ['hill', 'rock', 'cliff'];
 const GRAVITY_KINDS: readonly GravityKind[] = ['low', 'high'];
 
 function runChunks(raw: unknown, runParams: RunParams, surfaceIds: readonly string[]): RunChunks {

@@ -22,6 +22,7 @@ import { createRunSession, type RunSession } from '../game/run/runSession.ts';
 import { createTraceRecorder, endlessReportModel } from '../game/run/reportModel.ts';
 import { sectionJumpX } from '../game/run/sectionJump.ts';
 import { createEffectSounds, effectForSound } from '../render/effectSounds.ts';
+import { warmShaders } from '../render/warmup.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { roverLookFor } from '../render/roverModel.ts';
 import { createRunScene, type RunScene } from '../render/runScene.ts';
@@ -151,6 +152,7 @@ export function RunScreen({
       view.camera.updateProjectionMatrix();
     };
     resize();
+    warmShaders(renderer, view.scene, view.camera);
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 

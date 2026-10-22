@@ -24,6 +24,7 @@ import type { SpeedUnit } from '../game/run/feedback.ts';
 import { SLIDE_MARK_RAD, SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
 import { createEffectSounds, effectForSound } from '../render/effectSounds.ts';
+import { warmShaders } from '../render/warmup.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { createLevelScene, type LevelScene } from '../render/levelScene.ts';
 import { roverLookFor } from '../render/roverModel.ts';
@@ -186,6 +187,7 @@ export function LevelScreen(props: LevelScreenProps) {
       view.camera.updateProjectionMatrix();
     };
     resize();
+    warmShaders(renderer, view.scene, view.camera); // no shader is built mid-drive
     const observer = new ResizeObserver(resize);
     observer.observe(host);
 

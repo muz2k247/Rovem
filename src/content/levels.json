@@ -62,5 +62,6 @@
       "magnet": "#F2C14E"
     }
   },
-  "developerUnlockQuery": "unlock=all"
+  "developerUnlockQuery": "unlock=all",
+  "unlockInOrder": false
 }

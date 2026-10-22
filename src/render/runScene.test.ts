@@ -494,3 +494,65 @@ describe('graphics quality (R2)', () => {
     low.dispose();
   });
 });
+
+describe('natural edges and sky in the Endless Canyon (R6b, SHOWCASE_PLAN §12a)', () => {
+  it('draws no flat wall strip: no canyonWall box, and the ground beyond the corridor is strips', () => {
+    const { session, view } = make(7);
+    const all = names(view.scene);
+    expect(all).not.toContain('canyonWall');
+    for (const index of view.loadedChunkIndices()) expect(all).toContain(`edgeStrip-${index}`);
+    expect(count(view.scene, 'startSide')).toBe(2);
+    view.scene.traverse((o) => {
+      if (!o.name.startsWith('edgeStrip-')) return;
+      expect((o as THREE.Mesh).geometry.type).toBe('BufferGeometry'); // a surface that rises or falls, not a box
+    });
+    expect(session.course.chunks.length).toBeGreaterThan(1);
+  });
+
+  it('has a dome and a mountain ring that follow the camera, and a far ground below the track', () => {
+    const { session, view } = make(7);
+    view.update(session, 1 / 60);
+    const dome = view.scene.getObjectByName('sky')!;
+    const ring = view.scene.getObjectByName('mountains')!;
+    expect(dome).toBeDefined();
+    expect(ring).toBeDefined();
+    expect(ring.children).toHaveLength(2);
+    expect(dome.position.x).toBeCloseTo(view.camera.position.x, 6);
+    expect(ring.position.z).toBeCloseTo(view.camera.position.z, 6);
+    expect(ring.position.y).toBeCloseTo(view.camera.position.y, 6);
+  });
+
+  it('the sky, the mountains and the haze take the colour of the place the rover is in', () => {
+    const { session, view } = make(7);
+    session.course.ensureAhead(900);
+    const target = session.course.chunks.find((c) => c.place === 'dune-sea') ?? session.course.chunks[2]!;
+    view.update(fakeAt(session, (target.startXM + target.endXM) / 2), 0); // frameS 0: the look jumps to the place at once
+    const want = new THREE.Color(placeLook(target.place).sky);
+    expect((view.scene.background as THREE.Color).getHex()).toBe(want.getHex());
+    const base = (view.scene.getObjectByName('mountains')!.children[0] as THREE.Mesh).geometry.getAttribute('color');
+    expect(base.getX(0)).toBeCloseTo(want.r, 5);
+    expect(base.getY(0)).toBeCloseTo(want.g, 5);
+  });
+
+  it('Graphics Low has one mountain layer', () => {
+    const session = createRunSession({ content, rover: rover(), constants, seed: 7, input: () => 0 });
+    const low = createRunScene(session, content, 'all-terrain', { quality: 'low' });
+    expect(low.scene.getObjectByName('mountains')!.children).toHaveLength(1);
+    low.dispose();
+  });
+
+  it('Gravity Caves are rock faces, and their roof reaches into the rock', () => {
+    const { session, view } = make(7);
+    const cave = session.course.chunks.find((c) => c.kind === 'tunnel')!;
+    expect(cave.edge).toBe('rock');
+    view.update(fakeAt(session, cave.startXM + 50));
+    const roofs: THREE.Box3[] = [];
+    view.scene.traverse((o) => {
+      if (o.name === 'roof') roofs.push(new THREE.Box3().setFromObject(o));
+    });
+    const half = content.run.corridorHalfWidthM;
+    expect(roofs.length).toBeGreaterThan(0);
+    // somewhere the roof reaches past the corridor wall, into the rock face
+    expect(Math.max(...roofs.map((b) => Math.max(b.max.z, -b.min.z)))).toBeGreaterThan(half + 1);
+  });
+});

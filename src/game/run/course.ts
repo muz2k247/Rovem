@@ -1,4 +1,4 @@
-import type { CannonKind, Content, GravityKind, PointM, RectM, RunChunk } from '../../content/index.ts';
+import type { CannonKind, Content, EdgeStyle, GravityKind, PointM, RectM, RunChunk } from '../../content/index.ts';
 import type { EdgeContact } from '../../physics/collision.ts';
 import { footprintCorners, footprintOverlapsBox, pointInPolygon } from '../geometry.ts';
 import { mulberry32 } from './rng.ts';
@@ -40,6 +40,8 @@ export interface CourseChunk {
   place: string;
   /** The place's name, shown on the entry post and in the HUD. */
   name: string;
+  /** What stands beyond the corridor walls here (R6b). */
+  edge: EdgeStyle;
   /** Where the entry post stands (world x); none for the warm-up. */
   entryPostXM?: number;
   /** A line through the section that avoids every obstacle (world coordinates, mirrored with the section). */
@@ -89,6 +91,7 @@ export function createRunCourse(content: Content, seed: number) {
       id: t.id,
       place: t.place,
       name: t.name,
+      edge: t.edge ?? 'hill',
       entryPostXM: startXM + t.entryPostXM,
       line: t.line.map(pt),
       startXM,
@@ -115,7 +118,7 @@ export function createRunCourse(content: Content, seed: number) {
     const startXM = last ? last.endXM : 0;
     if (index === 0) {
       chunks.push({
-        index, kind: 'warmUp', id: 'warm-up', place: 'start', name: 'Start', line: [], startXM, endXM: run.warmUpLengthM, mirrored: false,
+        index, kind: 'warmUp', id: 'warm-up', place: 'start', name: 'Start', edge: 'hill', line: [], startXM, endXM: run.warmUpLengthM, mirrored: false,
         tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [],
       });
       return;

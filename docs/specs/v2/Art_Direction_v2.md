@@ -12,6 +12,7 @@
 | Natural terrain: surfaces sit where nature puts them, with blended edges | The friends' critique: perfect rectangles break immersion | DECISIONS 2026-10-21 (D10) |
 | Colours, HUD, sound and the story's look added | SHOWCASE_PLAN section 12 | DECISIONS 2026-10-21 |
 | Built in R2 (2026-10-21): the natural ground (1 m colour fringe, dips, ripples), a look for each Endless place, the glass HUD, the new sounds | Session R2 | DECISIONS 2026-10-21 (R2) |
+| Edges and sky added (section 3a): hillsides, rock faces and cliff drops instead of flat wall strips; a code-drawn mountain ring; the Endless Canyon gets a sky | A friend said the walls break immersion; ROADMAP OI-30 | SHOWCASE_PLAN §12a, DECISIONS 2026-10-22 (R6b) |
 | Rover look: the v4 garage drawing in 3D, with the three slots visibly separate | A5 | LEVELS_BUILD_PLAN A5 |
 | The nine mood images kept as mood only; the moon and Milky Way landing backdrops and the sign-in screens moved to Superseded | Sign-in is future | E25, E38 |
 
@@ -28,7 +29,7 @@ An **unnamed red planet**. The student's ship crashed on it; five parts were thr
 
 - The physics uses simple smooth polygons for surfaces and gravity zones; rectangles stay valid as four-corner polygons so old data still loads.
 - The ground colour blends across a 1 m noise-warped fringe, so no edge looks cut out. The ground height matches: mud and ice lie in dips, dunes roll. (Provisional values. Built in R2: the fringe is read from 9 samples on a 0.45 m ring round a point moved by noise of at most 0.15 m; mud dips 0.10 m, ice 0.05 m, sand ripples 0.07 m every 2.2 m; the rover rides the drawn ground and the physics stays flat.)
-- Open ground with natural edges (cliffs, rims, dunes, water). Built walls appear only where a fork needs two separate roads.
+- Open ground with natural edges (cliffs, rims, dunes, water). **No flat wall strip stands anywhere** (R6b, below). What the rover scrapes along is drawn as what nature would put there.
 - Surfaces must read from the driving view: dark road or rock, pale sand, pale blue ice, dark mud.
 - Each element gets a **warning** (you see it coming), a **moment** (sound, particles, camera) and a **pop-up** with the student's numbers (SHOWCASE_PLAN section 10).
 
@@ -57,6 +58,18 @@ Made in code with Web Audio; no sound files. The engine follows the throttle: si
 ## 7 The story's look (Planned, R3 and R8)
 
 The opening is one skippable line in the 3D scene at the wreck. Level select shows the ship's silhouette, and each recovered part lights up on it; unbuilt levels show as locked parts. Pickup lines tie the part to the force just used, with the student's numbers (placeholder text for k._muz's review). The ending is a short launch scene, camera only, about 10 s, then "Home".
+
+## 3a Edges and the sky (Confirmed 2026-10-22; Built in R6b; SHOWCASE_PLAN §12a)
+
+The edge the rover scrapes along (`world.hit`, and the corridor edge in Endless) does not move; only what is drawn there changes. The visible contact stands within 0.3 m of the scrape line, because what the student sees must be what they hit. The physics never reads the ground beyond the edge. Values are provisional, chosen by Claude.
+
+- **Hillside (the default).** A broken rock step 0.6–1.2 m tall with boulders at its foot, then a slope of 25°–40° (varied by smooth noise) up to 8–15 m above the edge, then rolling ground. A rover could plausibly drive up a bare slope, so the step and the boulders explain why it scrapes.
+- **Rock face (canyons and caves).** 55°–75°, broken into facets, 10–25 m tall, darker with bands. The Gravity Caves' roof reaches into it.
+- **Cliff drop (on ledges).** A rim of rocks 0.6–1.2 m tall with gaps no wider than 1.5 m, then the ground falls 10–20 m within 6 m beyond the rim, to a valley floor. Only where no other road lies within 30 m beyond the edge. The rover never falls; there is no new respawn cause.
+- **Where each is used.** A level file can name a style per road side and stretch (`edges` on a road, `edgeStyle` for the level; default `hill`). An Endless place names its style in its template (`edge`): Clay Gully, Launcher Alley and Gravity Caves are rock; Vent Run is a cliff; the others are hillsides. A change of style blends over a few metres.
+- **Ground beyond the edge** is built 40 m out (cells twice as big beyond the first margin, with the shared sides snapped so no crack opens), with a skirt that hangs to a far ground under the mountain ring.
+- **Sky in code, not a photo.** The levels keep their sky dome, sun, stars, aurora and lights; the Endless Canyon gets the same kind of dome, in the colour of the place the rover is in. Both get a **ring of distant low-poly mountains** inside the dome: two layers (Graphics Low: one) at 360 m and 300 m from the camera, peaks 2°–7° above the horizon, following the camera, drawn without fog, base in exactly the fog colour, peaks 80% (far) and 60% (near) fog colour mixed with a darker rock tone. No environment map: the lighting stays as tuned. Why code and not an HDR photo: the free photos are Earth photographs (blue sky, green plants) that clash with an unnamed red planet and with flat-shaded low-poly, they cannot follow each level's colours, and they cost 2–6 MB each. An HDR for lighting only stays a possible follow-up (it needs k._muz's asset approval).
+- The hillsides are tall enough that the mountains show mostly where the road runs out, over a cliff drop, or above a low hill. That follows from the plan's numbers; k._muz may want lower hills.
 
 ## 8 Levels' atmosphere (Built for the seven Game v4 levels; the five new levels Planned)
 

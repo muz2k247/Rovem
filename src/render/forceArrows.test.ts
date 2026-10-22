@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ArrowHelper, Group, Object3D, Vector3 } from 'three';
 import { levelsConfig } from '../content/levelsConfig.ts';
 import type { ForceArrow } from '../game/contracts.ts';
-import { arrowLabel, arrowLengthM, arrowName, createForceArrows, isArrowVisible } from './forceArrows.ts';
+import { arrowLabel, arrowLengthM, arrowName, createForceArrows, isArrowVisible, LABEL_REFRESH_S } from './forceArrows.ts';
 
 const cfg = levelsConfig.arrows;
 const push = (forceN: number, extra?: Partial<ForceArrow>): ForceArrow => ({
@@ -87,6 +87,28 @@ describe('createForceArrows', () => {
     expect(made).toEqual(['Push 1000 N']);
     fa.update([]);
     expect(fa.group.children.filter((c) => c.visible)).toHaveLength(0);
+  });
+
+  it('redraws a label in place instead of building a new one, and not more than a few times a second', () => {
+    let made = 0;
+    const drawn: string[] = [];
+    const fa = createForceArrows(cfg, (text) => {
+      made++;
+      const label = new Object3D();
+      label.userData.redraw = (words: string) => drawn.push(words);
+      drawn.push(text);
+      return label;
+    });
+    fa.update([push(1000)], 0.016);
+    fa.update([push(1010)], 0.016); // a new number, too soon: the old words stay
+    fa.update([push(1020)], 0.016);
+    expect(drawn).toEqual(['Push 1000 N']);
+    fa.update([push(1030)], LABEL_REFRESH_S); // enough time has passed
+    expect(drawn).toEqual(['Push 1000 N', 'Push 1030 N']);
+    expect(made).toBe(1);
+    fa.update([{ kind: 'friction', forceN: 400, directionWorld: { x: -1, y: 0, z: 0 } }], 0.016); // a different force is named at once
+    expect(drawn.at(-1)).toBe('Friction 400 N');
+    expect(made).toBe(1);
   });
 
   it('works in Node, where there is no canvas for labels', () => {

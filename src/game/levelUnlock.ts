@@ -3,9 +3,10 @@ import type { LevelCard } from '../content/levelCards.ts';
 import { isFinished, starsOf, type LevelProgress } from '../save/levelProgress.ts';
 import type { LevelSummary } from './contracts.ts';
 
-// Which levels are open (LEVELS_BUILD_PLAN A2). Levels open in order: finishing a level opens the next. Endless opens
-// after the first level. The hidden developer link (`?unlock=all`) opens everything; it is read from the address
-// each time and is never saved.
+// Which levels are open. Since Showcase R6b (SHOWCASE_PLAN §12a, 2026-10-22) every built level and Endless are open
+// from the first visit (`unlockInOrder: false` in levels.json). With the switch on, the rule of LEVELS_BUILD_PLAN A2
+// applies: levels open in order, finishing a level opens the next, and Endless opens after the first level. The hidden
+// developer link (`?unlock=all`) opens the old v4 files too; it is read from the address each time and is never saved.
 
 /** True when the address carries the developer link, e.g. `?unlock=all`. */
 export function developerUnlockFromSearch(search: string, query: string = levelsConfig.developerUnlockQuery): boolean {
@@ -14,22 +15,33 @@ export function developerUnlockFromSearch(search: string, query: string = levels
   return params.get(key ?? '') === value;
 }
 
-/** A level is open if it is the first, the one before it is finished, or the developer link is on. */
-export function isLevelUnlocked(ids: readonly string[], index: number, progress: LevelProgress, developerUnlock: boolean): boolean {
+/** A level is open if the in-order switch is off, it is the first, the one before it is finished, or the developer link is on. */
+export function isLevelUnlocked(
+  ids: readonly string[],
+  index: number,
+  progress: LevelProgress,
+  developerUnlock: boolean,
+  inOrder: boolean = levelsConfig.unlockInOrder,
+): boolean {
   if (index < 0 || index >= ids.length) return false;
-  if (developerUnlock || index === 0) return true;
+  if (developerUnlock || index === 0 || !inOrder) return true;
   return isFinished(progress, ids[index - 1]!);
 }
 
-/** Endless opens once the first level is finished. */
-export function isEndlessUnlocked(ids: readonly string[], progress: LevelProgress, developerUnlock: boolean): boolean {
-  return developerUnlock || (ids[0] !== undefined && isFinished(progress, ids[0]));
+/** Endless is open when the in-order switch is off; otherwise once the first level is finished. */
+export function isEndlessUnlocked(
+  ids: readonly string[],
+  progress: LevelProgress,
+  developerUnlock: boolean,
+  inOrder: boolean = levelsConfig.unlockInOrder,
+): boolean {
+  return developerUnlock || !inOrder || (ids[0] !== undefined && isFinished(progress, ids[0]));
 }
 
-/** Continue on Home: the first open level that is not finished, from the real progress. Null when all are finished. */
-export function continueTarget(ids: readonly string[], progress: LevelProgress): string | null {
+/** Continue on Home: the first open level that is not finished (`ids` are the built levels), from the real progress. Null when all are finished. */
+export function continueTarget(ids: readonly string[], progress: LevelProgress, inOrder: boolean = levelsConfig.unlockInOrder): string | null {
   for (let i = 0; i < ids.length; i++) {
-    if (!isFinished(progress, ids[i]!)) return isLevelUnlocked(ids, i, progress, false) ? ids[i]! : null;
+    if (!isFinished(progress, ids[i]!)) return isLevelUnlocked(ids, i, progress, false, inOrder) ? ids[i]! : null;
   }
   return null;
 }
@@ -46,6 +58,7 @@ export function levelSummaries(
   progress: LevelProgress,
   developerUnlock: boolean,
   built?: ReadonlySet<string>,
+  inOrder: boolean = levelsConfig.unlockInOrder,
 ): LevelSummary[] {
   const ids = levels.map((l) => l.id);
   return levels.map((l, i) => ({
@@ -55,7 +68,7 @@ export function levelSummaries(
     hook: l.hook,
     stars: starsOf(progress, l.id),
     bestTimeS: progress.levels[l.id]?.bestTimeS ?? null,
-    locked: !isLevelUnlocked(ids, i, progress, developerUnlock),
+    locked: !isLevelUnlocked(ids, i, progress, developerUnlock, inOrder),
     ...(built && !built.has(l.id) ? { comingSoon: true } : {}),
   }));
 }

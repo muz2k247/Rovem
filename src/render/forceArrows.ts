@@ -38,28 +38,41 @@ export function arrowLabel(arrow: ForceArrow): string {
   return arrow.extraLabel ? `${base} · ${arrow.extraLabel}` : base;
 }
 
-/** Makes the label object for one arrow, or null for none. Replaceable so tests run without a canvas. */
+/** Makes the label object for one arrow, or null for none. Replaceable so tests run without a canvas. A label that can be redrawn in place says how in `userData.redraw`. */
 export type LabelFactory = (text: string, colour: string) => Object3D | null;
 
-/** A text sprite drawn on a canvas. Returns null where there is no canvas (Node tests). */
+/** The label's canvas is this wide and tall in pixels whatever it says; the text is centred, with its dark panel behind it. */
+const LABEL_PX = { width: 768, height: 44 } as const;
+/** A label's words change at most this often (seconds): a number that flickers every frame is unreadable, and each change redraws a texture. */
+export const LABEL_REFRESH_S = 0.25;
+
+/** A text sprite drawn on a canvas. Returns null where there is no canvas (Node tests). Its text is redrawn in place, not rebuilt. */
 export const canvasLabel: LabelFactory = (text, colour) => {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
+  canvas.width = LABEL_PX.width;
+  canvas.height = LABEL_PX.height;
   const font = '600 28px "IBM Plex Sans", system-ui, sans-serif';
-  ctx.font = font;
-  canvas.width = Math.ceil(ctx.measureText(text).width) + 20;
-  canvas.height = 44;
-  ctx.font = font;
-  ctx.fillStyle = 'rgba(13, 17, 23, 0.8)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = colour;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 10, canvas.height / 2);
-  const sprite = new Sprite(new SpriteMaterial({ map: new CanvasTexture(canvas), depthTest: false, transparent: true }));
+  const texture = new CanvasTexture(canvas);
+  const draw = (words: string, ink: string) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = font;
+    const w = Math.min(canvas.width, Math.ceil(ctx.measureText(words).width) + 20);
+    const x0 = (canvas.width - w) / 2;
+    ctx.fillStyle = 'rgba(13, 17, 23, 0.8)';
+    ctx.fillRect(x0, 0, w, canvas.height);
+    ctx.fillStyle = ink;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(words, x0 + 10, canvas.height / 2);
+    texture.needsUpdate = true;
+  };
+  draw(text, colour);
+  const sprite = new Sprite(new SpriteMaterial({ map: texture, depthTest: false, transparent: true }));
   const heightM = 0.3;
   sprite.scale.set((heightM * canvas.width) / canvas.height, heightM, 1);
+  sprite.userData.redraw = draw;
   return sprite;
 };
 
@@ -67,19 +80,26 @@ interface Slot {
   arrow: ArrowHelper;
   label: Object3D | null;
   labelText: string;
+  /** The seconds on the arrows' own clock when the label last changed. */
+  labelAtS: number;
+  /** The force the label names: a new force is shown at once, only a new number waits. */
+  labelKind: ForceKind | null;
 }
 
 export interface ForceArrows {
   /** Add this to the rover's group; arrows start at its origin. */
   group: Group;
-  /** Show exactly these forces (those under the hide limit or with no direction are skipped). */
-  update(arrows: readonly ForceArrow[]): void;
+  /** Show exactly these forces (those under the hide limit or with no direction are skipped). `dtS` is the time since the last call, for the label refresh. */
+  update(arrows: readonly ForceArrow[], dtS?: number): void;
+  /** Build the first arrow and its label now, hidden, so their shaders can be compiled before the first frame. */
+  prepare(): void;
   dispose(): void;
 }
 
 export function createForceArrows(style: ArrowStyle = levelsConfig.arrows, makeLabel: LabelFactory = canvasLabel): ForceArrows {
   const group = new Group();
   const slots: Slot[] = [];
+  let clockS = 0;
   const dir = new Vector3();
   const tip = new Vector3();
 
@@ -98,7 +118,7 @@ export function createForceArrows(style: ArrowStyle = levelsConfig.arrows, makeL
       const arrow = new ArrowHelper(new Vector3(1, 0, 0), new Vector3(), 1, 0xffffff);
       arrow.visible = false;
       group.add(arrow);
-      s = { arrow, label: null, labelText: '' };
+      s = { arrow, label: null, labelText: '', labelAtS: -Infinity, labelKind: null };
       slots[i] = s;
     }
     return s;
@@ -111,7 +131,18 @@ export function createForceArrows(style: ArrowStyle = levelsConfig.arrows, makeL
 
   return {
     group,
-    update(arrows) {
+    prepare() {
+      const s = slot(0);
+      if (!s.label) {
+        s.label = makeLabel(' ', '#ffffff');
+        if (s.label) {
+          s.label.visible = false;
+          group.add(s.label);
+        }
+      }
+    },
+    update(arrows, dtS = 0) {
+      clockS += dtS;
       let used = 0;
       for (const a of arrows) {
         if (!isArrowVisible(a.forceN, style)) continue;
@@ -130,10 +161,23 @@ export function createForceArrows(style: ArrowStyle = levelsConfig.arrows, makeL
 
         const text = arrowLabel(a);
         if (text !== s.labelText) {
-          disposeLabel(s.label);
-          s.label = makeLabel(text, colour);
-          if (s.label) group.add(s.label);
-          s.labelText = text;
+          const redraw = s.label?.userData.redraw as ((words: string, ink: string) => void) | undefined;
+          if (redraw) {
+            // Same sprite, same texture: redraw it, and not more than a few times a second.
+            if (a.kind !== s.labelKind || clockS - s.labelAtS >= LABEL_REFRESH_S) {
+              redraw(text, colour);
+              s.labelText = text;
+              s.labelAtS = clockS;
+              s.labelKind = a.kind;
+            }
+          } else {
+            disposeLabel(s.label);
+            s.label = makeLabel(text, colour);
+            if (s.label) group.add(s.label);
+            s.labelText = text;
+            s.labelAtS = clockS;
+              s.labelKind = a.kind;
+          }
         }
         if (s.label) {
           tip.copy(dir).multiplyScalar(length);

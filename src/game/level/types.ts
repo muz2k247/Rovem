@@ -1,4 +1,4 @@
-import type { CannonKind, GravityKind, PointM } from '../../content/index.ts';
+import type { CannonKind, EdgeStyle, GravityKind, PointM } from '../../content/index.ts';
 
 // The level file format (LEVELS_BUILD_PLAN A9). Each level is one JSON file in `src/content/levels/`, validated on
 // load by `schema.ts`. Axes as everywhere in the game layer: x along the start heading, z to its left, metres.
@@ -13,6 +13,22 @@ export interface Pose {
   xM: number;
   zM: number;
   headingDeg: number;
+}
+
+/**
+ * What stands beyond the edge the rover scrapes along (SHOWCASE_PLAN §12a, R6b): a hillside behind a broken rock step (the default),
+ * a faceted rock face (canyons and caves), or a cliff drop behind a rim of rocks. Presentation only: the scrape line does not move.
+ */
+export const EDGE_STYLES: readonly EdgeStyle[] = ['hill', 'rock', 'cliff'];
+export type { EdgeStyle };
+
+/** The edge style along a stretch of one side of a road. Later rules win. A side is the left (+z of the heading) or the right of the road. */
+export interface EdgeRule {
+  side: 'left' | 'right' | 'both';
+  /** Distance along the road where the stretch begins and ends. Left out: the road's start and end. */
+  fromM?: number;
+  toM?: number;
+  style: EdgeStyle;
 }
 
 /** One piece of a road, driven from where the last one ended. An arc turns left for a positive angle, right for a negative one. */
@@ -40,6 +56,8 @@ export interface RoadDef {
    * routes. A rover that lands there, or drives into it, falls and comes back to the last checkpoint; a jump crosses it.
    */
   gap?: { fromM: number; toM: number };
+  /** What stands beyond the edge of this road, per side and stretch (R6b). Left out: the level's `edgeStyle`. */
+  edges?: EdgeRule[];
 }
 
 /** A cosine-bell hill: rises to `heightM` at the centre and falls to 0 at `radiusM`. */
@@ -278,6 +296,8 @@ export interface LevelDef {
   scavenger?: ScavengerDef;
   /** The smoking wreck beside the start (Crash Site): where the opening line stands. */
   wreck?: Pose;
+  /** What stands beyond the edges where a road's own `edges` say nothing (R6b). Default `hill`. */
+  edgeStyle?: EdgeStyle;
 }
 
 /** The looks a level can ask for (A8). Presentation only; `src/render/atmosphere.ts` has one preset for each. */

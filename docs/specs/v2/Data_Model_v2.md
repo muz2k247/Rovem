@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| "Whether a level is open" changed (2026-10-22, R6b): all built levels and Endless open from the first visit; the in-order rule stays behind a switch | The advisor must see the whole game in one sitting; no saved field changes | DECISIONS 2026-10-22 (R6b), `levelUnlock.ts` |
 | New section "What is saved today": three local-storage records, no database | Game v4 and the Showcase save only stars, times, distance, build and settings | DECISIONS 2026-10-14, 2026-10-17; code `src/save/` |
 | The seven-table model (missions, parts, questions, player, question_progress, player_mission, player_part) moved to Superseded | Questions, Knowledge and missions are not used | E42, E43, DECISIONS 2026-10-17 |
 | New "Future cloud model (M12)": a player table, a level-progress table and an endless table, with the rules that stay | E42 | E42 |
@@ -28,7 +29,7 @@ The game saves on the device in the browser's local storage, in three records th
 
 | Value | How it is calculated |
 |---|---|
-| Whether a level is open | Levels open in order: a level is open when the previous one is finished (best stars ≥ 1). The Endless Canyon opens after the first level. `?unlock=all` opens all and is never saved. (`levelUnlock.ts`) |
+| Whether a level is open | **Since 2026-10-22 (R6b): every built level and the Endless Canyon are open from the first visit**, because `unlockInOrder` in `levels.json` is `false`; a level with no file is "Coming soon". Nothing about it is saved. With the switch `true` the earlier rule applies: a level is open when the previous one is finished (best stars ≥ 1), and the Endless Canyon opens after the first level. `?unlock=all` opens the old Game v4 files too and is never saved. "Continue" goes to the first unfinished built level. (`levelUnlock.ts`) *Superseded: in-order unlocking as the only rule (LEVELS_BUILD_PLAN A2, 2026-10-17).* |
 | Total stars | The sum of the best star counts |
 
 **What is not stored.** Run results, the report, the Scavenger's run, the booster state and the student's previous run are shown during play but not saved (the "vs your last run" comparison is kept for the session only). Reset progress clears level stars and times and the Endless bests, and keeps the chosen parts and the speed unit.

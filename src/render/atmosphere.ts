@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { AtmosphereId } from '../game/level/types.ts';
+import { createMountainRing } from './mountains.ts';
 
 // The look of each level (LEVELS_BUILD_PLAN A8): sky colours, fog, dust or mist, the angle of the light, stars and the
 // aurora. Looks only; no physics. Graphics Low turns off the fog particles and the shadows. Every number here is
@@ -91,6 +92,8 @@ const SKY_RADIUS_M = 400;
 const SUN_DISTANCE_M = 90;
 const SHADOW_HALF_M = 32;
 const MOTE_BOX_M = 80;
+/** The mountain ring's horizon stands this far above the ground at the rover: about where the chase camera's eye is. */
+const MOUNTAIN_EYE_M = 2;
 
 /** A fixed-seed generator: the same sky every time. */
 function lcg(seed: number) {
@@ -105,6 +108,8 @@ export interface Atmosphere {
   sun: THREE.DirectionalLight;
   /** How many fog or dust particles are in the air (0 on Graphics Low). */
   moteCount: number;
+  /** The ring of distant mountains inside the dome (R6b): two layers on Graphics High, one on Low. */
+  mountainLayers: number;
   /** Follow the rover. `focus` is in three.js axes. */
   update(frameS: number, focus: { x: number; y: number; z: number }): void;
   dispose(): void;
@@ -142,6 +147,11 @@ export function createAtmosphere(scene: THREE.Scene, id: AtmosphereId, quality: 
   sky.renderOrder = -10;
   sky.frustumCulled = false;
   disposables.push(skyGeometry, skyMaterial);
+
+  // The mountain ring inside the dome (SHOWCASE_PLAN §12a): no fog, base in the fog colour.
+  const mountains = createMountainRing({ quality, fogColour: p.fogColour });
+  add(mountains.group);
+  disposables.push(mountains);
 
   const hemi = add(new THREE.HemisphereLight(p.hemiSky, p.hemiGround, p.hemiIntensity));
   hemi.name = 'hemisphere';
@@ -239,11 +249,13 @@ export function createAtmosphere(scene: THREE.Scene, id: AtmosphereId, quality: 
   return {
     sun,
     moteCount: motesSpec?.count ?? 0,
+    mountainLayers: mountains.layerCount,
     update(frameS, focus) {
       timeS += frameS;
       sun.target.position.set(focus.x, focus.y, focus.z);
       sun.position.copy(sun.target.position).add(sunOffset);
       sky.position.set(focus.x, 0, focus.z);
+      mountains.follow(focus.x, focus.y + MOUNTAIN_EYE_M, focus.z);
       stars?.position.set(focus.x, 0, focus.z);
       auroraGroup?.position.set(focus.x, 0, focus.z);
       if (auroraStrips.length > 0) {

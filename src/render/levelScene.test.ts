@@ -184,3 +184,41 @@ describe('level scene', () => {
     expect(view.scene.children.filter((c) => c.name === 'terrain')).toHaveLength(0);
   });
 });
+
+describe('natural edges and sky in a level (R6b, SHOWCASE_PLAN §12a)', () => {
+  it('draws no flat wall strip: nothing is called canyonWall, and the edges are rocks and a rock step', () => {
+    const { view } = make();
+    const all = names(view.scene);
+    expect(all).not.toContain('canyonWall');
+    expect(all).toContain('edgeKerb');
+    expect(all).toContain('edgeRocks');
+    expect(all).toContain('terrainSkirt');
+  });
+
+  it('has the mountain ring and a far ground that follow the camera', () => {
+    const { session, view } = make();
+    view.update(session, 1 / 60);
+    const ring = view.scene.getObjectByName('mountains')!;
+    expect(ring.children).toHaveLength(2);
+    expect(view.stats.mountainLayers).toBe(2);
+    expect(ring.position.x).toBeCloseTo(view.camera.position.x, 6);
+    const far = view.scene.getObjectByName('farGround')!;
+    expect(far.position.x).toBeCloseTo(view.camera.position.x, 6);
+    expect(far.position.y).toBeLessThan(session.world.heightM(session.pose.centreXM, session.pose.centreZM) - 10);
+  });
+
+  it('Graphics Low: one mountain layer and fewer rocks', () => {
+    const high = make({}, 'high');
+    const low = make({}, 'low');
+    expect(low.view.stats.mountainLayers).toBe(1);
+    expect(low.view.stats.edgeRocks).toBeLessThan(high.view.stats.edgeRocks);
+  });
+
+  it('keeps the existing sky: the dome, the sun and the lights are unchanged, and there is no environment map', () => {
+    const { view } = make();
+    expect(view.scene.getObjectByName('sky')).toBeDefined();
+    expect(view.scene.getObjectByName('sun')).toBeDefined();
+    expect(view.scene.getObjectByName('hemisphere')).toBeDefined();
+    expect(view.scene.environment).toBeNull();
+  });
+});

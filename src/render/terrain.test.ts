@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
+import { EDGE } from './edges.ts';
 import { levelsConfig } from '../content/levelsConfig.ts';
 import { worldOf } from './levelTestKit.ts';
-import { buildTerrainTile, drawnHeightM, GROUND_COLOUR, SURFACE_COLOURS, TILE_M, terrainTileKeys, createTerrain } from './terrain.ts';
+import { edgeFieldOf } from './levelEdges.ts';
+import { buildTerrainTile, CELL_M, drawnHeightM, GROUND_COLOUR, OUTER_CELL_FACTOR, SKIRT_DEPTH_M, SURFACE_COLOURS, TILE_M, terrainTileKeys, createTerrain } from './terrain.ts';
 
 const hill = { xM: 100, zM: 0, radiusM: 40, heightM: 4 };
 const colourAt = (geo: ReturnType<typeof buildTerrainTile>, i: number) => {
@@ -30,7 +33,10 @@ describe('terrain tiles', () => {
     for (const i of [0, 40, 100, geo.getAttribute('position').count - 1]) {
       const p = geo.getAttribute('position');
       expect(p.getY(i)).toBeCloseTo(drawnHeightM(world, p.getX(i), -p.getZ(i)), 5);
-      expect(Math.abs(p.getY(i) - world.heightM(p.getX(i), -p.getZ(i)))).toBeLessThan(0.15); // the surface only dips or ripples it a little
+      // the surface only dips or ripples it a little; beyond the edge the hillside rises (R6b)
+      const x = p.getX(i);
+      const z = -p.getZ(i);
+      expect(Math.abs(p.getY(i) - (world.heightM(x, z) + edgeFieldOf(world).sample(x, z).riseM))).toBeLessThan(0.15);
     }
     expect(geo.getIndex()!.count).toBe(n * n * 6);
   });
@@ -123,4 +129,77 @@ describe('natural edges and dips (R2, SHOWCASE_PLAN §5)', () => {
   function near(c: { r: number; g: number; b: number }, rgb: readonly number[]) {
     return Math.abs(c.r - rgb[0]!) < 0.1 && Math.abs(c.g - rgb[1]!) < 0.1 && Math.abs(c.b - rgb[2]!) < 0.1;
   }
+});
+
+describe('the ground beyond the edge (R6b, SHOWCASE_PLAN §12a)', () => {
+  const world = worldOf();
+
+  it('is built EDGE.outM beyond the run-off, in coarser cells past the first margin, with the same tile count on both qualities', () => {
+    const near = terrainTileKeys(world, TILE_M).length;
+    const out = terrainTileKeys(world, TILE_M, EDGE.outM).length;
+    expect(out).toBeGreaterThan(near * 2);
+    const high = createTerrain(world, { quality: 'high' });
+    expect(high.tileCount).toBe(out);
+    const fineSize = (TILE_M / CELL_M.high + 1) ** 2;
+    const coarseSize = (TILE_M / (CELL_M.high * OUTER_CELL_FACTOR) + 1) ** 2;
+    let fine = 0;
+    let coarseVertices = 0;
+    high.group.traverse((o) => {
+      const count = (o as THREE.Mesh).geometry?.getAttribute('position').count ?? 0;
+      if (o.name === 'tile') {
+        expect(count).toBe(fineSize); // the road's tiles stay single meshes in fine cells
+        fine++;
+      }
+      if (o.name === 'outerTile') coarseVertices += count; // the coarse tiles are merged in blocks
+    });
+    expect(fine).toBe(near);
+    expect(coarseVertices).toBe((out - near) * coarseSize);
+    high.dispose();
+  });
+
+  it('a fine tile beside a coarse one lies exactly on the coarse tile\'s edge, so no crack opens', () => {
+    const fine = buildTerrainTile(world, 3, 0, 1, TILE_M, { north: OUTER_CELL_FACTOR }); // x 96..128, z 0..32
+    const coarse = buildTerrainTile(world, 3, 1, 2, TILE_M); // x 96..128, z 32..64
+    const nf = TILE_M / 1;
+    const nc = TILE_M / 2;
+    const pf = fine.getAttribute('position');
+    const pc = coarse.getAttribute('position');
+    const cf = fine.getAttribute('color');
+    const cc = coarse.getAttribute('color');
+    for (let i = 0; i <= nf; i++) {
+      const f = i * (nf + 1) + nf; // z = 32 edge of the fine tile
+      const k0 = Math.floor(i / 2);
+      const a = k0 * (nc + 1); // the coarse tile's z = 32 edge
+      const b = Math.min(nc, k0 + 1) * (nc + 1);
+      const t = (i - 2 * k0) / 2;
+      expect(pf.getX(f)).toBeCloseTo(96 + i, 6);
+      expect(pf.getY(f)).toBeCloseTo(pc.getY(a) + (pc.getY(b) - pc.getY(a)) * t, 4);
+      expect(cf.getX(f)).toBeCloseTo(cc.getX(a) + (cc.getX(b) - cc.getX(a)) * t, 4);
+    }
+  });
+
+  it('hangs a skirt from the outer boundary only, so the far ground meets it without a gap', () => {
+    const terrain = createTerrain(world, { quality: 'low' });
+    const skirt = terrain.group.getObjectByName('terrainSkirt') as THREE.Mesh;
+    expect(skirt).toBeDefined();
+    const p = skirt.geometry.getAttribute('position');
+    let drop = 0;
+    for (let i = 0; i + 1 < p.count; i += 2) drop = Math.max(drop, p.getY(i) - p.getY(i + 1));
+    expect(drop).toBeCloseTo(SKIRT_DEPTH_M, 6);
+    // the skirt sits at the boundary of the built tiles: far from the road, beyond the 40 m of ground
+    for (let i = 0; i < p.count; i += 2) expect(world.roads.some((r) => r.line.nearest(p.getX(i), -p.getZ(i), 9 + EDGE.outM - TILE_M - 1) !== undefined)).toBe(false);
+    terrain.dispose();
+  });
+
+  it('colours the hillside the ground colour and a rock face darker', () => {
+    const rock = worldOf({ roads: [{ id: 'main', edges: [{ side: 'both', style: 'rock' }], start: { xM: 0, zM: 0, headingDeg: 0 }, segments: [{ kind: 'straight', lengthM: 300 }] }], route: ['main'] });
+    const lum = (w: typeof world) => {
+      const g = buildTerrainTile(w, 3, 0, 2, TILE_M); // x 96..128, z 0..32
+      const c = g.getAttribute('color');
+      const p = g.getAttribute('position');
+      for (let i = 0; i < p.count; i++) if (Math.abs(p.getX(i) - 112) < 0.01 && Math.abs(-p.getZ(i) - 20) < 0.01) return c.getX(i) + c.getY(i) + c.getZ(i);
+      throw new Error('no vertex');
+    };
+    expect(lum(rock)).toBeLessThan(lum(world) * 0.9);
+  });
 });

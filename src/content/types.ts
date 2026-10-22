@@ -230,8 +230,13 @@ export interface ChunkGravityZone extends ChunkZoneShape {
  * One Endless section, a named place (SHOWCASE_PLAN §11). Coordinates are section-local: x from 0 to the length, z across the canyon.
  * Several templates can share a place ("Dune Sea") at different difficulties.
  */
+/** What stands beyond an edge the rover scrapes along (SHOWCASE_PLAN §12a, R6b): a hillside, a faceted rock face, or a cliff drop behind a rim of rocks. */
+export type EdgeStyle = 'hill' | 'rock' | 'cliff';
+
 export interface RunChunk {
   id: string;
+  /** What stands beyond the corridor walls in this place (R6b). Default `hill`. */
+  edge?: EdgeStyle;
   /** The place id, shared by the variants of one place: the generator never puts the same place twice in a row. */
   place: string;
   /** The place's name, on the entry post and in the HUD ("Dune Sea"). */

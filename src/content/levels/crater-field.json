@@ -70,6 +70,7 @@
       "id": "c1-around",
       "name": "Around",
       "after": "lead-1",
+      "edges": [{ "side": "left", "fromM": 10, "toM": 260, "style": "cliff" }],
       "segments": [
         {
           "kind": "arc",
@@ -130,6 +131,7 @@
       "id": "c2-around",
       "name": "Around",
       "after": "m1",
+      "edges": [{ "side": "left", "fromM": 10, "toM": 270, "style": "cliff" }],
       "segments": [
         {
           "kind": "arc",
@@ -170,6 +172,7 @@
       "id": "cave-heavy",
       "name": "Heavy Cave",
       "after": "m2",
+      "edges": [{ "side": "both", "style": "rock" }],
       "segments": [
         {
           "kind": "straight",
@@ -181,6 +184,7 @@
       "id": "cave-float",
       "name": "Floating Cave",
       "after": "m2",
+      "edges": [{ "side": "both", "style": "rock" }],
       "gap": {
         "fromM": 134.81,
         "toM": 168.81

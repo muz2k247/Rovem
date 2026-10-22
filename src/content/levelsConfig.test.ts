@@ -11,6 +11,11 @@ const bad = (edit: (r: Raw) => void) => {
   return () => validateLevelsConfig(r);
 };
 
+it('rejects a missing or non-boolean unlockInOrder', () => {
+  expect(bad((r) => delete r.unlockInOrder)).toThrow(/unlockInOrder/);
+  expect(bad((r) => (r.unlockInOrder = 'no'))).toThrow(/unlockInOrder/);
+});
+
 describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
   it('accepts the shipped data', () => {
     expect(() => validateLevelsConfig(raw())).not.toThrow();
@@ -52,6 +57,7 @@ describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
     expect(c.arrows.hideBelowN).toBe(20);
     expect(c.arrows.flashS).toBe(0.6);
     expect(c.developerUnlockQuery).toBe('unlock=all');
+    expect(c.unlockInOrder).toBe(false); // R6b: every built level is open from the first visit
   });
 
   it('has a colour for every force kind (A4)', () => {

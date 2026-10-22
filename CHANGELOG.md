@@ -6,6 +6,21 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R6b: natural edges, sky, all levels open; 2026-10-22)
+- **Natural edges** (SHOWCASE_PLAN §12a). `src/render/edges.ts` holds the shapes (a hillside climbing 25°–40° to 8–15 m behind a broken rock step 0.6–1.2 m tall; a rock face of 55°–75°, 10–25 m, in facets; a cliff drop of 10–20 m within 6 m beyond a rim of rocks) and the plan for the rock step, rim rocks and boulders. `levelEdges.ts` gives a level's edge field (the rise from the distance past the nearest road's reach, a style per road side and stretch, the 30 m cliff rule, round caps at road ends); `levelEdgeScene.ts` builds the features; `endlessEdges.ts` does the same for the Endless corridor, with strips on both sides of every section and the hillside behind the start wall. The visible contact stands within 0.3 m of the scrape line.
+- **Level data:** an optional `edges` list on a road (`side`, `fromM`, `toM`, `style` = `hill` | `rock` | `cliff`) and `edgeStyle` for a level (default `hill`), validated in `schema.ts`. Crash Site, Geyser Canyon and Crater Field have cliffs, rock faces or both. Endless templates take an optional `edge` (Clay Gully, Launcher Alley and Gravity Caves are rock, Vent Run a cliff).
+- **Sky:** `mountains.ts` (a ring of low-poly peaks 2°–7° above the horizon, two layers, one on Graphics Low, no fog, base in the fog colour) inside the levels' sky dome, and `endlessSky.ts` (a dome and the same ring for the Endless Canyon, in the colour of the place). A far ground under the ring follows the camera. No environment map.
+- **All levels open:** `unlockInOrder: false` in `levels.json` (validated); `levelUnlock.ts` takes the switch. Tests for both rules.
+- Tests: `edges.test.ts`, `levelEdges.test.ts` (spans, round caps, junction gaps, the contact within 0.3 m in every level, every cliff has its rim and every hillside its step, the 30 m rule on the shipped data, nothing placed on risen ground), `endlessEdges.test.ts`, `mountains.test.ts`, and additions to the terrain, level scene, run scene and unlock tests.
+### Changed (Showcase R6b)
+- **The flat 6 m wall strips are gone** from the level scene (`track.ts`; `canyonWallSpans` and `buildCanyonWalls` removed, their tests moved to `levelEdges.test.ts`) and from the Endless scene (`canyonWall`, `startSide`; `startWall` is now the hillside behind the start line). The scrape line, `world.hit` and every level layout are unchanged.
+- **Terrain:** tiles are built 40 m beyond the run-off, in cells twice as big past the first margin with the shared sides snapped (no cracks), normals from one ring of heights, a skirt on the outer boundary. The terrain material is double-sided. `drawnHeightM` includes the rise beyond the edge. Cave roofs in Endless reach into the rock face.
+- The Endless camera far plane is 520 m (was 400) for the sky dome.
+### Fixed (Showcase R6b, lag found by k._muz; 2026-10-22)
+- Frame time while driving: edge rocks and far ground tiles are grouped in cells and blocks; anything the fog hides is not drawn (`src/render/cull.ts`); every shader is built before the first frame (`src/render/warmup.ts`), which also removes 100–450 ms freezes the first time an arrow, burst or splash appeared; force-arrow labels are redrawn in place, at most 4 times a second, instead of a new texture per change. Tests: `cull.test.ts`, the label test in `forceArrows.test.ts`, terrain test updated for merged outer tiles.
+
+### Docs (Showcase R6b built; 2026-10-22)
+- SRS FR-45, Data Model "Whether a level is open" and Art Direction (new section 3a, edges and sky) changed, each with a change-log row; LEVELS_BUILD_PLAN A2's unlocking marked superseded; CLAUDE.md "Level" term and layout updated; ROADMAP R6b, OI-30 closed and OI-46 to OI-48 added; `showcase.csv` has the §12a values; DECISIONS row "R6b built".
 ### Docs (Showcase R6b planned; 2026-10-22)
 - `docs/SHOWCASE_PLAN.md`: new §12a (natural edges instead of flat walls, a code-drawn sky with lighting from it, all built levels open, with the reasons and provisional presentation values); session R6b added before R7 in §15 and Part 7; a prompt RP for swapping in k._muz's rover parts. ROADMAP row R6b; DECISIONS 2026-10-22 R6b.
 
