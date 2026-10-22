@@ -206,7 +206,13 @@ describe('the part pickup (SHOWCASE_PLAN §12)', () => {
     expect(p.line).toBe('Each vent gave you 1200 N·s of push. A thruster throws gas back, and the ship gains equal momentum forward.');
   });
 
+  it('brings home the lift engine with the Heavy Cave weight and the mass in the line', () => {
+    const p = partPickup('crater-field', levelText, { weight: '4096', mass: '209' })!;
+    expect(p.partName).toBe('Lift engine');
+    expect(p.line).toBe("In the Heavy Cave your weight is 4096 N, but your mass is still 209 kg. To lift off, this engine must push harder than the ship's weight.");
+  });
+
   it('brings home nothing from a level that is not a Showcase level yet', () => {
-    expect(partPickup('crater-field', levelText, {})).toBeUndefined();
+    expect(partPickup('the-crossing', levelText, {})).toBeUndefined();
   });
 });

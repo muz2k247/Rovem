@@ -250,7 +250,7 @@ describe('slopes and rolling back', () => {
 describe('gravity zones', () => {
   it('in a low-gravity zone weight, friction and grip halve, mass does not', () => {
     const zone = { id: 'z', kind: 'low', polygon: [{ xM: -20, zM: -8 }, { xM: 80, zM: -8 }, { xM: 80, zM: 8 }, { xM: -20, zM: 8 }] };
-    const s = make({ id: 'gravity-wells', gravityZones: [zone] });
+    const s = make({ id: 'crater-field', gravityZones: [zone] });
     run(s, 1.5);
     // The grip halves too: F_lim = 0.8 × 209 × 4.9 = 819 N < 1000 N, so the wheels slip. a = (819.3 − 20.5) ÷ 209.
     expect(s.state.accelerationMps2).toBeCloseTo((0.8 * 209 * 4.9 - 0.02 * 209 * 4.9) / 209, 3);

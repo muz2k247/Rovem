@@ -21,7 +21,7 @@ describe('geyser-canyon', () => {
     expect(r.finished).toBe(true);
     expect(r.timeS).toBeGreaterThan(90);
     expect(r.timeS).toBeLessThan(110);
-    expect(r.respawns).toEqual({ crash: 0, stuck: 0, floated: 0, manual: 0 });
+    expect(r.respawns).toEqual({ crash: 0, stuck: 0, floated: 0, fell: 0, manual: 0 });
   });
 
   it('has the vents of the plan: one at the mouth, five on the vent lane, each giving J = 1200 N·s', () => {

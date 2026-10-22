@@ -26,6 +26,7 @@
 | 16 | New tests T11–T20 with hand arithmetic, recomputed on 2026-10-21 | Every new rule needs a test | E27–E34, E45–E47 |
 | 17 | New section "Open questions": the landing step, the held-brake hold force, code that still carries the tow input | Found while writing | S0 |
 | 19 | 11.4 and T20: the booster is Built (R4, 2026-10-22). The check distances are recomputed for a burn of exactly 180 steps (1.5 s): S0 had run 181 steps, so its distances were 0.04 to 0.25 m too long. The counts (24 primed, 22 cold) are unchanged | Session R4 | E47, `src/game/level/session.ts`, `booster.test.ts` |
+| 20 | 11.3 and T18: jumps are Built (R6, 2026-10-22). The landing step is split at the exact landing time, so the check values hold to 5 decimals. Added what the game layer does: ramps and chasms in the level data, the landing speed on a slope, the "fell" respawn, cave roofs | Session R6 | E45, `src/physics/air.ts` |
 | 18 | 11.2: the edge rule is Built (R1, 2026-10-21): walls scrape in levels and Endless, barriers crash or end the run. Added what happens when no place against the wall is found. T19 is Built | Session R1 | E46, `src/physics/collision.ts` |
 
 ## 1 Constants and units
@@ -152,7 +153,7 @@ The footprint is 2 m long by 1.7 m wide, its front edge centred on the physics p
 - **Obstacles** (boulders, barriers, launcher bases, pylons): a step that ends with the footprint overlapping an obstacle is undone (position, distance and heading, because a turn alone can swing the rear into an obstacle) and v = 0; the clock still advances. In a level this is a crash: after the 0.5 s crash moment the rover returns at rest to the last checkpoint, and the clock keeps running. In the Endless run the run ends. Water too deep, or a chasm, also sends the rover back to the last checkpoint.
 - **Built (R1, 2026-10-21):** walls scrape in levels and in Endless; barriers crash in levels and end the Endless run. The game layer finds the worst footprint corner past the edge, takes the edge direction a quarter turn from the line between the road (or corridor) and that corner, removes the velocity into the edge, turns the heading and the travel direction along it, and places the rover back against it (the push is repeated up to 8 times, because turning along the edge swings the other corners). A rover moving along or away from the edge only gets placed back and loses nothing. A square-on hit leaves the heading as it was. If no place against the wall is found (an odd junction), the step is undone and v = 0, with no crash. An obstacle wins when a step touches both. A wall scrape does not turn the rover into reverse, and there is no automatic reversing out: the student reverses.
 
-### 11.3 Leaving the ground: jumps (E45; Planned, session R6, pure function `src/physics/air.ts`)
+### 11.3 Leaving the ground: jumps (E45; Built, session R6, 2026-10-22; pure function `src/physics/air.ts`)
 
 1. The rover leaves the ground **only at a ramp lip defined in the level data** (lip position, direction, angle φ). Why not at every crest: on rolling ground that would launch the rover by accident, which looks like a bug. At the lip, with speed v along the ramp, v_h = v cos φ and v_y = v sin φ.
 2. **In the air** v_h stays the same, and v_y falls by g Δt each step, where g is that of the gravity zone the rover is in. The height rises by v_y Δt − ½ g Δt². No drive, brake, rolling friction or steering acts; the control levels keep updating, so keys take effect on landing. The clock runs, and the distance grows by the horizontal distance flown. There is no air resistance.
@@ -160,7 +161,16 @@ The footprint is 2 m long by 1.7 m wide, its front edge centred on the physics p
 4. The game shows the air time and "gravity pulled you down at g", never trajectory formulas (Grade 9).
 5. Cave ceilings must clear the highest jump of all 27 builds, h = v_y² ÷ 2g (session R6 checks it).
 
-**Open for R6 (S0 found it, did not decide it).** E45's test values are the exact kinematic ones. Taking the landing at the end of the first 1/120 s step with y ≤ 0 gives 102 steps = 0.8500 s and 13.137 m at g = 9.8, and 203 steps = 1.6917 s and 26.144 m at g = 4.9, not the exact 0.84512 s and 13.061 m. To make the test values exact, the landing step must be split at the exact landing time t_land = 2 v_y ÷ g, as `step()` already splits at v_max and at 0. This document assumes the split. k._muz or the R6 session should confirm.
+**The landing step (decided in R6, 2026-10-22; k._muz to confirm).** E45's test values are the exact kinematic ones. Taking the landing at the end of the first 1/120 s step with y ≤ 0 gives 102 steps = 0.8500 s and 13.137 m at g = 9.8, and 203 steps = 1.6917 s and 26.144 m at g = 4.9, not the exact 0.84512 s and 13.061 m. R6 splits the landing step at the exact landing time (t_land = (v_y + √(v_y² + 2 g y)) ÷ g, which is 2 v_y ÷ g when landing at the take-off height), as `step()` already splits at v_max and at 0. `airStep` does this, and T18 holds exactly.
+
+**Built (R6, 2026-10-22).**
+- `air.ts` has `launch` (v_h = v cos φ, v_y = v sin φ), `airStep` (one step; v_y falls by g Δt, the height changes by v_y Δt − ½ g Δt²; the landing step is split), and the closed forms `flightTimeS`, `apexHeightM`, `rangeM`. The game layer (`session.ts`, `takeOff` and `airborneStep`) holds the flight; `step()` is not called in the air.
+- **Ramps are level data** (`ramps`): a lip line across a wedge of ground that climbs at φ over a length and then drops away. The rover leaves the ground when its front crosses a lip going up the ramp, at speed above 0. Nothing else launches it.
+- In the air the control levels keep rising and falling by Δt ÷ T (so the pedals take effect on landing), the clock runs and the distance grows by the horizontal distance flown. Walls and obstacles are not tested in the air.
+- **Landing:** on a slope θ the speed along the ground becomes max(0, v_h cos θ + v_y sin θ) (v_y is negative); on flat ground that is v_h. A landing on an obstacle is a crash.
+- **Chasms:** a road can have a `gap` (no ground between two distances along it). A rover that lands with its middle over a gap, or drives its middle over the edge, or lands with no road under it, "fell": the cause `fell`, and it comes back to the last checkpoint at rest after the crash moment, with the clock running.
+- **Cave roofs:** a gravity zone can have a `ceilingM` above the lip. The level checks (`levelChecks.ts`) run all 27 builds on the star and safe routes and require every jump's apex to be below the roof; the session also keeps a rover under a roof if one were ever reached.
+- The vertical and horizontal parts are shown in captions as the air time, the distance and "gravity pulled you down at g = …", never as formulas.
 
 ### 11.4 Booster (E47; Built, session R4, 2026-10-22)
 
@@ -201,7 +211,7 @@ Tests T1–T9 and T11–T20 compare the code with hand calculations at a relativ
 | T15 Rolling back | At rest on a 25° slope, no keys | a = 3.96402 m/s², `rollingBack` true (E32) | Built |
 | T16 Water | Depth 0.50 m, 4.00 m/s, sand bed, full throttle | a = 0.506775 m/s², wheels slip; a Light-chassis build in 1.0 m of water floats (E33) | Built |
 | T17 Magnet and bend | d = 8 m; bends of 12, 25, 30, 40 m | 625 N; safe speeds 9.70, 14.00, 15.34, 17.71 m/s (E34) | Built |
-| T18 Jump | v = 16 m/s, φ = 15°, landing at take-off height | g = 9.8: 0.84512 s, 0.87494 m, 13.061 m; g = 4.9: 1.69025 s, 1.74987 m, 26.122 m (E45) | Planned (R6) |
+| T18 Jump | v = 16 m/s, φ = 15°, landing at take-off height | g = 9.8: 0.84512 s, 0.87494 m, 13.061 m; g = 4.9: 1.69025 s, 1.74987 m, 26.122 m (E45) | Built (`src/physics/air.test.ts`, R6) |
 | T19 Edge | 12 m/s into an edge | α = 30° → 10.392 m/s; 60° → 6.000; 90° → 0 (E46) | Built (`src/physics/collision.test.ts`, R1) |
 | T20 Booster | Starting build at rest in mud, primed, booster on | a = 10.8664 m/s². Heavy + All-terrain + Small (259 kg) leaves a 12 m patch; Heavy + Spiked + Small (267 kg) does not; 24 of 27 builds leave it when primed, 22 when cold (E47) | Built (R4) |
 
@@ -226,7 +236,7 @@ T5: v = 4.588688995 × 1 s; x = ½ × 4.588688995 × 1² = 2.294344498. T6: a = 
 
 ## 14 Open questions
 
-1. **The landing step** (section 11.3): split at the exact landing time, or end-of-step. Decide in R6.
+1. **The landing step** (section 11.3): R6 split it at the exact landing time (change-log row 20). k._muz to confirm.
 2. **The held-brake hold force** (section 6): kept as built; k._muz to rule (DECISIONS 2026-10-19 I1).
 3. **Code that still carries the tow.** `step()` still accepts the `towed` input and returns the state "Cruising" (tested in `step.test.ts`), although no game rule uses it. The spec lists them only in Superseded. Whether to delete them is a code change for a later session.
 4. **The booster test counts** depend on whether the throttle is primed (section 13, T20). R4 tests both (`booster.test.ts`): 24 primed, 22 cold.

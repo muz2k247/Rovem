@@ -131,6 +131,29 @@ export function checkLevelFile(id: LevelId): void {
       }
     });
 
+    it('puts every ramp on a road, and keeps every cave roof above the highest jump of all 27 builds (E45, R6)', () => {
+      for (const r of def.ramps) expect(world.roadAt(r.xM, r.zM), `${r.id} on a road`).toBeDefined();
+      const roofed = def.gravityZones.some((z) => z.ceilingM !== undefined);
+      if (!roofed) return;
+      let flights = 0;
+      for (const build of allBuilds(content)) {
+        for (const plan of [plans.stars, plans.safe]) {
+          const r = runPilot({ content, def, build, plan, maxS: 200 });
+          const events = r.session.events;
+          events.forEach((e, i) => {
+            if (e.kind !== 'landing') return;
+            const lift = [...events.slice(0, i)].reverse().find((x) => x.kind === 'takeoff')!;
+            const roofM = world.ceilingAt(lift.xM, lift.zM);
+            flights += 1;
+            if (roofM !== undefined) {
+              expect(e.apexM!, `${build.chassisId} ${build.wheelsId} ${build.motorId}: a jump from ${lift.xM.toFixed(0)}, ${lift.zM.toFixed(0)} under a roof of ${roofM} m above the lip`).toBeLessThan(roofM);
+            }
+          });
+        }
+      }
+      expect(flights).toBeGreaterThan(0);
+    });
+
     it('a respawn at any checkpoint works: from each one, the extreme builds can finish', () => {
       for (const c of def.checkpoints) {
         const from = startingAt(def, c.id);

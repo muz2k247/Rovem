@@ -35,7 +35,7 @@ describe('the Scavenger of Crash Site', () => {
   it('is an honest drive: the same run as the autopilot gives with that build, with no respawn', () => {
     const r = runPilot({ content, def, build: def.scavenger!.build, plan: { roads: def.scavenger!.roads } });
     expect(r.finished).toBe(true);
-    expect(r.respawns).toEqual({ crash: 0, stuck: 0, floated: 0, manual: 0 });
+    expect(r.respawns).toEqual({ crash: 0, stuck: 0, floated: 0, fell: 0, manual: 0 });
     expect(ghost.finishS).toBe(r.timeS);
     expect(ghost.stretchTimesS).toEqual(r.session.stretches.map((s) => s.timeS));
   });

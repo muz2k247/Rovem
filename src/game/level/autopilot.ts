@@ -198,7 +198,7 @@ export function runPilot(o: PilotOptions): PilotResult {
   const dt = constants.timeStepS;
   const deadband = (turnRadPerS * dt) / 2;
   const maxS = o.maxS ?? 400;
-  const respawns: Record<RespawnCause, number> = { crash: 0, stuck: 0, floated: 0, manual: 0 };
+  const respawns: Record<RespawnCause, number> = { crash: 0, stuck: 0, floated: 0, fell: 0, manual: 0 };
   let seen = 0;
   let index = 0;
   let lastFlipS = -1;

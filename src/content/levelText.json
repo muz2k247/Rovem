@@ -28,26 +28,14 @@
     {
       "id": "crater-field",
       "name": "Crater Field",
-      "hook": "Roll down, climb out. Height and speed trade places.",
-      "goal": "Cross the crater field to the next beacon.",
+      "hook": "Jump the crater, or roll down and climb out. Gravity decides how far you fly.",
+      "goal": "Get the lift engine on the far side.",
       "newHere": [
-        "Going down a slope trades height for speed. Going up trades speed for height.",
-        "A slope pulls you downhill, so a steep wall needs more push than a gentle ramp.",
-        "Every crater has a steep wall and a gentle ramp as the two ways out."
+        "Weight is how hard gravity pulls you. In the caves gravity changes, so your weight changes, but your mass does not.",
+        "On a slope, part of your weight pulls you downhill, so a steep wall can roll a weak rover back.",
+        "Off a ramp you fly, and gravity pulls you down. Less gravity means a longer jump."
       ],
       "diagram": "crater"
-    },
-    {
-      "id": "gravity-wells",
-      "name": "Gravity Wells",
-      "hook": "Same rover, different gravity. What changes?",
-      "goal": "Cross the gravity fields to the next beacon.",
-      "newHere": [
-        "In a gravity field your weight changes, but your mass does not.",
-        "Less weight means less grip and less friction. More weight means more of both.",
-        "A cannon hits just as hard in any field, because your mass did not change."
-      ],
-      "diagram": "lanes"
     },
     {
       "id": "the-crossing",
@@ -105,6 +93,8 @@
     "crash": { "title": "Crash", "line": "Back to the last checkpoint. The clock keeps running." },
     "stuck": { "title": "Stuck", "line": "Friction beats your motor. Back to the last checkpoint." },
     "floated": { "title": "Floated to a stop", "line": "A floating rover cannot drive. Back to the last checkpoint." },
+    "fell": { "title": "Fell short", "line": "You landed off the ground. Back to the last checkpoint." },
+    "jump": { "title": "In the air", "line": "{airS} s in the air, {distM} m. Gravity pulled you down at g = {g} m/s²." },
     "fork-result": { "title": "{otherRoad} road: {otherS} s", "line": "You took {yourRoad}: {yourS} s." },
     "fork-result-crash": { "title": "The {otherRoad} road", "line": "At full throttle you would have {outcome}." },
     "balanced": { "title": "", "line": "Balanced: constant speed" }
@@ -114,6 +104,7 @@
     "barrier": "hit a barrier",
     "stuck": "got stuck",
     "floated": "floated to a stop",
+    "fell": "fallen short",
     "timeout": "not got there in time"
   },
   "hints": {
@@ -211,7 +202,7 @@
     "parts": [
       { "levelId": "crash-site", "name": "Landing brakes", "built": true, "pickupLine": "On the Ring, grip gave you up to {grip} N of sideways force. These brakes use friction too: they stop the ship on the runway." },
       { "levelId": "geyser-canyon", "name": "Thruster", "built": true, "pickupLine": "Each vent gave you {impulse} N·s of push. A thruster throws gas back, and the ship gains equal momentum forward." },
-      { "levelId": "crater-field", "name": "Lift engine", "built": false, "pickupLine": "In the Heavy Cave your weight was {weight} N, but your mass stayed {mass} kg. To lift off, this engine must push harder than the ship's weight." },
+      { "levelId": "crater-field", "name": "Lift engine", "built": true, "pickupLine": "In the Heavy Cave your weight is {weight} N, but your mass is still {mass} kg. To lift off, this engine must push harder than the ship's weight." },
       { "levelId": "the-crossing", "name": "Splashdown floats", "built": false, "pickupLine": "The river pushed up on you with {upthrust} N. On Earth, the capsule lands in the sea and floats for the same reason." },
       { "levelId": "iron-ridge", "name": "Docking clamps", "built": false, "pickupLine": "You switched attract and repel to ride the pylons. These clamps are electromagnets: current on, they hold; current off, they let go." }
     ]

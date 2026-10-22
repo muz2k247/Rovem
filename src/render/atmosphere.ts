@@ -55,7 +55,7 @@ const PRESETS: Record<AtmosphereId, AtmospherePreset> = {
     hemiSky: 0x7a7a9a, hemiGround: 0x5a3a2c, hemiIntensity: 1.3, stars: false, aurora: false,
     motes: { count: 60, size: 0.1, opacity: 0.4, colour: 0xffe0b0, heightM: 12 },
   },
-  // Gravity Wells: dark sky with stars.
+  // A dark sky with stars (no level uses it since Gravity Wells folded into Crater Field in R6).
   starry: {
     id: 'starry', skyTop: 0x05070f, skyHorizon: 0x1a1f3a, fogColour: 0x0c1020, fogDensity: 0.006,
     sunColour: 0x9db4ff, sunIntensity: 2.2, sunElevationDeg: 35, sunAzimuthDeg: 120,

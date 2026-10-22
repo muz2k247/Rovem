@@ -2,7 +2,7 @@ import type { Content, GravityKind, PointM } from '../../content/index.ts';
 import type { EdgeContact } from '../../physics/collision.ts';
 import { footprintCorners, footprintOverlapsBox, pointInPolygon } from '../geometry.ts';
 import { levelsConfig } from '../../content/levelsConfig.ts';
-import type { BarrierDef, CraterDef, HillDef, LevelDef, Pose, RidgeDef, RoadDef } from './types.ts';
+import type { BarrierDef, CraterDef, HillDef, LevelDef, Pose, RampDef, RidgeDef, RoadDef } from './types.ts';
 
 // The level's map as the game layer sees it (LEVELS_BUILD_PLAN A7, A9): roads and walls, the ground height and slope,
 // surfaces, water, gravity zones. Pure functions of the level file; no rendering, no physics.
@@ -214,6 +214,29 @@ function ridgeHeightM(r: RidgeDef, xM: number, zM: number): number {
   return Math.max(0, topM - (u - r.riseLengthM - r.topLengthM) * Math.tan(r.fallAngleDeg * DEG));
 }
 
+/** A ramp's own frame: u metres along its heading from the foot (the lip is at u = lengthM), v metres to its left of the middle. */
+function rampFrame(r: RampDef, xM: number, zM: number): { u: number; v: number } {
+  const hd = r.headingDeg * DEG;
+  const dx = xM - r.xM;
+  const dz = zM - r.zM;
+  return { u: dx * Math.cos(hd) + dz * Math.sin(hd) + r.lengthM, v: -dx * Math.sin(hd) + dz * Math.cos(hd) };
+}
+
+/** The ground climbs at the ramp's angle from the foot (height 0) to the lip (L tan φ), then drops away to the ground beyond. */
+function rampHeightM(r: RampDef, xM: number, zM: number): number {
+  const { u, v } = rampFrame(r, xM, zM);
+  if (Math.abs(v) > r.widthM / 2 || u < 0 || u > r.lengthM) return 0;
+  return u * Math.tan(r.angleDeg * DEG);
+}
+
+/** Does the step from `prev` to `now`, travelling along `travelRad`, cross the lip of this ramp, going up it? */
+function crossesLip(r: RampDef, prev: PointM, now: PointM, travelRad: number): boolean {
+  if (Math.cos(travelRad - r.headingDeg * DEG) <= 0) return false;
+  const a = rampFrame(r, prev.xM, prev.zM);
+  const b = rampFrame(r, now.xM, now.zM);
+  return a.u < r.lengthM && b.u >= r.lengthM && Math.abs(b.v) <= r.widthM / 2;
+}
+
 // --- barriers ---
 
 /** Does the rover's footprint overlap an oriented box? The rover is moved into the box's own frame first. */
@@ -284,7 +307,14 @@ export function createLevelWorld(def: LevelDef, content: Content) {
     for (const h of def.hills) y += hillHeightM(h, xM, zM);
     for (const c of def.craters) y += craterHeightM(c, xM, zM);
     for (const r of def.ridges) y += ridgeHeightM(r, xM, zM);
+    for (const r of def.ramps) y += rampHeightM(r, xM, zM);
     return y;
+  };
+
+  /** Is this hit over a road's chasm (no ground there)? */
+  const inGap = (road: RoadGeometry, alongM: number): boolean => {
+    const gap = road.def.gap;
+    return gap !== undefined && alongM > gap.fromM && alongM < gap.toM;
   };
 
   const roadAt = (xM: number, zM: number): RoadHit | undefined => {
@@ -292,9 +322,19 @@ export function createLevelWorld(def: LevelDef, content: Content) {
     for (const road of roads) {
       const reach = road.widthM / 2 + road.runoffM;
       const hit = road.line.nearest(xM, zM, reach);
-      if (hit && (!best || hit.distM < best.distM)) best = { road, ...hit };
+      if (hit && !inGap(road, hit.alongM) && (!best || hit.distM < best.distM)) best = { road, ...hit };
     }
     return best;
+  };
+
+  /** Is the point over a chasm: within the reach of a road, along the stretch where that road has no ground? */
+  const chasmAt = (xM: number, zM: number): boolean => {
+    for (const road of roads) {
+      if (road.def.gap === undefined) continue;
+      const hit = road.line.nearest(xM, zM, road.widthM / 2 + road.runoffM);
+      if (hit && inGap(road, hit.alongM)) return true;
+    }
+    return false;
   };
 
   /** The road under a point, if the point is on the road itself (not just on its run-off). On-road beats run-off. */
@@ -302,7 +342,7 @@ export function createLevelWorld(def: LevelDef, content: Content) {
     let best: RoadHit | undefined;
     for (const road of roads) {
       const hit = road.line.nearest(xM, zM, road.widthM / 2);
-      if (hit && (!best || hit.distM < best.distM)) best = { road, ...hit };
+      if (hit && !inGap(road, hit.alongM) && (!best || hit.distM < best.distM)) best = { road, ...hit };
     }
     return best;
   };
@@ -342,8 +382,21 @@ export function createLevelWorld(def: LevelDef, content: Content) {
     },
     waterDepthM,
     gravityKindAt,
+    /** The ramp whose lip the front of the rover crossed in this step, if any (E45: the only place it leaves the ground). */
+    rampCrossed(prev: PointM, now: PointM, travelRad: number): RampDef | undefined {
+      return def.ramps.find((r) => crossesLip(r, prev, now, travelRad));
+    },
+    /** The height of the cave roof over a point, if it is in a cave (a gravity zone with a ceiling). */
+    ceilingAt(xM: number, zM: number): number | undefined {
+      for (let i = def.gravityZones.length - 1; i >= 0; i--) {
+        const z = def.gravityZones[i]!;
+        if (pointInPolygon(xM, zM, z.polygon)) return z.ceilingM;
+      }
+      return undefined;
+    },
     roadAt,
     onRoadAt,
+    chasmAt,
     /** The surface under a point: the riverbed (sand) in water, else a surface patch, else the road or its run-off, else the default. */
     surfaceIdAt(xM: number, zM: number): string {
       if (waterDepthM(xM, zM) > 0) return 'sand';
@@ -365,7 +418,8 @@ export function createLevelWorld(def: LevelDef, content: Content) {
       }
       let worst: EdgeContact | undefined;
       for (const c of footprintCorners(frontXM, frontZM, headingRad, footprint.lengthM, footprint.widthM)) {
-        if (roadAt(c.xM, c.zM)) continue;
+        // Over a chasm there is no ground but no wall either: the rover falls (session.ts), it does not scrape.
+        if (roadAt(c.xM, c.zM) || chasmAt(c.xM, c.zM)) continue;
         // The wall is the edge of the nearest road's reach (its run-off strip included).
         let best: { depthM: number; pointXM: number; pointZM: number } | undefined;
         for (const road of roads) {

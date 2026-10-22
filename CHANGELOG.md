@@ -6,6 +6,15 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R6: jumps and Crater Field; 2026-10-22)
+- **`src/physics/air.ts`** (pure, with `air.test.ts`, 10 tests): the E45 jump rule. `launch` splits the lip speed into v_h = v cos φ and v_y = v sin φ; `airStep` flies one 1/120 s step (v_h constant, v_y falls by g Δt) and splits the landing step at the exact landing time, so T18 holds exactly: 0.84512 s and 13.061 m at g = 9.8, 1.69025 s and 26.122 m at g = 4.9. `physics-checker` run: T18 recomputed by hand, `step()` unchanged, balance 20/9/23/17.
+- **Jumps in the level engine** (`session.ts`, `world.ts`, `schema.ts`, `types.ts`): `ramps` in the level data (a wedge of ground climbing at φ to a lip), take-off at a lip, flight in the zone's g, landing (speed along the ground on a slope), the new respawn cause `fell`, roads with a `gap` (a chasm), gravity zones with a `ceilingM` (a cave roof). Events `takeoff` and `landing`, the caption "In the air … Gravity pulled you down at g = …", and the rover drawn in the air. 15 tests in `session.jump.test.ts`.
+- **`crater-field.json`** (rebuilt; Gravity Wells folded in): a rim and a hook jump, two bowls (sand floor; icy floor) with ramps and vents, the Floating Cave (a 34 m chasm and two vents) against the Heavy Cave (a 20° mine shaft where 7 of 27 builds roll back), and the big jump over a pit to the lift engine. `levelFile.crater-field.test.ts` (33 tests): the shared A7 checks (all 27 builds finish the safe route; a new check that no jump of any build reaches a cave roof), the jump and chasm rules, the forks.
+- The Lift engine ship part is built; its pick-up line shows the Heavy Cave weight (m × 2g) and the mass.
+### Changed (Showcase R6)
+- `gravity-wells` is retired: its level file, test and map are removed; `LEVEL_IDS` has five levels. Crater Field's arrows are slope and weight; its report cards start with the gravity card.
+- Stretch gates and fork lines still count while the rover is in the air.
+
 ### Added (Showcase R5: Geyser Canyon; 2026-10-22)
 - **`geyser-canyon.json`** replaces `push-and-shove.json` (level id `geyser-canyon`): a vent at the canyon mouth and two sand drifts, the fork between the vent lane (5 vents, 3 head-on launchers, a kicker) and the longer sandy rim road, the alcove bend (r = 30 m), the outpost (kicker, sample, head-on launcher) and the gate (the finale kicker). Five report stretches; the Scavenger is Standard + Smooth + Large motor, 4 s delay. The Thruster ship part is built, with the vent impulse in its pick-up line. Tests: `levelFile.geyser-canyon.test.ts` (plus the shared A7 checks: every sample reachable, no build trapped, a checkpoint about every 30 s). ROADMAP OI-38 to OI-40.
 ### Changed (Showcase R5)

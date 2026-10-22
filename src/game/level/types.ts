@@ -4,8 +4,9 @@ import type { CannonKind, GravityKind, PointM } from '../../content/index.ts';
 // load by `schema.ts`. Axes as everywhere in the game layer: x along the start heading, z to its left, metres.
 // Every number a level needs is in its file; shared values (water, magnets, arrows) are in `levels.json`.
 
-// Crash Site (Showcase R3) replaces First Tracks and Ring Road. The other four are the v4 files, rebuilt in R5–R7 (SHOWCASE_PLAN §7).
-export const LEVEL_IDS = ['crash-site', 'geyser-canyon', 'crater-field', 'gravity-wells', 'the-crossing', 'polar-pass'] as const;
+// Crash Site (Showcase R3) replaces First Tracks and Ring Road; Geyser Canyon (R5) replaces Push & Shove; Crater Field (R6) folds in Gravity Wells.
+// The other two are the v4 files, rebuilt in R7 (SHOWCASE_PLAN §7).
+export const LEVEL_IDS = ['crash-site', 'geyser-canyon', 'crater-field', 'the-crossing', 'polar-pass'] as const;
 export type LevelId = (typeof LEVEL_IDS)[number];
 
 export interface Pose {
@@ -34,6 +35,11 @@ export interface RoadDef {
   start?: Pose;
   after?: string;
   segments: RoadSegment[];
+  /**
+   * A chasm in the road (E45): between these two distances along it there is no ground. The road is still one road for forks and
+   * routes. A rover that lands there, or drives into it, falls and comes back to the last checkpoint; a jump crosses it.
+   */
+  gap?: { fromM: number; toM: number };
 }
 
 /** A cosine-bell hill: rises to `heightM` at the centre and falls to 0 at `radiusM`. */
@@ -70,6 +76,21 @@ export interface RidgeDef {
   widthM: number;
 }
 
+/**
+ * A ramp with a lip (Physics Model Specification 11.3, E45): the only place the rover leaves the ground. The ground climbs at
+ * `angleDeg` over `lengthM` up to the lip, then drops away. The lip is a line across the ramp, `xM`, `zM` at its middle,
+ * square to `headingDeg`, the way the rover is driven over it. A rover crossing the lip leaves with v_h = v cos φ and v_y = v sin φ.
+ */
+export interface RampDef {
+  id: string;
+  xM: number;
+  zM: number;
+  headingDeg: number;
+  angleDeg: number;
+  lengthM: number;
+  widthM: number;
+}
+
 export interface WaterDef {
   id: string;
   polygon: PointM[];
@@ -85,6 +106,8 @@ export interface GravityZoneDef {
   id: string;
   kind: GravityKind;
   polygon: PointM[];
+  /** A cave: the height of its roof above the lip of a ramp in it, in metres. Every jump of every build must clear it (R6; `levelChecks.ts`). */
+  ceilingM?: number;
 }
 
 export interface PylonDef {
@@ -235,6 +258,7 @@ export interface LevelDef {
   hills: HillDef[];
   craters: CraterDef[];
   ridges: RidgeDef[];
+  ramps: RampDef[];
   water: WaterDef[];
   surfaceZones: SurfaceZoneDef[];
   gravityZones: GravityZoneDef[];

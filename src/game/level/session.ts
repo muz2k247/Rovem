@@ -1,6 +1,7 @@
 import type { Content, GravityKind } from '../../content/index.ts';
 import { levelsConfig } from '../../content/levelsConfig.ts';
 import { buildQuantities } from '../../physics/build.ts';
+import { airStep, launch } from '../../physics/air.ts';
 import { createFixedStepLoop } from '../../physics/loop.ts';
 import { movingIntoEdge, scrapeAlongEdge, type EdgeContact } from '../../physics/collision.ts';
 import { magnetOnRover } from '../../physics/magnet.ts';
@@ -79,12 +80,12 @@ export interface LevelSessionOptions {
 const ELEMENT_CAPTION_IDS = /^(boost|booster|surface-.+|gravity-.+|slip|slope-up|slide|water-in|float|magnet-attract|magnet-repel|hit-.+)$/;
 
 export type LevelPhase = 'driving' | 'respawning' | 'finished' | 'ended';
-export type RespawnCause = 'crash' | 'stuck' | 'floated' | 'manual';
-export type WhatIfOutcome = 'merged' | 'wall' | 'barrier' | 'stuck' | 'floated' | 'timeout';
+export type RespawnCause = 'crash' | 'stuck' | 'floated' | 'fell' | 'manual';
+export type WhatIfOutcome = 'merged' | 'wall' | 'barrier' | 'stuck' | 'floated' | 'fell' | 'timeout';
 
 export type LevelEventKind =
   | 'surface' | 'slip' | 'boost' | 'hit' | 'gravity' | 'slope' | 'descent' | 'rollback' | 'slide' | 'water' | 'float'
-  | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish' | 'booster' | 'split';
+  | 'takeoff' | 'landing' | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish' | 'booster' | 'split';
 
 /** Something that happened, with the numbers that changed. Captions and the report are made from these. */
 export interface LevelEvent {
@@ -122,6 +123,10 @@ export interface LevelEvent {
   radiusM?: number;
   needN?: number;
   speedMps?: number;
+  /** A jump (E45): the time in the air and the highest point above the lip. */
+  airS?: number;
+  /** The highest point above the lip. */
+  apexM?: number;
   upN?: number;
   volM3?: number;
   depthM?: number;
@@ -281,6 +286,8 @@ export function createLevelSession(options: LevelSessionOptions) {
   let snap: Snapshot | undefined;
   let captionNow: HudModel['caption'] = null;
   let boosterUsed = false;
+  /** A jump in progress (E45): the height above sea level of the ground's zero, and the two parts of the velocity. Left out while on the ground. */
+  let air: { yM: number; verticalMps: number; horizontalMps: number; startS: number; flownM: number; apexM: number; takeoffYM: number; gMps2: number } | undefined;
   /** Steps of push the booster has left (counted in whole steps, so 1.5 s is exactly 180 steps and no rounding adds one). */
   let boosterStepsLeft = 0;
   let splitNow: { text: string; behind: boolean } | undefined;
@@ -357,6 +364,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     flash = undefined;
     flashUntilS = 0;
     snap = undefined;
+    air = undefined;
     forceLine.reset();
     // An unfinished fork starts again from its fork line; a finished one stays finished.
     for (const f of forks.values()) if (!f.done) f.startClockS = undefined;
@@ -554,7 +562,122 @@ export function createLevelSession(options: LevelSessionOptions) {
       phase = 'ended';
       return;
     }
-    drivingStep();
+    if (air) airborneStep();
+    else drivingStep();
+  }
+
+  /** The next stretch begins when the front crosses its gate (on the ground or in the air); the Scavenger's gap at that gate is shown. */
+  function enterStretchAtGate(prevFront: { x: number; z: number }, front: { x: number; z: number }, t: number) {
+    const nextStretch = tracker.current + 1;
+    if (nextStretch >= stretchGates.length || !crossedForkLine(stretchGates[nextStretch]!, prevFront, front)) return;
+    tracker.enter(nextStretch, t, state.speedMps);
+    const gateS = scavenger?.gateS(nextStretch);
+    if (scavenger && gateS !== null && gateS !== undefined) {
+      const gapS = t - (scavenger.delayS + gateS);
+      const stretchName = def.stretches[nextStretch]!.name;
+      emit({ kind: 'split', gapS, stretchName });
+      splitNow = { text: splitText(gapS), behind: gapS > 0 };
+      splitUntilS = t + cfg.scavenger.splitShowS;
+    }
+  }
+
+  // --- jumps (E45; Physics Model Specification 11.3) ---
+
+  /**
+   * The rover's front crossed a ramp's lip: it leaves the ground with v_h = v cos φ and v_y = v sin φ. The game layer does the
+   * rest from here (airborneStep); `step()` is not called until it lands.
+   */
+  function takeOff(ramp: { angleDeg: number; lengthM: number }, g: number) {
+    const groundSpeedMps = state.speedMps;
+    const lip = launch(groundSpeedMps, ramp.angleDeg * DEG);
+    const yM = world.heightM(state.positionXM, state.positionZM) + ramp.lengthM * Math.tan(ramp.angleDeg * DEG);
+    air = { yM, verticalMps: lip.verticalMps, horizontalMps: lip.horizontalMps, startS: clockS(), flownM: 0, apexM: 0, takeoffYM: yM, gMps2: g };
+    state = { ...state, speedMps: lip.horizontalMps, rollingBack: false };
+    snap = undefined;
+    emit({ kind: 'takeoff', speedBeforeMps: groundSpeedMps, speedAfterMps: lip.horizontalMps, speedMps: lip.verticalMps, angleDeg: ramp.angleDeg, gMps2: g, massKg: rover.massKg });
+  }
+
+  /**
+   * One step in the air: no drive, brake or steering acts; the pedals' levels still rise and fall, so they take effect on landing.
+   * v_h stays the same and gravity pulls v_y down (air.ts). A step that reaches the ground is split at the exact landing time.
+   */
+  function airborneStep() {
+    const a = air!;
+    const input = drive({ stepIndex, clockS: clockS(), state, travelRad });
+    keys = input;
+    const forward = state.direction === 'forward';
+    const driveHeld = forward ? input.throttleHeld : input.brakeHeld;
+    const brakeHeld = forward ? input.brakeHeld : input.throttleHeld;
+    const level = (value: number, held: boolean, buildUpS: number) => (held ? Math.min(1, value + dtS / buildUpS) : Math.max(0, value - dtS / buildUpS));
+    state = {
+      ...state,
+      throttleLevel: level(state.throttleLevel, driveHeld && !brakeHeld, baseConstants.throttleBuildUpS),
+      brakeLevel: level(state.brakeLevel, brakeHeld, baseConstants.brakeBuildUpS),
+    };
+
+    const c = centreOf(state);
+    const g = gravityAt(world.gravityKindAt(c.x, c.z));
+    a.gMps2 = g;
+    const prevFront = { x: state.positionXM, z: state.positionZM };
+    const groundHereM = world.heightM(state.positionXM, state.positionZM);
+    const flown = airStep({ heightM: Math.max(0, a.yM - groundHereM), verticalMps: a.verticalMps, horizontalMps: a.horizontalMps }, g, dtS);
+    const x = state.positionXM + Math.cos(travelRad) * flown.horizontalM;
+    const z = state.positionZM + Math.sin(travelRad) * flown.horizontalM;
+    let yM = groundHereM + flown.state.heightM;
+    let landed = flown.landed;
+    // Ground that rises into the rover (a hill, a far lip) ends the flight too.
+    const groundAheadM = world.heightM(x, z);
+    if (!landed && yM <= groundAheadM) {
+      landed = true;
+      yM = groundAheadM;
+    }
+    // A cave has a roof, `ceilingM` above the lip the rover left from (so a pit under the jump does not lower it): the level's checks
+    // make sure no jump reaches it, and this keeps the rover under it if one ever did.
+    let verticalMps = flown.state.verticalMps;
+    const roofM = world.ceilingAt(x, z);
+    if (roofM !== undefined && !landed && yM - a.takeoffYM > roofM) {
+      yM = a.takeoffYM + roofM;
+      verticalMps = Math.min(verticalMps, 0);
+    }
+    a.flownM += flown.horizontalM;
+    a.apexM = Math.max(a.apexM, yM - a.takeoffYM);
+    state = {
+      ...state, positionXM: x, positionZM: z, distanceM: state.distanceM + flown.horizontalM, speedMps: a.horizontalMps,
+      timeS: state.timeS + dtS, stepCount: state.stepCount + 1,
+    };
+    // The lines a flight crosses count as they do on the ground (a fork line, a stretch's gate, a fork's merge). Samples, checkpoints and the finish are ground features: a flight over them does not take them.
+    if (!quiet && tracker.count > 0) enterStretchAtGate(prevFront, { x, z }, clockS());
+    checkForks(prevFront, { x, z });
+    if (!landed) {
+      a.yM = yM;
+      a.verticalMps = verticalMps;
+      return;
+    }
+
+    // Landing: the part of the velocity into the ground is removed, the part along it is kept (v_h cos θ + v_y sin θ on a slope θ).
+    const airS = clockS() - a.startS;
+    const theta = world.slopeRad(x, z, travelRad);
+    const speedAfter = Math.max(0, a.horizontalMps * Math.cos(theta) + flown.state.verticalMps * Math.sin(theta));
+    const done = a;
+    air = undefined;
+    state = { ...state, speedMps: speedAfter, drivingState: speedAfter === 0 ? 'Stopped' : state.drivingState };
+    emit({ kind: 'landing', airS, apexM: done.apexM, distM: done.flownM, gMps2: done.gMps2, speedBeforeMps: done.horizontalMps, speedAfterMps: speedAfter, massKg: rover.massKg });
+    say('jump', { airS: twoDecimals(airS), g: done.gMps2.toFixed(1), distM: twoDecimals(done.flownM) });
+
+    // Landing outside the drivable ground sends the rover back to the last checkpoint; on an obstacle it is a crash.
+    const centreNow = centreOf(state);
+    const hit = world.hit(x, z, state.headingRad);
+    if (hit?.kind === 'barrier') {
+      state = { ...state, speedMps: 0 };
+      scheduleRespawn('crash', 'barrier');
+      return;
+    }
+    if (world.chasmAt(centreNow.x, centreNow.z) || (!world.roadAt(x, z) && !world.roadAt(centreNow.x, centreNow.z))) {
+      state = { ...state, speedMps: 0 };
+      scheduleRespawn('fell');
+      return;
+    }
+    if (hit?.kind === 'wall') scrapeAgainstWall(hit.contact, 1);
   }
 
   function drivingStep() {
@@ -661,20 +784,17 @@ export function createLevelSession(options: LevelSessionOptions) {
     const front = { x: state.positionXM, z: state.positionZM };
     const centreNow = centreOf(state);
 
+    // Driving over the edge of a chasm: there is no ground under the middle of the rover, so it falls (E45).
+    if (world.chasmAt(centreNow.x, centreNow.z)) {
+      state = { ...state, speedMps: 0, rollingBack: false };
+      snap = undefined;
+      scheduleRespawn('fell');
+      return;
+    }
+
     // Stretches: the next one begins when the front crosses its gate; the time, the grip limit, a roll back and the ground are counted in the one the rover is in.
     if (!quiet && tracker.count > 0) {
-      const nextStretch = tracker.current + 1;
-      if (nextStretch < stretchGates.length && crossedForkLine(stretchGates[nextStretch]!, { x: prev.positionXM, z: prev.positionZM }, front)) {
-        tracker.enter(nextStretch, t, state.speedMps);
-        const gateS = scavenger?.gateS(nextStretch);
-        if (scavenger && gateS !== null && gateS !== undefined) {
-          const gapS = t - (scavenger.delayS + gateS);
-          const stretchName = def.stretches[nextStretch]!.name;
-          emit({ kind: 'split', gapS, stretchName });
-          splitNow = { text: splitText(gapS), behind: gapS > 0 };
-          splitUntilS = t + cfg.scavenger.splitShowS;
-        }
-      }
+      enterStretchAtGate({ x: prev.positionXM, z: prev.positionZM }, front, t);
       if ((next.slipping && !floating) || sliding) tracker.addGripLimit(dtS, q.gripLimitN, surfaceId);
       if (state.rollingBack) tracker.addRollingBack(dtS);
       const underId = world.surfaceIdAt(front.x, front.z);
@@ -887,6 +1007,10 @@ export function createLevelSession(options: LevelSessionOptions) {
       atTopSpeed: next.drivingState === 'At top speed',
     });
     void gripN;
+
+    // A ramp's lip: the only place the rover leaves the ground (E45).
+    const ramp = world.rampCrossed({ xM: prev.positionXM, zM: prev.positionZM }, { xM: state.positionXM, zM: state.positionZM }, travelRad);
+    if (ramp && state.speedMps > 0 && !inWater) takeOff(ramp, g);
   }
 
   let forceLineText: string | null = null;
@@ -1121,7 +1245,13 @@ export function createLevelSession(options: LevelSessionOptions) {
         headingRad: state.headingRad, travelRad, slideRad, groundYM: world.heightM(c.x, c.z),
         pitchRad: world.slopeRad(c.x, c.z, state.headingRad),
         waterDepthM: world.waterDepthM(c.x, c.z),
+        /** The rover's height above the zero of the map while it is in the air (otherwise left out), and the angle its path makes with the ground. */
+        ...(air ? { airYM: air.yM, airPitchRad: Math.atan2(air.verticalMps, air.horizontalMps) } : {}),
       };
+    },
+    /** Is the rover in the air (a jump, E45)? */
+    get airborne(): boolean {
+      return air !== undefined;
     },
     get bags(): readonly Bag[] {
       return bags;
@@ -1192,7 +1322,10 @@ export function createLevelSession(options: LevelSessionOptions) {
       const flat = buildQuantities(rover, specs.get('asphalt')!, { gravityMps2: baseConstants.gravityMps2 }, { slopeRad: 0, upthrustN: 0 });
       return buildLevelReport({
         def, rover, result, events, trace, clockS: clockS(), text: levelText, stretches: tracker.records(clockS()), content,
-        partValues: { grip: newtons(flat.gripLimitN), impulse: newtons(run.boostImpulseNs) },
+        partValues: {
+          grip: newtons(flat.gripLimitN), impulse: newtons(run.boostImpulseNs),
+          weight: newtons(rover.massKg * baseConstants.gravityMps2 * content.run.gravityMultipliers.high), mass: rover.massKg,
+        },
         ...(scavenger ? { scavenger, scavengerQuantities: scavengerQuantities(scavenger) } : {}),
         ...(ctx.build ? { build: ctx.build } : {}),
         ...(ctx.last ? { last: ctx.last } : {}),

@@ -92,7 +92,7 @@ describe('level summaries for the Levels screen (A3)', () => {
     let p = recordLevelResult(emptyLevelProgress(), ids[0]!, { stars: 2, timeS: 97.5 });
     p = finish(p, ids[1]!, 1);
     const rows = levelSummaries(levelCards.levels, p, false);
-    expect(rows).toHaveLength(6); // Crash Site replaced First Tracks and Ring Road (R3)
+    expect(rows).toHaveLength(5); // Crash Site replaced First Tracks and Ring Road (R3); Gravity Wells folded into Crater Field (R6)
     expect(rows[0]).toEqual({
       id: ids[0],
       number: 1,

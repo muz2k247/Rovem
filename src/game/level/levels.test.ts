@@ -5,7 +5,7 @@ import { LEVEL_IDS } from './types.ts';
 
 describe('level registry', () => {
   it('the level ids are exactly these, in play order (Crash Site replaced First Tracks and Ring Road in R3)', () => {
-    expect(LEVEL_IDS).toEqual(['crash-site', 'geyser-canyon', 'crater-field', 'gravity-wells', 'the-crossing', 'polar-pass']);
+    expect(LEVEL_IDS).toEqual(['crash-site', 'geyser-canyon', 'crater-field', 'the-crossing', 'polar-pass']);
   });
 
   it('loads and validates a level file, and lists the ones that exist in play order', () => {

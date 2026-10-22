@@ -3,7 +3,7 @@ import {
   ATMOSPHERE_IDS, LEVEL_IDS,
   type BarrierDef, type BoostDef, type CannonDef, type CheckpointDef, type CraterDef, type FinishDef, type ForkDef, type ForkLineDef,
   type GravityZoneDef, type HillDef, type HintDef, type HintDone, type HintTrigger, type LevelDef, type LevelId, type PylonDef,
-  type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type SurfaceZoneDef, type WaterDef,
+  type RampDef, type RidgeDef, type RoadDef, type RoadSegment, type SampleDef, type SignDef, type SurfaceZoneDef, type WaterDef,
   type Pose, type ScavengerDef, type StretchDef,
 } from './types.ts';
 
@@ -95,6 +95,12 @@ function road(raw: unknown, path: string): RoadDef {
   const surfaceId = optStr(o, 'surfaceId', path);
   const runoffSurfaceId = optStr(o, 'runoffSurfaceId', path);
   const name = optStr(o, 'name', path);
+  let gap: { fromM: number; toM: number } | undefined;
+  if (o.gap !== undefined) {
+    const g = obj(o.gap, `${path}.gap`);
+    gap = { fromM: num(g, 'fromM', `${path}.gap`), toM: num(g, 'toM', `${path}.gap`) };
+    if (gap.fromM < 0 || gap.toM <= gap.fromM) fail(`${path}.gap`, 'expected 0 <= fromM < toM');
+  }
   return {
     id: str(o, 'id', path),
     ...(name ? { name } : {}),
@@ -102,6 +108,7 @@ function road(raw: unknown, path: string): RoadDef {
     ...(runoffM !== undefined ? { runoffM } : {}),
     ...(surfaceId ? { surfaceId } : {}),
     ...(runoffSurfaceId ? { runoffSurfaceId } : {}),
+    ...(gap ? { gap } : {}),
     ...(start ? { start } : {}),
     ...(after ? { after } : {}),
     segments,
@@ -136,6 +143,16 @@ const ridge = (raw: unknown, path: string): RidgeDef => {
   };
 };
 
+const ramp = (raw: unknown, path: string): RampDef => {
+  const o = obj(raw, path);
+  const angleDeg = pos(o, 'angleDeg', path);
+  if (angleDeg >= 45) fail(`${path}.angleDeg`, 'must be below 45');
+  return {
+    id: str(o, 'id', path), xM: num(o, 'xM', path), zM: num(o, 'zM', path), headingDeg: num(o, 'headingDeg', path), angleDeg,
+    lengthM: pos(o, 'lengthM', path), widthM: pos(o, 'widthM', path),
+  };
+};
+
 const water = (raw: unknown, path: string): WaterDef => {
   const o = obj(raw, path);
   return { id: str(o, 'id', path), polygon: polygon(o.polygon, `${path}.polygon`), depthM: pos(o, 'depthM', path) };
@@ -150,7 +167,8 @@ const gravityZone = (raw: unknown, path: string): GravityZoneDef => {
   const o = obj(raw, path);
   const kind = o.kind;
   if (kind !== 'low' && kind !== 'high') fail(`${path}.kind`, 'expected "low" or "high"');
-  return { id: str(o, 'id', path), kind: kind as GravityKind, polygon: polygon(o.polygon, `${path}.polygon`) };
+  const ceilingM = optPos(o, 'ceilingM', path);
+  return { id: str(o, 'id', path), kind: kind as GravityKind, polygon: polygon(o.polygon, `${path}.polygon`), ...(ceilingM !== undefined ? { ceilingM } : {}) };
 };
 
 const pylon = (raw: unknown, path: string): PylonDef => {
@@ -287,6 +305,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     hills: each(o.hills, 'level.hills', hill),
     craters: each(o.craters, 'level.craters', crater),
     ridges: each(o.ridges, 'level.ridges', ridge),
+    ramps: each(o.ramps, 'level.ramps', ramp),
     water: each(o.water, 'level.water', water),
     surfaceZones: each(o.surfaceZones, 'level.surfaceZones', surfaceZone),
     gravityZones: each(o.gravityZones, 'level.gravityZones', gravityZone),
@@ -314,6 +333,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
   unique(def.forks.map((f) => f.id), 'level.forks');
   unique(def.pylons.map((p) => p.id), 'level.pylons');
   unique(def.boosts.map((b) => b.id), 'level.boosts');
+  unique(def.ramps.map((r) => r.id), 'level.ramps');
   unique(def.cannons.map((c) => c.id), 'level.cannons');
 
   unique(def.stretches.map((s) => s.id), 'level.stretches');

@@ -2,7 +2,6 @@ import { content } from '../../content/index.ts';
 import crashSite from '../../content/levels/crash-site.json' with { type: 'json' };
 import geyserCanyon from '../../content/levels/geyser-canyon.json' with { type: 'json' };
 import craterField from '../../content/levels/crater-field.json' with { type: 'json' };
-import gravityWells from '../../content/levels/gravity-wells.json' with { type: 'json' };
 import theCrossing from '../../content/levels/the-crossing.json' with { type: 'json' };
 import polarPass from '../../content/levels/polar-pass.json' with { type: 'json' };
 import { validateLevelDef } from './schema.ts';
@@ -15,7 +14,6 @@ const LEVEL_FILES: Partial<Record<LevelId, unknown>> = {
   'crash-site': crashSite,
   'geyser-canyon': geyserCanyon,
   'crater-field': craterField,
-  'gravity-wells': gravityWells,
   'the-crossing': theCrossing,
   'polar-pass': polarPass,
 };

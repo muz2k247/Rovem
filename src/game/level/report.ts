@@ -18,8 +18,7 @@ import type { LevelDef, LevelId } from './types.ts';
 const LEVEL_CARD_ORDER: Record<LevelId, readonly string[]> = {
   'crash-site': ['slide', 'sand', 'fork', 'crash'],
   'geyser-canyon': ['boost', 'hit'],
-  'crater-field': ['descent', 'rollback'],
-  'gravity-wells': ['gravity'],
+  'crater-field': ['gravity', 'descent', 'rollback'],
   'the-crossing': ['float', 'water'],
   'polar-pass': ['magnet'],
 };

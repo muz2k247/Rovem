@@ -12,8 +12,7 @@ export const MAX_ARROWS = 3;
 export const NEW_ELEMENT_FORCES: Record<LevelId, readonly ForceKind[]> = {
   'crash-site': ['friction', 'turning'],
   'geyser-canyon': ['impulse'],
-  'crater-field': ['slope'],
-  'gravity-wells': ['weight'],
+  'crater-field': ['slope', 'weight'],
   'the-crossing': ['upthrust', 'drag'],
   'polar-pass': ['magnet'],
 };

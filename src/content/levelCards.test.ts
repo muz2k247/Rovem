@@ -10,7 +10,6 @@ describe('level cards (LEVELS_BUILD_PLAN A2, A3, A7)', () => {
       'Crash Site',
       'Geyser Canyon',
       'Crater Field',
-      'Gravity Wells',
       'The Crossing',
       'Polar Pass',
     ]);

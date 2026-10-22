@@ -8,7 +8,7 @@ A browser-based 3D game that teaches Grade 9 physics (the newest Punjab Textbook
 
 ## Current focus: the Showcase round
 
-Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0, R1, R2 and R3 are done; R4–R8 are in the roadmap. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
+Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0 and R1–R6 are built (R4–R6 each have an open item for k._muz); R7 and R8 are in the roadmap. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
 
 ## Base: Game v4, concept levels
 
@@ -19,7 +19,6 @@ After the advisor saw the demo (an endless canyon run), the game became **seven 
 | Crash Site | rolling friction on sand against rock; grip in a turn on the Ring; choosing the faster route (replaces First Tracks and Ring Road, R3) |
 | Push & Shove | momentum and impulse |
 | Crater Field | slopes; kinetic and potential energy |
-| Gravity Wells | mass and weight |
 | The Crossing | density, upthrust, pressure |
 | Polar Pass | magnetic poles and electromagnets |
 

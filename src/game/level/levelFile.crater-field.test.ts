@@ -1,103 +1,246 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content/index.ts';
-import { levelsConfig } from '../../content/levelsConfig.ts';
-import { STARTING_BUILD, physicsConstants, roverFromParts, type BuildSelection } from '../buildFromParts.ts';
+import { STARTING_BUILD } from '../buildFromParts.ts';
 import { checkLevelFile, loadLevel, startingAt } from './levelChecks.ts';
-import { createLevelSession } from './session.ts';
-import { allBuilds, runPilot } from './testPilot.ts';
+import { createScavengerRun } from './scavenger.ts';
+import { allBuilds, roadPoint, runPilot } from './testPilot.ts';
 
 checkLevelFile('crater-field');
 
+// Crater Field (SHOWCASE_PLAN §3 Level 3, §6): a rim and a small safe jump, two bowls you can jump or roll through (one with an icy floor),
+// the Floating Cave with a chasm to jump and the Heavy Cave with a mine shaft, and the biggest jump to the lift engine.
 describe('crater-field', () => {
-  const { def, world } = loadLevel('crater-field');
+  const { def, world, plans } = loadLevel('crater-field');
+  const landingsOf = (r: ReturnType<typeof runPilot>) => r.session.events.filter((e) => e.kind === 'landing');
+  const fellOf = (r: ReturnType<typeof runPilot>) => r.respawns.fell;
+  const medium = (chassisId: string) => ({ chassisId, wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' });
 
-  it('uses the A10 values: craters 5 m deep with a 25° wall and a 12° ramp', () => {
-    expect(def.craters).toHaveLength(3);
-    for (const c of def.craters) {
-      expect(c.depthM).toBe(levelsConfig.crater.depthM);
-      expect(c.wallAngleDeg).toBe(levelsConfig.crater.wallAngleDeg);
-      expect(c.rampAngleDeg).toBe(levelsConfig.crater.rampAngleDeg);
-    }
+  it('takes the starting build about 100 s with all three samples and no respawns (90–150 s)', () => {
+    const r = runPilot({ content, def, plan: plans.stars });
+    expect(r.finished).toBe(true);
+    expect(r.timeS).toBeGreaterThan(90);
+    expect(r.timeS).toBeLessThan(115);
+    expect(r.respawns).toEqual({ crash: 0, stuck: 0, floated: 0, fell: 0, manual: 0 });
+    expect(r.samples.sort()).toEqual(['s-bowl', 's-float', 's-landing']);
   });
 
-  it('uses the A10 values: hills at most 4 m high, at least 60 m long, with a crest radius of at least 50 m', () => {
-    expect(def.hills.length).toBeGreaterThanOrEqual(3);
-    for (const h of def.hills) {
-      expect(h.heightM).toBeLessThanOrEqual(levelsConfig.hills.maxHeightM);
-      expect(2 * h.radiusM).toBeGreaterThanOrEqual(levelsConfig.hills.minLengthM);
-      // A cosine bell h/2 (1 + cos(π d ÷ r)) has crest curvature h π² ÷ (2 r²), so a radius of curvature 2 r² ÷ (h π²).
-      expect((2 * h.radiusM ** 2) / (h.heightM * Math.PI ** 2)).toBeGreaterThanOrEqual(levelsConfig.hills.minCrestRadiusM);
-    }
+  it('has the Scavenger on the route that skips the ramps, and the starting build beats it with all three samples', () => {
+    const scavenger = createScavengerRun(content, def)!;
+    expect(scavenger).toBeDefined();
+    const r = runPilot({ content, def, plan: plans.stars, scavenger });
+    expect(r.starFlags).toEqual([true, true, true]);
+    // The Scavenger's target is 4% to 8% over the starting rover's clean best (SHOWCASE_PLAN §8); the delay is the knob that makes the star reachable.
+    expect(scavenger.finishAtS).toBeGreaterThan(r.timeS);
   });
 
-  it('the way round each crater is flat, so it always works', () => {
-    for (const id of ['c1-around', 'c2-around', 'c3-around']) {
-      const line = world.roadById(id).line;
-      for (const p of line.points) expect(Math.abs(world.heightM(p.xM, p.zM)), `${id} at (${p.xM.toFixed(0)}, ${p.zM.toFixed(0)})`).toBeLessThan(1e-9);
-    }
-  });
-
-  it('coasting over a 4 m hill takes about √(2 g h) = 8.85 m/s: a rover at 12 m/s clears the crest, one at 6 m/s does not', () => {
-    const hill = def.hills[0]!;
-    const road = world.roadById('start');
-    const reach = (speed: number) => {
-      const session = createLevelSession({
-        content, def: { ...def, checkpoints: [], hints: [] }, rover: roverFromParts(content, STARTING_BUILD), constants: physicsConstants(content),
-        drive: () => ({ throttleHeld: false, brakeHeld: false, steer: 0 }),
-        initialState: { positionXM: hill.xM - hill.radiusM + 2, positionZM: hill.zM, headingRad: 0, speedMps: speed },
-      });
-      let top = 0;
-      for (let i = 0; i < 120 * 12; i++) {
-        session.stepOnce();
-        top = Math.max(top, world.heightM(session.pose.centreXM, session.pose.centreZM));
-      }
-      return { top, pastCrest: session.pose.centreXM > hill.xM + 2 };
-    };
-    expect(road.line.lengthM).toBeGreaterThan(0);
-    expect(reach(12).pastCrest).toBe(true);
-    expect(reach(6).pastCrest).toBe(false);
-    expect(reach(6).top).toBeLessThan(hill.heightM);
-  });
-
-  it('crater 2 has a mud floor: the spiked-wheel builds bog down on it, the starting build gets across', () => {
-    const outcome = (build: BuildSelection) => {
-      const r = runPilot({
-        content, def: startingAt(def, 'cp-2'), build, plan: { roads: ['m1', 'c2-through'] }, maxS: 70,
-        until: (s) => s.events.some((e) => e.kind === 'fork' || e.kind === 'respawn'),
-      });
-      return r.session.events.some((e) => e.kind === 'fork');
-    };
-    const builds = allBuilds(content);
-    const crossed = builds.filter(outcome);
-    expect(outcome(STARTING_BUILD)).toBe(true);
-    expect(crossed.length).toBeLessThan(27);
-    expect(crossed.length).toBeGreaterThan(15);
-    for (const b of builds.filter((x) => !crossed.includes(x))) expect(b.wheelsId).toBe('wheels-spiked');
-  });
-
-  it('crater 3: the starting build climbs the steep wall with the pad’s kick; with no stop at the foot every build now arrives fast enough (R1)', () => {
-    const climbs = (build: BuildSelection) => {
-      const r = runPilot({
-        content, def: startingAt(def, 'cp-3'), build, plan: { roads: ['m2', 'c3-through'] }, maxS: 80,
-        until: (s) => s.events.some((e) => e.kind === 'fork' || e.kind === 'respawn'),
-      });
-      return { passed: r.session.events.some((e) => e.kind === 'fork'), rolledBack: r.session.events.some((e) => e.kind === 'rollback') };
-    };
-    expect(climbs(STARTING_BUILD).passed).toBe(true);
-    const results = allBuilds(content).map((b) => climbs(b));
-    // Before the stops were removed (R1) weak builds rolled back here, held at rest at the foot. Now they arrive moving and none does;
-    // the crater is redesigned in R6. The rolling-back physics itself is tested by the next test.
-    expect(results.filter((r) => r.passed).length).toBeGreaterThan(10);
-  });
-
-  it('a rover with a Small motor at rest at the foot of the 25° wall rolls back (A6)', () => {
-    const foot = { xM: 1001.71, zM: -262.65, headingDeg: -30 }; // the foot of the wall (it was once marked by a stop line)
-    const r = runPilot({
-      content, build: { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-small' }, maxS: 20,
-      def: { ...def, start: { xM: foot.xM, zM: foot.zM, headingDeg: foot.headingDeg }, checkpoints: [], boosts: [], forks: [] },
-      plan: { roads: ['c3-through'], throttleOnly: true },
-      until: (s) => s.events.some((e) => e.kind === 'rollback'),
+  describe('the jumps (E45)', () => {
+    it('has five ramps, each on a road: a small hook jump, one before each of the three pits, and one on the lip of the chasm', () => {
+      expect(def.ramps.map((r) => r.id)).toEqual(['r0', 'r1', 'r2', 'r3', 'r4']);
+      for (const r of def.ramps) expect(world.roadAt(r.xM, r.zM)?.road.def.id, r.id).toBeDefined();
     });
-    expect(r.session.events.some((e) => e.kind === 'rollback')).toBe(true);
+
+    it('the first jump is small and safe: every one of the 27 builds lands it on the road in under 1.5 s', () => {
+      for (const build of allBuilds(content)) {
+        const r = runPilot({ content, def, build, plan: plans.safe, until: (s) => s.events.some((e) => e.kind === 'landing') });
+        const land = landingsOf(r)[0]!;
+        expect(land.airS!, `${build.chassisId} ${build.wheelsId} ${build.motorId}`).toBeLessThan(1.5);
+        expect(r.session.phase).toBe('driving');
+        expect(r.respawns.fell).toBe(0);
+      }
+    });
+
+    it('a vent before a ramp gives a longer jump: the icy bowl is cleared with it and not without', () => {
+      const bowl = (withVent: boolean) => {
+        const r = runPilot({
+          content, def: { ...startingAt(def, 'cp-2'), boosts: withVent ? def.boosts : [] }, plan: plans.stars,
+          until: (s) => s.events.some((e) => e.kind === 'landing'),
+        });
+        return landingsOf(r)[0]!;
+      };
+      const vented = bowl(true);
+      const plain = bowl(false);
+      expect(vented.distM!).toBeGreaterThan(plain.distM! + 4);
+      expect(vented.airS!).toBeGreaterThan(plain.airS!);
+    });
+
+    it('the two caves change g: 4.9 in the Floating Cave (weight 1024 N, mass 209 kg) and 19.6 in the Heavy Cave', () => {
+      const gravity = (cave: string) => {
+        const r = runPilot({
+          content, def: startingAt(def, 'cp-3'), plan: { roads: ['m2', cave, 'm3'] },
+          until: (s) => s.events.some((e) => e.kind === 'gravity'),
+        });
+        return r.session.events.find((e) => e.kind === 'gravity')!;
+      };
+      const float = gravity('cave-float');
+      expect(float.gravityKind).toBe('low');
+      expect(float.gMps2).toBeCloseTo(4.9, 9);
+      expect(float.weightN).toBeCloseTo(209 * 4.9, 6);
+      expect(float.massKg).toBe(209);
+      const heavy = gravity('cave-heavy');
+      expect(heavy.gravityKind).toBe('high');
+      expect(heavy.gMps2).toBeCloseTo(19.6, 9);
+      expect(heavy.weightN).toBeCloseTo(209 * 19.6, 6);
+    });
+
+    it('the jump over the chasm in the Floating Cave flies the time g = 4.9 gives, about twice what g = 9.8 would', () => {
+      const r = runPilot({
+        content, def: startingAt(def, 'cp-3'), plan: { roads: ['m2', 'cave-float', 'm3'] },
+        until: (s) => s.events.some((e) => e.kind === 'landing'),
+      });
+      const up = r.session.events.find((e) => e.kind === 'takeoff')!;
+      const down = landingsOf(r)[0]!;
+      const vy = up.speedMps!;
+      const lipM = down.apexM! - vy ** 2 / (2 * 4.9);
+      void lipM;
+      expect(down.gMps2).toBeCloseTo(4.9, 9);
+      // From the lip into a pit: t = (v_y + √(v_y² + 2 g h₀)) ÷ g, with the ground it lands on at the lip's own height (the far side of the chasm).
+      const expectedS = (vy + Math.sqrt(vy * vy + 2 * 4.9 * 0)) / 4.9 * 2 / 2;
+      expect(down.airS!).toBeGreaterThan(expectedS * 0.9);
+      const sameInEarthG = (2 * vy) / 9.8;
+      expect(down.airS!).toBeGreaterThan(sameInEarthG * 1.7);
+    });
+
+    // The two vents before the chasm are what carry every build over it (SHOWCASE_PLAN §6: vents before a ramp); without them the chasm is 34 m and a plain run-up lands short.
+    const noVents = { ...startingAt(def, 'cp-3'), boosts: def.boosts.filter((v) => !v.id.startsWith('r4-')) };
+
+    it('with its two vents every build clears the chasm; with a plain run-up even the starting build falls in', () => {
+      for (const build of allBuilds(content)) {
+        const r = runPilot({ content, def: startingAt(def, 'cp-3'), build, plan: { roads: ['m2', 'cave-float', 'm3'] }, until: (x) => x.events.some((e) => e.kind === 'landing') || x.phase === 'respawning' });
+        expect(fellOf(r), `${build.chassisId} ${build.wheelsId} ${build.motorId}`).toBe(0);
+      }
+      const plain = (motorId: string) =>
+        runPilot({ content, def: noVents, build: { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId }, plan: { roads: ['m2', 'cave-float', 'm3'] }, until: (x) => x.events.some((e) => e.kind === 'landing') });
+      expect(plain('motor-medium').session.phase).toBe('respawning');
+      expect(plain('motor-large').session.phase).toBe('respawning');
+    });
+
+    it('the Heavy Cave’s mine shaft is a hard climb: the starting build gets up it, but a heavy rover on spiked wheels rolls back and gets stuck (and can take the Floating Cave)', () => {
+      const shaft = (build: { chassisId: string; wheelsId: string; motorId: string }, cave: string) =>
+        runPilot({ content, def: startingAt(def, 'cp-3'), build, plan: { roads: ['m2', cave, 'm3', 'end'] }, maxS: 120 });
+      expect(shaft(STARTING_BUILD, 'cave-heavy').finished).toBe(true);
+      const weak = { chassisId: 'chassis-heavy', wheelsId: 'wheels-spiked', motorId: 'motor-small' };
+      const stuck = shaft(weak, 'cave-heavy');
+      expect(stuck.finished).toBe(false);
+      expect(stuck.session.events.some((e) => e.kind === 'rollback')).toBe(true);
+      expect(shaft(weak, 'cave-float').finished).toBe(true);
+    });
+
+    it('a fall sends the rover back to the last checkpoint, at rest, with the clock still running', () => {
+      const r = runPilot({
+        content, def: noVents, build: { chassisId: 'chassis-standard', wheelsId: 'wheels-all-terrain', motorId: 'motor-large' },
+        plan: { roads: ['m2', 'cave-float', 'm3'] }, until: (x) => x.phase === 'respawning',
+      });
+      const respawn = r.session.events.find((e) => e.kind === 'respawn')!;
+      expect(respawn.cause).toBe('fell');
+      const clock = r.session.clockS;
+      for (let i = 0; i < 300 && r.session.phase !== 'driving'; i++) r.session.stepOnce();
+      expect(r.session.phase).toBe('driving');
+      expect(r.session.state.speedMps).toBe(0);
+      expect(r.session.clockS).toBeGreaterThan(clock);
+      expect(r.session.airborne).toBe(false);
+    });
+
+    it('the Floating Cave is a real choice: the cave road wins for some builds and not for others, and the starting build loses only a little', () => {
+      const laneS = (build: (typeof allBuilds extends (c: never) => (infer B)[] ? B : never), road: string) =>
+        runPilot({
+          content, def: startingAt(def, 'cp-3'), build, plan: { roads: ['m2', road, 'm3'] }, maxS: 60,
+          until: (x) => x.events.some((e) => e.kind === 'fork'),
+        }).session.events.find((e) => e.kind === 'fork')?.yourS ?? Infinity; // a build stuck in the shaft never reaches the merge
+      const floatWins = allBuilds(content).filter((b) => laneS(b, 'cave-float') < laneS(b, 'cave-heavy')).length;
+      expect(floatWins).toBeGreaterThan(0);
+      expect(floatWins).toBeLessThan(27);
+      const gap = laneS(STARTING_BUILD, 'cave-float') - laneS(STARTING_BUILD, 'cave-heavy');
+      expect(Math.abs(gap)).toBeLessThan(3);
+    });
+
+    it('the big jump: the starting build clears the pit with two vents, and falls short, into the bowl, with none', () => {
+      const flight = (boosts: typeof def.boosts) => {
+        const r = runPilot({
+          content, def: { ...startingAt(def, 'cp-5'), boosts }, plan: plans.stars, until: (s) => s.events.some((e) => e.kind === 'landing'),
+        });
+        return landingsOf(r)[0]!;
+      };
+      const vented = flight(def.boosts);
+      const bare = flight([]);
+      expect(vented.distM!).toBeGreaterThan(40);
+      expect(vented.distM!).toBeGreaterThan(bare.distM! + 15);
+    });
+
+    it('all 27 builds can finish the last bowl by driving down and up it, with no jump', () => {
+      for (const build of allBuilds(content)) {
+        const r = runPilot({ content, def: startingAt(def, 'cp-5'), build, plan: { roads: ['end'] } });
+        expect(r.finished, `${build.chassisId} ${build.wheelsId} ${build.motorId}`).toBe(true);
+      }
+    });
+  });
+
+  describe('the bowls', () => {
+    it('has a sand floor in the first bowl and an icy floor in the second', () => {
+      const c1 = def.craters[0]!;
+      const c2 = def.craters[1]!;
+      expect(world.surfaceIdAt(c1.xM, c1.zM)).toBe('sand');
+      expect(world.surfaceIdAt(c2.xM, c2.zM)).toBe('ice');
+    });
+
+    it('the first bowl’s sample lies on its floor: the jump skips it', () => {
+      const s = def.samples.find((x) => x.id === 's-bowl')!;
+      const c1 = def.craters[0]!;
+      expect(Math.hypot(s.xM - c1.xM, s.zM - c1.zM)).toBeLessThan(1);
+      expect(world.heightM(s.xM, s.zM)).toBeCloseTo(-c1.depthM, 6);
+    });
+
+    it('rolling through the first bowl costs the starting rover time against the fork’s other road, and it can climb out', () => {
+      const r = runPilot({ content, def, plan: plans.stars, until: (s) => s.events.some((e) => e.kind === 'fork') });
+      const fork = r.session.events.find((e) => e.kind === 'fork')!;
+      expect(fork.yourRoad).toBe('c1-through');
+      expect(fork.otherS!).toBeGreaterThan(0);
+      expect(r.session.events.some((e) => e.kind === 'rollback')).toBe(false);
+    });
+  });
+
+  describe('the caves', () => {
+    it('are roofed, and the roofs clear every jump of every build (checked for all 27 in the shared checks)', () => {
+      expect(def.gravityZones.map((z) => [z.id, z.kind, z.ceilingM !== undefined])).toEqual([
+        ['floating-cave', 'low', true],
+        ['heavy-cave', 'high', true],
+      ]);
+    });
+
+    it('keep the two caves apart, so a wall stands between them', () => {
+      const a = world.roadById('cave-float');
+      const p = roadPoint(world, 'cave-heavy', 150);
+      expect(a.line.nearest(p.xM, p.zM, 20)).toBeUndefined();
+    });
+
+    it('has a chasm in the Floating Cave and none in the Heavy Cave', () => {
+      expect(def.roads.find((r) => r.id === 'cave-float')!.gap).toBeDefined();
+      expect(def.roads.find((r) => r.id === 'cave-heavy')!.gap).toBeUndefined();
+    });
+  });
+
+  describe('the report (P6)', () => {
+    it('names five stretches, in route order, and a clean drive takes what the file says on each', () => {
+      expect(def.stretches.map((s) => s.name)).toEqual(['The Rim', 'The First Bowl', 'The Icy Bowl', 'The Caves', 'The Big Jump']);
+      const r = runPilot({ content, def, plan: plans.stars });
+      const got = r.session.stretches;
+      expect(got.map((s) => s.id)).toEqual(def.stretches.map((s) => s.id));
+      got.forEach((s, i) => expect(s.timeS, s.id).toBeCloseTo(def.stretches[i]!.cleanS, 1));
+      expect(got.reduce((sum, s) => sum + s.timeS, 0)).toBeCloseTo(r.timeS, 6);
+    });
+
+    it('brings the lift engine home, with the Heavy Cave weight and the mass in the line', () => {
+      const r = runPilot({ content, def, plan: plans.stars });
+      const pickup = r.session.report().pickup;
+      expect(pickup?.partName).toBe('Lift engine');
+      expect(pickup?.line).toContain('4096 N');
+      expect(pickup?.line).toContain('209 kg');
+    });
+  });
+
+  it('keeps the starting build at 209 kg (the number the pop-up and the plan quote)', () => {
+    const r = runPilot({ content, def, plan: plans.safe, until: (s) => s.clockS > 1 });
+    expect(r.session.rover.massKg).toBe(209);
+    void STARTING_BUILD;
+    void medium;
   });
 });

@@ -1,5 +1,5 @@
 import type { PointM } from '../../content/index.ts';
-import { roadPoint, routeWith, type PilotPlan } from './testPilot.ts';
+import { routeWith, type PilotPlan } from './testPilot.ts';
 import type { LevelDef, LevelId } from './types.ts';
 import type { LevelWorld } from './world.ts';
 
@@ -20,18 +20,6 @@ const samplePoint = (def: LevelDef, id: string): PointM => {
   if (!s) throw new Error(`No sample ${id}`);
   return { xM: s.xM, zM: s.zM };
 };
-
-/** A point beside a barrier, clear of it, on the side away from the barrier's centre line offset `side` (+1 left, −1 right of the road). */
-function pastBarrier(def: LevelDef, world: LevelWorld, barrierId: string, roadId: string, along: number, side: 1 | -1): PointM {
-  const b = def.barriers.find((x) => x.id === barrierId);
-  if (!b) throw new Error(`No barrier ${barrierId}`);
-  const centre = roadPoint(world, roadId, along, 0);
-  // The barrier's lateral position on the road, then the free lane on the other side of the road's middle.
-  const lat = (b.xM - centre.xM) * -Math.sin(centre.headingRad) + (b.zM - centre.zM) * Math.cos(centre.headingRad);
-  const free = lat > 0 ? lat - b.widthM / 2 - 2.3 : lat + b.widthM / 2 + 2.3;
-  void side;
-  return roadPoint(world, roadId, along, free);
-}
 
 type PlanMaker = (def: LevelDef, world: LevelWorld) => LevelPlans;
 
@@ -55,26 +43,19 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
     };
   },
   'crater-field': (def) => {
-    const [hill, floor, wall] = [samplePoint(def, 's-hill'), samplePoint(def, 's-floor'), samplePoint(def, 's-wall')];
-    const roads = (c1: string, c2: string, c3: string) => ['start', 'lead-1', c1, 'm1', c2, 'm2', c3, 'end'];
-    return {
-      safe: { roads: roads('c1-around', 'c2-around', 'c3-around') },
-      stars: { roads: roads('c1-through', 'c2-through', 'c3-through'), via: [hill, floor, wall] },
+    const [bowl, float, landing] = [samplePoint(def, 's-bowl'), samplePoint(def, 's-float'), samplePoint(def, 's-landing')];
+    const ramp = (id: string): PointM => {
+      const r = def.ramps.find((x) => x.id === id);
+      if (!r) throw new Error(`No ramp ${id}`);
+      return { xM: r.xM, zM: r.zM };
     };
-  },
-  'gravity-wells': (def, world) => {
-    const [top, brake, ice] = [samplePoint(def, 's-top'), samplePoint(def, 's-brake'), samplePoint(def, 's-ice')];
-    const gap = pastBarrier(def, world, 'well-barrier', 'w1-hill', 185, -1);
-    const roads = (w1: string, w2: string, w3: string) => ['start', 'lead-1', w1, 'm1', w2, 'm2', w3, 'end'];
+    const roads = (c1: string, c2: string, cave: string) => ['start', 'lead-1', c1, 'm1', c2, 'm2', cave, 'm3', 'end'];
     return {
-      safe: { roads: roads('w1-round', 'w2-round', 'w3-round') },
-      stars: {
-        roads: roads('w1-hill', 'w2-ice', 'w3-round'),
-        via: [top, brake, gap, ice],
-        // Braking in low gravity takes nearly twice as far: slow down well before the barrier.
-        caps: [{ roadId: 'w1-hill', fromM: 160, toM: 200, speedMps: 8.5 }],
-        decelMps2: 2,
-      },
+      // The safe route goes round the bowls, over the Floating Cave's chasm (its two vents carry every build across) and down and up the last bowl: every build can.
+      // The Heavy Cave's shaft is steep enough that some builds roll back in it.
+      safe: { roads: roads('c1-around', 'c2-around', 'cave-float') },
+      // The starting build's drive: down into the first bowl for its sample, over the icy bowl by its ramp, over the chasm of the Floating Cave, over the big pit.
+      stars: { roads: roads('c1-through', 'c2-through', 'cave-float'), via: [bowl, ramp('r2'), float, ramp('r3'), landing] },
     };
   },
   'the-crossing': (def) => {

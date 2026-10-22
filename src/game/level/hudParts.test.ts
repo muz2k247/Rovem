@@ -112,9 +112,8 @@ describe('force arrows', () => {
 
   it('shows at most 3, the level’s new element first, then push, then friction', () => {
     const acting = [arrow('friction', 41), arrow('push', 1000), arrow('slope', 426), arrow('weight', 1024), arrow('magnet', 300)];
-    expect(selectArrows('crater-field', acting).map((a) => a.kind)).toEqual(['slope', 'push', 'friction']);
+    expect(selectArrows('crater-field', acting).map((a) => a.kind)).toEqual(['slope', 'weight', 'push']);
     expect(selectArrows('polar-pass', acting).map((a) => a.kind)).toEqual(['magnet', 'push', 'friction']);
-    expect(selectArrows('gravity-wells', acting).map((a) => a.kind)).toEqual(['weight', 'push', 'friction']);
   });
 
   it('shows only forces that act: nothing under 20 N, no slope arrow on flat ground', () => {

@@ -163,11 +163,13 @@ export function createLevelScene(session: LevelSession, content: Content, option
 
     // The rover: its front on the ground (or the riverbed), turned to its heading and tipped along the slope.
     const groundFront = world.heightM(pose.frontXM, pose.frontZM) + groundOffsetOf(world, pose.frontXM, pose.frontZM);
-    const targetRide = roverRideHeightM({ groundYM: groundFront, bedDropM: waterBedDropM(world, pose.frontXM, pose.frontZM), floating: s.floating });
-    rideY = rideY === undefined || frameS === 0 ? targetRide : rideY + (targetRide - rideY) * Math.min(1, RIDE_EASE_PER_S * frameS);
+    // In the air (a jump, E45) the rover is where the flight puts it, nose along its path; there is no easing to the ground.
+    const flying = pose.airYM !== undefined;
+    const targetRide = roverRideHeightM({ groundYM: pose.airYM ?? groundFront, bedDropM: flying ? 0 : waterBedDropM(world, pose.frontXM, pose.frontZM), floating: s.floating && !flying });
+    rideY = rideY === undefined || frameS === 0 || flying ? targetRide : rideY + (targetRide - rideY) * Math.min(1, RIDE_EASE_PER_S * frameS);
     rover.position.set(pose.frontXM, rideY, -pose.frontZM);
     rover.rotation.y = pose.headingRad;
-    rover.rotation.z = pose.pitchRad;
+    rover.rotation.z = pose.airPitchRad ?? pose.pitchRad;
     const movedM = state.distanceM >= lastDistanceM ? state.distanceM - lastDistanceM : 0; // 0 after a reset
     lastDistanceM = state.distanceM;
     const rolling = state.direction === 'reverse' !== state.rollingBack ? -1 : 1;
@@ -214,7 +216,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
       const side = roverWidthM / 2 - 0.1;
       const y = world.heightM(rearX, rearZ) + 0.12;
       const emitters = [new THREE.Vector3(rearX - fz * side, y, -(rearZ + fx * side)), new THREE.Vector3(rearX + fz * side, y, -(rearZ - fx * side))];
-      dust.update(frameS, emitters, state.speedMps * (DUST_PER_MPS[surfaceId] ?? 3), tint, new THREE.Vector3(-fx, 0, fz));
+      dust.update(frameS, emitters, flying ? 0 : state.speedMps * (DUST_PER_MPS[surfaceId] ?? 3), tint, new THREE.Vector3(-fx, 0, fz));
     }
 
     // The chase camera follows the ground; a respawn snaps it, so it never swings across the level.
