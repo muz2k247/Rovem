@@ -136,7 +136,7 @@ save/                                 local copy of progress; Supabase sync (lat
 
 ```
 .claude/              Claude Code config: settings.json, agents/, skills/
-.github/workflows/    CI: typecheck, test and balance on every push and pull request
+.github/workflows/    CI: typecheck, test and balance on every push and pull request; pages.yml publishes the build to GitHub Pages on every push to main (preview link)
 .nvmrc                Node major version (24)
 package.json, package-lock.json, tsconfig.json, vite.config.ts, index.html
 docs/

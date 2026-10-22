@@ -6,6 +6,9 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (preview link; 2026-10-22)
+- **GitHub Pages preview** for reviewers: `.github/workflows/pages.yml` builds the game and publishes `dist/` on every push to `main` (https://muz2k247.github.io/Rovem/ once Pages is on). `vite.config.ts` sets `base: './'` so the build works from a subfolder. The repo is made public for this (k._muz, 2026-10-22). The release hosting is still Nginx (Tech Stack v2); this is only a preview.
+
 ### Added (Showcase R6b: natural edges, sky, all levels open; 2026-10-22)
 - **Natural edges** (SHOWCASE_PLAN §12a). `src/render/edges.ts` holds the shapes (a hillside climbing 25°–40° to 8–15 m behind a broken rock step 0.6–1.2 m tall; a rock face of 55°–75°, 10–25 m, in facets; a cliff drop of 10–20 m within 6 m beyond a rim of rocks) and the plan for the rock step, rim rocks and boulders. `levelEdges.ts` gives a level's edge field (the rise from the distance past the nearest road's reach, a style per road side and stretch, the 30 m cliff rule, round caps at road ends); `levelEdgeScene.ts` builds the features; `endlessEdges.ts` does the same for the Endless corridor, with strips on both sides of every section and the hillside behind the start wall. The visible contact stands within 0.3 m of the scrape line.
 - **Level data:** an optional `edges` list on a road (`side`, `fromM`, `toM`, `style` = `hill` | `rock` | `cliff`) and `edgeStyle` for a level (default `hill`), validated in `schema.ts`. Crash Site, Geyser Canyon and Crater Field have cliffs, rock faces or both. Endless templates take an optional `edge` (Clay Gully, Launcher Alley and Gravity Caves are rock, Vent Run a cliff).
