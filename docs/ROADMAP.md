@@ -20,7 +20,8 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | R4 | The Scavenger, Change one part, the booster | 🟨 Built 2026-10-22 (physics-checker run, screenshots in `docs/captures/showcase/r4-*`; OI-33 to OI-37 are for k._muz). **Open: step 6, k._muz plays Crash Site about 5 times and tunes `startDelayS` or the build** | R3 |
 | R5 | Geyser Canyon and demo rehearsal (**demo cut**) | 🟨 Built 2026-10-22: steps 1, 2 and 4 done (OI-38 to OI-40 are for k._muz; no `src/physics/` change, so no physics-checker run). **Open: step 3, k._muz rehearses the §14 demo script in the browser and checks frame rate on the laptop with Graphics Low; Claude had no browser to do it** | R4 |
 | R6 | Jumps and Crater Field | 🟨 Built 2026-10-22 (physics-checker run; OI-41 to OI-45 are for k._muz). **Open: k._muz plays Crater Field in the browser (the caves, the chasm and the air camera are untested by eye) and confirms the landing step (OI-17)** | R5 |
-| R7 | The Crossing and Iron Ridge | ⬜ | R6 |
+| R6b | Natural edges (hills, rock faces, cliff drops), code-drawn sky, all levels open (SHOWCASE_PLAN §12a; added 2026-10-22, DECISIONS 2026-10-22 R6b) | ⬜ | R6 |
+| R7 | The Crossing and Iron Ridge | ⬜ | R6b |
 | R8 | Launch ending and polish | ⬜ | R7 |
 | v4 | **Game v4: concept levels** (`docs/LEVELS_BUILD_PLAN.md`) | ✅ Built through I1 (2026-10-19); its lineup, stop lines and par ⛔ superseded 2026-10-21 by the Showcase round | Demo |
 | P0 | Contracts, shared values, fonts, screen slots (main) | ✅ 2026-10-17 | — |
@@ -71,7 +72,7 @@ Approved 2026-10-21 (DECISIONS 2026-10-21). Design, values, the physics and engi
 
 **How the sessions run:**
 - One session at a time, in `D:\ROVEM` on `main` (no worktrees).
-- S0 (docs) runs first, then R1–R8.
+- S0 (docs) runs first, then R1–R8, with R6b (natural edges, sky, all levels open; added 2026-10-22) between R6 and R7.
 - The **demo cut is after R5**: Endless, the story, Crash Site, Geyser Canyon, the Scavenger, the report and Change one part.
 - Every session ends with typecheck, test and balance green (20/9/23/17, unchanged), docs updated, and a suggested commit message.
 

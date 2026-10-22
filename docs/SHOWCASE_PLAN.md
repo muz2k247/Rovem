@@ -349,6 +349,46 @@ Difficulty still grows with distance.
 
 - **Ending:** a short launch scene (camera only, about 10 s), then "Home".
 
+## 12a. Natural edges, the sky, and all levels open (added 2026-10-22; session R6b)
+
+**Why.** A friend of k._muz said the walls break immersion. Every level and the Endless Canyon fence the road with a flat, straight, 6 m tall strip (`src/render/track.ts`, `runScene.ts`). ROADMAP OI-30 already noted that the engine "still draws roads with walls, not open ground". k._muz also wants the advisor to see every level without playing through them in order.
+
+**What k._muz chose (2026-10-22):**
+1. **Edges change look only.** The edge the rover scrapes along (`world.hit`, the scrape rule v′ = v cos α) stays exactly where it is. What is drawn there changes:
+   - **Hillside or rock face** (the default): beyond the edge the ground climbs away at a natural angle. A hillside starts with a broken rock step and boulders at its foot, because a rover could plausibly drive up a bare 25° slope, and scraping along one would look wrong.
+   - **Cliff drop** (on ledges, where nature would put one): beyond a low rim of rocks, the ground falls away. The rim explains why the rover cannot go over. The rover never falls; there is no new respawn cause.
+   - Applies to the levels and the Endless Canyon.
+2. **Sky drawn in code, not an HDR photo.** The levels already have a gradient sky dome, a sun, stars and aurora per level (`src/render/atmosphere.ts`, sky radius 400 m, following the camera), lit by a hemisphere light in the sky's colours. R6b adds a ring of distant low-poly mountains inside that dome and a far ground under it, and gives the Endless Canyon the same sky (it has only a background colour today). k._muz asked for whichever is better; Claude chose code, for these reasons:
+   - The free HDR photos (Poly Haven, CC0) are photographed on Earth: blue sky, green plants, Earth ground at the horizon. On an unnamed red planet the backdrop would look borrowed.
+   - Each level has its own colours (`src/render/atmosphere.ts`). One photo cannot follow them; five photos are five downloads.
+   - The rover and ground are flat-shaded low-poly. A photographic sky behind them looks pasted on, and flat matte surfaces gain little from a photo's reflections.
+   - Size and speed: an HDR is 2–6 MB to download and decode on Intel UHD graphics; a code sky is a few kilobytes.
+   - No outside asset, so no licence step.
+   - What code loses: a photo's fine cloud detail. If the sky still looks flat after R6b, an HDR for **lighting only** is a small, reversible follow-up (it needs k._muz's asset approval and an `ASSETS.md` row).
+3. **All levels open.** Every built level and the Endless Canyon are open from the first visit. Levels 4 and 5 show "Coming soon" with their ship parts until R7 builds them. In-order unlocking stays in the code behind a switch in `levels.json` (off). `?unlock=all` keeps opening the old v4 files for builders.
+   - Before (LEVELS_BUILD_PLAN A2): "Levels open in order: finishing a level opens the next. Endless opens after First Tracks."
+   - After: "All built levels and Endless are open from the start; in-order unlocking is off (switch in `levels.json`)."
+   - Why: the advisor and the executives must see the whole picture in one sitting, and a student who is stuck can try another idea. Stars still reward finishing each level properly.
+
+**Values (all provisional, chosen by Claude, presentation only; the physics never reads them):**
+
+| Value | Number |
+|---|---|
+| Hillside foot | a broken rock step 0.6–1.2 m tall with boulders, right at the edge |
+| Hillside rise | then 25°–40°, varied by smooth noise, up to 8–15 m above the edge, then rolling ground |
+| Rock face (canyons, caves) | 55°–75°, broken into facets, 10–25 m tall |
+| Cliff rim | rocks 0.6–1.2 m tall along the edge, gaps no wider than 1.5 m |
+| Cliff drop | ground falls 10–20 m within 6 m beyond the rim, then a valley floor |
+| Cliff placement | only where no other road lies within 30 m beyond the edge |
+| Outside ground | built 40 m out from the edge, then a far ground to the mountain ring |
+| Mountain ring | 2 layers (Graphics Low: 1) at 300 m and 360 m from the camera, following it sideways like the sky; peaks 2°–7° above the horizon |
+| Mountain colour | drawn without fog; the base is exactly the fog colour, the peaks mix 80% (far layer) and 60% (near layer) fog colour with a darker rock tone |
+| Visible contact | the rock step, the base of the rock face or the rim stands within 0.3 m of the scrape line |
+
+Why the ring is so close and drawn without fog: the fog is thick (density 0.005–0.014; at 0.006 almost nothing is visible past about 350 m), and the cameras stop drawing at 700 m (levels) and 400 m (Endless). A fogged ring at 400–900 m would be invisible or cut off. A ring that moves with the camera and has the fog's colour at its base looks far away and meets the fogged far ground without a seam.
+
+The last row of the table matters most: what the student sees must be what they hit.
+
 ## 13. Tools for building levels
 
 - **`npm run maps`:** a top-down picture of every level in `docs/captures/maps/`.
@@ -468,7 +508,8 @@ One at a time, in `D:\ROVEM` on `main`. Each session ends with typecheck, test a
 | **R4: the Scavenger, the retry loop and the booster** | §8 with `npm run rival` (P5). Change one part and "vs your last run". The booster (§3a, P9, with the physics-checker). k._muz tunes the Scavenger by playing. | Demo steps 1–4 work twice in a row |
 | **R5: Geyser Canyon and rehearsal** | §6 Geyser Canyon. Rehearse the whole demo script and fix what breaks. | **Demo cut.** The whole script works start to finish |
 | R6: jumps and Crater Field | P1 (physics-checker; E45). §6 Crater Field. | All 27 builds finish; no ceiling hits |
-| R7: The Crossing and Iron Ridge | §3 levels 4 and 5 in the new style | Both pass the v4 A7 checks |
+| R6b: natural edges, sky, all levels open (added 2026-10-22) | §12a: hillsides, rock faces and cliff drops instead of flat walls, in levels and Endless; a code-drawn sky and mountain ring with lighting from it; every built level and Endless open | No flat wall strip is visible anywhere; the scrape happens where the rock is; frame rate no worse on Graphics Low; a first visit shows levels 1–3 and Endless open |
+| R7: The Crossing and Iron Ridge | §3 levels 4 and 5 in the new style, on R6b's edges | Both pass the v4 A7 checks |
 | R8: ending and polish | Launch ending, playtest fixes, docs | k._muz's playtest list is cleared |
 
 The rover-parts work runs separately (k._muz's other account) and only touches `src/render/roverModel.ts`. Merge it between sessions.
@@ -718,6 +759,51 @@ Paste one prompt per session, in a fresh Claude Code session in `D:\ROVEM`. Run 
 > 3. A script check that every cave ceiling clears the highest jump of all 27 builds (h = v_y² ÷ 2g).
 >
 > Done when: all 27 builds can finish and nothing hits a ceiling.
+
+### R6b: natural edges, sky, all levels open
+
+> Showcase plan §12a (read it whole); row R6b; DECISIONS 2026-10-22 "R6b". No `src/physics/` change: `world.hit`, the scrape rule and every level layout stay as they are.
+> 1. **All levels open.** Add `unlockInOrder: false` to `levels.json` (with its schema); `levelUnlock.ts` opens every built level and Endless when it is false, and keeps today's rule when true. Levels 4 and 5 stay "Coming soon". "Continue" goes to the first unfinished built level. `?unlock=all` still opens the old v4 files. Update the unlock tests first.
+> 2. **Edges.** Replace the flat wall strips (`track.ts` canyon walls in levels; the corridor walls in `runScene.ts`) with ground beyond the edge: a hillside (rock step and boulders at its foot) by default, a faceted rock face in canyons and caves, or a cliff drop behind a rock rim. Level data gets an optional edge style per road side and stretch (`hill` | `rock` | `cliff`, default `hill`); Endless places choose theirs in their templates (Gravity Caves: `rock`, meeting the existing cave roof). Put a cliff on at least one ledge per built level where one makes sense (for example Geyser Canyon's rim road, Crater Field's rims, the Crash Site ridge), only where §12a's placement rule allows.
+>    - How: presentation height outside = the physics ground height (`world.heightM`, or Endless's ground) + a rise that is 0 at the edge and grows with the distance past every road and its run-off. So forks and junctions work the way `canyonWallSpans` already handles them (no edge where another road joins), and the ground meets the run-off exactly. Place the rock step, boulders and rims along the same spans. The physics never reads the outside ground.
+>    - Extend the ground tiles 40 m out (coarser further out), then a far ground (fogged) to the mountain ring, with no holes from the chase camera or the dev top-down camera (`?dev=1`, T).
+> 3. **Sky.** Keep the levels' existing sky dome, sun, stars, aurora and lights (`atmosphere.ts`). Add the mountain ring inside the dome (§12a values: following the camera, no fog, base in the fog colour). Give the Endless Canyon the same dome and ring, with colours that follow its current per-place sky colour. Graphics Low: one mountain layer. Do not add an environment map; the lighting stays as it is, so the look tuned in earlier sessions doesn't shift.
+> 4. **Camera.** Keep the existing camera clamps (`levelCamera.ts`, `cameraPose` in `runScene.ts`). They keep the camera inside the edge line, where no hill or rock face stands.
+> 5. **Tests:** no wall-strip mesh in either scene; outside height equals the physics ground height at the edge; every cliff has its rim and every hillside its rock step; the visible contact stands within 0.3 m of the scrape line along every edge (sample every metre); no cliff breaks the placement rule; unlock rules both ways. Update the existing tests that look for the walls (names `canyonWall`, the corridor walls) on purpose, keeping what each one checks.
+> 6. **Check by eye** with screenshots (driving Chrome with `playwright-core` worked in R2–R6): each built level at a hillside, a rock face and a cliff, from the chase camera and from above; Endless in three places and in a cave; the Levels screen on a first visit (cleared storage). Measure the frame time against R6 on Graphics Low and High; if Low gets slower than 33 ms a frame, cut detail (fewer boulders, a coarser outside ground) before finishing.
+> 7. **Docs:** the unlock rule in `SRS_v0.6.md` FR-45, `Data_Model_v2.md` ("Whether a level is open"), `Art_Direction_v2.md` (edges and sky), each with a change-log line; mark LEVELS_BUILD_PLAN A2's unlocking superseded (dated, reason kept); update the CLAUDE.md "Level" term; close ROADMAP OI-30 if the open-ground look is met; `showcase.csv` gets the §12a values.
+>
+> Done when: no flat wall strip is visible anywhere, the scrape happens where the rock is, frame rate is no worse on Graphics Low, and a first visit shows levels 1–3 and Endless open.
+
+### RP: rover parts swap (any time, when k._muz brings `roverParts.ts`)
+
+> k._muz brings `roverParts.ts` and `preview.html`, made on another account from the brief below.
+> 1. Read the whole file first. Check it imports only `three`, loads nothing, uses no textures, exports the nine functions and `WHEEL_WIDTH_M`, makes new materials on every call (shared materials would rust and fade the student's rover with the Scavenger), and stays under 6000 triangles a rover (today's rovers are 2990–4034). Report anything that doesn't match the brief before changing code.
+> 2. Put it in `src/render/roverParts.ts`. Make `createRoverModel` in `roverModel.ts` build from it, keeping its interface (`root`, `body`, `wheels`, `steerPivots`, `parts`, `frontAxleBackM`, `rearAxleBackM`, `setSteer`, `setAttitude`) and the wheel mounts at (±0.54, 0.42, ±(0.85 − width/2)), so no other file changes. The new chassis carries the deck, mast, dish, headlight and rocker arms, so remove `createDeck` and the rocker loop; keep the short axle from z = ±0.52 to the hub.
+> 3. Update the tests that look for old part names (for example `deck` and `fin` in `garageScene.test.ts`) on purpose, keeping what each checks.
+> 4. The Scavenger (`scavengerGhost.ts`) re-colours and fades the same model: check that its rust and its fade within 8 m still work on the new parts.
+> 5. Screenshots of the garage (all nine parts) and of a level from the chase camera. Record the parts in `docs/ASSETS.md` as made for Rovem by k._muz with Claude, no outside licence.
+>
+> Done when: the garage and every scene show the new parts, and typecheck, test and balance are green.
+
+### Rover parts brief (for k._muz's other account; paste as it is)
+
+> Write original low-poly 3D rover parts for a three.js game. Output exactly two files.
+>
+> **File 1: `roverParts.ts`** (TypeScript, strict, no `any`)
+> - Import only `import * as THREE from 'three';` (three.js 0.186). Build everything from three.js geometry (Box, Cylinder, Cone, Sphere, Extrude, Lathe…). No textures, images or loaded models. Do not copy any existing design.
+> - Export these nine functions, each returning a `THREE.Group`: `createLightChassis()`, `createStandardChassis()`, `createHeavyChassis()`, `createSmallMotor()`, `createMediumMotor()`, `createLargeMotor()`, `createSmoothWheel()`, `createAllTerrainWheel()`, `createSpikedWheel()`. Also export `WHEEL_WIDTH_M = { smooth, allTerrain, spiked }` (each 0.25–0.35).
+> - Units are metres. Axes: +x forward, +y up, +z the rover's right.
+> - Whole rover: 2.0 m long (x from −1.0 to +1.0), 1.7 m wide including the wheels.
+> - **Chassis:** origin at the middle of the rover at ground level (y = 0). Body at most 1.0 m wide (z from −0.5 to +0.5); underside about 0.40 m up, deck top about 0.78 m. The chassis also carries a solar-panel deck, a camera mast, an antenna dish, a headlight at the front, and a rocker arm on each side from a pivot near (0, 0.66, ±0.52) down to (+0.54, 0.42, ±0.52) and (−0.54, 0.42, ±0.52). The game adds the short axle from there to each wheel. Wheels are not part of the chassis. Light, Standard and Heavy must look clearly different (Light: thin open frame; Heavy: thick armoured plates).
+> - **Motor:** same origin as the chassis, at the rear (x below about −0.4). Small, Medium and Large clearly different in size and detail.
+> - **Wheel:** origin at the hub centre; spin axis local z; radius exactly 0.42 m. Smooth, All-terrain and Spiked must look different from behind (the game camera follows the rover from behind).
+> - Materials: `MeshStandardMaterial` with `flatShading: true`. All colours as hex constants at the top. Create new materials inside each function call; never share one material object between calls or rovers (the game re-colours and fades one rover, the rival, on its own). Style: red-orange body, cream trim, gunmetal frame, deep-blue solar cells, brass dish, black tyres (change it if you have a better idea, but say so).
+> - Budget: under 6000 triangles for a full rover (chassis + motor + 4 wheels); it must run on a laptop with Intel UHD graphics. Comment each part briefly.
+>
+> **File 2: `preview.html`** (one file to open in Chrome)
+> - Load three@0.186.1 from `https://cdn.jsdelivr.net/npm/three@0.186.1/` with an import map, plus OrbitControls. Include the same part code as plain JavaScript.
+> - Show all nine parts in a row, and below them three full rovers (Light + Smooth + Small, Standard + All-terrain + Medium, Heavy + Spiked + Large), with each wheel's hub at x = ±0.54, y = 0.42, z = ±(0.85 − width/2). Grey ground, soft light, a 2 m ruler, and the triangle count of each rover on screen.
 
 ### R7: The Crossing and Iron Ridge
 

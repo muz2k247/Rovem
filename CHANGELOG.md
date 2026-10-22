@@ -6,6 +6,9 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs (Showcase R6b planned; 2026-10-22)
+- `docs/SHOWCASE_PLAN.md`: new §12a (natural edges instead of flat walls, a code-drawn sky with lighting from it, all built levels open, with the reasons and provisional presentation values); session R6b added before R7 in §15 and Part 7; a prompt RP for swapping in k._muz's rover parts. ROADMAP row R6b; DECISIONS 2026-10-22 R6b.
+
 ### Added (Showcase R6: jumps and Crater Field; 2026-10-22)
 - **`src/physics/air.ts`** (pure, with `air.test.ts`, 10 tests): the E45 jump rule. `launch` splits the lip speed into v_h = v cos φ and v_y = v sin φ; `airStep` flies one 1/120 s step (v_h constant, v_y falls by g Δt) and splits the landing step at the exact landing time, so T18 holds exactly: 0.84512 s and 13.061 m at g = 9.8, 1.69025 s and 26.122 m at g = 4.9. `physics-checker` run: T18 recomputed by hand, `step()` unchanged, balance 20/9/23/17.
 - **Jumps in the level engine** (`session.ts`, `world.ts`, `schema.ts`, `types.ts`): `ramps` in the level data (a wedge of ground climbing at φ to a lip), take-off at a lip, flight in the zone's g, landing (speed along the ground on a slope), the new respawn cause `fell`, roads with a `gap` (a chasm), gravity zones with a `ceilingM` (a cave roof). Events `takeoff` and `landing`, the caption "In the air … Gravity pulled you down at g = …", and the rover drawn in the air. 15 tests in `session.jump.test.ts`.
