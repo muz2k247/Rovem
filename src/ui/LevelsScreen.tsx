@@ -24,6 +24,7 @@ export function LevelsScreen({
   onOpenLevel,
   onEndless,
   onBack,
+  onLaunch,
 }: {
   levels: LevelSummary[];
   nextId: string | null;
@@ -34,6 +35,8 @@ export function LevelsScreen({
   onOpenLevel: (id: string) => void;
   onEndless: () => void;
   onBack: () => void;
+  /** Given once all five parts are recovered: opens the launch ending. */
+  onLaunch?: () => void;
 }) {
   return (
     <main className="screen levels">
@@ -44,6 +47,11 @@ export function LevelsScreen({
         <h1>Levels</h1>
       </header>
       <ShipSilhouette parts={ship} />
+      {onLaunch && (
+        <button type="button" className="btn cta launch-button" onClick={onLaunch}>
+          Launch the ship
+        </button>
+      )}
       <div className="level-grid">
         {levels.map((l) => {
           const isNext = l.id === nextId;

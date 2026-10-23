@@ -6,7 +6,7 @@ import type { StarCount } from '../game/contracts.ts';
 import { builtLevelIds, levelParS, levelScavengerInfo } from '../game/level/levels.ts';
 import type { LastRun } from '../game/level/lastRun.ts';
 import { levelText } from '../game/level/text.ts';
-import { shipParts } from '../game/ship.ts';
+import { launchReady, shipParts } from '../game/ship.ts';
 import { buildWithPart } from '../game/run/reportModel.ts';
 import { continueTarget, developerUnlockFromSearch, isEndlessUnlocked, levelSummaries, nextLevelId } from '../game/levelUnlock.ts';
 import { loadDemoProgress, resetDemoProgress, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
@@ -16,6 +16,7 @@ import { BuildScreen } from './BuildScreen.tsx';
 import { DriveScreen } from './DriveScreen.tsx';
 import { GarageScreen } from './GarageScreen.tsx';
 import { HomeScreen } from './HomeScreen.tsx';
+import { LaunchEnding } from './LaunchEnding.tsx';
 import { LevelIntroScreen } from './LevelIntroScreen.tsx';
 import { LevelScreen } from './LevelScreen.tsx';
 import { LevelsScreen } from './LevelsScreen.tsx';
@@ -31,6 +32,7 @@ type Screen =
   | { name: 'levels' }
   | { name: 'levelIntro'; levelId: string }
   | { name: 'settings' }
+  | { name: 'launch' } // the ending, after all five parts are recovered
   | { name: 'garage'; from: GarageFrom }
   | { name: 'run'; seed: number; runId: number }
   | { name: 'level'; levelId: string } // Track B's driving screen
@@ -98,6 +100,7 @@ export function App() {
     setScreen({ name: 'run', seed, runId: runCount + 1 });
   };
   const endlessUnlocked = isEndlessUnlocked(levelIds, levelProgress, developerUnlock);
+  const canLaunch = launchReady(shipParts(levelText.ship.parts, levelProgress));
   const toHome = () => setScreen({ name: 'home' });
   const toLevels = () => setScreen({ name: 'levels' });
   const toGarage = (from: GarageFrom) => setScreen({ name: 'garage', from });
@@ -137,6 +140,7 @@ export function App() {
           endless={{ ...levelCards.endless, locked: !endlessUnlocked, bestDistanceM: progress.bestDistanceM }}
           dustStorm={levelCards.dustStorm}
           ship={shipParts(levelText.ship.parts, levelProgress)}
+          onLaunch={canLaunch ? () => setScreen({ name: 'launch' }) : undefined}
           onOpenLevel={(levelId) => setScreen({ name: 'levelIntro', levelId })}
           onEndless={() => startRun(newSeed())}
           onBack={toHome}
@@ -158,6 +162,8 @@ export function App() {
         />
       );
     }
+    case 'launch':
+      return <LaunchEnding onHome={toHome} />;
     case 'settings':
       return <SettingsScreen {...settingsProps} onBack={toHome} />;
     case 'garage': {
@@ -188,6 +194,7 @@ export function App() {
           onResetProgress={resetProgress}
           speedUnit={progress.speedUnit}
           nextLevelId={next}
+          onLaunch={canLaunch ? () => setScreen({ name: 'launch' }) : undefined}
           onFinished={(r) => finishLevel(r.levelId, r)}
           lastRun={lastRuns.current.get(levelId)}
           onRunRecorded={(id, run) => lastRuns.current.set(id, run)}

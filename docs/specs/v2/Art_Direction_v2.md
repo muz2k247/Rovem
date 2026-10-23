@@ -10,6 +10,7 @@
 |---|---|---|
 | The terrain theme: an unnamed red planet where the student's ship crashed, replacing "a Mars-analog proving ground on Earth with a paved test track" | The story and the physics: a crash on Mars with g = 9.8 would be wrong physics (Mars is 3.7 m/s²) | E44, DECISIONS 2026-10-21 (D6) |
 | Natural terrain: surfaces sit where nature puts them, with blended edges | The friends' critique: perfect rectangles break immersion | DECISIONS 2026-10-21 (D10) |
+| The ending is built: render/launchScene.ts, camera only, 10 s, the ship climbs by the net-force rule | Showcase R8 | DECISIONS 2026-10-23 |
 | Colours, HUD, sound and the story's look added | SHOWCASE_PLAN section 12 | DECISIONS 2026-10-21 |
 | Built in R2 (2026-10-21): the natural ground (1 m colour fringe, dips, ripples), a look for each Endless place, the glass HUD, the new sounds | Session R2 | DECISIONS 2026-10-21 (R2) |
 | Edges and sky added (section 3a): hillsides, rock faces and cliff drops instead of flat wall strips; a code-drawn mountain ring; the Endless Canyon gets a sky | A friend said the walls break immersion; ROADMAP OI-30 | SHOWCASE_PLAN §12a, DECISIONS 2026-10-22 (R6b) |
@@ -55,9 +56,9 @@ An **unnamed red planet**. The student's ship crashed on it; five parts were thr
 
 Made in code with Web Audio; no sound files. The engine follows the throttle: silent when stopped, quiet when coasting, a lower default volume. Sounds: tyres per surface, skid, whoosh, thump, crunch, scrape, splash, rumble, hum. No music.
 
-## 7 The story's look (Planned, R3 and R8)
+## 7 The story's look (Built in R3 and R8)
 
-The opening is one skippable line in the 3D scene at the wreck. Level select shows the ship's silhouette, and each recovered part lights up on it; unbuilt levels show as locked parts. Pickup lines tie the part to the force just used, with the student's numbers (placeholder text for k._muz's review). The ending is a short launch scene, camera only, about 10 s, then "Home".
+The opening is one skippable line in the 3D scene at the wreck. Level select shows the ship's silhouette, and each recovered part lights up on it; unbuilt levels show as locked parts. Pickup lines tie the part to the force just used, with the student's numbers (placeholder text for k._muz's review). The ending is a short launch scene, camera only, about 10 s, then "Home" (built in R8: `src/render/launchScene.ts`; the ship climbs by the net-force rule once thrust beats weight; placeholder lines in `levelText.json`).
 
 ## 3a Edges and the sky (Confirmed 2026-10-22; Built in R6b; SHOWCASE_PLAN §12a)
 

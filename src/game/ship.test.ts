@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLevelProgress, recordLevelResult } from '../save/levelProgress.ts';
 import { levelText } from './level/text.ts';
-import { partsRecovered, shipParts } from './ship.ts';
+import { launchReady, partsRecovered, shipParts } from './ship.ts';
 
 describe('the ship (SHOWCASE_PLAN §12)', () => {
   const parts = levelText.ship.parts;
@@ -40,5 +40,17 @@ describe('the ship (SHOWCASE_PLAN §12)', () => {
   it('an unfinished run (0 stars) lights nothing', () => {
     const p = recordLevelResult(emptyLevelProgress(), 'crash-site', { stars: 0, timeS: 90 });
     expect(partsRecovered(shipParts(parts, p))).toBe(0);
+  });
+
+  it('the launch opens only when all five parts are recovered (R8)', () => {
+    let p = emptyLevelProgress();
+    for (const [i, part] of parts.entries()) {
+      expect(launchReady(shipParts(parts, p))).toBe(false);
+      p = recordLevelResult(p, part.levelId, { stars: 1, timeS: 100 + i });
+    }
+    expect(launchReady(shipParts(parts, p))).toBe(true);
+    expect(launchReady([])).toBe(false);
+    const unbuilt = parts.map((x) => (x.levelId === 'iron-ridge' ? { ...x, built: false } : x));
+    expect(launchReady(shipParts(unbuilt, p))).toBe(false);
   });
 });

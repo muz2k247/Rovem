@@ -8,24 +8,24 @@ A browser-based 3D game that teaches Grade 9 physics (the newest Punjab Textbook
 
 ## Current focus: the Showcase round
 
-Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0 and R1–R6 are built (R4–R6 each have an open item for k._muz); R7 and R8 are in the roadmap. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
+Since 2026-10-21 the plan is [`docs/SHOWCASE_PLAN.md`](docs/SHOWCASE_PLAN.md): a crashed ship on an unnamed red planet, five levels as natural places (Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge), each recovering one ship part while racing the Scavenger, plus the Endless Canyon as named places. No forced stops; walls scrape, obstacles crash; a booster. Sessions S0, R1–R8 and R6b are built (R4–R8 each have an open item for k._muz; the playtest list is ROADMAP OI-53), including the launch ending once all five parts are recovered. Game v4 below is the base it builds on; its seven-level lineup, stop lines and par rule are superseded.
 
 ## Base: Game v4, concept levels
 
-After the advisor saw the demo (an endless canyon run), the game became **seven short levels, each adding one new element to those before it, plus the Endless Canyon** as a high-score mode (approved 2026-10-17; revised to seven cumulative levels 2026-10-18). Design and plan: [`docs/LEVELS_BUILD_PLAN.md`](docs/LEVELS_BUILD_PLAN.md); summary in [`docs/DESIGN.md`](docs/DESIGN.md).
+After the advisor saw the demo (an endless canyon run), the game became short levels, each adding one new element to those before it, plus the Endless Canyon as a high-score mode (approved 2026-10-17; revised to seven cumulative levels 2026-10-18; **cut to the five levels below on 2026-10-21**). Design and plan: [`docs/LEVELS_BUILD_PLAN.md`](docs/LEVELS_BUILD_PLAN.md) (its seven-level lineup is superseded); summary in [`docs/DESIGN.md`](docs/DESIGN.md).
 
-| Level | What it teaches |
-|---|---|
-| Crash Site | rolling friction on sand against rock; grip in a turn on the Ring; choosing the faster route (replaces First Tracks and Ring Road, R3) |
-| Push & Shove | momentum and impulse |
-| Crater Field | slopes; kinetic and potential energy |
-| The Crossing | density, upthrust, pressure |
-| Iron Ridge | magnetic poles and electromagnets (replaced Polar Pass, R7) |
+| Level | What it teaches | Ship part |
+|---|---|---|
+| Crash Site | rolling friction on sand against rock; grip in a turn on the Ring; choosing the faster route (replaced First Tracks and Ring Road, R3) | landing brakes |
+| Geyser Canyon | impulse and momentum (replaced Push & Shove, R5) | thruster |
+| Crater Field | weight and gravity, slopes, falling off a ramp; the gravity caves (folded in Gravity Wells, R6) | lift engine |
+| The Crossing | upthrust and water drag | splashdown floats |
+| Iron Ridge | magnetic poles (replaced Polar Pass, R7) | docking clamps |
 
-- Levels open in order and last 90–150 s, with forks, checkpoints and up to three stars each (reach the beacon, collect 3 samples, beat par; revised 2026-10-21 to reach the part, collect 3 samples, beat the Scavenger). After the levels, Endless gets every element.
+- All five levels and Endless are open from the first visit (R6b, 2026-10-22; the in-order rule is switched off in `levels.json`). Levels last 90–150 s, with forks, checkpoints and up to three stars each (reach the part, collect 3 samples, beat the Scavenger; v4 had "reach the beacon … beat par"). After the fifth part is recovered, the Levels screen offers the launch ending. Endless gets every element.
 - All parts (chassis, wheels, motor; three each) are open; the garage shows what each change does.
 - On screen, only what teaches something: force arrows for the level's forces, one short caption with the student's number, and the F = ma line while the speed changes. The report shows a speed–time graph and the moments that mattered, with the worked maths on request.
-- Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole and R returns to the last checkpoint.
+- Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole, R returns to the last checkpoint and Shift fires the booster (once per attempt).
 - Played as a guest; progress stays on the device. Questions, Knowledge and accounts are future work.
 
 ## Earlier design (game design v2, superseded 2026-10-17)

@@ -20,4 +20,7 @@ export function shipParts(parts: readonly ShipPartText[], progress: LevelProgres
   }));
 }
 
+/** True once every part is recovered and every part's level is built: the launch ending opens (SHOWCASE_PLAN §12). */
+export const launchReady = (views: readonly ShipPartView[]): boolean => views.length > 0 && views.every((v) => v.state === 'recovered');
+
 export const partsRecovered = (views: readonly ShipPartView[]): number => views.filter((v) => v.state === 'recovered').length;

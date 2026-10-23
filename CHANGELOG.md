@@ -6,6 +6,20 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+## [showcase-0.1.0] — 2026-10-23
+
+The Showcase round: S0, R1–R8 (R8 is the launch ending; k._muz's playtest list is still open, ROADMAP OI-53).
+
+### Added (Showcase R8: the launch ending; 2026-10-23)
+- **The launch ending** (SHOWCASE_PLAN §12): `src/render/launchScene.ts` (a camera-only scene of 10 s: the repaired ship on a pad, the five recovered parts in cyan, a flame that follows thrust; the climb follows a = g (thrust ÷ weight − 1) once thrust beats weight), `src/ui/LaunchEnding.tsx` and `launch.css` (caption lines, a fade, Skip, then "Home").
+- **"Launch the ship"** on the Levels screen and in a level's report once all five parts are recovered (`launchReady` in `src/game/ship.ts`). It saves nothing.
+- `levelText.json` → `ship.ending` (durations, three placeholder lines, button labels), validated in `text.ts`.
+- Tests: `launchScene.test.ts` (thrust ramp, no lift before thrust beats weight, hand-worked height at 10 s, frame-rate independence) and a `launchReady` test in `ship.test.ts`.
+
+### Docs (Showcase R8; 2026-10-23)
+- ROADMAP R8 row, SC row and OI-53; DECISIONS 2026-10-23 R8; SRS FR-56 status and the "not built yet" note, Art Direction §7 and Architecture "Built (R8)" with change-log rows; CLAUDE.md layout lines for render/, ui/ and game/.
+- Stale wording fixed after the `spec-sync` pass: README's level table, "levels open" line and Shift key now match the five built levels; Architecture no longer draws `air.ts`, `collision.ts`, the autopilot, the Scavenger ghost, stretches and the booster as planned (diagram, text copy and tables); CLAUDE.md's "Coming soon" note says no level lacks a file.
+
 ### Changed (RP: rover parts swap; 2026-10-23)
 - The rover is built from the nine new parts in `src/render/roverParts.ts`; `createRoverModel` keeps its interface and the wheel mounts at (±0.54, 0.42, ±(0.85 − width/2)). Each chassis now carries its own deck, mast, dish, headlight and rocker arms (`createDeck` and the rocker loop are gone). Wheel widths are now 0.26 / 0.30 / 0.32 m. Left wheels are turned half a turn inside an unturned spin group, so spinning about z still means the same on both sides.
 - Tests that looked for old part names now find parts by geometry and colour (`roverModel`, `driveScene`, `garageScene`); the wheel-width check allows a hub nut or spindle up to 3 cm proud of the 1.7 m footprint; the level scene draw-object cap went from 250 to 300; the garage camera sphere from 1.4 m to 1.36 m (`garageScene.ts`).

@@ -50,9 +50,18 @@ export interface ShipPartText {
   built: boolean;
   pickupLine: string;
 }
+/** The launch ending (SHOWCASE_PLAN §12, R8): camera only, `durationS` long; the engine lights at `ignitionS`; each line shows from its `atS`. */
+export interface EndingText {
+  durationS: number;
+  ignitionS: number;
+  lines: { atS: number; text: string }[];
+  homeLabel: string;
+  skipLabel: string;
+}
 export interface ShipText {
   openingLine: string;
   recoveredTitle: string;
+  ending: EndingText;
   parts: ShipPartText[];
 }
 
@@ -140,6 +149,7 @@ export function validateLevelText(raw: unknown): LevelText {
   const ship: ShipText = {
     openingLine: str(sh, 'openingLine', 'levelText.ship'),
     recoveredTitle: str(sh, 'recoveredTitle', 'levelText.ship'),
+    ending: endingText(sh.ending),
     parts: partsRaw.map((raw, i) => {
       const p = obj(raw, `levelText.ship.parts[${i}]`);
       if (typeof p.built !== 'boolean') fail(`levelText.ship.parts[${i}].built`, 'expected true or false');
@@ -159,6 +169,27 @@ export function validateLevelText(raw: unknown): LevelText {
     scavenger,
     ship,
   };
+}
+
+function endingText(raw: unknown): EndingText {
+  const path = 'levelText.ship.ending';
+  const e = obj(raw, path);
+  const num = (key: string, min: number): number => {
+    const v = e[key];
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < min) fail(`${path}.${key}`, `expected a number of at least ${min}`);
+    return v;
+  };
+  const durationS = num('durationS', 1);
+  const ignitionS = num('ignitionS', 0);
+  if (ignitionS >= durationS) fail(`${path}.ignitionS`, 'must come before the end');
+  if (!Array.isArray(e.lines) || e.lines.length === 0) fail(`${path}.lines`, 'expected a non-empty list');
+  const lines = e.lines.map((raw, i) => {
+    const l = obj(raw, `${path}.lines[${i}]`);
+    const atS = l.atS;
+    if (typeof atS !== 'number' || !(atS >= 0 && atS < durationS)) fail(`${path}.lines[${i}].atS`, 'expected a time inside the ending');
+    return { atS, text: str(l, 'text', `${path}.lines[${i}]`) };
+  });
+  return { durationS, ignitionS, lines, homeLabel: str(e, 'homeLabel', path), skipLabel: str(e, 'skipLabel', path) };
 }
 
 export const levelText: LevelText = validateLevelText(textJson);

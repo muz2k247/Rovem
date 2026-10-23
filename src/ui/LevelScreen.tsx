@@ -72,6 +72,8 @@ export interface LevelScreenProps {
   /** Called once when the rover reaches the part, with the run for the next report's "vs your last run". */
   onRunRecorded?: (levelId: string, run: LastRun) => void;
   onNext: () => void;
+  /** Given once all five parts are recovered: the report offers the launch ending. */
+  onLaunch?: () => void;
   onLevels: () => void;
   onHome: () => void;
   /** Pause menu and report: open the garage. With a part id (the report's Try this), that part is fitted first. */
@@ -539,8 +541,9 @@ export function LevelScreen(props: LevelScreenProps) {
           }
           unit={props.speedUnit ?? 'mps'}
           actions={[
-            ...(props.nextLevelId ? [{ label: 'Next level', onClick: props.onNext, primary: true }] : []),
-            { label: 'Retry', onClick: retry, primary: !props.nextLevelId },
+            ...(props.onLaunch ? [{ label: 'Launch the ship', onClick: props.onLaunch, primary: true }] : []),
+            ...(props.nextLevelId ? [{ label: 'Next level', onClick: props.onNext, primary: !props.onLaunch }] : []),
+            { label: 'Retry', onClick: retry, primary: !props.nextLevelId && !props.onLaunch },
             { label: 'Change one part', onClick: () => props.onGarage() },
             { label: 'Levels', onClick: props.onLevels },
           ]}

@@ -12,7 +12,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 
 | # | Milestone | Status | Needs |
 |---|---|---|---|
-| SC | **Showcase round** (`docs/SHOWCASE_PLAN.md`; approved 2026-10-21) | 🟨 Planned 2026-10-21 | v4 I1 |
+| SC | **Showcase round** (`docs/SHOWCASE_PLAN.md`; approved 2026-10-21) | 🟨 Built through R8 (2026-10-23); open: k._muz's playtest list (OI-53) and the by-eye checks of R4–R8 | v4 I1 |
 | S0 | New editable source documents (`docs/specs/v2/`) | ✅ 2026-10-21 (DECISIONS 2026-10-21 S0; spec-sync run) | — |
 | R1 | Fixes, crashes (walls scrape, obstacles crash), tools | ✅ 2026-10-21 (physics-checker run; OI-19 to OI-21 are for k._muz) | S0 |
 | R2 | Endless as places, natural terrain, warnings and pop-ups, colours | ✅ 2026-10-21 (screenshots in `docs/captures/showcase/`; OI-22 to OI-27 are for k._muz; no `src/physics/` change, so no physics-checker run) | R1 |
@@ -22,7 +22,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | R6 | Jumps and Crater Field | 🟨 Built 2026-10-22 (physics-checker run; OI-41 to OI-45 are for k._muz). **Open: k._muz plays Crater Field in the browser (the caves, the chasm and the air camera are untested by eye) and confirms the landing step (OI-17)** | R5 |
 | R6b | Natural edges (hills, rock faces, cliff drops), code-drawn sky, all levels open (SHOWCASE_PLAN §12a; added 2026-10-22, DECISIONS 2026-10-22 R6b) | 🟨 Built 2026-10-22 (screenshots in `docs/captures/r6b/`; OI-46 to OI-48 are for k._muz; no `src/physics/` change, so no physics-checker run). **Open: k._muz looks at the hillsides, rock faces and cliffs in the browser** (the hill height hides the mountain ring from most views, OI-46) | R6 |
 | R7 | The Crossing and Iron Ridge | 🟨 Built 2026-10-23 (OI-49 to OI-52 are for k._muz; no `src/physics/` change, so no physics-checker run). **Open: k._muz plays both levels in the browser (the look of the water, the pylons on the ridge and the ghost's magnet run are untested by eye)** | R6b |
-| R8 | Launch ending and polish | ⬜ | R7 |
+| R8 | Launch ending and polish | 🟨 Built 2026-10-23: the launch ending and the CHANGELOG move to `showcase-0.1.0` are done (typecheck, 1362 tests and balance 20/9/23/17 green; no `src/physics/` change). **Open: k._muz's playtest list (OI-53) and the ending by eye** | R7 |
 | v4 | **Game v4: concept levels** (`docs/LEVELS_BUILD_PLAN.md`) | ✅ Built through I1 (2026-10-19); its lineup, stop lines and par ⛔ superseded 2026-10-21 by the Showcase round | Demo |
 | P0 | Contracts, shared values, fonts, screen slots (main) | ✅ 2026-10-17 | — |
 | A1 | Track A: Home, Levels, Intro, Pause, Settings; new HUD and force arrows | ✅ 2026-10-17 (branch `levels/a-ui`) | P0 |
@@ -427,6 +427,8 @@ Proposal: 1(a) and 2(b). Neither matters before M10. Both are pinned by tests (`
 **OI-51 (R7): the fork on The Crossing is close for the starting build** (about 1 s for the deep ford). It is a real choice across the 27 builds (17 favour the deep ford), but a student with the starting rover will not feel a big difference. Lengthening the bridge or the channel changes how many builds favour each.
 
 **OI-52 (R7): not done / not checked by eye.** (1) No screenshots of the two levels (the browser pass is for k._muz). (2) "A pylon pushing you through a bend" is built as a pylon on the inside of the first bend that pulls the rover round; it was checked by the tests, not played. (3) The cliff on The Crossing's bridge and on Iron Ridge's switchback and ridge passes `levelEdges.test.ts`'s placement rule. (4) Frame rate on the laptop was not re-measured.
+
+**OI-53 (R8): not done.** (1) *The playtest list.* "k._muz's playtest list" is not in the repository or in the R8 session, so nothing on it was cleared. Send the list (or the open "Open:" items of R4 to R7 above) and it becomes a session. (2) *The ending was not looked at in a browser.* It is tested (thrust ramp, climb height by hand, frame-rate independence) but nobody has seen the ship, the flame, the camera or the caption timing; the three caption lines are placeholders. (3) *No spec-sync result is recorded here yet*; see the R8 report.
 
 Spec edits E4–E47 were applied in S0 (2026-10-21): the source documents are now `docs/specs/v2/`; `docs/PENDING_SPEC_EDITS.md` is history.
 

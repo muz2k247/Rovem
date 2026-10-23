@@ -199,6 +199,17 @@
   "ship": {
     "openingLine": "Your ship came down hard. Five parts lie scattered across this red planet. Find them all.",
     "recoveredTitle": "Part recovered: {name}",
+    "ending": {
+      "durationS": 10,
+      "ignitionS": 3.5,
+      "lines": [
+        { "atS": 0.5, "text": "Five parts. One ship." },
+        { "atS": 3.5, "text": "The engine pushes the gas down. The gas pushes the ship up." },
+        { "atS": 6.5, "text": "Thrust is now bigger than weight. It lifts." }
+      ],
+      "homeLabel": "Home",
+      "skipLabel": "Skip"
+    },
     "parts": [
       { "levelId": "crash-site", "name": "Landing brakes", "built": true, "pickupLine": "On the Ring, grip gave you up to {grip} N of sideways force. These brakes use friction too: they stop the ship on the runway." },
       { "levelId": "geyser-canyon", "name": "Thruster", "built": true, "pickupLine": "Each vent gave you {impulse} N·s of push. A thruster throws gas back, and the ship gains equal momentum forward." },

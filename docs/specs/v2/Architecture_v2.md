@@ -12,10 +12,12 @@
 | Screens, game flow, physics, content and local-copy blocks renamed for levels, the Scavenger and the report | Game v4 and the Showcase | E39, DECISIONS 2026-10-17, 2026-10-21 |
 | Account and sync, the cloud database and the sign-in service drawn dashed as Future | Accounts are later | E39, E43 |
 | R7: the level files `the-crossing` and `iron-ridge` are built; `scavenger.poles` is level data | Showcase R7 | DECISIONS 2026-10-23 |
+| R8: the launch ending (render/launchScene.ts, ui/LaunchEnding.tsx, launchReady in game/ship.ts) is built | Showcase R8 | DECISIONS 2026-10-23 |
 | Planned modules added: `physics/air.ts`, `physics/collision.ts`, the autopilot, the Scavenger ghost, report stretches, the booster, `npm run maps` and `npm run rival` | Showcase sessions R1–R8 | SHOWCASE_PLAN Parts 3–5 |
 | R1 (2026-10-21) built `physics/collision.ts`, `npm run maps`, `game/level/mapSvg.ts`, `game/level/devKeys.ts` and `render/devOverlay.ts`; the stop lines are gone (a fork has a drive-through `line`) | Session R1 | SHOWCASE_PLAN §4, §5, §13 |
 | R2 (2026-10-21) built the Endless places (`game/run/course.ts` with polygon zones, `sectionJump.ts`), the pop-up, card and moment modules (`game/popups.ts`, `feedbackQueue.ts`, `moments.ts`, `driveFeedback.ts`, `cardText.ts`) and the ground and scenery modules (`render/groundBlend.ts`, `runGround.ts`, `runScenery.ts`, `placeLooks.ts`, `bursts.ts`); `game/captionQueue.ts` and the Endless caption feed were removed | Session R2 | SHOWCASE_PLAN §10, §11, §12, P3 |
 | R4 (2026-10-22) built `game/level/autopilot.ts` (moved out of `testPilot.ts`), `scavenger.ts` (the headless ghost run, its playback and gate times), `lastRun.ts` ("vs your last run"), the booster in `session.ts` and `keys.ts`, `render/scavengerGhost.ts` (the rusty rover, its fade and the split gates) and `scripts/rival.ts`; level data `scavenger`; `levels.json` `booster` and `scavenger` | Session R4 | SHOWCASE_PLAN §3a, §8, §9, P5, P9 |
+| R8 docs pass (2026-10-23): the modules first drawn as planned (`air.ts`, `collision.ts`, the autopilot, the Scavenger ghost, stretches, the booster) are shown as built; nothing in this file is planned any more except the Future items | `spec-sync` found the wording stale; the code was checked | Showcase R8 |
 | Real dependency check: one two-way link between `game/` and `save/` (types), found while checking | Say what is true | S0, section 4 |
 
 ## 1 The big picture
@@ -39,8 +41,8 @@ flowchart TB
       content["content/ game data and its checks: parts, surfaces, levels, text"]
       save["save/ local copy: stars, times, settings, Endless best"]
     end
-    air["physics/air.ts jumps (planned R6)"]
-    coll["physics/collision.ts walls scrape"]
+    air["physics/air.ts jumps (R6)"]
+    coll["physics/collision.ts walls scrape (R1)"]
     auto["game/level/autopilot.ts the Scavenger's driver (R4)"]
     ghost["Scavenger ghost, report stretches, booster (R3-R4)"]
   end
@@ -58,19 +60,18 @@ flowchart TB
   ui --> save
   save --> content
   save -. "types only (to fix)" .-> game
-  air -.-> physics
-  coll -.-> physics
-  auto -.-> game
-  ghost -.-> game
+  air --> physics
+  coll --> physics
+  auto --> game
+  ghost --> game
   web -. "sends files" .-> BROWSER
   save -. "later" .-> cloud
   classDef planned stroke-dasharray: 6 4,fill:#fff7e0,stroke:#b8860b
   classDef future stroke-dasharray: 2 4,fill:#eeeeee,stroke:#888888
-  class air,coll,auto,ghost planned
   class cloud,web future
 ```
 
-**How to read it.** Each box is one part of the game. An arrow from A to B means "A uses B" and never the other way round, so you can read the picture from the top (what the student touches) down to the bottom (the pure physics and the stored data). Solid boxes exist today. **Dashed boxes with a yellow fill are planned** and carry the session that will build them. Grey dashed boxes are decided or future. A dashed arrow means "will plug into". The student never talks to the physics directly: they use the screens, the screens ask the game rules, and the game rules ask the physics.
+**How to read it.** Each box is one part of the game. An arrow from A to B means "A uses B" and never the other way round, so you can read the picture from the top (what the student touches) down to the bottom (the pure physics and the stored data). Solid boxes exist today, with the session that built them in brackets. **Dashed boxes with a yellow fill would be planned**; none is left (the style stays for the next round). Grey dashed boxes are decided or future. A dashed arrow means "will plug into". The student never talks to the physics directly: they use the screens, the screens ask the game rules, and the game rules ask the physics.
 
 ### 1.2 The same picture in plain text
 
@@ -87,18 +88,17 @@ flowchart TB
         |   game/    the rules                |
         |     game/level/  the level engine   |
         |     game/run/    the Endless run    |
-        |     [autopilot, Scavenger ghost,    |
-        |      report stretches, booster]     |   <- R3-R4, built
+        |     autopilot, Scavenger ghost,     |
+        |     report stretches, booster       |   <- R3-R4, built
         +--------+------------+---------+-----+
                  |            |         |
         +--------v---+  +-----v-----+ +-v--------+
         | physics/   |  | content/  | | save/    |
         | pure maths |  | game data | | local    |
-        | [air.ts,   |  | and its   | | copy of  |
-        | collision] |  | checks    | | progress |
+        | air.ts,    |  | and its   | | copy of  |
+        | collision  |  | checks    | | progress |
         +------------+  +-----------+ +----------+
-        planned: R6 (air.ts)
-        
+
    Outside the browser:
    [ Nginx web server ] sends the files (decided, not done)
    [ Supabase cloud   ] accounts and sync (future, M12)
@@ -106,7 +106,7 @@ flowchart TB
    Arrows always point DOWN: a lower box never uses a higher one.
 ```
 
-**How to read it.** Read from the top. The student uses the two top boxes. Those ask the rules box, which turns each 1/120-second step into game events. The rules box asks three bottom boxes: the physics (the maths), the content (the numbers and level files) and the save box (what is kept on the device). Square brackets mark planned parts.
+**How to read it.** Read from the top. The student uses the two top boxes. Those ask the rules box, which turns each 1/120-second step into game events. The rules box asks three bottom boxes: the physics (the maths), the content (the numbers and level files) and the save box (what is kept on the device). Square brackets mark Future parts (outside the browser).
 
 ## 2 What each block does
 
@@ -115,8 +115,8 @@ flowchart TB
 | Web server (Nginx) | Sends the built game files over HTTPS from a Linux server in the cloud. No game logic runs on it | SRS 2.2, NFR-1, NFR-3 | Decided, not done (M8) |
 | Screens (`src/ui/`) | Home, Levels, Level intro, the Level screen, Garage, the Endless run screen, Settings, Pause, the HUD and the report | FR-1, FR-2, FR-27, FR-45, FR-48, FR-49 | Built |
 | Game loop and rendering (`src/render/`) | Runs the fixed-step loop (not tied to frame rate), reads steer, throttle and brake, draws the 3D scene, plays sounds | FR-6, FR-29, NFR-2 | Built |
-| Game rules (`src/game/`) | Runs a level (checkpoints and respawn, finish, stars, unlocking) and the Endless run, and turns each step into the HUD and report data, the pop-ups and the moments | FR-5, FR-45 to FR-49, FR-51 to FR-58 | Built (level engine, run, places, pop-ups, report); Scavenger, stretches, booster Planned |
-| Physics model (`src/physics/`) | Driving state, net force, acceleration, speed and distance from textbook formulas; slopes, rolling back, water, magnets, momentum events and gravity zones; supplies the garage preview | FR-3, FR-8 to FR-11, FR-28, FR-29, FR-50, NFR-4 | Built; jumps and collisions Planned |
+| Game rules (`src/game/`) | Runs a level (checkpoints and respawn, finish, stars, unlocking) and the Endless run, and turns each step into the HUD and report data, the pop-ups and the moments | FR-5, FR-45 to FR-49, FR-51 to FR-58 | Built (level engine, run, places, pop-ups, report, Scavenger, stretches, booster, launch ending) |
+| Physics model (`src/physics/`) | Driving state, net force, acceleration, speed and distance from textbook formulas; slopes, rolling back, water, magnets, momentum events and gravity zones; supplies the garage preview | FR-3, FR-8 to FR-11, FR-28, FR-29, FR-50, NFR-4 | Built (collisions R1, jumps R6) |
 | Content data (`src/content/`) | Parts, surfaces, level files, the endless course chunks and the level text, validated when they load | NFR-5 | Built |
 | Local copy of progress (`src/save/`) | Keeps the best stars and time per level, the best Endless distance, the build and the settings in the browser's local storage | FR-24, NFR-7 | Built |
 | Account and sync | Sign-up, sign-in, merge two devices | FR-25, FR-41 to FR-44 | Future (M12) |
@@ -125,8 +125,7 @@ flowchart TB
 
 ## 3 Module map (checked against the code)
 
-**`src/physics/`** (Built): `build.ts` (build quantities, power-up multiplier), `step.ts` (the fixed step, states, reverse, rolling back), `ground.ts` (R, slope pull), `water.ts` (upthrust, drag, floating), `magnet.ts` (force and its split along the gear and sideways), `momentum.ts` (`shareMomentum`, `applyImpulse`), `missions.ts` (the old mission measurements, kept for the balance report), `loop.ts` (the fixed-step loop), `collision.ts` (edges scrape: v′ = v cos α; built R1), `types.ts`.
-*Planned:* `air.ts` (jumps, R6).
+**`src/physics/`** (Built): `build.ts` (build quantities, power-up multiplier), `step.ts` (the fixed step, states, reverse, rolling back), `ground.ts` (R, slope pull), `water.ts` (upthrust, drag, floating), `magnet.ts` (force and its split along the gear and sideways), `momentum.ts` (`shareMomentum`, `applyImpulse`), `missions.ts` (the old mission measurements, kept for the balance report), `loop.ts` (the fixed-step loop), `collision.ts` (edges scrape: v′ = v cos α; built R1), `air.ts` (jumps; built R6), `types.ts`.
 
 **`src/content/`** (Built): `parts.json`, `surfaces.json`, `constants.json`, `levels.json` (shared Game v4 values), `levels/*.json` (`crash-site.json` and the other Game v4 level files, and `testCourse.json`; First Tracks and Ring Road were retired in R3), `levelText.json` (level cards, captions, report words), `run.json`, `runChunks.json` (the Endless places: sections with polygon zones, an entry post and a line), `runText.json` (Endless), `garage.json`, `missions.json` and `powerUps.json` (regression only), and `schema.ts`, `types.ts`, `levelsConfig.ts`, `levelCards.ts`, `garage.ts`, `index.ts` (validation and loading).
 *Built (R3):* `crash-site.json`, level data `stretches` and `wreck`, `levels.json` `report`, and the `ship` and `stretch` text. *Built (R4):* level data `scavenger` (build, route, `startDelayS`), `levels.json` `booster` and `scavenger`, the `scavenger`, `split` and `stretch.lastRun` text. *Built (R5–R7):* level files `geyser-canyon`, `crater-field` (merged), `the-crossing` (reshaped), `iron-ridge` (replaces `polar-pass`); level data `ramps`; level data `scavenger.poles` (R7: the ghost flips its magnet pole).
@@ -135,7 +134,7 @@ flowchart TB
 *Built (R4):* `game/level/autopilot.ts` (the Scavenger's driver, moved out of `testPilot.ts`, which re-exports it for the tests), `scavenger.ts` (the headless ghost run, cached; `poseAt` for the scene; gate and stretch times), `lastRun.ts`, the Scavenger's splits, third star and report comparison in `session.ts` and `report.ts`, and the booster in `session.ts` and `keys.ts`.
 
 **`src/render/`** (Built): `levelScene.ts`, `devOverlay.ts` (zone outlines for `?dev=1`), `runScene.ts`, `garageScene.ts`, `driveScene.ts`, `roverModel.ts`, `roverAttitude.ts`, `terrain.ts`, `water.ts`, `track.ts`, `pylons.ts`, `landmarks.ts`, `wreck.ts` (the smoking wreck at Crash Site's start), `atmosphere.ts`, `levelCamera.ts`, `forceArrows.ts`, `skidMarks.ts`, `engineSound.ts`, `effectSounds.ts` (one-shot sounds and the tyre bed for each surface), `groundBlend.ts` (the 1 m colour fringe with a noise-warped edge, dips and ripples), `runGround.ts` (one ground mesh for each Endless section), `runScenery.ts` (entry posts, boulders, vents, mud, ice, cave crystals and dust, cannons), `placeLooks.ts` (the colours of each place), `bursts.ts` (particles for the moments), `SceneCanvas.tsx`, `spinningCube.ts`, `levelTestKit.ts`.
-*Built (R4):* `scavengerGhost.ts` (the Scavenger's model, the fade and the split gates; the edge marker is in `ui/LevelScreen.tsx`). *Planned:* the launch ending (R8).
+*Built (R4):* `scavengerGhost.ts` (the Scavenger's model, the fade and the split gates; the edge marker is in `ui/LevelScreen.tsx`). *Built (R8):* the launch ending (`render/launchScene.ts`, `ui/LaunchEnding.tsx`, `launchReady` in `game/ship.ts`).
 
 **`src/ui/`** (Built): `App.tsx`, `HomeScreen.tsx`, `LevelsScreen.tsx`, `ShipSilhouette.tsx`, `LevelIntroScreen.tsx`, `LevelScreen.tsx`, `GarageScreen.tsx`, `GaragePreview.tsx`, `RunScreen.tsx`, `SettingsScreen.tsx`, `SettingsPanel.tsx`, `PauseMenu.tsx`, `Stars.tsx`, `LevelDiagram.tsx`, `BuildScreen.tsx` and `DriveScreen.tsx` (the old test drive, kept), `screens.ts`, `levelScreenLogic.ts`, `hud/Hud.tsx`, `hud/FeedbackLayer.tsx` (the pop-up beside the rover and the caption card), `report/` (`StretchStrip.tsx`, `ReportScreen.tsx`, `ReportCards.tsx`, `SpeedGraph.tsx`, `graph.ts`).
 *Built (R4):* the Scavenger on the report strip, "vs your last run", Change one part, the booster pip and the split text on the HUD, the Scavenger card and the edge marker. The ship silhouette and the plain report strip were built in R3.
@@ -154,7 +153,7 @@ Counting the imports between the top folders of `src/` (tests excluded): `physic
 
 The student starts a level on the intro screen. `ui/LevelScreen.tsx` creates a session from the level file (`game/level/session.ts`) and a scene (`render/levelScene.ts`). Each frame, the loop (`physics/loop.ts`) runs as many 1/120 s steps as the frame covers. Each step: read the keys → `session` works out the ground under the rover (surface, slope, water, gravity zone, magnets) → `physics/step.ts` moves the rover → `session` checks checkpoints, samples, the finish, crashes and stuck rules → events become captions, force arrows and the HUD model (`game/contracts.ts`). At the end `game/level/report.ts` builds the report model and `save/levelProgress.ts` keeps the best stars and time. The garage preview calls the same `physics/build.ts` (FR-3).
 
-*Planned additions to this flow:* the autopilot runs the Scavenger's whole route when the level loads (14,400 steps for 120 s, a few milliseconds) and the scene plays its ghost; the session records per stretch the time, entry and exit speed and the cause events, which `report.ts` turns into the strip and the three-line explanation (FR-55).
+*Added to this flow in R3–R4 (built):* the autopilot runs the Scavenger's whole route when the level loads (14,400 steps for 120 s, a few milliseconds) and the scene plays its ghost; the session records per stretch the time, entry and exit speed and the cause events, which `report.ts` turns into the strip and the three-line explanation (FR-55).
 
 ---
 
