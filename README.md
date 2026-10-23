@@ -20,7 +20,7 @@ After the advisor saw the demo (an endless canyon run), the game became **seven 
 | Push & Shove | momentum and impulse |
 | Crater Field | slopes; kinetic and potential energy |
 | The Crossing | density, upthrust, pressure |
-| Polar Pass | magnetic poles and electromagnets |
+| Iron Ridge | magnetic poles and electromagnets (replaced Polar Pass, R7) |
 
 - Levels open in order and last 90–150 s, with forks, checkpoints and up to three stars each (reach the beacon, collect 3 samples, beat par; revised 2026-10-21 to reach the part, collect 3 samples, beat the Scavenger). After the levels, Endless gets every element.
 - All parts (chassis, wheels, motor; three each) are open; the garage shows what each change does.

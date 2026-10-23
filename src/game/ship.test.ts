@@ -11,18 +11,24 @@ describe('the ship (SHOWCASE_PLAN §12)', () => {
     expect(parts.map((p) => p.name)).toEqual(['Landing brakes', 'Thruster', 'Lift engine', 'Splashdown floats', 'Docking clamps']);
   });
 
-  it('with nothing finished: the built levels’ parts are open, the others are locked', () => {
+  it('with nothing finished: all five parts are open (R7 built the last two levels)', () => {
     const v = shipParts(parts, emptyLevelProgress());
-    expect(v.map((p) => p.state)).toEqual(['open', 'open', 'open', 'locked', 'locked']);
+    expect(v.map((p) => p.state)).toEqual(['open', 'open', 'open', 'open', 'open']);
     expect(partsRecovered(v)).toBe(0);
   });
 
-  it('lights a part once its level is finished, and keeps a part of an unbuilt level locked even if its old level was finished', () => {
+  it('lights a part once its level is finished', () => {
     let p = recordLevelResult(emptyLevelProgress(), 'crash-site', { stars: 1, timeS: 95 });
     p = recordLevelResult(p, 'the-crossing', { stars: 3, timeS: 80 });
     const v = shipParts(parts, p);
-    expect(v.map((x) => x.state)).toEqual(['recovered', 'open', 'open', 'locked', 'locked']);
-    expect(partsRecovered(v)).toBe(1);
+    expect(v.map((x) => x.state)).toEqual(['recovered', 'open', 'open', 'recovered', 'open']);
+    expect(partsRecovered(v)).toBe(2);
+  });
+
+  it('keeps a part of a level that is not built locked even if its old level was finished', () => {
+    const unbuilt = parts.map((x) => (x.levelId === 'the-crossing' || x.levelId === 'iron-ridge' ? { ...x, built: false } : x));
+    const p = recordLevelResult(emptyLevelProgress(), 'the-crossing', { stars: 3, timeS: 80 });
+    expect(shipParts(unbuilt, p).map((x) => x.state)).toEqual(['open', 'open', 'open', 'locked', 'locked']);
   });
 
   it('lights a built part for every finished level (the rule holds for later rounds)', () => {

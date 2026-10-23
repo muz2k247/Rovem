@@ -1325,6 +1325,8 @@ export function createLevelSession(options: LevelSessionOptions) {
         partValues: {
           grip: newtons(flat.gripLimitN), impulse: newtons(run.boostImpulseNs),
           weight: newtons(rover.massKg * baseConstants.gravityMps2 * content.run.gravityMultipliers.high), mass: rover.massKg,
+          // The most the river can push up on the rover: ρ g V with the rover under the water (The Crossing's part line).
+          upthrust: newtons(cfg.water.densityKgPerM3 * baseConstants.gravityMps2 * cfg.water.roverVolumeM3),
         },
         ...(scavenger ? { scavenger, scavengerQuantities: scavengerQuantities(scavenger) } : {}),
         ...(ctx.build ? { build: ctx.build } : {}),

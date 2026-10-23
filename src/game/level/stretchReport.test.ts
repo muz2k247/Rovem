@@ -212,7 +212,14 @@ describe('the part pickup (SHOWCASE_PLAN §12)', () => {
     expect(p.line).toBe("In the Heavy Cave your weight is 4096 N, but your mass is still 209 kg. To lift off, this engine must push harder than the ship's weight.");
   });
 
-  it('brings home nothing from a level that is not a Showcase level yet', () => {
-    expect(partPickup('the-crossing', levelText, {})).toBeUndefined();
+  it('brings home the splashdown floats with the upthrust in the line (R7), and the docking clamps', () => {
+    const p = partPickup('the-crossing', levelText, { upthrust: '1960' })!;
+    expect(p.partName).toBe('Splashdown floats');
+    expect(p.line).toContain('1960 N');
+    expect(partPickup('iron-ridge', levelText, {})?.partName).toBe('Docking clamps');
+  });
+
+  it('brings home nothing from a level the text does not know', () => {
+    expect(partPickup('no-such-level', levelText, {})).toBeUndefined();
   });
 });

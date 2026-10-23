@@ -6,6 +6,16 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (Showcase R7: The Crossing and Iron Ridge; 2026-10-23)
+- **The Crossing reshaped** (`the-crossing.json`): lakebed, a 0.3 m ford, mud banks, a vent before the river, one fork (deep ford or the long bridge), the slope out; five stretches, a Scavenger (Light + Smooth + Large on the bridge), par 110 s.
+- **Iron Ridge** (`iron-ridge.json`, replaces `polar-pass.json`): the v4 pylons on open ground plus a pylon at a bend, boulders, rock faces round the gate, a kicker launcher, one fork (magnet line or switchback road) and an icy ridge only the pylons carry every build up; five stretches, a Scavenger (Heavy + Smooth + Medium on the switchback), par 110 s.
+- `scavenger.poles` in level data (validated in `schema.ts`, used by `scavenger.ts`): the ghost flips its pole where the level's plan does.
+- `upthrust` in the part-pickup values (the Splashdown floats line).
+- Tests: new `levelFile.the-crossing.test.ts` (water, bridge, vent, mud banks, slope, the booster in water, the fork, stretches) and `levelFile.iron-ridge.test.ts` (pylons, the pass, the ice and mud side, the gate, a slingshot, the ridge with and without its pylons, the fork, the kicker, stretches); the v4 A7 checks run for both through `checkLevelFile`.
+### Changed (Showcase R7)
+- Level id `polar-pass` is now `iron-ridge` (types, plans, arrows, report order, text). The ship parts "Splashdown floats" and "Docking clamps" are built, so the Levels screen has no "Coming soon" card.
+- `ship.test.ts`, `stretchReport.test.ts`, `levelCards.test.ts` and `hudParts.test.ts` follow the new ids and the two built parts. Timeouts raised in `levelEdges.test.ts` and one `runScene.test.ts` test.
+
 ### Added (preview link; 2026-10-22)
 - **GitHub Pages preview** for reviewers: `.github/workflows/pages.yml` builds the game and publishes `dist/` on every push to `main` (https://muz2k247.github.io/Rovem/ once Pages is on). `vite.config.ts` sets `base: './'` so the build works from a subfolder. The repo is made public for this (k._muz, 2026-10-22). The release hosting is still Nginx (Tech Stack v2); this is only a preview.
 

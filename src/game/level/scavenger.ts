@@ -108,7 +108,7 @@ export function createScavengerRun(content: Content, def: LevelDef): ScavengerRu
     content,
     def: ghostDef,
     build: sd.build,
-    plan: { roads: sd.roads, ...(sd.via ? { via: sd.via } : {}), ...(sd.bendMargin !== undefined ? { bendMargin: sd.bendMargin } : {}) },
+    plan: { roads: sd.roads, ...(sd.via ? { via: sd.via } : {}), ...(sd.bendMargin !== undefined ? { bendMargin: sd.bendMargin } : {}), ...(sd.poles ? { poles: sd.poles } : {}) },
     maxS,
     onStep: (s) => {
       const p = s.pose;

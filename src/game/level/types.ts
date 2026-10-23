@@ -6,7 +6,7 @@ import type { CannonKind, EdgeStyle, GravityKind, PointM } from '../../content/i
 
 // Crash Site (Showcase R3) replaces First Tracks and Ring Road; Geyser Canyon (R5) replaces Push & Shove; Crater Field (R6) folds in Gravity Wells.
 // The other two are the v4 files, rebuilt in R7 (SHOWCASE_PLAN §7).
-export const LEVEL_IDS = ['crash-site', 'geyser-canyon', 'crater-field', 'the-crossing', 'polar-pass'] as const;
+export const LEVEL_IDS = ['crash-site', 'geyser-canyon', 'crater-field', 'the-crossing', 'iron-ridge'] as const;
 export type LevelId = (typeof LEVEL_IDS)[number];
 
 export interface Pose {
@@ -254,6 +254,8 @@ export interface ScavengerDef {
   via?: PointM[];
   /** The autopilot's bend margin (fraction of the safe bend speed). Default 0.9. */
   bendMargin?: number;
+  /** The pole it carries from each point of a road on, where the level has magnets (R7: Iron Ridge). It rides the pylons the way a good student does. */
+  poles?: { roadId: string; fromM: number; pole: 'N' | 'S' }[];
   /**
    * `scavengerStartDelayS` (SHOWCASE_PLAN §8): the one tuning knob, shown to the student. 0 starts it beside you; positive: it starts
    * that many seconds after you; negative: a head start. Its driving is never slowed in secret.

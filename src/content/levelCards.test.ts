@@ -11,7 +11,7 @@ describe('level cards (LEVELS_BUILD_PLAN A2, A3, A7)', () => {
       'Geyser Canyon',
       'Crater Field',
       'The Crossing',
-      'Polar Pass',
+      'Iron Ridge',
     ]);
     expect(levelCards.levels.map((l) => l.id)).toEqual([...LEVEL_IDS]);
   });

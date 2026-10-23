@@ -77,7 +77,7 @@ const PRESETS: Record<AtmosphereId, AtmospherePreset> = {
     hemiSky: 0xa0b4c8, hemiGround: 0x5a4a44, hemiIntensity: 2, stars: false, aurora: false,
     motes: { count: 90, size: 1.5, opacity: 0.13, colour: 0xe8f0f8, heightM: 3 },
   },
-  // Polar Pass: night with a faint aurora.
+  // Iron Ridge (was Polar Pass): night with a faint aurora.
   'aurora-night': {
     id: 'aurora-night', skyTop: 0x02040c, skyHorizon: 0x0b1630, fogColour: 0x08122a, fogDensity: 0.006,
     sunColour: 0x7da0ff, sunIntensity: 2, sunElevationDeg: 30, sunAzimuthDeg: 90,

@@ -3,11 +3,30 @@
   "name": "The Crossing",
   "placeholder": true,
   "atmosphere": "blue-mist",
-  "parS": 95,
+  "edgeStyle": "hill",
+  "parS": 110,
   "start": {
     "xM": 0,
     "zM": 0,
     "headingDeg": 0
+  },
+  "scavenger": {
+    "build": {
+      "chassisId": "chassis-light",
+      "wheelsId": "wheels-smooth",
+      "motorId": "motor-large"
+    },
+    "roads": [
+      "start",
+      "bend-1",
+      "lead",
+      "ford",
+      "run-in",
+      "f1-bridge",
+      "bank",
+      "slope"
+    ],
+    "startDelayS": 0
   },
   "defaultSurfaceId": "asphalt",
   "roads": [
@@ -22,34 +41,45 @@
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 130
+          "lengthM": 200
         }
       ]
     },
     {
-      "id": "b1",
+      "id": "bend-1",
       "after": "start",
       "segments": [
         {
           "kind": "arc",
-          "radiusM": 60,
-          "angleDeg": -40
+          "radiusM": 150,
+          "angleDeg": 25
         }
       ]
     },
     {
       "id": "lead",
-      "after": "b1",
+      "after": "bend-1",
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 150
+          "lengthM": 330
         }
       ]
     },
     {
-      "id": "mid",
+      "id": "ford",
+      "name": "The ford",
       "after": "lead",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    },
+    {
+      "id": "run-in",
+      "after": "ford",
       "segments": [
         {
           "kind": "straight",
@@ -58,370 +88,304 @@
       ]
     },
     {
-      "id": "to-ch1",
-      "after": "mid",
+      "id": "f1-deep",
+      "name": "Deep ford",
+      "after": "run-in",
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 70
+          "lengthM": 300
         }
       ]
     },
     {
-      "id": "ch1",
-      "name": "Channel",
-      "after": "to-ch1",
-      "segments": [
-        {
-          "kind": "straight",
-          "lengthM": 200
-        }
-      ]
-    },
-    {
-      "id": "bridge-1",
+      "id": "f1-bridge",
       "name": "Bridge",
-      "after": "to-ch1",
+      "after": "run-in",
+      "edges": [
+        {
+          "side": "left",
+          "fromM": 30,
+          "toM": 300,
+          "style": "cliff"
+        }
+      ],
       "segments": [
         {
           "kind": "arc",
-          "radiusM": 40,
-          "angleDeg": 43.32396507122404
+          "radiusM": 62,
+          "angleDeg": 30
         },
         {
           "kind": "straight",
-          "lengthM": 62.00833315904969
+          "lengthM": 101.61
         },
         {
           "kind": "arc",
-          "radiusM": 40,
-          "angleDeg": -86.64793014244808
+          "radiusM": 62,
+          "angleDeg": -60
         },
         {
           "kind": "straight",
-          "lengthM": 62.00833315904969
+          "lengthM": 101.61
         },
         {
           "kind": "arc",
-          "radiusM": 40,
-          "angleDeg": 43.32396507122404
+          "radiusM": 62,
+          "angleDeg": 30
         }
       ]
     },
     {
-      "id": "bar",
-      "after": "ch1",
+      "id": "bank",
+      "after": "f1-deep",
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 110
+          "lengthM": 180
         }
       ]
     },
     {
-      "id": "ch2",
-      "name": "Channel",
-      "after": "bar",
+      "id": "slope",
+      "name": "The slope",
+      "after": "bank",
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 200
-        }
-      ]
-    },
-    {
-      "id": "bridge-2",
-      "name": "Bridge",
-      "after": "bar",
-      "segments": [
-        {
-          "kind": "arc",
-          "radiusM": 40,
-          "angleDeg": 43.32396507122404
-        },
-        {
-          "kind": "straight",
-          "lengthM": 62.00833315904969
-        },
-        {
-          "kind": "arc",
-          "radiusM": 40,
-          "angleDeg": -86.64793014244808
-        },
-        {
-          "kind": "straight",
-          "lengthM": 62.00833315904969
-        },
-        {
-          "kind": "arc",
-          "radiusM": 40,
-          "angleDeg": 43.32396507122404
-        }
-      ]
-    },
-    {
-      "id": "far",
-      "after": "ch2",
-      "segments": [
-        {
-          "kind": "straight",
-          "lengthM": 90
-        },
-        {
-          "kind": "arc",
-          "radiusM": 70,
-          "angleDeg": 35
-        },
-        {
-          "kind": "straight",
-          "lengthM": 110
+          "lengthM": 210
         }
       ]
     }
   ],
   "route": [
     "start",
-    "b1",
+    "bend-1",
     "lead",
-    "mid",
-    "to-ch1",
-    "ch1",
-    "bar",
-    "ch2",
-    "far"
+    "ford",
+    "run-in",
+    "f1-deep",
+    "bank",
+    "slope"
   ],
-  "hills": [
+  "hills": [],
+  "ridges": [
     {
-      "xM": 70,
-      "zM": 0,
-      "radiusM": 40,
-      "heightM": 4
+      "xM": 1287.52,
+      "zM": 491.61,
+      "headingDeg": 25,
+      "riseAngleDeg": 6,
+      "riseLengthM": 50,
+      "topLengthM": 40,
+      "fallAngleDeg": 6,
+      "widthM": 30
     }
   ],
   "water": [
     {
-      "id": "water-1",
+      "id": "ford",
       "polygon": [
         {
-          "xM": 190.21,
-          "zM": -50.48
+          "xM": 618.24,
+          "zM": 164.07
         },
         {
-          "xM": 200.94,
-          "zM": -59.48
+          "xM": 630.93,
+          "zM": 169.99
         },
         {
-          "xM": 218.94,
-          "zM": -38.03
+          "xM": 619.09,
+          "zM": 195.37
         },
         {
-          "xM": 208.21,
-          "zM": -29.03
+          "xM": 606.4,
+          "zM": 189.45
         }
       ],
       "depthM": 0.3
     },
     {
-      "id": "water-2",
+      "id": "deep",
       "polygon": [
         {
-          "xM": 297.45,
-          "zM": -140.47
+          "xM": 885.6,
+          "zM": 288.75
         },
         {
-          "xM": 308.18,
-          "zM": -149.47
+          "xM": 894.66,
+          "zM": 292.97
         },
         {
-          "xM": 326.17,
-          "zM": -128.02
+          "xM": 882.83,
+          "zM": 318.35
         },
         {
-          "xM": 315.45,
-          "zM": -119.02
-        }
-      ],
-      "depthM": 0.3
-    },
-    {
-      "id": "water-3",
-      "polygon": [
-        {
-          "xM": 335.75,
-          "zM": -172.61
-        },
-        {
-          "xM": 360.27,
-          "zM": -193.18
-        },
-        {
-          "xM": 378.27,
-          "zM": -171.73
-        },
-        {
-          "xM": 353.75,
-          "zM": -151.16
-        }
-      ],
-      "depthM": 0.5
-    },
-    {
-      "id": "water-4",
-      "polygon": [
-        {
-          "xM": 511.94,
-          "zM": -320.44
-        },
-        {
-          "xM": 519.6,
-          "zM": -326.87
-        },
-        {
-          "xM": 537.6,
-          "zM": -305.42
-        },
-        {
-          "xM": 529.94,
-          "zM": -298.99
+          "xM": 873.77,
+          "zM": 314.12
         }
       ],
       "depthM": 1
-    },
+    }
+  ],
+  "surfaceZones": [
     {
-      "id": "water-5",
+      "surfaceId": "mud",
       "polygon": [
         {
-          "xM": 749.42,
-          "zM": -519.71
+          "xM": 574.37,
+          "zM": 146.93
         },
         {
-          "xM": 757.08,
-          "zM": -526.14
+          "xM": 583.44,
+          "zM": 151.16
         },
         {
-          "xM": 775.08,
-          "zM": -504.69
+          "xM": 574.14,
+          "zM": 171.09
         },
         {
-          "xM": 767.42,
-          "zM": -498.26
+          "xM": 565.08,
+          "zM": 166.87
         }
-      ],
-      "depthM": 1
+      ]
+    },
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 1133.57,
+          "zM": 407.68
+        },
+        {
+          "xM": 1142.63,
+          "zM": 411.91
+        },
+        {
+          "xM": 1133.33,
+          "zM": 431.85
+        },
+        {
+          "xM": 1124.27,
+          "zM": 427.62
+        }
+      ]
     }
   ],
   "boosts": [
     {
-      "id": "pad-start",
-      "xM": 118,
+      "id": "vent-0",
+      "xM": 45,
       "zM": 0,
-      "radiusM": 2.5
+      "radiusM": 3
     },
     {
-      "id": "pad-ch1",
-      "xM": 504.09,
-      "zM": -295.58,
-      "radiusM": 2.5
-    },
-    {
-      "id": "pad-ch2",
-      "xM": 741.57,
-      "zM": -494.84,
-      "radiusM": 2.5
+      "id": "vent-1",
+      "xM": 798.11,
+      "zM": 263.4,
+      "radiusM": 3
     }
   ],
+  "barriers": [],
   "checkpoints": [
     {
       "id": "cp-1",
-      "xM": 229.85,
-      "zM": -65.46,
-      "headingDeg": -40
+      "xM": 444.65,
+      "zM": 98.58,
+      "headingDeg": 25
     },
     {
       "id": "cp-2",
-      "xM": 386.89,
-      "zM": -197.23,
-      "headingDeg": -40
+      "xM": 689.36,
+      "zM": 212.68,
+      "headingDeg": 25
     },
     {
       "id": "cp-3",
-      "xM": 666.5,
-      "zM": -431.85,
-      "headingDeg": -40
+      "xM": 1097.2,
+      "zM": 402.86,
+      "headingDeg": 25
     }
   ],
   "forks": [
     {
       "id": "fork-1",
       "line": {
-        "xM": 467.32,
-        "zM": -264.72,
-        "headingDeg": -40,
+        "xM": 816.24,
+        "zM": 271.85,
+        "headingDeg": 25,
         "widthM": 12
       },
       "roadIds": [
-        "ch1",
-        "bridge-1"
+        "f1-deep",
+        "f1-bridge"
       ],
       "mergeAt": {
-        "xM": 620.53,
-        "zM": -393.28,
-        "radiusM": 8
-      }
-    },
-    {
-      "id": "fork-2",
-      "line": {
-        "xM": 704.8,
-        "zM": -463.99,
-        "headingDeg": -40,
-        "widthM": 12
-      },
-      "roadIds": [
-        "ch2",
-        "bridge-2"
-      ],
-      "mergeAt": {
-        "xM": 858.01,
-        "zM": -592.55,
+        "xM": 1088.13,
+        "zM": 398.64,
         "radiusM": 8
       }
     }
   ],
   "samples": [
     {
-      "id": "s-river",
-      "xM": 357.01,
-      "zM": -172.16
-    },
-    {
-      "id": "s-bar",
-      "xM": 664.59,
-      "zM": -426.34
+      "id": "s-ford",
+      "xM": 617.61,
+      "zM": 181.99
     },
     {
       "id": "s-bank",
-      "xM": 770.28,
-      "zM": -522.85
+      "xM": 1134.5,
+      "zM": 417.5
+    },
+    {
+      "id": "s-slope",
+      "xM": 1336.31,
+      "zM": 517.12
     }
   ],
   "signs": [
     {
       "id": "sign-b1",
-      "xM": 112,
+      "xM": 178,
       "zM": -4.6,
-      "radiusM": 60
-    },
-    {
-      "id": "sign-far",
-      "xM": 910.21,
-      "zM": -642.35,
-      "radiusM": 70
+      "radiusM": 150
     }
   ],
+  "hints": [],
   "finish": {
-    "xM": 1065.46,
-    "zM": -675.22,
+    "xM": 1432.53,
+    "zM": 559.23,
     "radiusM": 6
-  }
+  },
+  "stretches": [
+    {
+      "id": "lakebed",
+      "name": "The Lakebed",
+      "cleanS": 34.2
+    },
+    {
+      "id": "ford",
+      "name": "The Ford",
+      "startsAfterRoad": "lead",
+      "cleanS": 6.92
+    },
+    {
+      "id": "run-in",
+      "name": "The Run-in",
+      "startsAfterRoad": "ford",
+      "cleanS": 10.25
+    },
+    {
+      "id": "river",
+      "name": "The River",
+      "startsAfterRoad": "run-in",
+      "cleanS": 28.93
+    },
+    {
+      "id": "slope",
+      "name": "The Slope",
+      "startsAfterRoad": "bank",
+      "cleanS": 11.84
+    }
+  ]
 }

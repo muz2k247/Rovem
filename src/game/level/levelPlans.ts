@@ -59,32 +59,35 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
     };
   },
   'the-crossing': (def) => {
-    const [river, bar, bank] = [samplePoint(def, 's-river'), samplePoint(def, 's-bar'), samplePoint(def, 's-bank')];
-    const roads = (c1: string, c2: string) => ['start', 'b1', 'lead', 'mid', 'to-ch1', c1, 'bar', c2, 'far'];
+    const [ford, bank, slope] = [samplePoint(def, 's-ford'), samplePoint(def, 's-bank'), samplePoint(def, 's-slope')];
+    const roads = (fork: string) => ['start', 'bend-1', 'lead', 'ford', 'run-in', fork, 'bank', 'slope'];
+    // The bridge is dry for every build; the deep ford is a choice the level file's tests make on their own.
     return {
-      safe: { roads: roads('bridge-1', 'bridge-2') },
-      stars: { roads: roads('ch1', 'ch2'), via: [river, bar, bank] },
+      safe: { roads: roads('f1-bridge') },
+      stars: { roads: roads('f1-deep'), via: [ford, bank, slope] },
     };
   },
-  'polar-pass': (def) => {
+  'iron-ridge': (def) => {
     const [pass, mud, top] = [samplePoint(def, 's-pass'), samplePoint(def, 's-mud'), samplePoint(def, 's-top')];
-    const roads = (ch: string, cr: string) => ['start', 'p1', 'pass', 'ice', 'gate', 'lead-1', ch, 'sling', 'lead-2', cr, 'end'];
+    const roads = (fork: string) => ['start', 'p1', 'bend-1', 'pass', 'ice', 'gate', 'lead-1', fork, 'lead-2', 'climb', 'end'];
     // The pole to carry from each point: unlike the pylons to be pulled through a gap, then like them to be pushed out of it.
-    const poles = [
+    const poles = (fork: string) => [
       { roadId: 'pass', fromM: 0, pole: 'N' as const },
       { roadId: 'pass', fromM: 21, pole: 'S' as const },
       { roadId: 'ice', fromM: 30, pole: 'N' as const },
       { roadId: 'ice', fromM: 110, pole: 'S' as const },
       { roadId: 'gate', fromM: 0, pole: 'N' as const },
       { roadId: 'gate', fromM: 21, pole: 'S' as const },
-      { roadId: 'sling', fromM: 71, pole: 'N' as const },
-      { roadId: 'sling', fromM: 150, pole: 'S' as const },
-      { roadId: 'sling', fromM: 191, pole: 'N' as const },
+      ...(fork === 'f1-line' ? [{ roadId: 'f1-line', fromM: 71, pole: 'N' as const }, { roadId: 'f1-line', fromM: 150, pole: 'S' as const }] : []),
       { roadId: 'lead-2', fromM: 0, pole: 'S' as const },
+      { roadId: 'climb', fromM: 77, pole: 'N' as const },
+      { roadId: 'climb', fromM: 93, pole: 'S' as const },
+      { roadId: 'climb', fromM: 120, pole: 'N' as const },
     ];
+    // The switchback road is the long way for every build; the magnet line is a choice the level file's tests make on their own.
     return {
-      safe: { roads: roads('bridge', 'ramp'), poles },
-      stars: { roads: roads('channel', 'crater'), via: [pass, mud, top], poles },
+      safe: { roads: roads('f1-switch'), poles: poles('f1-switch') },
+      stars: { roads: roads('f1-line'), via: [pass, mud, top], poles: poles('f1-line') },
     };
   },
 };

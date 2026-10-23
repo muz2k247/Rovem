@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { content } from '../content/index.ts';
 import { builtLevelIds, loadLevelDef } from '../game/level/levels.ts';
 import { createLevelWorld, type LevelWorld } from '../game/level/world.ts';
@@ -7,6 +7,9 @@ import { edgeFieldOf, outsideHeightM, scrapeDepthM } from './levelEdges.ts';
 import { EDGE_STEP_M, planLevelEdges } from './levelEdgeScene.ts';
 import { worldOf } from './levelTestKit.ts';
 import { drawnHeightM } from './terrain.ts';
+
+// Every built level is meshed and sampled here; with five levels (R7) a loaded machine needs more than the default 5 s.
+vi.setConfig({ testTimeout: 60_000 });
 
 // The edges of a level (SHOWCASE_PLAN §12a, R6b): where they stand, what stands there, and that the contact is on the scrape line.
 

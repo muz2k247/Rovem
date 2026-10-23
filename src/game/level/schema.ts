@@ -280,9 +280,13 @@ const scavenger = (raw: unknown, path: string): ScavengerDef => {
   if (roads.length === 0) fail(`${path}.roads`, 'the Scavenger needs a route');
   const via = o.via === undefined ? undefined : list(o.via, `${path}.via`).map((p, i) => ({ xM: num(obj(p, `${path}.via[${i}]`), 'xM', `${path}.via[${i}]`), zM: num(obj(p, `${path}.via[${i}]`), 'zM', `${path}.via[${i}]`) }));
   const bendMargin = optPos(o, 'bendMargin', path);
+  const poles = o.poles === undefined ? undefined : list(o.poles, `${path}.poles`).map((p, i) => {
+    const q = obj(p, `${path}.poles[${i}]`);
+    return { roadId: str(q, 'roadId', `${path}.poles[${i}]`), fromM: num(q, 'fromM', `${path}.poles[${i}]`), pole: oneOf(q, 'pole', `${path}.poles[${i}]`, ['N', 'S'] as const) };
+  });
   return {
     build: { chassisId: str(b, 'chassisId', `${path}.build`), wheelsId: str(b, 'wheelsId', `${path}.build`), motorId: str(b, 'motorId', `${path}.build`) },
-    roads, ...(via ? { via } : {}), ...(bendMargin !== undefined ? { bendMargin } : {}), startDelayS: num(o, 'startDelayS', path),
+    roads, ...(via ? { via } : {}), ...(bendMargin !== undefined ? { bendMargin } : {}), ...(poles ? { poles } : {}), startDelayS: num(o, 'startDelayS', path),
   };
 };
 
@@ -379,6 +383,7 @@ export function validateLevelDef(raw: unknown, surfaceIds: readonly string[]): L
     lastRouteIndex = at;
   });
   def.scavenger?.roads.forEach((r, i) => needRoad(r, `level.scavenger.roads[${i}]`));
+  def.scavenger?.poles?.forEach((p, i) => needRoad(p.roadId, `level.scavenger.poles[${i}].roadId`));
   needSurface(def.defaultSurfaceId, 'level.defaultSurfaceId');
   def.surfaceZones.forEach((z, i) => needSurface(z.surfaceId, `level.surfaceZones[${i}].surfaceId`));
   def.forks.forEach((f, i) => {

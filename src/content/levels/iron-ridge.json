@@ -1,0 +1,607 @@
+{
+  "id": "iron-ridge",
+  "name": "Iron Ridge",
+  "placeholder": true,
+  "atmosphere": "aurora-night",
+  "edgeStyle": "hill",
+  "parS": 110,
+  "start": {
+    "xM": 0,
+    "zM": 0,
+    "headingDeg": 0
+  },
+  "scavenger": {
+    "build": {
+      "chassisId": "chassis-heavy",
+      "wheelsId": "wheels-smooth",
+      "motorId": "motor-medium"
+    },
+    "roads": [
+      "start",
+      "p1",
+      "bend-1",
+      "pass",
+      "ice",
+      "gate",
+      "lead-1",
+      "f1-switch",
+      "lead-2",
+      "climb",
+      "end"
+    ],
+    "poles": [
+      {
+        "roadId": "pass",
+        "fromM": 0,
+        "pole": "N"
+      },
+      {
+        "roadId": "pass",
+        "fromM": 21,
+        "pole": "S"
+      },
+      {
+        "roadId": "ice",
+        "fromM": 30,
+        "pole": "N"
+      },
+      {
+        "roadId": "ice",
+        "fromM": 110,
+        "pole": "S"
+      },
+      {
+        "roadId": "gate",
+        "fromM": 0,
+        "pole": "N"
+      },
+      {
+        "roadId": "gate",
+        "fromM": 21,
+        "pole": "S"
+      },
+      {
+        "roadId": "lead-2",
+        "fromM": 0,
+        "pole": "S"
+      },
+      {
+        "roadId": "climb",
+        "fromM": 77,
+        "pole": "N"
+      },
+      {
+        "roadId": "climb",
+        "fromM": 93,
+        "pole": "S"
+      },
+      {
+        "roadId": "climb",
+        "fromM": 120,
+        "pole": "N"
+      }
+    ],
+    "startDelayS": 0
+  },
+  "defaultSurfaceId": "asphalt",
+  "roads": [
+    {
+      "id": "start",
+      "name": "Start",
+      "start": {
+        "xM": 0,
+        "zM": 0,
+        "headingDeg": 0
+      },
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 300
+        }
+      ]
+    },
+    {
+      "id": "p1",
+      "after": "start",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 220
+        }
+      ]
+    },
+    {
+      "id": "bend-1",
+      "name": "The bend",
+      "after": "p1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -35
+        }
+      ]
+    },
+    {
+      "id": "pass",
+      "name": "The pass",
+      "widthM": 5,
+      "runoffM": 1.5,
+      "after": "bend-1",
+      "edges": [
+        {
+          "side": "both",
+          "style": "rock"
+        }
+      ],
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    },
+    {
+      "id": "ice",
+      "name": "Ice shelf",
+      "after": "pass",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 130
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "name": "The gate",
+      "widthM": 5,
+      "runoffM": 1.5,
+      "after": "ice",
+      "edges": [
+        {
+          "side": "both",
+          "style": "rock"
+        }
+      ],
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 110
+        }
+      ]
+    },
+    {
+      "id": "lead-1",
+      "after": "gate",
+      "edges": [
+        {
+          "side": "both",
+          "style": "rock"
+        }
+      ],
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 60
+        }
+      ]
+    },
+    {
+      "id": "f1-line",
+      "name": "Magnet line",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 340
+        }
+      ]
+    },
+    {
+      "id": "f1-switch",
+      "name": "Switchback road",
+      "after": "lead-1",
+      "edges": [
+        {
+          "side": "left",
+          "fromM": 30,
+          "toM": 340,
+          "style": "cliff"
+        }
+      ],
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 30
+        },
+        {
+          "kind": "straight",
+          "lengthM": 80.83
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -60
+        },
+        {
+          "kind": "straight",
+          "lengthM": 80.83
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 30
+        }
+      ]
+    },
+    {
+      "id": "lead-2",
+      "after": "f1-line",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 120
+        }
+      ]
+    },
+    {
+      "id": "climb",
+      "name": "The climb",
+      "after": "lead-2",
+      "edges": [
+        {
+          "side": "both",
+          "fromM": 60,
+          "toM": 280,
+          "style": "cliff"
+        }
+      ],
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 300
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "after": "climb",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 90
+        }
+      ]
+    }
+  ],
+  "route": [
+    "start",
+    "p1",
+    "bend-1",
+    "pass",
+    "ice",
+    "gate",
+    "lead-1",
+    "f1-line",
+    "lead-2",
+    "climb",
+    "end"
+  ],
+  "hills": [],
+  "ridges": [
+    {
+      "xM": 1330.98,
+      "zM": -545.78,
+      "headingDeg": -35,
+      "riseAngleDeg": 15,
+      "riseLengthM": 70,
+      "topLengthM": 25,
+      "fallAngleDeg": 8,
+      "widthM": 30
+    }
+  ],
+  "water": [],
+  "surfaceZones": [
+    {
+      "surfaceId": "ice",
+      "polygon": [
+        {
+          "xM": 704.49,
+          "zM": -124.19
+        },
+        {
+          "xM": 737.25,
+          "zM": -147.14
+        },
+        {
+          "xM": 753.31,
+          "zM": -124.2
+        },
+        {
+          "xM": 720.55,
+          "zM": -101.26
+        }
+      ]
+    },
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 703.63,
+          "zM": -125.42
+        },
+        {
+          "xM": 736.39,
+          "zM": -148.36
+        },
+        {
+          "xM": 745,
+          "zM": -136.08
+        },
+        {
+          "xM": 712.23,
+          "zM": -113.13
+        }
+      ]
+    },
+    {
+      "surfaceId": "ice",
+      "polygon": [
+        {
+          "xM": 1322.13,
+          "zM": -556.67
+        },
+        {
+          "xM": 1384.38,
+          "zM": -600.26
+        },
+        {
+          "xM": 1400.44,
+          "zM": -577.33
+        },
+        {
+          "xM": 1338.19,
+          "zM": -533.73
+        }
+      ]
+    }
+  ],
+  "pylons": [
+    {
+      "id": "pyl-feel",
+      "xM": 130,
+      "zM": 8,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-bend",
+      "xM": 555.83,
+      "zM": -15.26,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-pass-a",
+      "xM": 595.35,
+      "zM": -27.26,
+      "pole": "S"
+    },
+    {
+      "id": "pyl-pass-b",
+      "xM": 592.13,
+      "zM": -31.85,
+      "pole": "S"
+    },
+    {
+      "id": "pyl-mud",
+      "xM": 724.31,
+      "zM": -130.75,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-gate-a",
+      "xM": 791.94,
+      "zM": -164.92,
+      "pole": "S",
+      "switching": {
+        "phaseS": 0
+      }
+    },
+    {
+      "id": "pyl-gate-b",
+      "xM": 788.73,
+      "zM": -169.51,
+      "pole": "S",
+      "switching": {
+        "phaseS": 0
+      }
+    },
+    {
+      "id": "pyl-sling-1",
+      "xM": 974.57,
+      "zM": -287.67,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-up",
+      "xM": 1354.9,
+      "zM": -555.2,
+      "pole": "N"
+    },
+    {
+      "id": "pyl-top",
+      "xM": 1390.12,
+      "zM": -579.86,
+      "pole": "N"
+    }
+  ],
+  "boosts": [],
+  "cannons": [
+    {
+      "id": "k1",
+      "kind": "kicker",
+      "xM": 1545.6,
+      "zM": -696.05,
+      "directionDeg": -35
+    }
+  ],
+  "barriers": [
+    {
+      "id": "boulder-1",
+      "xM": 340,
+      "zM": 3.6,
+      "headingDeg": 20,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-2",
+      "xM": 380,
+      "zM": -3.6,
+      "headingDeg": 20,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-3",
+      "xM": 420,
+      "zM": 3.6,
+      "headingDeg": 20,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    },
+    {
+      "id": "boulder-4",
+      "xM": 460,
+      "zM": -3.6,
+      "headingDeg": 20,
+      "lengthM": 2.4,
+      "widthM": 2.4,
+      "look": "boulder"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp-1",
+      "xM": 250,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-2",
+      "xM": 450,
+      "zM": 0,
+      "headingDeg": 0
+    },
+    {
+      "id": "cp-3",
+      "xM": 671.56,
+      "zM": -84.05,
+      "headingDeg": -35
+    },
+    {
+      "id": "cp-4",
+      "xM": 761.67,
+      "zM": -147.14,
+      "headingDeg": -35
+    },
+    {
+      "id": "cp-5",
+      "xM": 888.64,
+      "zM": -236.04,
+      "headingDeg": -35
+    },
+    {
+      "id": "cp-6",
+      "xM": 1212.2,
+      "zM": -462.61,
+      "headingDeg": -35
+    }
+  ],
+  "forks": [
+    {
+      "id": "fork-1",
+      "line": {
+        "xM": 913.21,
+        "zM": -253.25,
+        "headingDeg": -35,
+        "widthM": 12
+      },
+      "roadIds": [
+        "f1-line",
+        "f1-switch"
+      ],
+      "mergeAt": {
+        "xM": 1191.72,
+        "zM": -448.27,
+        "radiusM": 8
+      }
+    }
+  ],
+  "samples": [
+    {
+      "id": "s-pass",
+      "xM": 604.52,
+      "zM": -38.57
+    },
+    {
+      "id": "s-mud",
+      "xM": 755.2,
+      "zM": -138.95
+    },
+    {
+      "id": "s-top",
+      "xM": 1398.15,
+      "zM": -592.81
+    }
+  ],
+  "signs": [
+    {
+      "id": "sign-bend",
+      "xM": 490,
+      "zM": -4.6,
+      "radiusM": 100
+    }
+  ],
+  "hints": [],
+  "finish": {
+    "xM": 1601.3,
+    "zM": -735.06,
+    "radiusM": 6
+  },
+  "stretches": [
+    {
+      "id": "foothills",
+      "name": "The Foothills",
+      "cleanS": 34.71
+    },
+    {
+      "id": "pass",
+      "name": "The Pass",
+      "startsAfterRoad": "p1",
+      "cleanS": 14.12
+    },
+    {
+      "id": "mine",
+      "name": "The Old Mine",
+      "startsAfterRoad": "ice",
+      "cleanS": 7.07
+    },
+    {
+      "id": "ridge-run",
+      "name": "The Ridge Run",
+      "startsAfterRoad": "lead-1",
+      "cleanS": 19.84
+    },
+    {
+      "id": "climb",
+      "name": "The Climb",
+      "startsAfterRoad": "lead-2",
+      "cleanS": 18.38
+    }
+  ]
+}

@@ -367,7 +367,7 @@ describe('places and their warnings (R2, SHOWCASE_PLAN §10 and §11)', () => {
       seen.cannon += cannons > 0 ? 1 : 0;
     }
     for (const [what, n] of Object.entries(seen)) expect(n, what).toBeGreaterThan(0); // the course really offered each of them
-  });
+  }, 30_000); // 9 s when the whole suite runs at once
 
   it('small obstacles are boulders and the cave walls are barriers', () => {
     const { session, view } = world();

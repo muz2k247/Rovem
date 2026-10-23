@@ -70,7 +70,7 @@
 <line x1="983.7" y1="175.5" x2="995.8" y2="175.5" stroke="#2f7d3b" stroke-width="2"/>
 <text x="983.7" y="175.5" font-size="13" font-family="sans-serif" fill="#10131a" stroke="#fff" stroke-width="3" paint-order="stroke" text-anchor="middle">crater 14 m deep, wall 75°, ramp 75°</text>
 <polygon points="899.7,182.6 974,202.5 979.7,181.3 905.4,161.4" fill="#8c6a44" fill-opacity="0.3" stroke="#6b4a2a"/>
-<text x="902.6" y="172" font-size="13" font-family="sans-serif" fill="#10131a" stroke="#fff" stroke-width="3" paint-order="stroke" >ridge 12° up, 12° down</text>
+<text x="902.6" y="172" font-size="13" font-family="sans-serif" fill="#10131a" stroke="#fff" stroke-width="3" paint-order="stroke" >ridge 20° up, 20° down</text>
 <polygon points="360.7,66 357.1,62.4 352.1,62.4 348.5,66 348.5,71 352.1,74.6 357.1,74.6 360.7,71" fill="#d8b878" fill-opacity="0.85" stroke="#2a2a2a" stroke-width="1"/>
 <polygon points="704.1,114.2 700.2,110.2 694.5,110.2 690.6,114.2 690.6,119.8 694.5,123.8 700.2,123.8 704.1,119.8" fill="#b6dcf0" fill-opacity="0.85" stroke="#2a2a2a" stroke-width="1"/>
 <polygon points="1286.2,270.2 1282.2,266.2 1276.6,266.2 1272.7,270.2 1272.7,275.8 1276.6,279.7 1282.2,279.7 1286.2,275.8" fill="#d8b878" fill-opacity="0.85" stroke="#2a2a2a" stroke-width="1"/>

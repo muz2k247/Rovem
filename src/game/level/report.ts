@@ -20,7 +20,7 @@ const LEVEL_CARD_ORDER: Record<LevelId, readonly string[]> = {
   'geyser-canyon': ['boost', 'hit'],
   'crater-field': ['gravity', 'descent', 'rollback'],
   'the-crossing': ['float', 'water'],
-  'polar-pass': ['magnet'],
+  'iron-ridge': ['magnet'],
 };
 
 interface Candidate {

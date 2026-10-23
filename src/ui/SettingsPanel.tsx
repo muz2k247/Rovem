@@ -104,7 +104,7 @@ export function SettingsPanel({
         <h3>Controls</h3>
         <small>These keys work in the levels.</small>
         <ul className="control-list">
-          {controlsList({ levels: true, extra: ['Space: flip your magnet (Polar Pass)'] }).map((c) => (
+          {controlsList({ levels: true, extra: ['Space: flip your magnet (Iron Ridge)'] }).map((c) => (
             <li key={c.keys + c.does}>
               <kbd>{c.keys}</kbd> {c.does}
             </li>

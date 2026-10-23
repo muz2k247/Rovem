@@ -40,22 +40,22 @@
     {
       "id": "the-crossing",
       "name": "The Crossing",
-      "hook": "Wade, float or sink. Cross the water.",
-      "goal": "Cross the flooded valley to the beacon.",
+      "hook": "Wade the ford, float the deep channel, or take the long bridge. Your rover decides.",
+      "goal": "Get the splashdown floats across the river.",
       "newHere": [
-        "Water pushes up on anything in it, with a force equal to the weight of the water pushed aside.",
-        "If the water pushes up harder than your weight, you float, and a floating rover cannot drive or steer. It only coasts.",
+        "Water pushes up on anything in it, with a force equal to the weight of the water pushed aside. A light rover can be pushed up so much that it floats and loses its grip.",
+        "A floating rover cannot drive or steer. It only coasts.",
         "Water also drags you back, more the faster you go."
       ],
       "diagram": "river"
     },
     {
-      "id": "polar-pass",
-      "name": "Polar Pass",
-      "hook": "Pull and push with a super electromagnet.",
-      "goal": "Reach the polar lander.",
+      "id": "iron-ridge",
+      "name": "Iron Ridge",
+      "hook": "Giant electromagnets pull and push. Ride the magnet line, or take the long switchback road.",
+      "goal": "Get the docking clamps from the top of the ridge.",
       "newHere": [
-        "Like poles repel and unlike poles attract.",
+        "Like poles repel and unlike poles attract. Press Space to flip your rover's pole.",
         "The pull gets weaker the further away you are.",
         "An electromagnet works only while its current is on."
       ],
@@ -203,8 +203,8 @@
       { "levelId": "crash-site", "name": "Landing brakes", "built": true, "pickupLine": "On the Ring, grip gave you up to {grip} N of sideways force. These brakes use friction too: they stop the ship on the runway." },
       { "levelId": "geyser-canyon", "name": "Thruster", "built": true, "pickupLine": "Each vent gave you {impulse} N·s of push. A thruster throws gas back, and the ship gains equal momentum forward." },
       { "levelId": "crater-field", "name": "Lift engine", "built": true, "pickupLine": "In the Heavy Cave your weight is {weight} N, but your mass is still {mass} kg. To lift off, this engine must push harder than the ship's weight." },
-      { "levelId": "the-crossing", "name": "Splashdown floats", "built": false, "pickupLine": "The river pushed up on you with {upthrust} N. On Earth, the capsule lands in the sea and floats for the same reason." },
-      { "levelId": "iron-ridge", "name": "Docking clamps", "built": false, "pickupLine": "You switched attract and repel to ride the pylons. These clamps are electromagnets: current on, they hold; current off, they let go." }
+      { "levelId": "the-crossing", "name": "Splashdown floats", "built": true, "pickupLine": "The river pushed up on you with {upthrust} N. On Earth, the capsule lands in the sea and floats for the same reason." },
+      { "levelId": "iron-ridge", "name": "Docking clamps", "built": true, "pickupLine": "You switched attract and repel to ride the pylons. These clamps are electromagnets: current on, they hold; current off, they let go." }
     ]
   },
   "tryThis": {
