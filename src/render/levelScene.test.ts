@@ -163,7 +163,7 @@ describe('level scene', () => {
     view.scene.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.LineSegments) meshes++;
     });
-    expect(meshes).toBeLessThan(250);
+    expect(meshes).toBeLessThan(300); // was 250 before the new rover parts (RP): one rover is about 150 meshes now
     expect(levelsConfig.arrows.maxLengthM).toBe(3);
   });
 

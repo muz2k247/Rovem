@@ -6,6 +6,10 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Changed (RP: rover parts swap; 2026-10-23)
+- The rover is built from the nine new parts in `src/render/roverParts.ts`; `createRoverModel` keeps its interface and the wheel mounts at (±0.54, 0.42, ±(0.85 − width/2)). Each chassis now carries its own deck, mast, dish, headlight and rocker arms (`createDeck` and the rocker loop are gone). Wheel widths are now 0.26 / 0.30 / 0.32 m. Left wheels are turned half a turn inside an unturned spin group, so spinning about z still means the same on both sides.
+- Tests that looked for old part names now find parts by geometry and colour (`roverModel`, `driveScene`, `garageScene`); the wheel-width check allows a hub nut or spindle up to 3 cm proud of the 1.7 m footprint; the level scene draw-object cap went from 250 to 300; the garage camera sphere from 1.4 m to 1.36 m (`garageScene.ts`).
+
 ### Added (Showcase R7: The Crossing and Iron Ridge; 2026-10-23)
 - **The Crossing reshaped** (`the-crossing.json`): lakebed, a 0.3 m ford, mud banks, a vent before the river, one fork (deep ford or the long bridge), the slope out; five stretches, a Scavenger (Light + Smooth + Large on the bridge), par 110 s.
 - **Iron Ridge** (`iron-ridge.json`, replaces `polar-pass.json`): the v4 pylons on open ground plus a pylon at a bend, boulders, rock faces round the gate, a kicker launcher, one fork (magnet line or switchback road) and an icy ridge only the pylons carry every build up; five stretches, a Scavenger (Heavy + Smooth + Medium on the switchback), par 110 s.

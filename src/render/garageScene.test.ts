@@ -96,12 +96,12 @@ describe('garage scene', () => {
   it('a new look swaps the model for the new parts', () => {
     const view = createGarageScene(std, L, W);
     view.setLook({ ...std, motor: 'large' }, 'motor');
-    let fins = 0;
-    view.model.parts.motor.traverse((o) => o.name === 'fin' && fins++);
-    expect(fins).toBe(6);
+    let finPlates = 0; // the Large motor has six heat-sink plates (boxes 0.02 m across and 0.22 m tall)
+    view.model.parts.motor.traverse((o) => o instanceof THREE.Mesh && o.geometry instanceof THREE.BoxGeometry && o.geometry.parameters.depth === 0.02 && o.geometry.parameters.height === 0.22 && finPlates++);
+    expect(finPlates).toBe(6);
     // and only one rover is in the scene
     let rovers = 0;
-    view.scene.traverse((o) => o.name === 'deck' && rovers++);
+    view.scene.traverse((o) => o.name === 'chassis' && rovers++);
     expect(rovers).toBe(1);
   });
 

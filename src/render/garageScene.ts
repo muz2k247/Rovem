@@ -15,7 +15,7 @@ const DROP_M = 0.5;
 const START_SCALE = 0.6;
 const CAMERA_FOV_DEG = 32;
 /** The rover seen from the camera's side: a sphere around it that holds every part at every turntable angle. */
-const ROVER_RADIUS_M = 1.4;
+const ROVER_RADIUS_M = 1.36;
 /** How much of the narrower side of the canvas that sphere takes. */
 const FILL = 0.95;
 const AIM = new THREE.Vector3(0, 0.62, 0);

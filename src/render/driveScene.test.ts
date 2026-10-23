@@ -86,16 +86,26 @@ describe('wheel looks', () => {
   });
 
   it('the three wheel types are built differently', () => {
-    const count = (style: WheelStyle, name: string) => names(build(style).root).filter((n) => n === name).length;
-    expect([count('smooth', 'hub'), count('smooth', 'tread'), count('smooth', 'spike')]).toEqual([4, 0, 0]);
-    expect([count('all-terrain', 'hub'), count('all-terrain', 'tread'), count('all-terrain', 'spike')]).toEqual([0, 40, 0]);
-    expect([count('spiked', 'hub'), count('spiked', 'tread'), count('spiked', 'spike')]).toEqual([0, 0, 64]);
+    // The parts are unnamed meshes (roverParts.ts): smooth has slotted discs, all-terrain 14 tread lugs a wheel (boxes 0.07 m long), spiked 18 cone studs a wheel.
+    const count = (style: WheelStyle, test: (m: THREE.Mesh) => boolean) => {
+      let n = 0;
+      for (const w of build(style).wheels) w.traverse((o) => o instanceof THREE.Mesh && test(o) && n++);
+      return n;
+    };
+    const spike = (m: THREE.Mesh) => m.geometry instanceof THREE.ConeGeometry;
+    const lug = (m: THREE.Mesh) => m.geometry instanceof THREE.BoxGeometry && m.geometry.parameters.width === 0.07;
+    const slot = (m: THREE.Mesh) => m.geometry instanceof THREE.BoxGeometry && m.geometry.parameters.width === 0.02;
+    expect([count('smooth', slot), count('smooth', lug), count('smooth', spike)]).toEqual([24, 0, 0]);
+    expect([count('all-terrain', slot), count('all-terrain', lug), count('all-terrain', spike)]).toEqual([0, 56, 0]);
+    expect([count('spiked', slot), count('spiked', lug), count('spiked', spike)]).toEqual([0, 0, 72]);
   });
 
   it('every look keeps the model as wide as the footprint (1.7 m)', () => {
     for (const style of ['smooth', 'all-terrain', 'spiked'] as const) {
       const size = new THREE.Box3().setFromObject(build(style).root).getSize(new THREE.Vector3());
-      expect(size.z).toBeCloseTo(W, 6);
+      // The wheel faces sit at ±0.85 m; a hub nut or spindle stands up to 3 cm proud of them (roverParts.ts).
+      expect(size.z).toBeGreaterThanOrEqual(W - 1e-6);
+      expect(size.z).toBeLessThanOrEqual(W + 0.07);
     }
   });
 });

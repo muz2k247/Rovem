@@ -6,6 +6,7 @@ import {
   createRoverModel,
   motorStyleFor,
   roverLookFor,
+  STARTING_LOOK,
   wheelStyleFor,
   wheelTurnRad,
   MAX_WHEEL_TURN_PER_FRAME_RAD,
@@ -51,13 +52,25 @@ describe('part ids → looks', () => {
   });
 });
 
+// The parts are unnamed meshes now (roverParts.ts), so these tests find them by what they are made of.
+const COLOUR = { solar: 0x15254d, dish: 0xd49b42, headlight: 0xfff6cf };
+const meshes = (root: THREE.Object3D) => {
+  const found: THREE.Mesh[] = [];
+  root.traverse((o) => o instanceof THREE.Mesh && found.push(o));
+  return found;
+};
+const withColour = (root: THREE.Object3D, hex: number) => meshes(root).filter((m) => (m.material as THREE.MeshStandardMaterial).color.getHex() === hex);
+const tubes = (root: THREE.Object3D) => meshes(root).filter((m) => m.geometry instanceof THREE.CylinderGeometry && m.geometry.parameters.radiusTop <= 0.02);
+
 describe('the footprint does not change (1.7 m wide, 2 m long)', () => {
   it.each(CHASSIS.flatMap((c) => WHEELS.flatMap((w) => MOTORS.map((m) => [c, w, m] as const))))(
     '%s / %s / %s is 1.7 m wide and inside the 2 m length',
     (c, w, m) => {
       const root = createRoverModel(L, W, look(c, w, m)).root;
       const box = new THREE.Box3().setFromObject(root);
-      expect(box.max.z - box.min.z).toBeCloseTo(W, 6);
+      // The wheel faces sit at ±0.85 m; a hub nut or spindle stands up to 3 cm proud of them (roverParts.ts), so the width is 1.7 m plus that.
+      expect(box.max.z - box.min.z).toBeGreaterThanOrEqual(W - 1e-6);
+      expect(box.max.z - box.min.z).toBeLessThanOrEqual(W + 0.07);
       expect(box.max.x).toBeLessThanOrEqual(1e-6); // the origin is the rover's front
       expect(box.min.x).toBeGreaterThanOrEqual(-L - 1e-6);
     },
@@ -66,74 +79,102 @@ describe('the footprint does not change (1.7 m wide, 2 m long)', () => {
     const box = new THREE.Box3().setFromObject(createRoverModel(L, W, look('standard', 'all-terrain', 'medium')).root);
     expect(Math.abs(box.min.y)).toBeLessThan(0.03); // the tread blocks stand a hair below the tyre
   });
+  it('the wheel mounts are at (±0.54, 0.42, ±(0.85 − width/2))', () => {
+    for (const [wheel, width] of [['smooth', 0.26], ['all-terrain', 0.3], ['spiked', 0.32]] as const) {
+      const m = createRoverModel(L, W, look('standard', wheel, 'medium'));
+      for (const mount of m.parts.wheelMounts) {
+        expect(Math.abs(mount.position.z)).toBeCloseTo(0.85 - width / 2, 9);
+        expect(Math.abs(mount.position.x)).toBeCloseTo(0.54, 9);
+        expect(mount.position.y).toBeCloseTo(0.42, 9);
+      }
+    }
+  });
 });
 
 describe('the three bodies look different', () => {
-  const model = (c: ChassisStyle) => createRoverModel(L, W, look(c, 'all-terrain', 'medium'));
-  const part = (c: ChassisStyle) => model(c).parts.chassis;
+  const part = (c: ChassisStyle) => createRoverModel(L, W, look(c, 'all-terrain', 'medium')).parts.chassis;
 
-  it('Light is an open frame of tubes and struts, with no body plates or rivets', () => {
-    const p = part('light');
-    expect(named(p, 'tube').length).toBeGreaterThanOrEqual(8);
-    expect(named(p, 'strut').length).toBeGreaterThanOrEqual(4);
-    expect(named(p, 'shell')).toHaveLength(0);
-    expect(named(p, 'rivet')).toHaveLength(0);
+  it('Light is an open frame of thin tubes (a spaceframe), Standard and Heavy are solid hulls', () => {
+    expect(tubes(part('light')).length).toBeGreaterThanOrEqual(16);
+    expect(tubes(part('standard')).length).toBeLessThan(tubes(part('light')).length / 2);
+    expect(tubes(part('heavy')).length).toBeLessThan(tubes(part('light')).length / 2);
   });
-  it('Standard is a plated body: a shell with side plates, and no tubes or rivets', () => {
-    const p = part('standard');
-    expect(named(p, 'shell')).toHaveLength(1);
-    expect(named(p, 'plate').length).toBeGreaterThanOrEqual(2);
-    expect(named(p, 'tube')).toHaveLength(0);
-    expect(named(p, 'rivet')).toHaveLength(0);
+  it('Heavy has four floodlights; the others have two lights', () => {
+    expect(withColour(part('light'), COLOUR.headlight)).toHaveLength(2);
+    expect(withColour(part('standard'), COLOUR.headlight)).toHaveLength(2);
+    expect(withColour(part('heavy'), COLOUR.headlight)).toHaveLength(4);
   });
-  it('Heavy is armoured: a shell, big side plates, rivets and a bumper', () => {
-    const p = part('heavy');
-    expect(named(p, 'shell')).toHaveLength(1);
-    expect(named(p, 'plate').length).toBeGreaterThanOrEqual(4);
-    expect(named(p, 'rivet').length).toBeGreaterThanOrEqual(8);
-    expect(named(p, 'bumper')).toHaveLength(1);
-    expect(named(part('standard'), 'bumper')).toHaveLength(0);
-  });
-  it('the three use different colours (a body material each)', () => {
-    const colour = (c: ChassisStyle) => {
-      const mesh = named(part(c), c === 'light' ? 'tube' : 'shell')[0] as THREE.Mesh;
-      return (mesh.material as THREE.MeshStandardMaterial).color.getHex();
-    };
-    expect(new Set(CHASSIS.map(colour)).size).toBe(3);
+  it('the biggest box in the body grows Light < Standard < Heavy', () => {
+    const biggest = (c: ChassisStyle) =>
+      Math.max(
+        ...meshes(part(c))
+          .filter((m) => m.geometry instanceof THREE.BoxGeometry)
+          .map((m) => {
+            const s = size(m);
+            return s.x * s.y * s.z;
+          }),
+      );
+    expect(biggest('light')).toBeLessThan(biggest('standard'));
+    expect(biggest('standard')).toBeLessThan(biggest('heavy'));
   });
 });
 
-describe('the three motors differ clearly in size and fins', () => {
+describe('the three motors differ clearly in size and parts', () => {
   const pod = (m: MotorStyle) => createRoverModel(L, W, look('standard', 'all-terrain', m)).parts.motor;
-  it('housing volume grows Small < Medium < Large', () => {
+  it('the motor block grows Small < Medium < Large', () => {
     const volume = (m: MotorStyle) => {
-      const s = size(named(pod(m), 'housing')[0]!);
+      const s = size(pod(m));
       return s.x * s.y * s.z;
     };
     expect(volume('small')).toBeLessThan(volume('medium'));
     expect(volume('medium')).toBeLessThan(volume('large'));
     expect(volume('large') / volume('small')).toBeGreaterThan(1.8);
   });
-  it('cooling fins: 3, 4 and 6', () => {
-    expect(MOTORS.map((m) => named(pod(m), 'fin').length)).toEqual([3, 4, 6]);
+  it('the cooling parts grow: more meshes in Medium than Small, and in Large than Medium', () => {
+    const [s, m, l] = MOTORS.map((x) => meshCount(pod(x)));
+    expect(s).toBeLessThan(m!);
+    expect(m).toBeLessThan(l!);
   });
 });
 
 describe('shared details on every rover', () => {
-  const model = createRoverModel(L, W, look('standard', 'all-terrain', 'medium'));
-  it('has a solar panel, a mast with a two-lens camera, an antenna dish, two rocker arms, a headlight', () => {
-    for (const name of ['solarPanel', 'mast', 'dish', 'headlight']) expect(named(model.root, name)).toHaveLength(1);
-    expect(named(model.root, 'lens')).toHaveLength(2);
-    expect(named(model.root, 'rocker')).toHaveLength(2);
-  });
-  it('is the same for all nine part looks', () => {
+  it('has solar cells, a camera with two lenses, a brass dish, two rocker pivots and a headlight, whatever the chassis', () => {
     for (const c of CHASSIS) {
-      for (const m of MOTORS) {
-        const root = createRoverModel(L, W, look(c, 'smooth', m)).root;
-        expect(named(root, 'mast')).toHaveLength(1);
-        expect(named(root, 'rocker')).toHaveLength(2);
-      }
+      const chassis = createRoverModel(L, W, look(c, 'smooth', 'small')).parts.chassis;
+      expect(withColour(chassis, COLOUR.solar).length).toBeGreaterThanOrEqual(1);
+      expect(withColour(chassis, COLOUR.dish).length).toBeGreaterThanOrEqual(1);
+      expect(withColour(chassis, COLOUR.headlight).length).toBeGreaterThanOrEqual(2);
+      const lenses = meshes(chassis).filter((m) => (m.material as THREE.MeshStandardMaterial).color.getHex() === 0x1b1c20 && m.position.y > 0.95 && m.geometry instanceof THREE.CylinderGeometry);
+      expect(lenses).toHaveLength(2);
+      // a rocker arm pivot on each side, 0.52 m out and 0.66 m up
+      const pivots = meshes(chassis).filter((m) => Math.abs(m.position.y - 0.66) < 1e-6 && Math.abs(m.position.x) < 1e-6 && Math.abs(Math.abs(m.position.z) - 0.52) < 0.01);
+      expect(pivots.some((m) => m.position.z > 0)).toBe(true);
+      expect(pivots.some((m) => m.position.z < 0)).toBe(true);
     }
+  });
+  it('the chassis carries its own deck: the model adds no loose deck group', () => {
+    const root = createRoverModel(L, W, look('standard', 'all-terrain', 'medium')).root;
+    expect(named(root, 'deck')).toHaveLength(0);
+    expect(named(root, 'chassis')).toHaveLength(1);
+    expect(named(root, 'motor')).toHaveLength(1);
+  });
+  it('has fewer than 6000 triangles for any of the 27 builds', () => {
+    const tris = (o: THREE.Object3D) => meshes(o).reduce((n, m) => n + (m.geometry.index ? m.geometry.index.count : m.geometry.getAttribute('position').count) / 3, 0);
+    for (const c of CHASSIS) for (const w of WHEELS) for (const m of MOTORS) expect(tris(createRoverModel(L, W, look(c, w, m)).root)).toBeLessThan(6000);
+  });
+  it('every rover makes its own materials, so re-colouring one never changes another', () => {
+    const a = new Set(meshes(createRoverModel(L, W, STARTING_LOOK).root).map((m) => m.material));
+    const b = new Set(meshes(createRoverModel(L, W, STARTING_LOOK).root).map((m) => m.material));
+    expect([...a].filter((x) => b.has(x))).toHaveLength(0);
+  });
+  it('the left wheels are turned half a turn so the outer face stays outward; the spin groups are not', () => {
+    const m = createRoverModel(L, W, look('standard', 'smooth', 'medium'));
+    m.parts.wheelMounts.forEach((mount, i) => {
+      const spin = m.wheels[i]!;
+      expect(mount.children).toContain(spin);
+      expect(spin.rotation.y).toBe(0);
+      expect(spin.children[0]!.rotation.y).toBeCloseTo(mount.position.z < 0 ? Math.PI : 0, 12);
+    });
   });
 });
 
