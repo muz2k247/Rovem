@@ -6,6 +6,9 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs (Polish round planned; 2026-10-26)
+- `docs/POLISH_PLAN.md`: k._muz's playtest feedback, the round's decisions (DECISIONS 2026-10-26), the sessions and the R9 audit prompt. ROADMAP: row R9; OI-53 points to the playtest list.
+
 ## [showcase-0.1.0] — 2026-10-23
 
 The Showcase round: S0, R1–R8 (R8 is the launch ending; k._muz's playtest list is still open, ROADMAP OI-53).
