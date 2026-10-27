@@ -3,15 +3,31 @@
   "name": "Crash Site",
   "placeholder": true,
   "atmosphere": "clear-dusk",
-  "parS": 105,
+  "parS": 170,
   "start": {
     "xM": 0,
     "zM": 0,
     "headingDeg": 0
   },
   "scavenger": {
-    "build": { "chassisId": "chassis-heavy", "wheelsId": "wheels-smooth", "motorId": "motor-medium" },
-    "roads": ["start", "bend-1", "lead", "f1-dunes", "m1", "b2", "ring", "exit", "climb"],
+    "build": {
+      "chassisId": "chassis-heavy",
+      "wheelsId": "wheels-smooth",
+      "motorId": "motor-medium"
+    },
+    "roads": [
+      "start",
+      "bend-1",
+      "lead-1",
+      "f2-gully",
+      "lead-2",
+      "f1-dunes",
+      "m1",
+      "b2",
+      "ring",
+      "exit",
+      "climb"
+    ],
     "topSpeedFactor": 0.945,
     "startDelayS": 0
   },
@@ -49,12 +65,101 @@
       ]
     },
     {
-      "id": "lead",
+      "id": "lead-1",
       "after": "bend-1",
       "segments": [
         {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 20
+        },
+        {
           "kind": "straight",
-          "lengthM": 200
+          "lengthM": 86.83261901814636
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -40
+        },
+        {
+          "kind": "straight",
+          "lengthM": 86.83261901814636
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 20
+        }
+      ]
+    },
+    {
+      "id": "f2-gully",
+      "name": "Gully",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 220
+        }
+      ]
+    },
+    {
+      "id": "f2-bypass",
+      "name": "Bypass",
+      "after": "lead-1",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 62,
+          "angleDeg": 20
+        },
+        {
+          "kind": "straight",
+          "lengthM": 71.92724592334125
+        },
+        {
+          "kind": "arc",
+          "radiusM": 62,
+          "angleDeg": -40
+        },
+        {
+          "kind": "straight",
+          "lengthM": 71.92724592334125
+        },
+        {
+          "kind": "arc",
+          "radiusM": 62,
+          "angleDeg": 20
+        }
+      ]
+    },
+    {
+      "id": "lead-2",
+      "after": "f2-bypass",
+      "segments": [
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -20
+        },
+        {
+          "kind": "straight",
+          "lengthM": 76.19084129338724
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 40
+        },
+        {
+          "kind": "straight",
+          "lengthM": 76.19084129338724
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -20
         }
       ]
     },
@@ -63,7 +168,7 @@
       "name": "Dunes",
       "surfaceId": "sand",
       "runoffSurfaceId": "sand",
-      "after": "lead",
+      "after": "lead-2",
       "segments": [
         {
           "kind": "straight",
@@ -75,8 +180,15 @@
       "id": "f1-ridge",
       "name": "Ridge",
       "surfaceId": "asphalt",
-      "after": "lead",
-      "edges": [{ "side": "left", "fromM": 10, "toM": 263, "style": "cliff" }],
+      "after": "lead-2",
+      "edges": [
+        {
+          "side": "left",
+          "fromM": 10,
+          "toM": 263,
+          "style": "cliff"
+        }
+      ],
       "segments": [
         {
           "kind": "arc",
@@ -108,8 +220,27 @@
       "after": "f1-ridge",
       "segments": [
         {
+          "kind": "arc",
+          "radiusM": 150,
+          "angleDeg": -15
+        },
+        {
           "kind": "straight",
-          "lengthM": 140
+          "lengthM": 54.20114572397399
+        },
+        {
+          "kind": "arc",
+          "radiusM": 150,
+          "angleDeg": 30
+        },
+        {
+          "kind": "straight",
+          "lengthM": 54.20114572397399
+        },
+        {
+          "kind": "arc",
+          "radiusM": 150,
+          "angleDeg": -15
         }
       ]
     },
@@ -151,11 +282,17 @@
     {
       "id": "climb",
       "after": "exit",
-      "edges": [{ "side": "both", "fromM": 30, "style": "cliff" }],
+      "edges": [
+        {
+          "side": "both",
+          "fromM": 30,
+          "style": "cliff"
+        }
+      ],
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 270
+          "lengthM": 390
         }
       ]
     }
@@ -163,7 +300,9 @@
   "route": [
     "start",
     "bend-1",
-    "lead",
+    "lead-1",
+    "f2-bypass",
+    "lead-2",
     "f1-ridge",
     "m1",
     "b2",
@@ -179,34 +318,34 @@
       "heightM": 4
     },
     {
-      "xM": 480.27,
-      "zM": 189.36,
+      "xM": 939.9,
+      "zM": 575.03,
       "radiusM": 70,
       "heightM": 3.5
     },
     {
-      "xM": 526.23,
-      "zM": 227.93,
+      "xM": 985.86,
+      "zM": 613.6,
       "radiusM": 70,
       "heightM": 3.5
     },
     {
-      "xM": 572.19,
-      "zM": 266.5,
+      "xM": 1031.82,
+      "zM": 652.17,
       "radiusM": 70,
       "heightM": 3.5
     },
     {
-      "xM": 618.16,
-      "zM": 305.06,
+      "xM": 1077.79,
+      "zM": 690.73,
       "radiusM": 70,
       "heightM": 3.5
     }
   ],
   "craters": [
     {
-      "xM": 807.47,
-      "zM": 471.98,
+      "xM": 1359.02,
+      "zM": 934.79,
       "floorRadiusM": 20,
       "depthM": 5,
       "wallAngleDeg": 60,
@@ -216,8 +355,8 @@
   ],
   "ridges": [
     {
-      "xM": 749.97,
-      "zM": 446.98,
+      "xM": 1301.52,
+      "zM": 909.79,
       "headingDeg": 180,
       "riseAngleDeg": 4,
       "riseLengthM": 90,
@@ -229,8 +368,8 @@
   "barriers": [
     {
       "id": "boulder-1",
-      "xM": 826.47,
-      "zM": 439.07,
+      "xM": 1378.02,
+      "zM": 901.88,
       "headingDeg": 30,
       "lengthM": 2.4,
       "widthM": 2.4,
@@ -238,8 +377,8 @@
     },
     {
       "id": "boulder-2",
-      "xM": 829.85,
-      "zM": 456.88,
+      "xM": 1381.4,
+      "zM": 919.69,
       "headingDeg": 56,
       "lengthM": 2.4,
       "widthM": 2.4,
@@ -247,8 +386,8 @@
     },
     {
       "id": "boulder-3",
-      "xM": 825.53,
-      "zM": 492.05,
+      "xM": 1377.08,
+      "zM": 954.86,
       "headingDeg": 138,
       "lengthM": 2.4,
       "widthM": 2.4,
@@ -256,8 +395,8 @@
     },
     {
       "id": "boulder-4",
-      "xM": 795.85,
-      "zM": 496.91,
+      "xM": 1347.4,
+      "zM": 959.72,
       "headingDeg": 205,
       "lengthM": 2.4,
       "widthM": 2.4,
@@ -265,8 +404,8 @@
     },
     {
       "id": "boulder-5",
-      "xM": 771.76,
-      "zM": 484.98,
+      "xM": 1323.31,
+      "zM": 947.79,
       "headingDeg": 250,
       "lengthM": 2.4,
       "widthM": 2.4,
@@ -276,35 +415,95 @@
   "checkpoints": [
     {
       "id": "cp-1",
-      "xM": 422.82,
-      "zM": 141.15,
-      "headingDeg": 40
+      "xM": 321.29,
+      "zM": 66.11,
+      "headingDeg": 60
     },
     {
       "id": "cp-2",
-      "xM": 813.11,
-      "zM": 439.98,
-      "headingDeg": 10
+      "xM": 395.25,
+      "zM": 171.38,
+      "headingDeg": 32.35
     },
     {
       "id": "cp-3",
-      "xM": 839.95,
-      "zM": 470.85,
-      "headingDeg": 88
+      "xM": 508.59,
+      "zM": 216.08,
+      "headingDeg": 27.8
     },
     {
       "id": "cp-4",
-      "xM": 815.88,
-      "zM": 503.37,
+      "xM": 748.42,
+      "zM": 395.29,
+      "headingDeg": 20
+    },
+    {
+      "id": "cp-5",
+      "xM": 894.08,
+      "zM": 533.44,
+      "headingDeg": 52.61
+    },
+    {
+      "id": "cp-6",
+      "xM": 1160.24,
+      "zM": 746.25,
+      "headingDeg": 25
+    },
+    {
+      "id": "cp-7",
+      "xM": 1286.39,
+      "zM": 861.75,
+      "headingDeg": 51.64
+    },
+    {
+      "id": "cp-8",
+      "xM": 1364.66,
+      "zM": 902.79,
+      "headingDeg": 10
+    },
+    {
+      "id": "cp-9",
+      "xM": 1391.5,
+      "zM": 933.66,
+      "headingDeg": 88
+    },
+    {
+      "id": "cp-10",
+      "xM": 1367.43,
+      "zM": 966.18,
       "headingDeg": 165
+    },
+    {
+      "id": "cp-11",
+      "xM": 1151.52,
+      "zM": 909.79,
+      "headingDeg": 180
     }
   ],
   "forks": [
     {
+      "id": "fork-2",
+      "line": {
+        "xM": 526.23,
+        "zM": 227.93,
+        "headingDeg": 40,
+        "widthM": 12
+      },
+      "roadIds": [
+        "f2-gully",
+        "f2-bypass"
+      ],
+      "mergeAt": {
+        "xM": 694.76,
+        "zM": 369.34,
+        "radiusM": 8
+      }
+    },
+    {
       "id": "fork-1",
       "line": {
-        "xM": 449.63,
-        "zM": 163.65,
+        "xM": 909.25,
+        "zM": 549.32,
         "headingDeg": 40,
         "widthM": 12
       },
@@ -313,8 +512,8 @@
         "f1-ridge"
       ],
       "mergeAt": {
-        "xM": 648.8,
-        "zM": 330.78,
+        "xM": 1108.43,
+        "zM": 716.45,
         "radiusM": 8
       }
     }
@@ -327,26 +526,26 @@
     },
     {
       "id": "s-ring",
-      "xM": 833.71,
-      "zM": 475.67
+      "xM": 1385.26,
+      "zM": 938.48
     },
     {
       "id": "s-climb",
-      "xM": 599.97,
-      "zM": 449.98
+      "xM": 1151.52,
+      "zM": 912.79
     }
   ],
   "signs": [
     {
       "id": "sign-ring-in",
-      "xM": 807.47,
-      "zM": 446.38,
+      "xM": 1359.02,
+      "zM": 909.19,
       "radiusM": 25
     },
     {
       "id": "sign-ring-out",
-      "xM": 807.47,
-      "zM": 432.58,
+      "xM": 1359.02,
+      "zM": 895.39,
       "radiusM": 40
     }
   ],
@@ -383,47 +582,446 @@
       "textId": "brake",
       "trigger": {
         "kind": "zone",
-        "xM": 762.42,
-        "zM": 425.59,
+        "xM": 1313.97,
+        "zM": 888.4,
         "radiusM": 12
       },
       "doneWhen": "brake"
     }
   ],
   "finish": {
-    "xM": 494.97,
-    "zM": 446.98,
-    "radiusM": 6
+    "xM": 926.52,
+    "zM": 909.79,
+    "radiusM": 6,
+    "headingDeg": 180
   },
   "stretches": [
     {
-      "id": "plain",
-      "name": "The Plain",
-      "cleanS": 33.4
+      "id": "slick",
+      "name": "The Slick",
+      "cleanS": 21.53
+    },
+    {
+      "id": "gully",
+      "name": "The Gully",
+      "startsAfterRoad": "bend-1",
+      "cleanS": 33.34
     },
     {
       "id": "dunes",
       "name": "The Dunes",
-      "startsAfterRoad": "lead",
-      "cleanS": 16.89
+      "startsAfterRoad": "f2-bypass",
+      "cleanS": 34.47
     },
     {
-      "id": "run-up",
-      "name": "The Run-up",
+      "id": "shade",
+      "name": "The Shade",
       "startsAfterRoad": "f1-ridge",
-      "cleanS": 11.83
+      "cleanS": 22.61
     },
     {
       "id": "ring",
       "name": "The Ring",
       "startsAfterRoad": "b2",
-      "cleanS": 12.97
+      "cleanS": 12.98
     },
     {
       "id": "climb",
       "name": "The Climb",
       "startsAfterRoad": "exit",
-      "cleanS": 15.73
+      "cleanS": 22.47
+    }
+  ],
+  "surfaceZones": [
+    {
+      "surfaceId": "oil",
+      "polygon": [
+        {
+          "xM": 20,
+          "zM": 10
+        },
+        {
+          "xM": 60,
+          "zM": 10
+        },
+        {
+          "xM": 60,
+          "zM": -9
+        },
+        {
+          "xM": 24,
+          "zM": -9
+        }
+      ]
+    },
+    {
+      "surfaceId": "oil",
+      "polygon": [
+        {
+          "xM": 199.97,
+          "zM": 9
+        },
+        {
+          "xM": 204.7,
+          "zM": 9.08
+        },
+        {
+          "xM": 209.39,
+          "zM": 9.31
+        },
+        {
+          "xM": 214.08,
+          "zM": 9.7
+        },
+        {
+          "xM": 218.74,
+          "zM": 10.25
+        },
+        {
+          "xM": 223.39,
+          "zM": 10.95
+        },
+        {
+          "xM": 228.01,
+          "zM": 11.81
+        },
+        {
+          "xM": 232.6,
+          "zM": 12.82
+        },
+        {
+          "xM": 236.76,
+          "zM": -4.69
+        },
+        {
+          "xM": 231.59,
+          "zM": -5.83
+        },
+        {
+          "xM": 226.38,
+          "zM": -6.8
+        },
+        {
+          "xM": 221.14,
+          "zM": -7.59
+        },
+        {
+          "xM": 215.87,
+          "zM": -8.21
+        },
+        {
+          "xM": 210.59,
+          "zM": -8.65
+        },
+        {
+          "xM": 205.3,
+          "zM": -8.91
+        },
+        {
+          "xM": 200.03,
+          "zM": -9
+        }
+      ]
+    },
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 554.92,
+          "zM": 263.75
+        },
+        {
+          "xM": 557.22,
+          "zM": 265.68
+        },
+        {
+          "xM": 559.51,
+          "zM": 267.61
+        },
+        {
+          "xM": 561.81,
+          "zM": 269.53
+        },
+        {
+          "xM": 564.11,
+          "zM": 271.46
+        },
+        {
+          "xM": 575.68,
+          "zM": 257.67
+        },
+        {
+          "xM": 573.38,
+          "zM": 255.75
+        },
+        {
+          "xM": 571.08,
+          "zM": 253.82
+        },
+        {
+          "xM": 568.79,
+          "zM": 251.89
+        },
+        {
+          "xM": 566.49,
+          "zM": 249.96
+        }
+      ]
+    },
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 600.88,
+          "zM": 302.32
+        },
+        {
+          "xM": 603.18,
+          "zM": 304.25
+        },
+        {
+          "xM": 605.48,
+          "zM": 306.17
+        },
+        {
+          "xM": 607.78,
+          "zM": 308.1
+        },
+        {
+          "xM": 610.07,
+          "zM": 310.03
+        },
+        {
+          "xM": 621.64,
+          "zM": 296.24
+        },
+        {
+          "xM": 619.35,
+          "zM": 294.31
+        },
+        {
+          "xM": 617.05,
+          "zM": 292.38
+        },
+        {
+          "xM": 614.75,
+          "zM": 290.46
+        },
+        {
+          "xM": 612.45,
+          "zM": 288.53
+        }
+      ]
+    },
+    {
+      "surfaceId": "mud",
+      "polygon": [
+        {
+          "xM": 646.84,
+          "zM": 340.88
+        },
+        {
+          "xM": 649.14,
+          "zM": 342.81
+        },
+        {
+          "xM": 651.44,
+          "zM": 344.74
+        },
+        {
+          "xM": 653.74,
+          "zM": 346.67
+        },
+        {
+          "xM": 656.04,
+          "zM": 348.6
+        },
+        {
+          "xM": 667.61,
+          "zM": 334.81
+        },
+        {
+          "xM": 665.31,
+          "zM": 332.88
+        },
+        {
+          "xM": 663.01,
+          "zM": 330.95
+        },
+        {
+          "xM": 660.71,
+          "zM": 329.02
+        },
+        {
+          "xM": 658.41,
+          "zM": 327.1
+        }
+      ]
+    },
+    {
+      "surfaceId": "ice",
+      "polygon": [
+        {
+          "xM": 1188.07,
+          "zM": 769.17
+        },
+        {
+          "xM": 1191.39,
+          "zM": 770.81
+        },
+        {
+          "xM": 1194.68,
+          "zM": 772.55
+        },
+        {
+          "xM": 1197.91,
+          "zM": 774.36
+        },
+        {
+          "xM": 1201.09,
+          "zM": 776.27
+        },
+        {
+          "xM": 1204.23,
+          "zM": 778.25
+        },
+        {
+          "xM": 1207.31,
+          "zM": 780.32
+        },
+        {
+          "xM": 1210.33,
+          "zM": 782.47
+        },
+        {
+          "xM": 1213.3,
+          "zM": 784.7
+        },
+        {
+          "xM": 1216.21,
+          "zM": 787
+        },
+        {
+          "xM": 1219.06,
+          "zM": 789.38
+        },
+        {
+          "xM": 1221.84,
+          "zM": 791.84
+        },
+        {
+          "xM": 1224.55,
+          "zM": 794.36
+        },
+        {
+          "xM": 1227.2,
+          "zM": 796.96
+        },
+        {
+          "xM": 1229.78,
+          "zM": 799.63
+        },
+        {
+          "xM": 1232.29,
+          "zM": 802.36
+        },
+        {
+          "xM": 1234.73,
+          "zM": 805.16
+        },
+        {
+          "xM": 1237.09,
+          "zM": 808.02
+        },
+        {
+          "xM": 1239.38,
+          "zM": 810.94
+        },
+        {
+          "xM": 1241.59,
+          "zM": 813.93
+        },
+        {
+          "xM": 1256.19,
+          "zM": 803.4
+        },
+        {
+          "xM": 1253.7,
+          "zM": 800.04
+        },
+        {
+          "xM": 1251.12,
+          "zM": 796.75
+        },
+        {
+          "xM": 1248.46,
+          "zM": 793.52
+        },
+        {
+          "xM": 1245.71,
+          "zM": 790.36
+        },
+        {
+          "xM": 1242.88,
+          "zM": 787.28
+        },
+        {
+          "xM": 1239.97,
+          "zM": 784.27
+        },
+        {
+          "xM": 1236.99,
+          "zM": 781.35
+        },
+        {
+          "xM": 1233.92,
+          "zM": 778.5
+        },
+        {
+          "xM": 1230.78,
+          "zM": 775.73
+        },
+        {
+          "xM": 1227.57,
+          "zM": 773.04
+        },
+        {
+          "xM": 1224.3,
+          "zM": 770.45
+        },
+        {
+          "xM": 1220.95,
+          "zM": 767.93
+        },
+        {
+          "xM": 1217.54,
+          "zM": 765.51
+        },
+        {
+          "xM": 1214.06,
+          "zM": 763.18
+        },
+        {
+          "xM": 1210.53,
+          "zM": 760.94
+        },
+        {
+          "xM": 1206.94,
+          "zM": 758.79
+        },
+        {
+          "xM": 1203.29,
+          "zM": 756.74
+        },
+        {
+          "xM": 1199.59,
+          "zM": 754.79
+        },
+        {
+          "xM": 1195.84,
+          "zM": 752.93
+        }
+      ]
     }
   ]
 }

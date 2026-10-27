@@ -23,6 +23,7 @@ import { createWreck, type Wreck } from './wreck.ts';
 import { createScavengerGhost, createSplitGates, type ScavengerGhost } from './scavengerGhost.ts';
 import { createCameraBlend } from './runScene.ts';
 import { createSplashes, createWater, roverRideHeightM, waterBedDropM } from './water.ts';
+import { createDepthPosts, createWake, createWaterLine } from './waterMarks.ts';
 
 // The 3D view of one level (LEVELS_BUILD_PLAN A7, A8): terrain, the edges beyond the road (R6b), water, pylons, signs, arches, the sky and
 // the rover, all placed from the session on the same ground the physics uses. It draws; it never decides what the physics
@@ -123,12 +124,18 @@ export function createLevelScene(session: LevelSession, content: Content, option
   const water = def.water.length > 0 ? createWater(world) : undefined;
   if (water) scene.add(water.group);
   const splashes = water ? createSplashes(scene) : undefined;
+  // The water made readable (R12): depth posts, a wake behind the rover and a water line on its body (the line is added once the rover exists, below).
+  const depthPosts = water ? createDepthPosts(world) : undefined;
+  if (depthPosts) scene.add(depthPosts.group);
+  const wake = water ? createWake(scene) : undefined;
   const pylons = def.pylons.length > 0 ? createPylons(def.pylons) : undefined;
   if (pylons) scene.add(pylons.group);
 
   const { lengthM: roverLengthM, widthM: roverWidthM } = session.world.footprint;
   const model = createRoverModel(roverLengthM, roverWidthM, options.look);
   const rover = model.root;
+  const waterLine = water ? createWaterLine(roverLengthM, roverWidthM) : undefined;
+  if (waterLine) scene.add(waterLine.group);
   rover.rotation.order = 'YZX'; // turn to the heading first, then nose up or down along the slope
   rover.traverse((o) => {
     o.castShadow = quality === 'high';
@@ -233,6 +240,14 @@ export function createLevelScene(session: LevelSession, content: Content, option
       xM: pose.frontXM, yM: rideY + (s.floating ? 0.45 : world.heightM(pose.centreXM, pose.centreZM) - rideY), zM: pose.frontZM,
       speedMps: state.speedMps, inWater, headingRad: state.headingRad,
     });
+    if (waterLine || wake) {
+      const surfaceY = world.heightM(pose.centreXM, pose.centreZM);
+      waterLine?.update({ inWater, xM: pose.centreXM, zM: pose.centreZM, headingRad: state.headingRad, surfaceYM: surfaceY });
+      wake?.update(frameS, {
+        yM: surfaceY, speedMps: state.speedMps, inWater,
+        rearXM: pose.frontXM - Math.cos(state.headingRad) * model.rearAxleBackM, rearZM: pose.frontZM - Math.sin(state.headingRad) * model.rearAxleBackM,
+      });
+    }
     pylons?.update({
       timeS: clockS, roverPole: s.pole, roverXM: pose.centreXM, roverZM: pose.centreZM,
       isOn: (id) => s.pylonOn(id), groundYM: (x, z) => world.heightM(x, z),
@@ -380,10 +395,13 @@ export function createLevelScene(session: LevelSession, content: Content, option
       }
       bursts.dispose();
       splashes?.dispose();
+      depthPosts?.dispose();
+      wake?.dispose();
+      waterLine?.dispose();
       pylons?.dispose();
       arrows.dispose();
       atmosphere.dispose();
-      for (const o of [water?.group, pylons?.group]) if (o) scene.remove(o);
+      for (const o of [water?.group, pylons?.group, depthPosts?.group, waterLine?.group]) if (o) scene.remove(o);
     },
   };
 }

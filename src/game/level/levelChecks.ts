@@ -59,12 +59,21 @@ export interface CheckOptions {
    * rebuilds the level (DECISIONS 2026-10-26 (8): about 150 s).
    */
   holdWMissesAStar?: boolean;
+  /**
+   * The window for the starting build's clean star run, in seconds (exclusive). Default 60 to 150, the v4 and Showcase rule. The levels rebuilt in the Polish round
+   * (R12 onward) say 135 to 160: about 150 s (DECISIONS 2026-10-27 (8)).
+   */
+  starRunWindowS?: [number, number];
+  /** The longest gap between checkpoints on a good drive, in seconds (exclusive). Default 55. The rebuilt levels say 40: a return costs little. */
+  checkpointGapS?: number;
 }
 
 export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
   const { def, world, plans } = loadLevel(id);
   const starRunBeatsScavenger = options.starRunBeatsScavenger ?? true;
   const holdWMissesAStar = options.holdWMissesAStar ?? true;
+  const [starRunMinS, starRunMaxS] = options.starRunWindowS ?? [60, 150];
+  const checkpointGapS = options.checkpointGapS ?? 55;
 
   describe(`level file ${id}`, () => {
     it('is marked placeholder and has a par time', () => {
@@ -121,14 +130,14 @@ export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
       }
     });
 
-    it('the starting build finishes with all 3 samples in 60 to 150 s (A7), and beats the par time', () => {
+    it(`the starting build finishes with all 3 samples in ${starRunMinS} to ${starRunMaxS} s (A7), and beats the par time`, () => {
       // A level with a Scavenger: the third star is to beat it, and the starting build's best drive must manage that.
       const scavenger = createScavengerRun(content, def);
       const r = runPilot({ content, def, plan: plans.stars, ...(scavenger ? { scavenger } : {}) });
       expect(r.finished).toBe(true);
       expect(r.samples.sort()).toEqual(def.samples.map((s) => s.id).sort());
-      expect(r.timeS).toBeGreaterThan(60); // was 75 s before the stops were removed (R1); the Showcase levels are 90–150 s (SHOWCASE_PLAN §5) and are rebuilt later
-      expect(r.timeS).toBeLessThan(150);
+      expect(r.timeS).toBeGreaterThan(starRunMinS); // 60 s was 75 s before the stops were removed (R1); the Showcase levels were 90–150 s (SHOWCASE_PLAN §5)
+      expect(r.timeS).toBeLessThan(starRunMaxS);
       expect(r.starFlags).toEqual([true, true, starRunBeatsScavenger]);
       // The par time follows the A10 rule for this scripted drive: × 1.15, up to the next 5 s (provisional until I1 plays the levels).
       const { factor, roundUpToS } = levelsConfig.par;
@@ -184,10 +193,10 @@ export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
       }
     });
 
-    it('has a checkpoint about every 30 s of a good drive', () => {
+    it(`has a checkpoint at least every ${checkpointGapS} s of a good drive`, () => {
       const r = runPilot({ content, def, plan: plans.safe });
       const times = [0, ...r.session.events.filter((e) => e.kind === 'checkpoint').map((e) => e.timeS), r.timeS];
-      for (let i = 1; i < times.length; i++) expect(times[i]! - times[i - 1]!, `gap ${i}`).toBeLessThan(55);
+      for (let i = 1; i < times.length; i++) expect(times[i]! - times[i - 1]!, `gap ${i}`).toBeLessThan(checkpointGapS);
     });
   });
 }

@@ -969,7 +969,10 @@ export function createLevelSession(options: LevelSessionOptions) {
     // --- events and captions from changes of place and state ---
     const frontSurface = world.surfaceIdAt(front.x, front.z);
     const inWater = world.waterDepthM(centreNow.x, centreNow.z) > 0;
-    if (!inWater && frontSurface !== currentSurfaceId) {
+    // The riverbed counts as sand, so the front wheels reaching the water would read as a change to sand and pop up "Sand" before the water's own
+    // pop-up (R12). Water has its own words, so a front in water is not a change of surface.
+    const frontWet = world.waterDepthM(front.x, front.z) > 0;
+    if (!inWater && !frontWet && frontSurface !== currentSurfaceId) {
       currentSurfaceId = frontSurface;
       if (frontSurface === 'mud' || frontSurface === 'sand' || frontSurface === 'ice' || frontSurface === 'oil') {
         const sp = specs.get(frontSurface)!;
@@ -1267,6 +1270,9 @@ export function createLevelSession(options: LevelSessionOptions) {
   function hudModel(): HudModel {
     const progress = world.progressAt(state.positionXM, state.positionZM);
     const total = def.checkpoints.length;
+    const here = centreOf(state);
+    const wetM = phase === 'driving' ? world.waterDepthM(here.x, here.z) : 0;
+    const hereG = constants.gravityMps2 * world.gravityMultiplierAt(here.x, here.z);
     return {
       speedMps: state.speedMps,
       speedKmh: state.speedMps * 3.6,
@@ -1288,6 +1294,17 @@ export function createLevelSession(options: LevelSessionOptions) {
       }),
       ...(stuckSteps > 0 && stuckKind && !quiet
         ? { stuck: { cause: stuckKind, progress: stuckSteps / stuckSteps_, boosterReady: boosterStepsLeft === 0 && rechargeStepsLeft === 0 && !stuckAtWall, atWall: stuckAtWall } }
+        : {}),
+      ...(wetM > 0
+        ? {
+            water: {
+              depthM: wetM,
+              upthrustN: upthrustN(cfg.water.densityKgPerM3, hereG, cfg.water.roverVolumeM3, cfg.water.submersionHeightM, wetM),
+              weightN: rover.massKg * hereG,
+              maxUpthrustN: cfg.water.densityKgPerM3 * hereG * cfg.water.roverVolumeM3,
+              floating: wasFloating,
+            },
+          }
         : {}),
       ...(splitNow && clockS() < splitUntilS ? { split: splitNow } : {}),
       ...(kickerAlert ? { launcherWarning: kickerAlert } : {}),

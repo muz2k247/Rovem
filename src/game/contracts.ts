@@ -66,6 +66,11 @@ export interface HudModel {
    * checkpoint. `progress` runs from 0 to 1 over the hold; the wheels spin and a ring shows it; the HUD points at Shift when `boosterReady`.
    */
   stuck?: { cause: 'stuck' | 'floated'; progress: number; boosterReady: boolean; atWall: boolean };
+  /**
+   * Present while the rover is in water (R12, DECISIONS 2026-10-26 (6)): the two bars of the meter, upthrust against weight, in newtons, and whether the
+   * upthrust has passed the weight ("You float": no grip, no steering). `maxUpthrustN` is the most the river can push up with the rover fully under (ρ g V).
+   */
+  water?: { depthM: number; upthrustN: number; weightN: number; maxUpthrustN: number; floating: boolean };
   /** A kicker launcher is about to fire from behind, or its bag is in flight: the side of the screen its edge marker shows on (R11). */
   launcherWarning?: 'left' | 'right';
   /** The gap to the Scavenger, shown for a few seconds after a split gate (R4). */

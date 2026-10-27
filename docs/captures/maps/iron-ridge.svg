@@ -112,9 +112,9 @@
 <polygon points="347,36.6 348.9,35.9 348.2,34.1 346.3,34.7" fill="#c0392b" stroke="#7a1d12"/>
 <polygon points="380.2,30.6 382.1,30 381.4,28.1 379.5,28.8" fill="#c0392b" stroke="#7a1d12"/>
 <polygon points="413.4,36.6 415.3,35.9 414.6,34.1 412.7,34.7" fill="#c0392b" stroke="#7a1d12"/>
-<circle cx="1314.6" cy="609.8" r="6" fill="#444"/>
-<line x1="1314.6" y1="609.8" x2="1322.8" y2="615.5" stroke="#444" stroke-width="3"/>
-<text x="1314.6" y="609.8" font-size="13" font-family="sans-serif" fill="#10131a" stroke="#fff" stroke-width="3" paint-order="stroke" >cannon (kicker)</text>
+<circle cx="1309.4" cy="617.3" r="6" fill="#444"/>
+<line x1="1309.4" y1="617.3" x2="1319.3" y2="618.2" stroke="#444" stroke-width="3"/>
+<text x="1309.4" y="617.3" font-size="13" font-family="sans-serif" fill="#10131a" stroke="#fff" stroke-width="3" paint-order="stroke" >cannon (kicker)</text>
 <circle cx="140.2" cy="25.7" r="7" fill="#d63b2b" stroke="#fff" stroke-width="2"/>
 <text x="140.2" y="25.7" font-size="13" font-family="sans-serif" fill="#10131a" stroke="#fff" stroke-width="3" paint-order="stroke" >pyl-feel N</text>
 <circle cx="493.5" cy="45" r="7" fill="#d63b2b" stroke="#fff" stroke-width="2"/>

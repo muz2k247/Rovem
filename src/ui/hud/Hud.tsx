@@ -23,6 +23,36 @@ function Ring({ fraction, className }: { fraction: number; className: string }) 
   );
 }
 
+/**
+ * The water meter (R12, DECISIONS 2026-10-26 (6)): two bars, upthrust (green) against weight (violet), shown only while the rover is in water. The green
+ * grows with the depth; when it passes the violet the rover floats, and the meter says so. Both bars share one scale, so they can be compared by eye.
+ */
+export function WaterMeter({ water }: { water: NonNullable<HudModel['water']> }) {
+  const scaleN = Math.max(water.weightN, water.maxUpthrustN) * 1.05;
+  const percent = (n: number) => `${Math.max(0, Math.min(100, (n / scaleN) * 100)).toFixed(1)}%`;
+  return (
+    <div className={water.floating ? 'hud2-water floating' : 'hud2-water'} role="status" aria-live="polite" aria-label={`Upthrust ${Math.round(water.upthrustN)} newtons, weight ${Math.round(water.weightN)} newtons${water.floating ? ', you float' : ''}`}>
+      {water.floating && <strong className="water-float">You float</strong>}
+      <div className="water-bars">
+        <div className="water-col">
+          <span className="water-bar water-up">
+            <span style={{ height: percent(water.upthrustN) }} />
+          </span>
+          <small>Upthrust</small>
+          <b>{Math.round(water.upthrustN)} N</b>
+        </div>
+        <div className="water-col">
+          <span className="water-bar water-weight">
+            <span style={{ height: percent(water.weightN) }} />
+          </span>
+          <small>Weight</small>
+          <b>{Math.round(water.weightN)} N</b>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Hud({
   model,
   showControlsHint,
@@ -101,6 +131,8 @@ export function Hud({
           </span>
         </div>
       )}
+
+      {model.water && <WaterMeter water={model.water} />}
 
       {model.launcherWarning && (
         <div className={`hud2-launcher-warning ${model.launcherWarning}`} role="status" aria-label={`Launcher on your ${model.launcherWarning}, about to fire from behind`}>

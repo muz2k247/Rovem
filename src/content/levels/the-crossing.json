@@ -4,7 +4,7 @@
   "placeholder": true,
   "atmosphere": "blue-mist",
   "edgeStyle": "hill",
-  "parS": 110,
+  "parS": 170,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -21,6 +21,8 @@
       "bend-1",
       "lead",
       "ford",
+      "flat",
+      "reach",
       "run-in",
       "f1-deep",
       "bank",
@@ -62,8 +64,27 @@
       "after": "bend-1",
       "segments": [
         {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 15
+        },
+        {
           "kind": "straight",
-          "lengthM": 330
+          "lengthM": 215.58196842039706
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": -30
+        },
+        {
+          "kind": "straight",
+          "lengthM": 215.58196842039706
+        },
+        {
+          "kind": "arc",
+          "radiusM": 100,
+          "angleDeg": 15
         }
       ]
     },
@@ -79,12 +100,33 @@
       ]
     },
     {
-      "id": "run-in",
+      "id": "flat",
       "after": "ford",
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 170
+          "lengthM": 280
+        }
+      ]
+    },
+    {
+      "id": "reach",
+      "name": "The reach",
+      "after": "flat",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 260
+        }
+      ]
+    },
+    {
+      "id": "run-in",
+      "after": "reach",
+      "segments": [
+        {
+          "kind": "straight",
+          "lengthM": 150
         }
       ]
     },
@@ -143,7 +185,7 @@
       "segments": [
         {
           "kind": "straight",
-          "lengthM": 180
+          "lengthM": 220
         }
       ]
     },
@@ -164,6 +206,8 @@
     "bend-1",
     "lead",
     "ford",
+    "flat",
+    "reach",
     "run-in",
     "f1-deep",
     "bank",
@@ -172,8 +216,18 @@
   "hills": [],
   "ridges": [
     {
-      "xM": 1287.52,
-      "zM": 491.61,
+      "xM": 318.98,
+      "zM": 56.25,
+      "headingDeg": 40,
+      "riseAngleDeg": 5,
+      "riseLengthM": 50,
+      "topLengthM": 30,
+      "fallAngleDeg": 5,
+      "widthM": 30
+    },
+    {
+      "xM": 1967.25,
+      "zM": 808.57,
       "headingDeg": 25,
       "riseAngleDeg": 6,
       "riseLengthM": 50,
@@ -187,42 +241,120 @@
       "id": "ford",
       "polygon": [
         {
-          "xM": 618.24,
-          "zM": 164.07
+          "xM": 797.64,
+          "zM": 278.62
         },
         {
-          "xM": 630.93,
-          "zM": 169.99
+          "xM": 803.98,
+          "zM": 281.58
         },
         {
-          "xM": 619.09,
-          "zM": 195.37
+          "xM": 810.32,
+          "zM": 284.54
         },
         {
-          "xM": 606.4,
-          "zM": 189.45
+          "xM": 822.16,
+          "zM": 259.16
+        },
+        {
+          "xM": 815.81,
+          "zM": 256.2
+        },
+        {
+          "xM": 809.47,
+          "zM": 253.25
         }
       ],
       "depthM": 0.3
     },
     {
+      "id": "reach",
+      "polygon": [
+        {
+          "xM": 1163.78,
+          "zM": 449.36
+        },
+        {
+          "xM": 1172.85,
+          "zM": 453.59
+        },
+        {
+          "xM": 1181.91,
+          "zM": 457.81
+        },
+        {
+          "xM": 1190.97,
+          "zM": 462.04
+        },
+        {
+          "xM": 1200.04,
+          "zM": 466.27
+        },
+        {
+          "xM": 1209.1,
+          "zM": 470.49
+        },
+        {
+          "xM": 1218.16,
+          "zM": 474.72
+        },
+        {
+          "xM": 1230,
+          "zM": 449.34
+        },
+        {
+          "xM": 1220.93,
+          "zM": 445.11
+        },
+        {
+          "xM": 1211.87,
+          "zM": 440.89
+        },
+        {
+          "xM": 1202.81,
+          "zM": 436.66
+        },
+        {
+          "xM": 1193.74,
+          "zM": 432.44
+        },
+        {
+          "xM": 1184.68,
+          "zM": 428.21
+        },
+        {
+          "xM": 1175.62,
+          "zM": 423.98
+        }
+      ],
+      "depthM": 0.5
+    },
+    {
       "id": "deep",
       "polygon": [
         {
-          "xM": 885.6,
-          "zM": 288.75
+          "xM": 1580.69,
+          "zM": 643.76
         },
         {
-          "xM": 894.66,
-          "zM": 292.97
+          "xM": 1589.75,
+          "zM": 647.99
         },
         {
-          "xM": 882.83,
-          "zM": 318.35
+          "xM": 1598.81,
+          "zM": 652.22
         },
         {
-          "xM": 873.77,
-          "zM": 314.12
+          "xM": 1610.64,
+          "zM": 626.84
+        },
+        {
+          "xM": 1601.58,
+          "zM": 622.61
+        },
+        {
+          "xM": 1592.52,
+          "zM": 618.39
         }
       ],
       "depthM": 1
@@ -233,20 +365,44 @@
       "surfaceId": "mud",
       "polygon": [
         {
-          "xM": 574.37,
-          "zM": 146.93
+          "xM": 738.12,
+          "zM": 245.35
         },
         {
-          "xM": 583.44,
-          "zM": 151.16
+          "xM": 740.84,
+          "zM": 246.62
         },
         {
-          "xM": 574.14,
-          "zM": 171.09
+          "xM": 743.56,
+          "zM": 247.89
         },
         {
-          "xM": 565.08,
-          "zM": 166.87
+          "xM": 746.28,
+          "zM": 249.16
+        },
+        {
+          "xM": 749,
+          "zM": 250.42
+        },
+        {
+          "xM": 756.6,
+          "zM": 234.11
+        },
+        {
+          "xM": 753.88,
+          "zM": 232.84
+        },
+        {
+          "xM": 751.16,
+          "zM": 231.58
+        },
+        {
+          "xM": 748.45,
+          "zM": 230.31
+        },
+        {
+          "xM": 745.73,
+          "zM": 229.04
         }
       ]
     },
@@ -254,20 +410,44 @@
       "surfaceId": "mud",
       "polygon": [
         {
-          "xM": 1133.57,
-          "zM": 407.68
+          "xM": 1768.59,
+          "zM": 725.87
         },
         {
-          "xM": 1142.63,
-          "zM": 411.91
+          "xM": 1771.31,
+          "zM": 727.14
         },
         {
-          "xM": 1133.33,
-          "zM": 431.85
+          "xM": 1774.03,
+          "zM": 728.41
         },
         {
-          "xM": 1124.27,
-          "zM": 427.62
+          "xM": 1776.75,
+          "zM": 729.67
+        },
+        {
+          "xM": 1779.47,
+          "zM": 730.94
+        },
+        {
+          "xM": 1787.07,
+          "zM": 714.63
+        },
+        {
+          "xM": 1784.36,
+          "zM": 713.36
+        },
+        {
+          "xM": 1781.64,
+          "zM": 712.09
+        },
+        {
+          "xM": 1778.92,
+          "zM": 710.82
+        },
+        {
+          "xM": 1776.2,
+          "zM": 709.56
         }
       ]
     }
@@ -281,8 +461,8 @@
     },
     {
       "id": "vent-1",
-      "xM": 798.11,
-      "zM": 263.4,
+      "xM": 1890.22,
+      "zM": 772.65,
       "radiusM": 3
     }
   ],
@@ -290,20 +470,44 @@
   "checkpoints": [
     {
       "id": "cp-1",
-      "xM": 444.65,
-      "zM": 98.58,
-      "headingDeg": 25
+      "xM": 311.32,
+      "zM": 49.82,
+      "headingDeg": 40
     },
     {
       "id": "cp-2",
-      "xM": 689.36,
-      "zM": 212.68,
-      "headingDeg": 25
+      "xM": 631.28,
+      "zM": 212.12,
+      "headingDeg": 10
     },
     {
       "id": "cp-3",
-      "xM": 1097.2,
-      "zM": 402.86,
+      "xM": 934.06,
+      "zM": 326.79,
+      "headingDeg": 25
+    },
+    {
+      "id": "cp-4",
+      "xM": 1124.39,
+      "zM": 415.54,
+      "headingDeg": 25
+    },
+    {
+      "id": "cp-5",
+      "xM": 1405.34,
+      "zM": 546.55,
+      "headingDeg": 25
+    },
+    {
+      "id": "cp-6",
+      "xM": 1831.31,
+      "zM": 745.18,
+      "headingDeg": 25
+    },
+    {
+      "id": "cp-7",
+      "xM": 1944.59,
+      "zM": 798.01,
       "headingDeg": 25
     }
   ],
@@ -311,8 +515,8 @@
     {
       "id": "fork-1",
       "line": {
-        "xM": 816.24,
-        "zM": 271.85,
+        "xM": 1459.72,
+        "zM": 571.91,
         "headingDeg": 25,
         "widthM": 12
       },
@@ -321,27 +525,27 @@
         "f1-bridge"
       ],
       "mergeAt": {
-        "xM": 1088.13,
-        "zM": 398.64,
+        "xM": 1731.61,
+        "zM": 698.7,
         "radiusM": 8
       }
     }
   ],
   "samples": [
     {
-      "id": "s-ford",
-      "xM": 617.61,
-      "zM": 181.99
+      "id": "s-reach",
+      "xM": 1196.89,
+      "zM": 449.35
     },
     {
       "id": "s-bank",
-      "xM": 1134.5,
-      "zM": 417.5
+      "xM": 1777.83,
+      "zM": 720.25
     },
     {
       "id": "s-slope",
-      "xM": 1336.31,
-      "zM": 517.12
+      "xM": 2016.04,
+      "zM": 834.08
     }
   ],
   "signs": [
@@ -354,39 +558,39 @@
   ],
   "hints": [],
   "finish": {
-    "xM": 1432.53,
-    "zM": 559.23,
+    "xM": 2112.26,
+    "zM": 876.19,
     "radiusM": 6
   },
   "stretches": [
     {
       "id": "lakebed",
       "name": "The Lakebed",
-      "cleanS": 34.2
+      "cleanS": 47.36
     },
     {
       "id": "ford",
       "name": "The Ford",
       "startsAfterRoad": "lead",
-      "cleanS": 6.92
+      "cleanS": 24.42
     },
     {
-      "id": "run-in",
-      "name": "The Run-in",
-      "startsAfterRoad": "ford",
-      "cleanS": 10.25
+      "id": "reach",
+      "name": "The Reach",
+      "startsAfterRoad": "flat",
+      "cleanS": 28.66
     },
     {
-      "id": "river",
-      "name": "The River",
+      "id": "channel",
+      "name": "The Channel",
       "startsAfterRoad": "run-in",
-      "cleanS": 28.93
+      "cleanS": 34.73
     },
     {
       "id": "slope",
       "name": "The Slope",
       "startsAfterRoad": "bank",
-      "cleanS": 11.84
+      "cleanS": 10.22
     }
   ]
 }

@@ -26,11 +26,11 @@ type PlanMaker = (def: LevelDef, world: LevelWorld) => LevelPlans;
 const PLANS: Record<LevelId, PlanMaker | undefined> = {
   'crash-site': (def) => {
     const [debris, ring, climb] = [samplePoint(def, 's-debris'), samplePoint(def, 's-ring'), samplePoint(def, 's-climb')];
-    // The ridge is the firm way for every build; the dunes are a choice the level file's tests make on their own.
-    const roads = (fork: string) => ['start', 'bend-1', 'lead', fork, 'm1', 'b2', 'ring', 'exit', 'climb'];
+    // The bypass and the ridge are the firm ways for every build; the gully and the dunes are choices the level file's tests make on their own.
+    const roads = (gully: string, dunes: string) => ['start', 'bend-1', 'lead-1', gully, 'lead-2', dunes, 'm1', 'b2', 'ring', 'exit', 'climb'];
     return {
-      safe: { roads: roads('f1-ridge') },
-      stars: { roads: roads('f1-ridge'), via: [debris, ring, climb] },
+      safe: { roads: roads('f2-bypass', 'f1-ridge') },
+      stars: { roads: roads('f2-gully', 'f1-dunes'), via: [debris, ring, climb] },
     };
   },
   'geyser-canyon': (def) => {
@@ -59,12 +59,12 @@ const PLANS: Record<LevelId, PlanMaker | undefined> = {
     };
   },
   'the-crossing': (def) => {
-    const [ford, bank, slope] = [samplePoint(def, 's-ford'), samplePoint(def, 's-bank'), samplePoint(def, 's-slope')];
-    const roads = (fork: string) => ['start', 'bend-1', 'lead', 'ford', 'run-in', fork, 'bank', 'slope'];
+    const [reach, bank, slope] = [samplePoint(def, 's-reach'), samplePoint(def, 's-bank'), samplePoint(def, 's-slope')];
+    const roads = (fork: string) => ['start', 'bend-1', 'lead', 'ford', 'flat', 'reach', 'run-in', fork, 'bank', 'slope'];
     // The bridge is dry for every build; the deep ford is a choice the level file's tests make on their own.
     return {
       safe: { roads: roads('f1-bridge') },
-      stars: { roads: roads('f1-deep'), via: [ford, bank, slope] },
+      stars: { roads: roads('f1-deep'), via: [reach, bank, slope] },
     };
   },
   'iron-ridge': (def) => {

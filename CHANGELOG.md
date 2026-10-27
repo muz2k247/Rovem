@@ -6,6 +6,23 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (R12: Crash Site and The Crossing rebuilt; 2026-10-27)
+- **Crash Site** (DECISIONS 2026-10-26 (4), 2026-10-27 (8)): an oil slick across the start road 20–60 m from the start beside the wreck, and a tongue of oil on the first 35 m of bend 1; a mud gully fork (three 12 m pools against a firm bypass); the dune fork; ice on the run-up bend (75 m, before the Ring); S-bends of r 100 m for length; a longer climb. The starting build's clean star run is 147.4 s (was 90.8 s); 11 checkpoints; six stretches (The Slick, The Gully, The Dunes, The Shade, The Ring, The Climb). Nothing that crashes the rover stands on the outside of the oiled bend.
+- **The Crossing** (DECISIONS 2026-10-26 (6)): a 60 m wading reach at 0.5 m with a sample in it, a 20 m deep crossing at 1.0 m on a fork with the bridge kept, the 0.3 m ford, a hill on the lakebed, the river's vent moved to the far bank. The starting build's clean star run is 145.4 s (was 92.1 s); 7 checkpoints; stretches The Lakebed, The Ford, The Reach, The Channel, The Slope. Every one of the 11 builds that float crosses the deep crossing with one burn fired from 1 m into the water.
+- **The water made readable** (`src/render/waterMarks.ts`, `HudModel.water`, `WaterMeter` in `Hud.tsx`): depth posts banded 0.3 / 0.5 / 1.0 m (one before each pool, and one at the fork for the 1.0 m), a water line on the rover, a wake behind it, and a two-bar meter, upthrust against weight, then "You float".
+- Tests: `waterMarks.test.ts`, `waterMeter.test.ts`; the Crash Site and The Crossing level-file tests rewritten (oil, mud gully, ice, the wading reach, the one-burn check, the deep crossing).
+
+### Changed (R12)
+- `levelChecks.ts`: `checkLevelFile` takes `starRunWindowS` and `checkpointGapS` (the rebuilt levels use 135–160 s and 40 s; the others keep 60–150 s and 55 s until R13). `levelPlans.ts`: the new road ids. `scavenger.test.ts` and `forkOtherRoad.test.ts` follow the new levels (the fork times were re-captured on the rebuilt levels).
+- The level files are new (written from a script that places everything on the roads; the Ring, boulders, ridge and samples keep their shape and move with their roads).
+
+### Fixed (R12)
+- The front wheels reaching water no longer pop up "Sand: …" before the water's own pop-up (the bed counts as sand for the physics).
+- ROADMAP OI-57 (the scripted driver pinned against a wall in the ford) is closed: the ford was rebuilt.
+
+### Docs (R12)
+- Component Values: the Polish R12 rows in `levels.csv`, the R12 rows in `showcase.csv`, the old Crash Site and Crossing rows marked superseded, a change-log line in `read_me.csv`. DECISIONS 2026-10-27 (R12). ROADMAP: R12 row, OI-57 moved to the history, OI-59 to OI-62. CLAUDE.md: the render layout line.
+
 ### Added (R11: the systems every level needs; 2026-10-27)
 - **The recharging booster** (DECISIONS 2026-10-26 (1)): 15 s after the end of a burn (it ends after 1.5 s, at top speed, on a crash or at take-off); a restart refills it, a return to a checkpoint does not and the recharge keeps counting; not while it burns, recharges or in the air. The HUD pip is a ring that fills (`booster.rechargeS` in `levels.json`; `hud.booster` gains `rechargeLeftS`, `rechargeFraction`, and `'used'` is now `'recharging'`).
 - **The Scavenger** (DECISIONS 2026-10-26 (3)): Heavy chassis + Smooth wheels + Medium motor on every level, the motor worn per level (`scavenger.topSpeedFactor`: 0.945, and 1.0 on Iron Ridge), no start delay; it fires its booster when ready, on the ground, in forward gear and at least 0.5 m/s below its top speed (the autopilot's new `booster` and `topSpeedFactor` options); the ghost shows a flame while it burns and a label "The Scavenger fired its booster" for 1.5 s within about 60 m. Its card shows the worn top speed (15.12 m/s, new 16.00). The Scavenger's roads: the Heavy Cave on Crater Field, the deep ford on The Crossing, the magnet line (with its poles) on Iron Ridge, as the audit found them. They finish +6.0%, +6.0%, +5.9%, +5.8%, +7.1% after the starting rover's clean best.

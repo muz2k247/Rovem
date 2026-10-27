@@ -6,7 +6,7 @@ import { loadLevel } from './levelChecks.ts';
 import { createLevelSession } from './session.ts';
 import { clearScavengerCache, createScavengerRun } from './scavenger.ts';
 import { validateLevelDef } from './schema.ts';
-import { runPilot } from './autopilot.ts';
+import { allRoutes, runPilot } from './autopilot.ts';
 import { roverFromParts, physicsConstants } from '../buildFromParts.ts';
 import { SURFACE_IDS, testLevelRaw } from './testLevel.ts';
 
@@ -17,7 +17,7 @@ describe('the Scavenger of Crash Site', () => {
   const ghost = createScavengerRun(content, def)!;
   // The starting rover's clean best drive (no crash, no respawn, no samples) over every route, using its booster as the Scavenger does (AUDIT_R9 G2).
   const cleanBest = Math.min(
-    ...['f1-dunes', 'f1-ridge'].map((fork) => runPilot({ content, def, booster: true, plan: { roads: ['start', 'bend-1', 'lead', fork, 'm1', 'b2', 'ring', 'exit', 'climb'] } }).timeS),
+    ...allRoutes(def).map((route) => runPilot({ content, def, booster: true, plan: { roads: route.roads } }).timeS),
   );
 
   it('is built from the level file: Heavy + Smooth + Medium with a worn motor, a route, and no start delay (DECISIONS 2026-10-26 (1), (3))', () => {

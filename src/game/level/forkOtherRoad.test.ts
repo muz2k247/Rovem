@@ -11,10 +11,10 @@ import type { LevelId } from './types.ts';
 // build's star run of each level, captured from the all-at-once version before the change: [your road, other road, your time, other
 // road's time, how the other road ended].
 const BEFORE: Record<string, [string, string, number, number, string][]> = {
-  'crash-site': [["f1-ridge","f1-dunes",16.40833333333333,15.775,"merged"]],
+  'crash-site': [["f2-gully","f2-bypass",13.325000000000003,13.875,"merged"],["f1-dunes","f1-ridge",15.766666666666666,16.45,"merged"]], // R12: re-captured after the level was rebuilt (the equivalence was shown on the old files)
   'geyser-canyon': [["f1-vents","f1-rim",13.075000000000003,23.5,"merged"]], // R11: re-captured when the launchers moved to the roadside and fire one aimed shot each
   'crater-field': [["c1-through","c1-around",12.475000000000001,16.25,"merged"],["c2-through","c2-around",13.424999999999997,16.791666666666668,"merged"],["cave-float","cave-heavy",16.02499999999999,16.05,"merged"]],
-  'the-crossing': [["f1-deep","f1-bridge",17.15833333333334,16.275,"merged"]],
+  'the-crossing': [["f1-deep","f1-bridge",21.233333333333334,20.275,"merged"]], // R12: re-captured after the level was rebuilt
   'iron-ridge': [["f1-line","f1-switch",14.041666666666671,16.391666666666666,"merged"]],
 };
 
