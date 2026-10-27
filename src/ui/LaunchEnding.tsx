@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { createLaunchScene } from '../render/launchScene.ts';
+import { releaseRenderer } from '../render/release.ts';
 import { levelText } from '../game/level/text.ts';
 import './launch.css';
 
@@ -54,10 +55,8 @@ export function LaunchEnding({ onHome }: { onHome: () => void }) {
 
     return () => {
       observer.disconnect();
-      renderer.setAnimationLoop(null);
-      renderer.dispose();
-      renderer.domElement.remove();
       view.dispose();
+      releaseRenderer(renderer);
     };
   }, []);
 

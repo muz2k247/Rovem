@@ -17,15 +17,22 @@ export interface CameraPose {
   look: { xM: number; yM: number; zM: number };
 }
 
+/**
+ * `flightYM` is the rover's own height while it is in the air (a jump; R10). `flightShare` (0 to 1, default 1 when `flightYM` is
+ * given) says how much of the camera follows the rover instead of the ground under it: 1 while airborne, then eased down to 0 after
+ * the landing, so the camera comes back to the ground rule without a step. In the air the camera takes its height and its look
+ * height from the rover, and keeps its full distance behind (the road clamp is for the ground: over a chasm there is no road).
+ */
 export function levelCameraPose(
   world: Pick<LevelWorld, 'heightM' | 'roadAt'>,
-  rover: { xM: number; zM: number; travelRad: number },
+  rover: { xM: number; zM: number; travelRad: number; flightYM?: number; flightShare?: number },
 ): CameraPose {
+  const share = rover.flightYM === undefined ? 0 : Math.min(1, Math.max(0, rover.flightShare ?? 1));
   const dx = Math.cos(rover.travelRad);
   const dz = Math.sin(rover.travelRad);
   const at = (backM: number) => ({ x: rover.xM - dx * backM, z: rover.zM - dz * backM });
   let back = CAMERA_BACK_M;
-  if (!world.roadAt(at(back).x, at(back).z)) {
+  if (share < 1 && !world.roadAt(at(back).x, at(back).z)) {
     // Too far back to be over the road: find (by halving) the furthest point along the way that still is.
     let good = 0;
     let bad = CAMERA_BACK_M;
@@ -34,15 +41,24 @@ export function levelCameraPose(
       if (world.roadAt(at(mid).x, at(mid).z)) good = mid;
       else bad = mid;
     }
-    back = good;
+    back = good + (CAMERA_BACK_M - good) * share;
   }
   const cam = at(back);
   const roverGround = world.heightM(rover.xM, rover.zM);
-  const yM = Math.max(roverGround + CAMERA_UP_M, world.heightM(cam.x, cam.z) + CAMERA_MIN_ABOVE_GROUND_M);
+  const roverY = rover.flightYM === undefined ? roverGround : roverGround + (rover.flightYM - roverGround) * share;
+  const yM = Math.max(roverY + CAMERA_UP_M, world.heightM(cam.x, cam.z) + CAMERA_MIN_ABOVE_GROUND_M);
   const lookX = rover.xM + dx * CAMERA_LOOK_AHEAD_M;
   const lookZ = rover.zM + dz * CAMERA_LOOK_AHEAD_M;
+  const lookGround = world.heightM(lookX, lookZ);
+  const lookBase = rover.flightYM === undefined ? lookGround : lookGround + (rover.flightYM - lookGround) * share;
   return {
     position: { xM: cam.x, yM, zM: cam.z },
-    look: { xM: lookX, yM: world.heightM(lookX, lookZ) + CAMERA_LOOK_HEIGHT_M, zM: lookZ },
+    look: { xM: lookX, yM: lookBase + CAMERA_LOOK_HEIGHT_M, zM: lookZ },
   };
 }
+
+/** After a landing the camera and the nose ease back to the ground rule over this long (R10). */
+export const LANDING_EASE_CAMERA_S = 0.4;
+export const LANDING_EASE_PITCH_S = 0.15;
+/** The sky, the mountain ring and the far ground follow the ground under the rover, smoothed at this rate (per second), so a pit's edge does not step the horizon. */
+export const HORIZON_EASE_PER_S = 3;

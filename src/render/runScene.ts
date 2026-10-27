@@ -24,6 +24,7 @@ import { createSkidMarks } from './skidMarks.ts';
 import { SLIDE_MARK_RAD, wrapAngle } from '../game/run/drift.ts';
 import { leanRad, steerAngleRad } from './roverAttitude.ts';
 import { createRoverModel, wheelTurnRad, type RoverLook, type WheelStyle } from './roverModel.ts';
+import { disposeTree } from './release.ts';
 
 // The 3D view of the endless canyon (docs/DEMO_BUILD_PLAN.md A3, A4, A7). Original low-poly shapes; no outside assets.
 // Axes as in driveScene: physics x is three x, physics z is three −z, y is up.
@@ -631,6 +632,7 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
     loadedChunkIndices: () => [...chunkGroups.keys()].sort((a, b) => a - b),
     update,
     dispose() {
+      disposeTree(scene);
       arrows.dispose();
       skid.dispose();
       bursts.dispose();

@@ -22,7 +22,7 @@ Status key: ⬜ Not started · 🟨 In progress · ✅ Done · ⏸ Paused · ⛔
 | R7 | The Crossing and Iron Ridge | ✅ 2026-10-23. By-eye check replaced by the playtest; both levels are rebuilt in R12–R13 | R6b |
 | R8 | Launch ending and polish | ✅ 2026-10-23 (typecheck, 1362 tests and balance green). Ending judged by k._muz 2026-10-27 (OI-53 closed): the ship is rebuilt in R15 | R7 |
 | R9 | Polish round: audit (memory, lag and jumps; 2–3 elements per idea; launchers; water; oil; pickup feedback; the recharging booster and the Scavenger), no game changes (`docs/POLISH_PLAN.md` §6; DECISIONS 2026-10-26) | ✅ 2026-10-26: `docs/AUDIT_R9.md` (screenshots in `docs/captures/r9/`). Values decided the same day (DECISIONS "Polish round: values after the R9 audit") | R8 |
-| R10 | Performance and the jump camera (`docs/POLISH_PLAN.md` §7) | ⬜ Next | R9 |
+| R10 | Performance and the jump camera (`docs/POLISH_PLAN.md` §7) | ✅ 2026-10-27: air camera and horizon, fork drive spread over steps, WebGL contexts released; before/after in `docs/captures/r10/perf.md`, jump screenshots `docs/captures/r10/crater-jump*.jpg`; not committed yet | R9 |
 | R11 | Systems: the recharging booster (student and Scavenger), the stuck rule, angled roadside launchers (physics-checker), oil, the water fixes, pop-up timing | ⬜ | R10 |
 | R12 | Level pass 1: Crash Site and The Crossing | ⬜ | R11 |
 | R13 | Level pass 2: Geyser Canyon, Crater Field, Iron Ridge; `npm run rival` learns poles; the Scavenger retuned | ⬜ | R12 |

@@ -12,9 +12,10 @@ import { createDevOverlay, type DevOverlay } from './devOverlay.ts';
 import { createDust } from './driveScene.ts';
 import { createForceArrows } from './forceArrows.ts';
 import { createLandmarks } from './landmarks.ts';
-import { levelCameraPose } from './levelCamera.ts';
+import { HORIZON_EASE_PER_S, LANDING_EASE_CAMERA_S, LANDING_EASE_PITCH_S, levelCameraPose } from './levelCamera.ts';
 import { createLevelEdges } from './levelEdgeScene.ts';
 import { createPylons } from './pylons.ts';
+import { disposeTree } from './release.ts';
 import { createRoverModel, wheelTurnRad, type RoverLook } from './roverModel.ts';
 import { createTerrain, groundOffsetOf, SURFACE_COLOURS } from './terrain.ts';
 import { createTrack } from './track.ts';
@@ -160,6 +161,13 @@ export function createLevelScene(session: LevelSession, content: Content, option
   let lastDistanceM = 0;
   let rideY: number | undefined;
   let camY: number | undefined;
+  /** 1 while the rover is in the air, then falling to 0 after the landing: how much of the camera follows the rover and not the ground (R10). */
+  let flightShare = 0;
+  /** The same for the nose: 1 at the landing, falling to 0 over LANDING_EASE_PITCH_S; `airNoseRad` is the last nose angle in the air. */
+  let noseShare = 0;
+  let airNoseRad = 0;
+  /** The ground height the sky, the mountain ring and the far ground follow, smoothed. */
+  let horizonY: number | undefined;
   let lastCamTarget: { x: number; z: number } | undefined;
   let shakeM = 0;
   let topDown = false;
@@ -183,7 +191,12 @@ export function createLevelScene(session: LevelSession, content: Content, option
     rideY = rideY === undefined || frameS === 0 || flying ? targetRide : rideY + (targetRide - rideY) * Math.min(1, RIDE_EASE_PER_S * frameS);
     rover.position.set(pose.frontXM, rideY, -pose.frontZM);
     rover.rotation.y = pose.headingRad;
-    rover.rotation.z = pose.airPitchRad ?? pose.pitchRad;
+    if (pose.airPitchRad !== undefined) {
+      airNoseRad = pose.airPitchRad;
+      noseShare = 1;
+    } else if (frameS > 0) noseShare = Math.max(0, noseShare - frameS / LANDING_EASE_PITCH_S);
+    else noseShare = 0;
+    rover.rotation.z = pose.pitchRad + (airNoseRad - pose.pitchRad) * noseShare;
     const movedM = state.distanceM >= lastDistanceM ? state.distanceM - lastDistanceM : 0; // 0 after a reset
     lastDistanceM = state.distanceM;
     const rolling = state.direction === 'reverse' !== state.rollingBack ? -1 : 1;
@@ -243,8 +256,12 @@ export function createLevelScene(session: LevelSession, content: Content, option
     const targetFov = FOV_AT_REST_DEG + FOV_PER_MPS_DEG * state.speedMps + fovWiden;
     camera.fov = frameS > 0 ? camera.fov + (targetFov - camera.fov) * Math.min(1, FOV_EASE_PER_S * frameS) : camera.fov;
     camera.updateProjectionMatrix();
-    const cam = levelCameraPose(world, { xM: target.x, zM: target.z, travelRad: cameraAngle.follow(s.pose.travelRad, jumped ? 1e3 : frameS) });
-    camY = camY === undefined || frameS === 0 || jumped ? cam.position.yM : camY + (cam.position.yM - camY) * Math.min(1, CAMERA_HEIGHT_EASE_PER_S * frameS);
+    // In the air the camera follows the rover's own height (no easing: the arc is smooth); after the landing it eases back to the ground rule.
+    if (flying) flightShare = 1;
+    else if (frameS > 0 && !jumped) flightShare = Math.max(0, flightShare - frameS / LANDING_EASE_CAMERA_S);
+    else flightShare = 0;
+    const cam = levelCameraPose(world, { xM: target.x, zM: target.z, travelRad: cameraAngle.follow(s.pose.travelRad, jumped ? 1e3 : frameS), flightYM: rideY, flightShare });
+    camY = camY === undefined || frameS === 0 || jumped || flying ? cam.position.yM : camY + (cam.position.yM - camY) * Math.min(1, CAMERA_HEIGHT_EASE_PER_S * frameS);
     camY = Math.max(camY, world.heightM(cam.position.xM, cam.position.zM) + 0.6);
     let shakeX = 0;
     let shakeY = 0;
@@ -263,13 +280,15 @@ export function createLevelScene(session: LevelSession, content: Content, option
       camera.lookAt(target.x, world.heightM(target.x, target.z), -target.z);
     } else camera.up.set(0, 1, 0);
 
+    // The horizon follows the ground under the rover, smoothed: a pit's edge or a chasm must not step it. The far ground never rises above the real ground.
     const groundAtRover = world.heightM(target.x, target.z);
-    farGround.position.set(camera.position.x, groundAtRover - FAR_GROUND_DROP_M, camera.position.z);
+    horizonY = horizonY === undefined || frameS === 0 || jumped ? groundAtRover : horizonY + (groundAtRover - horizonY) * Math.min(1, HORIZON_EASE_PER_S * frameS);
+    farGround.position.set(camera.position.x, Math.min(horizonY, groundAtRover) - FAR_GROUND_DROP_M, camera.position.z);
     // Past the fog's reach things are fog-coloured: leave them undrawn (and the far rocks, too small to see).
     const hiddenBeyondM = fogRangeM((scene.fog as THREE.FogExp2).density);
     terrain.update(camera.position.x, camera.position.z, hiddenBeyondM);
     edges.update(camera.position.x, camera.position.z, hiddenBeyondM, ROCK_RANGE_M[quality]);
-    atmosphere.update(frameS, { x: camera.position.x, y: groundAtRover, z: camera.position.z });
+    atmosphere.update(frameS, { x: camera.position.x, y: horizonY, z: camera.position.z });
   };
   update(session);
 
@@ -333,6 +352,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
     },
     update,
     dispose() {
+      disposeTree(scene); // everything still in the scene, the rover, the dust and the split gates included; the parts below add their own
       scene.remove(terrain.group, track.group, edges.group, farGround, landmarks.group, rover, arrows.group);
       edges.dispose();
       farGround.geometry.dispose();

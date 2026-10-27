@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { content } from '../content/index.ts';
 import { createGarageScene, type GarageScene, type SwapSlot } from '../render/garageScene.ts';
 import type { RoverLook } from '../render/roverModel.ts';
+import { releaseRenderer } from '../render/release.ts';
 
 const SLOTS: SwapSlot[] = ['chassis', 'wheels', 'motor'];
 /** Radians turned per pixel dragged. */
@@ -70,7 +71,7 @@ export function GaragePreview({ look }: { look: RoverLook }) {
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
       el.removeEventListener('pointercancel', up);
-      renderer.dispose();
+      releaseRenderer(renderer);
       el.remove();
     };
   }, []);

@@ -26,6 +26,7 @@ import { warmShaders } from '../render/warmup.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { roverLookFor } from '../render/roverModel.ts';
 import { createRunScene, type RunScene } from '../render/runScene.ts';
+import { releaseRenderer } from '../render/release.ts';
 import { recordRun, saveDemoProgress, type DemoProgress } from '../save/demoProgress.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
 import { FeedbackLayer } from './hud/FeedbackLayer.tsx';
@@ -376,8 +377,7 @@ export function RunScreen({
       observer.disconnect();
       renderer.setAnimationLoop(null);
       view.dispose();
-      renderer.dispose();
-      renderer.domElement.remove();
+      releaseRenderer(renderer);
       engine.dispose();
       effects.dispose();
     };

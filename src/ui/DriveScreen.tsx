@@ -9,6 +9,7 @@ import { createTrack } from '../game/level.ts';
 import { createDriveScene } from '../render/driveScene.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { wheelStyleFor } from '../render/roverModel.ts';
+import { releaseRenderer } from '../render/release.ts';
 
 const MAX_FRAME_S = 0.1; // a long pause (hidden tab) must not make the rover jump
 
@@ -88,9 +89,7 @@ export function DriveScreen({ build, onBack }: { build: BuildSelection; onBack: 
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', keys.clear);
       observer.disconnect();
-      renderer.setAnimationLoop(null);
-      renderer.dispose();
-      renderer.domElement.remove();
+      releaseRenderer(renderer);
       engine.dispose();
     };
   }, [build, targetDistanceM]);

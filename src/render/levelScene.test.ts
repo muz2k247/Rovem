@@ -222,3 +222,37 @@ describe('natural edges and sky in a level (R6b, SHOWCASE_PLAN §12a)', () => {
     expect(view.scene.environment).toBeNull();
   });
 });
+
+describe('level scene: a jump (R10)', () => {
+  const jumpLevel = () => make({ ramps: [{ id: 'r1', xM: 150, zM: 0, headingDeg: 0, angleDeg: 20, lengthM: 8, widthM: 6 }] });
+  /** Steps the session, drawing a 60 Hz frame every second step, until `done`. */
+  const frames = (m: ReturnType<typeof make>, done: () => boolean, maxS = 60) => {
+    for (let i = 0; i < Math.round(maxS / DT) && !done(); i++) {
+      m.session.stepOnce();
+      if (i % 2 === 0) m.view.update(m.session, 2 * DT);
+    }
+  };
+
+  it('in the air the camera follows the rover\'s own height and keeps its full distance behind', () => {
+    const m = jumpLevel();
+    frames(m, () => (m.session.pose.airYM ?? -Infinity) - m.session.pose.groundYM > 1.5);
+    expect(m.session.airborne).toBe(true);
+    m.view.update(m.session, 2 * DT);
+    const { camera, rover: roverObj } = m.view;
+    expect(roverObj.position.y).toBeGreaterThan(m.session.pose.groundYM + 1.5);
+    expect(camera.position.y).toBeCloseTo(roverObj.position.y + 2.3, 6);
+    expect(Math.hypot(camera.position.x - roverObj.position.x, camera.position.z - roverObj.position.z)).toBeGreaterThan(CAMERA_BACK_M - 1.2);
+  });
+
+  it('on landing the nose eases from the flight angle to the ground slope over 0.15 s, not in one frame', () => {
+    const m = jumpLevel();
+    frames(m, () => m.session.airborne);
+    frames(m, () => !m.session.airborne);
+    expect(m.session.airborne).toBe(false);
+    m.view.update(m.session, 2 * DT);
+    const pitch = m.session.pose.pitchRad;
+    expect(Math.abs(m.view.rover.rotation.z - pitch)).toBeGreaterThan(0.02); // still mostly the flight angle
+    for (let i = 0; i < 10; i++) m.view.update(m.session, 2 * DT); // 10 frames of 1/60 s = 0.167 s
+    expect(m.view.rover.rotation.z).toBeCloseTo(pitch, 6);
+  });
+});

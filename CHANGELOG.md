@@ -6,6 +6,12 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Fixed (R10: the jump camera, the fork freezes and the WebGL leak; 2026-10-27)
+- **Jump camera** (AUDIT_R9 A4): in the air the camera takes its height and look height from the rover's own flight and keeps its full 6.2 m behind, with no road clamp; after the landing it eases back to the ground rule over 0.4 s, and the nose eases from the flight angle to the slope over 0.15 s. The sky, mountain ring and far ground follow a smoothed ground height (3 per second), and the far ground never rises above the real ground. `levelCamera.ts`, `levelScene.ts`. Over the Crater Field chasm the camera was 10.7 m below the ground and lost the rover; now it stays 2.3 m above it (screenshots in `docs/captures/r10/`).
+- **Fork freezes** (A1): the other road's time was driven all at once at the merge (56–111 ms in one frame). Both roads of a fork are now started at the fork line, at the rover's speed there, and driven 8 steps each with every real step; the other road is finished at the merge. The results are identical (`forkOtherRoad.test.ts`, numbers captured from the old code). No physics change.
+- **WebGL leak** (A2): every level, Endless, drive, garage and ending screen now calls `renderer.forceContextLoss()` on leaving (`src/render/release.ts`), and the level and Endless scenes dispose everything left in them (the rover, the dust, the split gates). A heap snapshot showed no JavaScript object holds the old canvases; Chrome only frees a context when it finalises its canvas. Second leak-test loop: private memory flat (480 to 467 MB; before 635 to 726 MB); all 12 contexts lost.
+- Tests: air-camera and landing-nose tests (`levelCamera.test.ts`, `levelScene.test.ts`). Before/after tables: `docs/captures/r10/perf.md`.
+
 ### Docs (the ship, the ending and the edges; 2026-10-27)
 - DECISIONS: "the ship, the ending and the edges" (k._muz: the ship is rebuilt; the edges get small fixes; the mountain-ring rule chosen by Claude).
 - POLISH_PLAN §8–§12: the R11–R15 prompts; status line updated. DECISIONS: item (10) of the R9 values row (countdown, pickup set, pop-up time rule, Scavenger booster label, Endless launchers, no oil in Endless).

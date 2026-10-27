@@ -174,10 +174,19 @@ interface CannonState {
   shots: number;
 }
 
+/**
+ * How many steps of each road's what-if drive run alongside every step of the real drive (R10). The other road's time is needed at the
+ * merge; driving it there, in one go, froze a frame for 56–111 ms. Spread over the steps between the fork line and the merge, it costs
+ * a fraction of a millisecond a frame. Whatever is left at the merge is finished then, so the answer never depends on this number.
+ */
+const OTHER_ROAD_STEPS_PER_STEP = 8;
+
 interface ForkState {
   startClockS: number | undefined;
   /** The rover's speed along its heading when it crossed the fork line: the other road starts from it. */
   startSpeedMps: number;
+  /** The what-if drive of each road of the fork, started at the fork line (the road the rover takes is only known at the merge). */
+  sims: Map<string, LevelSession> | undefined;
   votes: Record<string, number>;
   done: boolean;
 }
@@ -367,7 +376,10 @@ export function createLevelSession(options: LevelSessionOptions) {
     air = undefined;
     forceLine.reset();
     // An unfinished fork starts again from its fork line; a finished one stays finished.
-    for (const f of forks.values()) if (!f.done) f.startClockS = undefined;
+    for (const f of forks.values()) if (!f.done) {
+      f.startClockS = undefined;
+      f.sims = undefined;
+    }
     for (const f of forks.values()) if (!f.done) for (const k of Object.keys(f.votes)) f.votes[k] = 0;
     currentSurfaceId = world.surfaceIdAt(state.positionXM, state.positionZM);
     currentZone = world.gravityKindAt(centreOf(state).x, centreOf(state).z);
@@ -441,13 +453,13 @@ export function createLevelSession(options: LevelSessionOptions) {
     return Math.abs(lateral) <= line.widthM / 2;
   }
 
-  /** The other road, driven straight from the fork line at the speed the rover had there, with the throttle held: how long it takes to the merge, or how it ends. */
-  function otherRoadResult(roadId: string, mergeAt: WhatIfOptions['mergeAt'], startSpeedMps: number): { outcome: WhatIfOutcome; timeS: number } {
+  /** The other road, driven straight from the fork line at the speed the rover had there, with the throttle held: a session that ends at the merge, or how it ends. */
+  function startOtherRoad(roadId: string, mergeAt: WhatIfOptions['mergeAt'], startSpeedMps: number): LevelSession {
     const road = world.roadById(roadId);
     const first = road.line.points[0]!;
     const second = road.line.points[1]!;
     const headingDeg = (Math.atan2(second.zM - first.zM, second.xM - first.xM) / DEG);
-    const sim = createLevelSession({
+    return createLevelSession({
       content, rover, constants, def: { ...def, start: { xM: first.xM, zM: first.zM, headingDeg }, forks: [], hints: [], signs: [], samples: def.samples },
       initialState: { speedMps: startSpeedMps },
       whatIf: { roadId, mergeAt },
@@ -459,6 +471,10 @@ export function createLevelSession(options: LevelSessionOptions) {
         return { throttleHeld: true, brakeHeld: false, steer: Math.abs(err) <= deadband ? 0 : err > 0 ? 1 : -1 };
       },
     });
+  }
+
+  /** Drives a what-if session to its end: how long the road took to the merge, or how it ended. */
+  function otherRoadResult(sim: LevelSession): { outcome: WhatIfOutcome; timeS: number } {
     while (sim.phase === 'driving') sim.stepOnce();
     return sim.whatIfEnd ?? { outcome: 'timeout', timeS: sim.clockS };
   }
@@ -471,16 +487,20 @@ export function createLevelSession(options: LevelSessionOptions) {
         if (crossedForkLine(f.line, prev, front)) {
           fs.startClockS = clockS();
           fs.startSpeedMps = state.speedMps;
+          fs.sims = new Map(f.roadIds.map((id) => [id, startOtherRoad(id, f.mergeAt, fs.startSpeedMps)]));
         }
         continue;
       }
+      // Both roads are driven a few steps with every real step, so that at the merge the other one is (nearly) done already.
+      if (fs.sims) for (const sim of fs.sims.values()) for (let i = 0; i < OTHER_ROAD_STEPS_PER_STEP && sim.phase === 'driving'; i++) sim.stepOnce();
       const on = world.onRoadAt(front.x, front.z);
       if (on && f.roadIds.includes(on.road.def.id)) fs.votes[on.road.def.id] = (fs.votes[on.road.def.id] ?? 0) + 1;
       if (Math.hypot(front.x - f.mergeAt.xM, front.z - f.mergeAt.zM) > f.mergeAt.radiusM) continue;
       fs.done = true;
       const yourRoad = (fs.votes[f.roadIds[1]] ?? 0) > (fs.votes[f.roadIds[0]] ?? 0) ? f.roadIds[1] : f.roadIds[0];
       const otherRoad = yourRoad === f.roadIds[0] ? f.roadIds[1] : f.roadIds[0];
-      const other = otherRoadResult(otherRoad, f.mergeAt, fs.startSpeedMps);
+      const other = otherRoadResult(fs.sims!.get(otherRoad)!);
+      fs.sims = undefined;
       const yourS = clockS() - fs.startClockS;
       emit({ kind: 'fork', yourRoad, otherRoad, yourS, otherS: other.timeS, otherOutcome: other.outcome });
       if (other.outcome === 'merged') {
@@ -1183,7 +1203,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     pole = cfg.magnet.startPole;
     events = [];
     trace = [{ timeS: 0, speedMps: state.speedMps }];
-    forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), startSpeedMps: 0, done: false }]));
+    forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), startSpeedMps: 0, sims: undefined, done: false }]));
     hints = def.hints.map((h) => ({ def: h, shown: false, done: false }));
     deepShown = false;
     boosterUsed = false;
