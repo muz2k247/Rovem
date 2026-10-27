@@ -8,7 +8,7 @@ Rovem is a desktop-browser 3D game that teaches Grade 9 physics (the newest Punj
 
 - Learning loop: Predict → Experiment → Observe → Explain → Retry.
 - **Current focus: the Showcase round** (`docs/SHOWCASE_PLAN.md`, approved 2026-10-21; DECISIONS 2026-10-21; sessions S0, R1–R8 and R6b (added 2026-10-22) in `docs/ROADMAP.md`, prompts in the plan's Part 7). Story: the student's ship crashed on an unnamed red planet (Earth gravity on open ground); each level recovers one ship part, racing an old robot rover, the Scavenger. Five levels as natural places, each teaching one idea: Crash Site, Geyser Canyon, Crater Field, The Crossing, Iron Ridge; plus the Endless Canyon as named places. No forced stops anywhere; jumps at designed ramps; walls scrape, obstacles crash. Read the whole plan before any Showcase work. The game never shows textbook chapter names. Work happens in `D:\ROVEM` on `main`, one session at a time (no worktrees).
-- **Next: the Polish round** (`docs/POLISH_PLAN.md`, DECISIONS 2026-10-26): after k._muz's playtest, the R9 audit runs first; values come after it. Where it differs from the Showcase plan or the Key terms below (the booster recharges, levels last 120–180 s, the Scavenger has no head start), DECISIONS 2026-10-26 governs.
+- **Now: the Polish round** (`docs/POLISH_PLAN.md`, DECISIONS 2026-10-26, both rows): R9 audited the build (`docs/AUDIT_R9.md`) and the values are decided; build sessions R10–R15 are in `docs/ROADMAP.md`, R10's prompt in POLISH_PLAN §7. Where it differs from the Showcase plan or the Key terms below (the booster recharges, levels last about 150 s, the Scavenger has no head start; DECISIONS 2026-10-27 adds the R15 art pass), DECISIONS 2026-10-26 governs.
 - **Game v4, concept levels** (`docs/LEVELS_BUILD_PLAN.md`, 2026-10-17; built through I1, 2026-10-19): its level engine, physics rules (A6), garage and HUD stay and are what the Showcase builds on. **Its seven-level lineup, stop lines, par rule and E1 order are superseded (2026-10-21)**; the reasoning stays in that file. Screens: wireframes v2, https://claude.ai/artifact/EkDVVY6hjAEJD3MiVzwvsh.
 - Demo v3, the endless canyon run (`docs/DEMO_BUILD_PLAN.md`, 2026-10-14), is built and kept as the Endless Canyon mode.
 - Game design v2 (missions, medals, hub, questions, Knowledge; 2026-10-13) is **superseded** (2026-10-17). Its text and reasoning stay in `docs/DESIGN.md`; do not build from it.
@@ -38,12 +38,12 @@ Rules:
 
 ## Key terms
 
-- **Level** (Showcase): a 90–150 s drive through one natural place that teaches one new idea, mixes in the earlier ones, and ends at a ship part (v4: "ends at a beacon"). All built levels and Endless are open from the first visit (DECISIONS 2026-10-22, R6b; the in-order rule stays behind `unlockInOrder` in `levels.json`, off); a level with no file would show "Coming soon" (none today: all five are built; the Dust Storm card, next round, is locked); `?unlock=all` in the address also opens the old v4 files (never saved). Levels have no game over: mistakes cost time.
+- **Level** (Showcase): a drive of about 150 s for the starting build (150–180 s for a student; DECISIONS 2026-10-26; was 90–150 s) through one natural place that teaches one new idea, mixes in the earlier ones, and ends at a ship part (v4: "ends at a beacon"). All built levels and Endless are open from the first visit (DECISIONS 2026-10-22, R6b; the in-order rule stays behind `unlockInOrder` in `levels.json`, off); a level with no file would show "Coming soon" (none today: all five are built; the Dust Storm card, next round, is locked); `?unlock=all` in the address also opens the old v4 files (never saved). Levels have no game over: mistakes cost time.
 - **Checkpoint**: a drive-through point on a level the rover returns to, at rest, after a crash (hitting an obstacle), getting stuck, floating off, falling, or pressing R. The level clock keeps running. Never a stop.
 - **Stars**: 3 per level: reach the part, collect all 3 samples, beat the Scavenger (revised 2026-10-21; v4 had "reach the beacon … beat the par time"). Only the best stars and time per level are saved.
 - **Par time**: superseded 2026-10-21 by the Scavenger's finish time. (v4: the target time for the third star, LEVELS_BUILD_PLAN A2.)
-- **Scavenger**: the rival, an old robot rover; a ghost replay of an honest scripted run with its own build and route. It never collides (SHOWCASE_PLAN §8).
-- **Booster**: one use per level attempt (Shift): 2500 N for up to 1.5 s, stopping at top speed (SHOWCASE_PLAN §3a).
+- **Scavenger**: the rival, an old robot rover; a ghost replay of an honest scripted run with its own route. Polish round (DECISIONS 2026-10-26): one look and build on every level (Heavy + Smooth + Medium), a worn part tuned per level, no head start, and a recharging booster. It never collides (SHOWCASE_PLAN §8).
+- **Booster** (Shift): recharges 15 s after each burn from R11 on (DECISIONS 2026-10-26; before: one use per level attempt); 2500 N for up to 1.5 s, stopping at top speed (SHOWCASE_PLAN §3a).
 - **Stretch**: a named part of a level's route (4–6 per level) that the report compares time on.
 - **Sample**: one of 3 canisters per level, collected by driving through it (never by stopping); it stays collected after a respawn.
 - **Gear**: `direction` in the physics state (forward or reverse); it decides which key drives and which brakes.
@@ -141,7 +141,9 @@ save/                                 local copy of progress; Supabase sync (lat
 .nvmrc                Node major version (24)
 package.json, package-lock.json, tsconfig.json, vite.config.ts, index.html
 docs/
-  ROADMAP.md          milestones, status, open issues
+  ROADMAP.md          live milestones, status, open issues
+  ROADMAP_HISTORY.md  retired milestones and closed open issues, moved word for word (2026-10-26)
+  AUDIT_R9.md         the R9 audit: measurements and the proposals the 2026-10-26 values came from
   DECISIONS.md        dated log of decisions confirmed by k._muz
   DESIGN.md           approved design: Game v4 (top), Demo v3 (kept as Endless), game design v2 (superseded)
   LEVELS_BUILD_PLAN.md  Game v4: design (Part A), worktree rules (Part B), session prompts (Part C)

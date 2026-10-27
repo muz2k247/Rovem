@@ -1,6 +1,6 @@
 # Rovem: Polish round
 
-**Status:** direction decided by k._muz in chat on 2026-10-26 (DECISIONS 2026-10-26). Values are not decided yet: the R9 audit proposes them, k._muz decides, and only then do the build sessions start. Written for k._muz and the implementor sessions.
+**Status:** direction decided by k._muz in chat on 2026-10-26 (DECISIONS 2026-10-26); R9 audited the build and the values are decided (DECISIONS 2026-10-26 "values after the R9 audit", and 2026-10-27 for the ship and the edges). The prompts for R10–R15 are §7–§12; run them in that order. Written for k._muz and the implementor sessions.
 
 **What it builds on.** The Showcase round (`docs/SHOWCASE_PLAN.md`) is built through R8. This round changes parts of it (listed under "What it supersedes"); everything else in that plan stays.
 
@@ -83,9 +83,9 @@ One at a time, in `D:\ROVEM` on `main`.
 
 | Session | What | When |
 |---|---|---|
-| **R9** | **Audit:** measure, simulate, propose. No game changes. | Now |
+| **R9** | **Audit:** measure, simulate, propose. No game changes. | ✅ 2026-10-26 |
 | — | k._muz and the advisor read the audit and decide the values. | After R9 |
-| R10+ | Build sessions, written after the audit. Likely order: (1) performance and the jump glitch; (2) the systems the levels need: the recharging booster (for the student and the Scavenger) and the angled launcher hit; (3) the level pass, the top priority: launchers, oil, water, 2–3 elements per idea, 120–180 s, with the Scavenger's settings retuned at the end (data only); (4) pickup feedback and polish. | After the decisions |
+| R10+ | Build sessions, written after the audit. Likely order: (1) performance and the jump glitch; (2) the systems the levels need: the recharging booster (for the student and the Scavenger) and the angled launcher hit; (3) the level pass, the top priority: launchers, oil, water, 2–3 elements per idea, 120–180 s, with the Scavenger's settings retuned at the end (data only); (4) pickup feedback and polish. *Updated 2026-10-26: set as R10–R14 in `docs/ROADMAP.md` (Polish round); the levels now target about 150 s (DECISIONS "values after the R9 audit" (8)); R10's prompt is §7.* | After the decisions |
 
 **Model:** run R9 on Opus. It's mostly judgment: reading levels as an educator and a player, and weighing the options. Sonnet is fine for the build sessions.
 
@@ -177,3 +177,238 @@ Paste everything inside the box into a fresh implementor session.
 > 5. A suggested split of the build sessions.
 >
 > **Done when:** A to H are each answered with measured or simulated numbers (or a plain "couldn't measure, because …"), and `git status` shows only the report, the screenshots and the ROADMAP row. Suggested commit message: `R9: audit the Showcase build (memory, levels, launchers, water, booster, Scavenger)`.
+
+---
+
+## 7. Prompt: R10, performance and the jump camera
+
+Written 2026-10-26 after the values were decided (DECISIONS 2026-10-26, "Polish round: values after the R9 audit"). **Model:** Sonnet. The causes are found and measured; this session fixes them.
+
+Paste everything inside the box into a fresh implementor session.
+
+> **Session R10: performance and the jump camera (no physics changes).**
+>
+> Read `CLAUDE.md`, `docs/ROADMAP.md`, both DECISIONS rows dated 2026-10-26, and in `docs/AUDIT_R9.md`: §1, part A and Appendix A. The audit found every cause below; don't re-audit, fix.
+>
+> **Rules:**
+> - No change to `src/physics/`, to any game value or to any level file. typecheck, test and balance (20/9/23/17) stay green.
+> - **Graphics High stays the default.** k._muz rejected switching to Low automatically. Don't cut detail on High without asking.
+> - Measure on the production build (`npm run build`, `npm run preview`) with `playwright-core` installed in your scratchpad, as R9 did. The probe needs the five temporary hooks listed in Appendix A. Add them for measuring and remove them before you finish, or keep them only behind `?dev=1`.
+> - Run each measurement on a quiet machine (no tests or simulations running at the same time). Timings on this laptop move by several ms between runs.
+>
+> **1. Baseline.** Run the Appendix A probe (`probe_levels`, `probe_leak`) on Low and High before any change, and keep the numbers.
+>
+> **2. The jump camera** (AUDIT_R9 A4, value 24). Today the camera's height follows the ground *under* the rover, so over a chasm it sinks up to 18 m below the rover and loses it, and the road clamp pulls it from 6.2 m behind to 0 m. The sky dome, the mountain ring and the far ground follow the same ground height, so the horizon drops and steps 2–4 m in single frames at pit edges.
+> - While airborne: the camera follows the rover's own flight height, with no road clamp.
+> - On landing: ease back to the ground rule, with the landing pitch eased over 0.15 s.
+> - The sky, the mountain ring and the far ground follow a smoothed height, so nothing steps at a pit edge.
+> - Files: `src/render/levelCamera.ts`, `src/render/levelScene.ts`.
+> - Take screenshots at the same jump moments as `docs/captures/r9/crater-jump*.jpg` and save them in `docs/captures/r10/`.
+>
+> **3. The fork freezes** (A1, value 25). The longest frame on every level (56–111 ms) comes just after a fork's merge point, where the session drives the other road headless inside one frame. That drive starts from rest with the throttle held, so it doesn't depend on the student's run. Work it out at level load, as the Scavenger already is, or in small pieces across frames before the merge. Add a test that the report shows the same other-road time and outcome as today.
+>
+> **4. The leak** (A2). Each level visit or Retry creates a new WebGL renderer, and none is ever freed: 12 contexts in the leak test, about 17 MB of Chrome private memory per visit. All three canvases stayed alive even with the hooks cleared. R9 did not trace the holder.
+> - Find the holder: a listener, a requestAnimationFrame, a closure, or a module-level reference.
+> - On leaving a level: dispose the scene's geometries, materials and textures, the rover and the dust, then call `renderer.dispose()` and `forceContextLoss()`. Or share one renderer across the whole app.
+> - Endless (`RunScreen`) too.
+> - **Done when:** the second loop of the leak test is flat (within noise) and the count of live contexts stays at 1.
+>
+> **5. After.** Run the probe again on Low and High and put both tables (before and after) in the ROADMAP R10 row or a short `docs/captures/r10/perf.md`. If a level's mean frame on High is still over 16.7 ms while driving, report it with its draw calls and triangles. Don't change the default.
+>
+> **Docs:** the ROADMAP R10 row, `CHANGELOG.md` under Unreleased. Close nothing in ROADMAP without a reason.
+>
+> **Done when:** steps 1–5 are done; the jump screenshots show the rover in view through every Crater Field jump; no frame over 50 ms comes from a fork; and the tests are green. Suggested commit message: `R10: fix the jump camera, the fork freezes and the WebGL leak`.
+
+---
+
+## 8. Prompt: R11, the systems
+
+Written 2026-10-27. **Model:** Sonnet. Run after R10 is committed.
+
+> **Session R11: the systems every level needs (booster recharge, stuck rule, angled launchers, oil, water fixes, pop-up timing).**
+>
+> Read `CLAUDE.md`, `docs/ROADMAP.md` (including the R10 row), the three DECISIONS rows dated 2026-10-26 and 2026-10-27, and in `docs/AUDIT_R9.md`: §1, C, D, E, G and §3. The values are decided; use them exactly as DECISIONS states. If something you need isn't there, stop and ask k._muz.
+>
+> **Rules:**
+> - Write each test before its code. typecheck, test and balance (20/9/23/17) stay green; the balance counts must not change.
+> - Every value goes in `src/content/` data and in `docs/specs/v2/component_values/showcase.csv`, with a change-log line. Logic never hard-codes a value.
+> - Levels are not rebuilt here (that's R12–R13). Change a level file only where a system needs it to work: launcher positions, a test oil patch.
+>
+> **1. The recharging booster** (DECISIONS values (1) and (3)):
+> - 15 s from the end of a burn. Retry refills it; a checkpoint return doesn't. A HUD ring shows the recharge.
+> - The Scavenger: Heavy + Smooth + Medium on every level. Motor top speed × 0.945, or × 1.00 on Iron Ridge, stored as per-level data. No start delay.
+> - It fires its booster when ready, on the ground, in forward gear and ≥ 0.5 m/s below its top speed. The ghost's replay includes its burns.
+> - Its card shows the worn part. Its booster label follows DECISIONS (10).
+>
+> **2. The stuck rule** (values (7)):
+> - A 2 s hold replaces the instant return. Floaters get the same 2 s.
+> - The timer pauses during a burn and resets if the rover moves. Letting go of W cancels the return. R still returns at once.
+> - On screen: the wheels spin, a ring shows the return coming, and the pop-up stays until the return. The HUD points at Shift when the booster is ready.
+> - Tests: mud with a burn and without one, an edge, a floater.
+>
+> **3. Angled launchers** (values (5)):
+> - The rule: (m₁ + m₂)v′ = m₁v₁ + m₂v₂, with velocities as vectors, in `src/physics/momentum.ts`. It must give exactly today's `shareMomentum` results for 0° and 180°; test that.
+> - Placement: 11 m from the centre line, both sides alternately, firing at 30° to the road. Head-on bags at 12 m/s, kickers at 30 m/s.
+> - Each launcher aims where the rover will be if it keeps its current speed.
+> - Launchers are solid, so the rover can't drive through them.
+> - Kickers get a warning sound and an edge marker.
+> - Never across ice, and hits at least 2 s apart.
+> - The screen shows only the along-road numbers.
+> - Move the existing launchers in Geyser Canyon and Iron Ridge. Move Endless Launcher Alley's to the corridor edges (|z| ≥ 15 m).
+> - Edit `Physics_Model_Spec_v2` with a change-log line.
+> - **Run the `physics-checker` agent** and fix what it finds.
+>
+> **4. Oil** (values (4)): a new surface, μ_g 0.15 and μ_r 0.02, with its own look and pop-up. Its placement comes in R12, so add only a test patch here.
+>
+> **5. Water fixes** (AUDIT_R9 D5 item 5, and the weight arrow):
+> - The entry pop-up reads the depth after the move.
+> - The weight arrow shows in water, beside the upthrust arrow.
+> - The meter, the depth posts and the water line come in R12.
+>
+> **6. Pop-up timing** (values (9) and (10)): on screen for 1.0 s + 0.3 s per word, between 1.5 s and 4.0 s, for pop-ups and captions alike. The queue still shows one at a time.
+>
+> **Docs:**
+> - Mark SHOWCASE_PLAN §3a and §8 superseded where DECISIONS 2026-10-26 replaces them, keeping their reasons.
+> - CLAUDE.md Key terms: in Booster, drop "from R11 on".
+> - The ROADMAP R11 row, and CHANGELOG.
+> - Run the `spec-sync` agent at the end.
+>
+> **Done when:** 1–6 work in the game and in tests, the physics-checker passes, and typecheck, test and balance are green. Suggested commit message: `R11: recharging booster, 2 s stuck rule, angled roadside launchers, oil, water fixes, pop-up timing`.
+
+---
+
+## 9. Prompt: R12, level pass 1 (Crash Site and The Crossing)
+
+Written 2026-10-27. **Model:** Sonnet, or Opus for stronger level-design judgment. Run after R11 is committed.
+
+> **Session R12: rebuild Crash Site and The Crossing.**
+>
+> Read `CLAUDE.md`, `docs/ROADMAP.md` (the R10 and R11 rows), the DECISIONS rows dated 2026-10-26 and 2026-10-27, and `docs/SHOWCASE_PLAN.md` (the level design rules and §5, surfaces). In `docs/AUDIT_R9.md`, read B (Crash Site, The Crossing and the maps), D, E and §3.
+>
+> **Target for each level** (DECISIONS values (8)):
+> - The starting build's clean star run, with all 3 samples, takes about 150 s.
+> - An ordinary run fits in 150–180 s. So no single mistake costs more than a few seconds, and checkpoints sit close together.
+> - The level shows its idea through 2–3 elements and brings back the earlier ideas.
+> - The starting build can reach every sample, and none of the 27 builds can get trapped.
+> - The layout leaves room for R11's longer pop-ups.
+>
+> **Crash Site** (friction and grip):
+> - The oil slick from the wreck, 20–60 m from the start, plus a tongue on the first third of bend-1. Nothing on the outside of the oiled bend may crash the rover.
+> - A mud gully, and crater ice.
+> - Keep the Ring.
+>
+> **The Crossing** (upthrust and water drag):
+> - A 60 m wading reach at 0.5 m on the main route, with a sample in it.
+> - A 20 m deep crossing at 1.0 m on a fork, with the bridge kept as the other road.
+> - The river's vent moved off the river.
+> - Depth posts (0.3 / 0.5 / 1.0 m), a water line on the rover, spray and a wake, and the two-bar meter: upthrust against weight, then "You float".
+> - Check that every build that floats can cross the deep reach with one burn.
+>
+> **Check:**
+> - Run `npm run maps`.
+> - Drive both levels with the autopilot for all 27 builds, and report each level's clean time for the starting build.
+> - Save screenshots in `docs/captures/r12/`.
+> - Don't retune the Scavenger yet (that's R13), but report its current gap.
+>
+> **Docs:** level values in `showcase.csv` and `levels.csv`, with change-log lines; the ROADMAP R12 row; CHANGELOG.
+>
+> **Done when:** both levels hit the target, every build finishes, and typecheck, test and balance are green. Suggested commit message: `R12: rebuild Crash Site (oil, mud, ice) and The Crossing (wading reach, deep crossing, depth meter)`.
+
+---
+
+## 10. Prompt: R13, level pass 2 and the Scavenger retune
+
+Written 2026-10-27. **Model:** Sonnet, or Opus for stronger level-design judgment. Run after R12 is committed.
+
+> **Session R13: rebuild Geyser Canyon, Crater Field and Iron Ridge; teach `npm run rival` the magnet poles; retune the Scavenger.**
+>
+> Read what R12 read, plus the R12 row, AUDIT_R9 B (the three levels) and G2, and DECISIONS 2026-10-27.
+>
+> **Target:** the same as R12: about 150 s for the starting build's clean run, 150–180 s for an ordinary run, 2–3 elements per idea, and every build finishes.
+>
+> **Geyser Canyon** (impulse and momentum): the roadside launchers at least 2 s apart, a heavy-against-light road, a mud bank.
+>
+> **Crater Field** (weight, slopes and falling):
+> - A vent in each cave, ice braking in low gravity, and a jump that suits a heavy rover in the Heavy Cave.
+> - Cave roofs and ramp meshes.
+> - Glowing crystals and dust (k._muz asked for both).
+> - Measure the frame time on High before and after the crystals and dust, with the R10 probe. If it rises by more than 1 ms, report it and use a smaller particle pool.
+>
+> **Iron Ridge** (magnetism): a chain of pylons, a pylon on an icy slope, a magnetic brake, and a fork with a real choice.
+>
+> **Then, in order:**
+> 1. Make `npm run rival` drive with the magnet poles (OI-50, in ROADMAP_HISTORY), so its Iron Ridge numbers match the game.
+> 2. Retune the Scavenger's worn value for each level, as data only, with the same look and parts everywhere. Target: +4–8% slower than the starting build's clean best on all five levels, with both using the booster. Report the values.
+>
+> **Docs:** values in the CSVs with change-log lines; the ROADMAP R13 row; CHANGELOG; screenshots in `docs/captures/r13/`.
+>
+> **Done when:** all three levels hit the target, the Scavenger lands +4–8% slower on all five, and typecheck, test and balance are green. Suggested commit message: `R13: rebuild Geyser Canyon, Crater Field and Iron Ridge; rival learns poles; retune the Scavenger`.
+
+---
+
+## 11. Prompt: R14, pickup feedback, countdown and tidy-ups
+
+Written 2026-10-27. **Model:** Sonnet. Run after R13 is committed.
+
+> **Session R14: pickup feedback, the countdown, wording fixes and code tidy-ups. No physics or level changes.**
+>
+> Read `CLAUDE.md`, `docs/ROADMAP.md`, DECISIONS 2026-10-26 and 2026-10-27 (item (10) above all), AUDIT_R9 F and G3, and OI-18 and OI-37 in `docs/ROADMAP_HISTORY.md`.
+>
+> 1. **Sample pickup** (AUDIT_R9 F2):
+>    - a 0.3 s chime made in Web Audio, with no outside asset;
+>    - a 0.5 s gold sparkle from the `bursts.ts` pool;
+>    - the canister flies to the HUD in 0.4 s;
+>    - a three-pip counter shows for 2 s;
+>    - "Sample n of 3" goes out as a pop-up.
+> 2. **Ship-part moment:** 1.5 s after the clock stops, before the report:
+>    - the crate lifts and spins, and its cyan bands flash;
+>    - a low thump plays;
+>    - the camera eases to a 30° orbit;
+>    - the ship's outline shows, with this part lit.
+> 3. **The 3-2-1 countdown**, as DECISIONS (10) says.
+> 4. **The booster pop-up says "up to"** (OI-37): "up to 2500 N × 1.5 s".
+> 5. **Code tidy-ups** from OI-18: small and targeted, with no refactor beyond them.
+>
+> **Docs:** the ROADMAP R14 row, CHANGELOG, screenshots in `docs/captures/r14/`.
+>
+> **Done when:** 1–5 work, and typecheck, test and balance are green. Suggested commit message: `R14: pickup moments, 3-2-1 countdown, booster wording, tidy-ups`.
+
+---
+
+## 12. Prompt: R15, the art pass (ship, launch ending, edges, mountain ring)
+
+Written 2026-10-27. **Model:** Sonnet; switch to Opus if the first ship screenshots disappoint. Run after R14 is committed.
+
+> **Session R15: rebuild the ship and the launch ending; small edge fixes; let the mountain ring show.**
+>
+> Read `CLAUDE.md` (Art and assets above all), `docs/ROADMAP.md`, DECISIONS 2026-10-27 ("the ship, the ending and the edges"), DECISIONS 2026-10-23 (R8, the ending), `docs/specs/v2/Art_Direction_v2.md`, and OI-46 and OI-53 in `docs/ROADMAP_HISTORY.md`. Look at the screenshots in `docs/captures/r6b/`.
+>
+> **Rules:**
+> - Build only original low-poly geometry in code: no outside models or images.
+> - No change to physics, level timing or collisions. The edges are looks only.
+> - typecheck, test and balance stay green.
+>
+> **Part 1: the ship (stop for k._muz).** k._muz said the ship "is literally shapes stacked upon each other".
+> - Build one ship model in `src/render/`, used for the wreck at Crash Site, on the Levels screen and in the launch.
+> - A tapered hull with a clear outline, not primitives stacked on each other.
+> - The five recovered parts visibly fitted into it.
+> - An engine bell and landing legs.
+> - Flat-shaded panels in the art direction's colours.
+> - Save screenshots from three angles in `docs/captures/r15/`, then **stop and ask k._muz to approve them before Part 2.** Revise until approved.
+>
+> **Part 2: the launch ending.** Rework it around the new ship: the camera path, a better flame, smoke and ground dust, and caption timing that uses R11's pop-up rule. Keep the lift-off rule a = g (thrust ÷ weight − 1), the 10 s length, Skip and Home.
+>
+> **Part 3: the edges and the mountain ring.**
+> - The rule (DECISIONS 2026-10-27): on open places, seen from the chase camera, the top of the nearby hills must sit lower in view than the mountain ring's peaks.
+> - On Crash Site, Crater Field, The Crossing and the open Endless places, hillsides rise about 4–6 m over about 80 m, with dips down to about 2 m.
+> - Canyons keep their tall walls.
+> - Make the rocks rounder, and the rock step so it doesn't read as a sawtooth.
+> - Check the rule with a probe over screenshots from each level, and measure the frame time on High before and after.
+>
+> **Docs:**
+> - Values in `showcase.csv`, with change-log lines.
+> - Mark SHOWCASE_PLAN §12a superseded where it changes, keeping the reason.
+> - The ROADMAP R15 row, and CHANGELOG.
+> - Run the `spec-sync` agent at the end.
+>
+> **Done when:** k._muz has approved the ship, the ending plays, the mountain ring shows on the open levels, and typecheck, test and balance are green. Suggested commit message: `R15: rebuild the ship and the launch ending; lower open-place hills so the mountains show`.

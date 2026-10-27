@@ -6,6 +6,16 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Docs (the ship, the ending and the edges; 2026-10-27)
+- DECISIONS: "the ship, the ending and the edges" (k._muz: the ship is rebuilt; the edges get small fixes; the mountain-ring rule chosen by Claude).
+- POLISH_PLAN §8–§12: the R11–R15 prompts; status line updated. DECISIONS: item (10) of the R9 values row (countdown, pickup set, pop-up time rule, Scavenger booster label, Endless launchers, no oil in Endless).
+- ROADMAP: R15 art pass added; OI-46 and OI-53 closed and moved to `docs/ROADMAP_HISTORY.md`. CLAUDE.md: R10–R15.
+
+### Docs (R9 values decided; roadmap split; 2026-10-26)
+- DECISIONS: "Polish round: values after the R9 audit" (booster 15 s, Scavenger, oil, launchers, water, the 2 s stuck rule, levels about 150 s, pop-up timing; no automatic Low graphics).
+- ROADMAP: R10–R14 and a Polish round section; closed open issues and retired milestones moved word for word to the new `docs/ROADMAP_HISTORY.md`; open now: OI-25, OI-46, OI-53.
+- POLISH_PLAN §7: the R10 prompt. CLAUDE.md: Key terms (Level, Scavenger, Booster) and layout.
+
 ### Docs (Polish round planned; 2026-10-26)
 - `docs/POLISH_PLAN.md`: k._muz's playtest feedback, the round's decisions (DECISIONS 2026-10-26), the sessions and the R9 audit prompt. ROADMAP: row R9; OI-53 points to the playtest list.
 
