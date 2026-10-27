@@ -42,7 +42,9 @@ const RIDE_EASE_PER_S = 7;
 const SHAKE_HZ = 38;
 const SHAKE_UP_SHARE = 0.6;
 const ARROWS_LIFT_M = 0.75;
-const DUST_PER_MPS: Record<string, number> = { sand: 7, ice: 2.5, mud: 6, asphalt: 3 };
+/** How fast the wheels spin while the rover is stuck (presentation). */
+const STUCK_SPIN_RAD_PER_S = 28;
+const DUST_PER_MPS: Record<string, number> = { sand: 7, ice: 2.5, mud: 6, oil: 1.5, asphalt: 3 };
 /** A camera kick (SHOWCASE_PLAN §16: 0.2 s) and the wider view of a vent, as in the Endless scene. */
 const CAMERA_KICK_S = 0.2;
 const CAMERA_KICK_M = 0.14;
@@ -75,7 +77,7 @@ export interface LevelScene {
   /** The scene's part of a moment (SHOWCASE_PLAN §10): a burst of particles at the rover and a camera cue. */
   cue(moment: { particles?: MomentParticles; camera?: MomentCamera }): void;
   /** Where the Scavenger's edge marker points (three.js coordinates) and how far it is from the rover; undefined where the level has no Scavenger. */
-  scavengerMarker(): { position: THREE.Vector3; distanceM: number } | undefined;
+  scavengerMarker(): { position: THREE.Vector3; distanceM: number; boosting: boolean } | undefined;
   /** Opacity of the Scavenger right now (1 when there is none). */
   readonly scavengerOpacity: number;
   /** Developer tool (`?dev=1`): a camera straight above the rover, x to the right and z up the picture, `heightM` above the ground. */
@@ -200,10 +202,12 @@ export function createLevelScene(session: LevelSession, content: Content, option
     const movedM = state.distanceM >= lastDistanceM ? state.distanceM - lastDistanceM : 0; // 0 after a reset
     lastDistanceM = state.distanceM;
     const rolling = state.direction === 'reverse' !== state.rollingBack ? -1 : 1;
+    const hud = hudIn ?? s.hud;
     wheelAngle -= wheelTurnRad(rolling * movedM);
+    // Held at rest on full throttle (the stuck rule, R11): the wheels spin on the spot while the return counts down.
+    if (hud.stuck?.cause === 'stuck' && frameS > 0) wheelAngle -= STUCK_SPIN_RAD_PER_S * frameS;
     for (const w of model.wheels) w.rotation.z = wheelAngle;
 
-    const hud = hudIn ?? s.hud;
     arrowCount = 0;
     arrows.group.position.set(pose.centreXM, rideY + ARROWS_LIFT_M, -pose.centreZM);
     if (showForces) {

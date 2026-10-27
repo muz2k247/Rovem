@@ -5,7 +5,7 @@ import { airStep, launch } from '../../physics/air.ts';
 import { createFixedStepLoop } from '../../physics/loop.ts';
 import { movingIntoEdge, scrapeAlongEdge, type EdgeContact } from '../../physics/collision.ts';
 import { magnetOnRover } from '../../physics/magnet.ts';
-import { shareMomentum } from '../../physics/momentum.ts';
+import { shareMomentumVectors } from '../../physics/momentum.ts';
 import { createState, motionSign, step, type PhysicsState } from '../../physics/step.ts';
 import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/types.ts';
 import { slopePullN } from '../../physics/ground.ts';
@@ -13,6 +13,7 @@ import { floats, upthrustN, waterDragNsPerM } from '../../physics/water.ts';
 import { surfaceSpec, type BuildSelection } from '../buildFromParts.ts';
 import type { ForceArrow, HudModel, MagnetPole, ReportModel } from '../contracts.ts';
 import { footprintOverlapsCircle, pointAlongPath } from '../geometry.ts';
+import { bagVelocity, crossingTimes, launcherShouldFire } from '../launchers.ts';
 import {
   SLIDE_MARK_RAD, sidewaysBendRadPerS, slideAngleRad, travelTurnLimitFromNormalRadPerS, turnTravelDirection, wrapAngle,
 } from '../run/drift.ts';
@@ -85,7 +86,7 @@ export type WhatIfOutcome = 'merged' | 'wall' | 'barrier' | 'stuck' | 'floated' 
 
 export type LevelEventKind =
   | 'surface' | 'slip' | 'boost' | 'hit' | 'gravity' | 'slope' | 'descent' | 'rollback' | 'slide' | 'water' | 'float'
-  | 'takeoff' | 'landing' | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish' | 'booster' | 'split';
+  | 'takeoff' | 'landing' | 'magnet' | 'pole' | 'scrape' | 'sample' | 'checkpoint' | 'respawn' | 'fork' | 'finish' | 'booster' | 'split' | 'warning' | 'stuckHold' | 'stuckRelease';
 
 /** Something that happened, with the numbers that changed. Captions and the report are made from these. */
 export interface LevelEvent {
@@ -167,11 +168,12 @@ interface Bag {
   xM: number;
   zM: number;
   dirRad: number;
+  speedMps: number;
 }
 
+/** A launcher fires once per pass, aimed (launchers.ts); what is remembered is when it did. */
 interface CannonState {
-  activatedAtS: number;
-  shots: number;
+  firedAtS: number;
 }
 
 /**
@@ -274,6 +276,11 @@ export function createLevelSession(options: LevelSessionOptions) {
   let usedPads = new Set<string>();
   let cannonStates = new Map<string, CannonState>();
   let bags: Bag[] = [];
+  /** When the last launcher hit landed: a bag that arrives within `minHitGapS` of it does nothing (one pop-up at a time). */
+  let lastHitS = -Infinity;
+  /** The kickers that have warned, so each warns once; and the side of the screen the warning shows on, while one is live. */
+  let warnedKickers = new Set<string>();
+  let kickerAlert: 'left' | 'right' | null = null;
   let forks = new Map<string, ForkState>();
   let signsShown = new Set<string>();
   let hints: HintState[] = [];
@@ -294,7 +301,14 @@ export function createLevelSession(options: LevelSessionOptions) {
   let releasedSinceS: number | undefined;
   let snap: Snapshot | undefined;
   let captionNow: HudModel['caption'] = null;
-  let boosterUsed = false;
+  /** Steps of recharge left after the last burn ended (R11): 0 means the booster is ready. */
+  let rechargeStepsLeft = 0;
+  /** The stuck rule (R11): steps the rover has been at rest on full throttle (or floating almost still), and the kind. */
+  let stuckSteps = 0;
+  let stuckKind: 'stuck' | 'floated' | undefined;
+  let stuckAtWall = false;
+  /** The step of the last scrape against a wall: a rover pressed into one is pushed back each step, so it never rests at exactly 0. */
+  let lastWallStep = -Infinity;
   /** A jump in progress (E45): the height above sea level of the ground's zero, and the two parts of the velocity. Left out while on the ground. */
   let air: { yM: number; verticalMps: number; horizontalMps: number; startS: number; flownM: number; apexM: number; takeoffYM: number; gMps2: number } | undefined;
   /** Steps of push the booster has left (counted in whole steps, so 1.5 s is exactly 180 steps and no rounding adds one). */
@@ -306,6 +320,23 @@ export function createLevelSession(options: LevelSessionOptions) {
   const forceLine = createForceLine();
 
   const clockS = () => clockStep * dtS;
+  const rechargeSteps = Math.round(cfg.booster.rechargeS / dtS);
+  const stuckSteps_ = Math.round(cfg.stuck.holdS / dtS);
+  /** A burn is over (it ran out, reached top speed, or the rover crashed or took off): the recharge starts now. */
+  const startRecharge = () => {
+    boosterStepsLeft = 0;
+    rechargeStepsLeft = rechargeSteps;
+  };
+  const endBurn = () => {
+    if (boosterStepsLeft > 0) startRecharge();
+  };
+  /** The stuck hold stops (the rover moved, a key was let go, or it went back): the screen takes the pop-up down. */
+  const clearStuck = () => {
+    if (stuckSteps === 0) return;
+    stuckSteps = 0;
+    stuckKind = undefined;
+    if (!quiet) emit({ kind: 'stuckRelease' });
+  };
   const gearAngle = (s: PhysicsState) => (s.direction === 'forward' ? s.headingRad : s.headingRad + Math.PI);
   /** The front of the footprint is the physics position; the centre is half a rover length behind it. */
   const centreOf = (s: PhysicsState) => ({
@@ -368,12 +399,18 @@ export function createLevelSession(options: LevelSessionOptions) {
     usedPads = new Set();
     cannonStates = new Map();
     bags = [];
+    lastHitS = -Infinity;
+    warnedKickers = new Set();
+    kickerAlert = null;
     signsShown = new Set();
     pylonModes = new Map();
     flash = undefined;
     flashUntilS = 0;
     snap = undefined;
     air = undefined;
+    endBurn();
+    clearStuck();
+    lastWallStep = -Infinity;
     forceLine.reset();
     // An unfinished fork starts again from its fork line; a finished one stays finished.
     for (const f of forks.values()) if (!f.done) {
@@ -547,6 +584,7 @@ export function createLevelSession(options: LevelSessionOptions) {
           emit({ kind: 'scrape', speedBeforeMps, speedAfterMps: speedMps, angleDeg: alphaRad / DEG });
         }
         wasScraping = true;
+        lastWallStep = stepIndex;
         return true;
       }
       c = again.contact;
@@ -560,6 +598,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     if (phase === 'finished' || phase === 'ended') return;
     clockStep += 1;
     stepIndex += 1;
+    if (rechargeStepsLeft > 0) rechargeStepsLeft -= 1;
     if (clockStep % traceEvery === 0) trace.push({ timeS: clockS(), speedMps: phase === 'driving' ? state.speedMps : 0 });
     advance();
     captionNow = queue.update(clockS());
@@ -611,6 +650,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     const groundSpeedMps = state.speedMps;
     const lip = launch(groundSpeedMps, ramp.angleDeg * DEG);
     const yM = world.heightM(state.positionXM, state.positionZM) + ramp.lengthM * Math.tan(ramp.angleDeg * DEG);
+    endBurn();
     air = { yM, verticalMps: lip.verticalMps, horizontalMps: lip.horizontalMps, startS: clockS(), flownM: 0, apexM: 0, takeoffYM: yM, gMps2: g };
     state = { ...state, speedMps: lip.horizontalMps, rollingBack: false };
     snap = undefined;
@@ -659,6 +699,7 @@ export function createLevelSession(options: LevelSessionOptions) {
       yM = a.takeoffYM + roofM;
       verticalMps = Math.min(verticalMps, 0);
     }
+    moveBags(clockS());
     a.flownM += flown.horizontalM;
     a.apexM = Math.max(a.apexM, yM - a.takeoffYM);
     state = {
@@ -739,10 +780,11 @@ export function createLevelSession(options: LevelSessionOptions) {
     const topMps = prev.direction === 'forward' ? rover.topSpeedMps : baseConstants.reverseTopSpeedFraction * rover.topSpeedMps;
     let boostN = 0;
     if (boosterStepsLeft > 0) {
-      if (prev.speedMps >= topMps && !prev.rollingBack) boosterStepsLeft = 0;
+      if (prev.speedMps >= topMps && !prev.rollingBack) endBurn();
       else {
         boostN = cfg.booster.forceN;
         boosterStepsLeft -= 1;
+        if (boosterStepsLeft === 0) startRecharge(); // the last step of the burn: the recharge starts now
       }
     }
 
@@ -838,7 +880,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     }
     fireCannons(front, t);
     moveBags(t);
-    hitBags(front, t, motion);
+    hitBags(front, t);
 
     // Samples, checkpoints, signs, finish.
     if (!quiet) {
@@ -894,16 +936,34 @@ export function createLevelSession(options: LevelSessionOptions) {
       return;
     }
 
-    // Stuck: full throttle, no brake and no movement (friction beats the motor); or floating and slowed to a stop.
+    // Stuck (R11, DECISIONS 2026-10-26 (7)): full throttle, no brake and no movement (friction beats the motor, or the rover is pressed against a
+    // wall); or floating and slowed almost to a stop. After `stuck.holdS` the rover goes back to its checkpoint, not at once: the wheels spin and a
+    // ring shows it coming. The timer does not run during a burn; it starts again if the rover moves, a key is let go, or the rover goes back.
     const floatStopped = floating && state.speedMps < cfg.rules.floatStopMps;
-    if (floatStopped) {
-      state = { ...state, speedMps: 0 };
-      scheduleRespawn('floated');
-      return;
-    }
-    if (state.speedMps === 0 && state.throttleLevel === 1 && state.brakeLevel === 0 && state.drivingState === 'Stopped') {
-      scheduleRespawn('stuck');
-      return;
+    const pressedOnWall = state.speedMps < cfg.rules.floatStopMps && stepIndex - lastWallStep <= cfg.stuck.wallPressSteps;
+    const atRestOnThrottle = state.throttleLevel === 1 && state.brakeLevel === 0 && ((state.speedMps === 0 && state.drivingState === 'Stopped') || pressedOnWall);
+    if (!floatStopped && !atRestOnThrottle) clearStuck();
+    else if (boostN === 0) {
+      const kind = floatStopped ? 'floated' : 'stuck';
+      if (stuckSteps > 0 && stuckKind !== kind) clearStuck();
+      if (stuckSteps === 0) {
+        stuckKind = kind;
+        stuckAtWall = kind === 'stuck' && pressedOnWall;
+        if (!quiet) {
+          emit(kind === 'floated'
+            ? { kind: 'stuckHold', cause: 'floated', upN, weightN: rover.massKg * g, depthM }
+            : { kind: 'stuckHold', cause: 'stuck', frictionN: q.rollingForceN, forceN: rover.driveForceMaxN, ...(stuckAtWall ? { obstacle: 'wall' as const } : {}) });
+        }
+      }
+      stuckSteps += 1;
+      if (stuckSteps >= stuckSteps_) {
+        stuckSteps = 0;
+        stuckKind = undefined;
+        if (!quiet) emit({ kind: 'stuckRelease' });
+        state = { ...state, speedMps: 0 };
+        scheduleRespawn(kind);
+        return;
+      }
     }
 
     // --- events and captions from changes of place and state ---
@@ -911,7 +971,7 @@ export function createLevelSession(options: LevelSessionOptions) {
     const inWater = world.waterDepthM(centreNow.x, centreNow.z) > 0;
     if (!inWater && frontSurface !== currentSurfaceId) {
       currentSurfaceId = frontSurface;
-      if (frontSurface === 'mud' || frontSurface === 'sand' || frontSurface === 'ice') {
+      if (frontSurface === 'mud' || frontSurface === 'sand' || frontSurface === 'ice' || frontSurface === 'oil') {
         const sp = specs.get(frontSurface)!;
         const onIt = buildQuantities(rover, sp, { gravityMps2: g }, { slopeRad: slopeGear, upthrustN: upN });
         const asphalt = buildQuantities(rover, specs.get('asphalt')!, { gravityMps2: g }, { slopeRad: slopeGear, upthrustN: upN });
@@ -919,7 +979,7 @@ export function createLevelSession(options: LevelSessionOptions) {
           kind: 'surface', surfaceId: frontSurface, mu: sp.rollingFriction, k: rover.rollingFactor, normalN: onIt.normalForceN,
           frictionN: onIt.rollingForceN, asphaltN: asphalt.rollingForceN, gripN: onIt.gripLimitN,
         });
-        say(`surface-${frontSurface}`, { frictionN: newtons(onIt.rollingForceN), asphaltN: newtons(asphalt.rollingForceN), gripN: newtons(onIt.gripLimitN) });
+        say(`surface-${frontSurface}`, { frictionN: newtons(onIt.rollingForceN), asphaltN: newtons(asphalt.rollingForceN), gripN: newtons(onIt.gripLimitN), motorN: newtons(rover.driveForceMaxN) });
       }
     }
 
@@ -976,11 +1036,14 @@ export function createLevelSession(options: LevelSessionOptions) {
     }
     wasSliding = sliding;
 
-    // Water.
+    // Water. The entry reads the depth where the rover is now: the step's own `depthM` and `upN` are from before the move, so on the first
+    // step in the water they are 0 (R11, AUDIT_R9 D3).
     if (inWater && !wasInWater) {
-      const vol = cfg.water.roverVolumeM3 * Math.min(depthM / cfg.water.submersionHeightM, 1);
-      emit({ kind: 'water', upN, weightN: rover.massKg * g, depthM, volM3: vol, massKg: rover.massKg, gMps2: g });
-      say('water-in', { upN: newtons(upN), weightN: newtons(rover.massKg * g) });
+      const nowM = world.waterDepthM(centreNow.x, centreNow.z);
+      const nowUpN = upthrustN(cfg.water.densityKgPerM3, g, cfg.water.roverVolumeM3, cfg.water.submersionHeightM, nowM);
+      const vol = cfg.water.roverVolumeM3 * Math.min(nowM / cfg.water.submersionHeightM, 1);
+      emit({ kind: 'water', upN: nowUpN, weightN: rover.massKg * g, depthM: nowM, volM3: vol, massKg: rover.massKg, gMps2: g });
+      say('water-in', { upN: newtons(nowUpN), weightN: newtons(rover.massKg * g) });
     }
     if (inWater && floating && !wasFloating) {
       emit({ kind: 'float', upN, weightN: rover.massKg * g, depthM, volM3: cfg.water.roverVolumeM3 * Math.min(depthM / cfg.water.submersionHeightM, 1), massKg: rover.massKg, gMps2: g });
@@ -1061,34 +1124,58 @@ export function createLevelSession(options: LevelSessionOptions) {
     return terms;
   }
 
-  // --- cannons ---
+  // --- launchers (R11, DECISIONS 2026-10-26 (5)) ---
+  // A launcher stands beside the road and fires once, across it, at the angle its file gives. It fires at the moment the bag would meet the
+  // rover where their paths cross if the rover kept its velocity (launchers.ts), so braking, speeding up or swerving dodges it. Never when
+  // the crossing is on ice, and the bag's flight is no longer than its range.
+
+  /** The rover's velocity as an arrow: its speed along the way it is travelling. */
+  const roverVelocity = () => ({ x: state.speedMps * Math.cos(travelRad), z: state.speedMps * Math.sin(travelRad) });
+  const bagSpeedOf = (kind: 'headOn' | 'kicker') => (kind === 'headOn' ? bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps);
 
   function fireCannons(front: { x: number; z: number }, t: number) {
+    const v = roverVelocity();
+    let alert: 'left' | 'right' | null = null;
     for (const c of def.cannons) {
       const dirRad = c.directionDeg * DEG;
-      if (!cannonStates.has(c.id)) {
-        const triggerM = c.triggerM ?? (c.kind === 'headOn' ? bagSpec.headOnTriggerDistanceM : bagSpec.kickerWakeRearOffsetM + footprint.lengthM + 9);
-        if (Math.hypot(front.x - c.xM, front.z - c.zM) <= triggerM) cannonStates.set(c.id, { activatedAtS: t, shots: 0 });
+      const launcher = { position: { x: c.xM, z: c.zM }, velocity: bagVelocity(dirRad, bagSpeedOf(c.kind)) };
+      const toRover = { x: front.x - c.xM, z: front.z - c.zM };
+      const dist = Math.hypot(toRover.x, toRover.z);
+      const passed = toRover.x * Math.cos(dirRad) + toRover.z * Math.sin(dirRad) > 0; // the rover is beyond the launcher, the way its bag flies
+
+      // A kicker warns before it fires: a sound, and a marker at the edge of the screen on its side until its bag has gone.
+      if (c.kind === 'kicker' && !cannonStates.has(c.id) && dist <= bagSpec.kickerWarnM && !passed && v.x * Math.cos(dirRad) + v.z * Math.sin(dirRad) > 0) {
+        if (!warnedKickers.has(c.id)) {
+          warnedKickers.add(c.id);
+          emit({ kind: 'warning', hitKind: 'kicker' });
+        }
       }
-      const cs = cannonStates.get(c.id);
-      if (!cs) continue;
-      for (;;) {
-        const due = cs.activatedAtS + cs.shots * bagSpec.fireIntervalS;
-        if (due > t + 1e-9) break;
-        // A head-on cannon stops firing once the rover has passed it; a kicker fires a fixed number of shots.
-        const ahead = (front.x - c.xM) * Math.cos(dirRad) + (front.z - c.zM) * Math.sin(dirRad);
-        if (c.kind === 'headOn' ? ahead <= 0 : cs.shots >= bagSpec.kickerShots) break;
-        bags.push({ id: `${c.id}#${cs.shots}`, cannonId: c.id, kind: c.kind, firedAtS: due, xM: c.xM, zM: c.zM, dirRad });
-        cs.shots += 1;
+      if (c.kind === 'kicker' && warnedKickers.has(c.id) && (!cannonStates.has(c.id) || bags.some((b) => b.cannonId === c.id))) {
+        // Left of the rover is the side of (−sin h, cos h).
+        const leftOfRover = -Math.sin(state.headingRad) * (c.xM - front.x) + Math.cos(state.headingRad) * (c.zM - front.z) > 0;
+        alert = leftOfRover ? 'left' : 'right';
       }
+
+      if (cannonStates.has(c.id)) continue;
+      if (c.triggerM !== undefined && dist > c.triggerM) continue;
+      if (c.kind === 'kicker' && !passed) continue;
+      if (!launcherShouldFire(launcher, front, v, bagSpec.minAimSpeedMps)) continue;
+      const cross = crossingTimes(launcher, front, v)!;
+      if (cross.bagS * bagSpeedOf(c.kind) > bagSpec.rangeM) continue;
+      const atX = c.xM + launcher.velocity.x * cross.bagS;
+      const atZ = c.zM + launcher.velocity.z * cross.bagS;
+      if (world.surfaceIdAt(atX, atZ) === 'ice') continue; // never across ice: a shove there cannot be steered out of
+      cannonStates.set(c.id, { firedAtS: t });
+      bags.push({ id: `${c.id}#0`, cannonId: c.id, kind: c.kind, firedAtS: t, xM: c.xM, zM: c.zM, dirRad, speedMps: bagSpeedOf(c.kind) });
     }
+    kickerAlert = alert;
   }
 
   function moveBags(t: number) {
     const kept: Bag[] = [];
     for (const bag of bags) {
       const c = def.cannons.find((x) => x.id === bag.cannonId)!;
-      const travelled = (bag.kind === 'headOn' ? bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps) * (t - bag.firedAtS);
+      const travelled = bag.speedMps * (t - bag.firedAtS);
       if (travelled >= bagSpec.rangeM) continue;
       bag.xM = c.xM + travelled * Math.cos(bag.dirRad);
       bag.zM = c.zM + travelled * Math.sin(bag.dirRad);
@@ -1097,8 +1184,12 @@ export function createLevelSession(options: LevelSessionOptions) {
     bags = kept;
   }
 
-  function hitBags(front: { x: number; z: number }, t: number, motion: 1 | -1) {
-    void t;
+  /**
+   * A bag meets the rover: (m₁ + m₂) v′ = m₁ v₁ + m₂ v₂, with the velocities as arrows (momentum.ts). The speed becomes |v′| and the travel
+   * direction turns to v′; the heading stays, so the rover slides at the angle between them and the tyres bring the path back (drift.ts).
+   * The numbers on screen are the ones along the road (along the heading).
+   */
+  function hitBags(front: { x: number; z: number }, t: number) {
     const remaining: Bag[] = [];
     for (const bag of bags) {
       const touching = footprintOverlapsCircle(front.x, front.z, state.headingRad, footprint.lengthM, footprint.widthM, bag.xM, bag.zM, bagSpec.radiusM);
@@ -1106,28 +1197,34 @@ export function createLevelSession(options: LevelSessionOptions) {
         remaining.push(bag);
         continue;
       }
-      // m₁u₁ + m₂u₂ = (m₁ + m₂)u′, along the heading.
-      const bagSpeed = bag.kind === 'headOn' ? bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps;
-      const bagAlong = bagSpeed * Math.cos(bag.dirRad - state.headingRad);
-      const u1 = alongHeading(state);
+      // Two hits at least minHitGapS apart: a bag that arrives sooner after one is spent and does nothing.
+      if (t - lastHitS < bagSpec.minHitGapS) continue;
+      lastHitS = t;
+      const hx = Math.cos(state.headingRad);
+      const hz = Math.sin(state.headingRad);
+      const v1 = roverVelocity();
+      const v2 = bagVelocity(bag.dirRad, bag.speedMps);
+      const v3 = shareMomentumVectors(rover.massKg, v1, bagSpec.massKg, v2);
+      const alongRoad = (v: { x: number; z: number }) => v.x * hx + v.z * hz;
+      const u1 = alongRoad(v1);
+      const u2 = alongRoad(v2);
+      const u3 = alongRoad(v3);
       const before = state.speedMps;
-      const temp: PhysicsState = { ...state, direction: u1 >= 0 ? 'forward' : 'reverse', speedMps: Math.abs(u1), rollingBack: false };
-      const shared = shareMomentum(temp, rover.massKg, bagSpec.massKg, bagAlong);
-      const u3 = shared.direction === 'forward' ? shared.speedMps : -shared.speedMps;
-      state = withVelocityAlongHeading(state, u3);
+      const speedAfter = Math.hypot(v3.x, v3.z);
+      state = { ...state, speedMps: speedAfter, rollingBack: speedAfter > 0 && u3 !== 0 && u3 > 0 === (state.direction === 'reverse') };
+      if (speedAfter > 0) travelRad = Math.atan2(v3.z, v3.x);
       emit({
         kind: 'hit', hitKind: bag.kind, speedBeforeMps: before, speedAfterMps: state.speedMps, massKg: rover.massKg, bagKg: bagSpec.massKg,
-        u1, u2: bagAlong, u3,
+        u1, u2, u3,
       });
       say(`hit-${bag.kind}`, {
-        massKg: rover.massKg, bagKg: bagSpec.massKg, u1: twoDecimals(u1), u2: twoDecimals(bagAlong), u3: twoDecimals(u3),
+        massKg: rover.massKg, bagKg: bagSpec.massKg, u1: twoDecimals(u1), u2: twoDecimals(u2), u3: twoDecimals(u3),
         before: twoDecimals(before), after: twoDecimals(state.speedMps),
       });
       flash = { kind: 'impulse', forceN: (rover.massKg * Math.abs(u3 - u1)) / cfg.arrows.flashS, directionWorld: worldDirection(travelRad, 0, u3 >= u1 ? 1 : -1), extraLabel: `Δv ${u3 - u1 >= 0 ? '+' : '−'}${twoDecimals(Math.abs(u3 - u1))} m/s` };
       flashUntilS = clockS() + cfg.arrows.flashS;
     }
     bags = remaining;
-    void motion;
   }
 
   // --- the HUD ---
@@ -1147,7 +1244,8 @@ export function createLevelSession(options: LevelSessionOptions) {
         directionWorld: { x: down * Math.cos(s.slopeGearRad) * Math.cos(s.gearRad), y: down * Math.sin(s.slopeGearRad), z: -down * Math.cos(s.slopeGearRad) * Math.sin(s.gearRad) },
       });
     }
-    if (s.zone !== undefined) out.push({ kind: 'weight', forceN: rover.massKg * s.gMps2, directionWorld: { x: 0, y: -1, z: 0 } });
+    // Weight is drawn in a gravity zone and in water, where it is the other half of "upthrust against weight" (R11).
+    if (s.zone !== undefined || s.inWater) out.push({ kind: 'weight', forceN: rover.massKg * s.gMps2, directionWorld: { x: 0, y: -1, z: 0 } });
     if (s.curve && state.speedMps >= cfg.rules.bendCaptionMinMps) {
       out.push({
         kind: 'turning', forceN: (rover.massKg * state.speedMps ** 2) / s.curve.radiusM,
@@ -1180,8 +1278,19 @@ export function createLevelSession(options: LevelSessionOptions) {
       caption: captionNow,
       forceLine: phase === 'driving' ? forceLineText : null,
       forces: actingForces(),
-      ...(quiet ? {} : { booster: { state: boosterStepsLeft > 0 ? ('firing' as const) : boosterUsed ? ('used' as const) : ('ready' as const), leftS: boosterStepsLeft * dtS } }),
+      ...(quiet ? {} : {
+        booster: {
+          state: boosterStepsLeft > 0 ? ('firing' as const) : rechargeStepsLeft > 0 ? ('recharging' as const) : ('ready' as const),
+          leftS: boosterStepsLeft * dtS,
+          rechargeLeftS: rechargeStepsLeft * dtS,
+          rechargeFraction: rechargeStepsLeft > 0 ? 1 - rechargeStepsLeft / rechargeSteps : 1,
+        },
+      }),
+      ...(stuckSteps > 0 && stuckKind && !quiet
+        ? { stuck: { cause: stuckKind, progress: stuckSteps / stuckSteps_, boosterReady: boosterStepsLeft === 0 && rechargeStepsLeft === 0 && !stuckAtWall, atWall: stuckAtWall } }
+        : {}),
       ...(splitNow && clockS() < splitUntilS ? { split: splitNow } : {}),
+      ...(kickerAlert ? { launcherWarning: kickerAlert } : {}),
     };
   }
 
@@ -1206,8 +1315,11 @@ export function createLevelSession(options: LevelSessionOptions) {
     forks = new Map(def.forks.map((f) => [f.id, { startClockS: undefined, votes: Object.fromEntries(f.roadIds.map((r) => [r, 0])), startSpeedMps: 0, sims: undefined, done: false }]));
     hints = def.hints.map((h) => ({ def: h, shown: false, done: false }));
     deepShown = false;
-    boosterUsed = false;
     boosterStepsLeft = 0;
+    rechargeStepsLeft = 0;
+    stuckSteps = 0;
+    stuckKind = undefined;
+    stuckAtWall = false;
     splitNow = undefined;
     splitUntilS = 0;
     tracker = createStretchTracker(quiet ? [] : def.stretches);
@@ -1304,20 +1416,20 @@ export function createLevelSession(options: LevelSessionOptions) {
       say('pole', { pole });
     },
     /**
-     * Shift: fire the booster (§3a). One use per attempt: a restart refills it, a return to a checkpoint does not. Returns whether it fired.
+     * Shift: fire the booster (§3a). It recharges `booster.rechargeS` after each burn ends (R11, DECISIONS 2026-10-26): a restart refills it, a
+     * return to a checkpoint does not and the recharge keeps counting. Not in the air, not while it burns or recharges. Returns whether it fired.
      * It pushes with `booster.forceN` along the gear for up to `booster.maxDurationS`, and stops early at top speed.
      */
     fireBooster(): boolean {
-      if (phase !== 'driving' || quiet || boosterUsed) return false;
-      boosterUsed = true;
+      if (phase !== 'driving' || quiet || air || boosterStepsLeft > 0 || rechargeStepsLeft > 0) return false;
       boosterStepsLeft = Math.round(cfg.booster.maxDurationS / dtS);
-      emit({ kind: 'booster', forceN: cfg.booster.forceN, durationS: cfg.booster.maxDurationS, impulseNs: cfg.booster.forceN * cfg.booster.maxDurationS, massKg: rover.massKg });
+      emit({ kind: 'booster', speedBeforeMps: state.speedMps, forceN: cfg.booster.forceN, durationS: cfg.booster.maxDurationS, impulseNs: cfg.booster.forceN * cfg.booster.maxDurationS, massKg: rover.massKg });
       say('booster', { forceN: newtons(cfg.booster.forceN), durationS: cfg.booster.maxDurationS, impulseNs: newtons(cfg.booster.forceN * cfg.booster.maxDurationS) });
       return true;
     },
-    /** Has the booster been fired in this attempt? */
-    get boosterUsed(): boolean {
-      return boosterUsed;
+    /** Is the booster ready to fire (not burning, not recharging)? */
+    get boosterReady(): boolean {
+      return boosterStepsLeft === 0 && rechargeStepsLeft === 0;
     },
     /** Where each stretch after the first begins (the split gates): the line the rover's front crosses. */
     get splitGates(): readonly ForkLineDef[] {

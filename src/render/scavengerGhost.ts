@@ -22,7 +22,7 @@ export interface ScavengerGhost {
   /** Moves it to where the run puts it when the student's clock reads `clockS`. `playerFront` is the student rover's front on the ground (physics x, z). */
   update(input: { clockS: number; frameS: number; playerFrontXM: number; playerFrontZM: number; beaten: boolean }): void;
   /** Where the edge marker points, and how far it is from the student's rover. */
-  marker(): { position: THREE.Vector3; distanceM: number };
+  marker(): { position: THREE.Vector3; distanceM: number; boosting: boolean };
   /** The current opacity (for tests). */
   readonly opacity: number;
   dispose(): void;
@@ -81,6 +81,15 @@ export function createScavengerGhost(run: ScavengerRun, world: LevelWorld, quali
   let lastZ: number | undefined;
   let distanceM = Infinity;
   const markerAt = new THREE.Vector3();
+  let boosting = false;
+
+  // Its booster (R11): a short orange flame behind it while it burns, in the replay as in the run.
+  const flameMaterial = new THREE.MeshBasicMaterial({ color: 0xff9a3c, transparent: true, opacity: 0.9 });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.6, 8), flameMaterial);
+  flame.rotation.z = Math.PI / 2; // the tip points backward along the rover (+x forward)
+  flame.position.set(-lengthM / 2 - 0.9, 0.55, 0);
+  flame.visible = false;
+  root.add(flame);
 
   const place = (x: number, z: number, heading: number): number => {
     const y = world.heightM(x, z) + groundOffsetOf(world, x, z);
@@ -108,8 +117,11 @@ export function createScavengerGhost(run: ScavengerRun, world: LevelWorld, quali
       group.visible = !beaten || Math.floor((performance.now() / 1000) * BLINK_HZ * 2) % 2 === 0;
       for (const m of materials) m.opacity = opacity;
       markerAt.set(pose.frontXM, y + MARKER_LIFT_M, -pose.frontZM);
+      boosting = pose.boosting && !beaten;
+      flame.visible = boosting;
+      if (boosting) flame.scale.set(0.8 + 0.4 * Math.abs(Math.sin(clockS * 60)), 1, 1);
     },
-    marker: () => ({ position: markerAt, distanceM }),
+    marker: () => ({ position: markerAt, distanceM, boosting }),
     get opacity() {
       return opacity;
     },
@@ -118,6 +130,7 @@ export function createScavengerGhost(run: ScavengerRun, world: LevelWorld, quali
         if (o instanceof THREE.Mesh) o.geometry.dispose();
       });
       for (const m of materials) m.dispose();
+      flameMaterial.dispose();
     },
   };
 }

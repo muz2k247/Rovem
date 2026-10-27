@@ -8,19 +8,23 @@
   "fieldChunksBetweenTunnels": 2,
   "sectionMinLengthM": 150,
   "mudPatchMaxLengthM": 12,
-  "minBendRadiusM": { "asphalt": 62, "sand": 100, "mud": 100, "ice": 500 },
+  "minBendRadiusM": { "asphalt": 62, "sand": 100, "mud": 100, "ice": 500, "oil": 331 },
   "difficultyStartsM": [0, 500, 1500],
   "gravityMultipliers": { "low": 0.5, "high": 2 },
   "boostImpulseNs": 1200,
   "sandbag": {
     "massKg": 40,
     "radiusM": 0.5,
-    "headOnSpeedMps": 10,
+    "headOnSpeedMps": 12,
     "kickerSpeedMps": 30,
-    "fireIntervalS": 1.2,
     "headOnTriggerDistanceM": 90,
-    "kickerShots": 3,
     "kickerWakeRearOffsetM": 3,
-    "rangeM": 150
+    "rangeM": 150,
+    "angleDeg": 30,
+    "roadsideOffsetM": 11,
+    "minHitGapS": 2,
+    "kickerWarnM": 40,
+    "baseSizeM": 1.3,
+    "minAimSpeedMps": 1
   }
 }

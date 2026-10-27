@@ -328,7 +328,7 @@ Launchers are not obstacles. The session (`session.ts`, `fireCannons`) and the E
 - **A trap worth a line in the report:** a bag from behind at 20 m/s and 45° *slows* the rover (16 → 15.7), because its speed along the road, 20 × cos 45° = 14.1 m/s, is less than the rover's. A kicker speeds you up only if s cos θ > u.
 - **Proposed angle 30°:** the bend (4–9°) passes the 5° slide threshold, so skid marks and the squeal show it, and the drift on rock stays under 0.6 m.
 - **Proposed bag speeds:**
-  - **Head-on: 12 m/s.** At 30° the starting build goes 16 → 11.76 m/s, about today's straight 10 m/s hit (16 → 11.42). Light 16 → 10.95 (today 10.98); heavy 16 → 12.58 (today 12.63). The lesson's numbers stay the same; the bag gains a sideways shove.
+  - **Head-on: 12 m/s.** At 30° the starting build goes 16 → 11.76 m/s, about today's straight 10 m/s hit (16 → 11.82; the audit first wrote 11.42, a slip found in R11). Light 16 → 10.95 (today 10.98); heavy 16 → 12.58 (today 12.63). The lesson's numbers stay the same; the bag gains a sideways shove.
   - **Kicker: keep 30 m/s** (+1.6 m/s for the starting build at 30°, today +2.25 m/s straight).
 - **What the screen shows:** only the along-the-road numbers, as today, for example "209 kg × 16.0 + 40 kg × (−10.4) = 249 kg × v → v = 11.8 m/s", where −10.4 is the bag's along-the-road part. The sideways shove is *seen*, not calculated: the path bends, skid marks and the squeal, and the slide angle in the drift. Grade 9 momentum is taught along a line (POLISH_PLAN §3).
 - **Edges and cliffs:** on rock the largest drift at 30° is 0.54 m (light, 30 m/s from behind). A hit only reaches an edge if the rover is already within about half a metre of it, and then it scrapes (`world.hit`, v′ = v cos α). A hit can't push a rover off a cliff rim: every edge is a scrape line, and the rover never falls off an edge (R6b, DECISIONS 2026-10-22). On ice the drift reaches 3–8.5 m, so **no launcher should fire across ice**.
@@ -616,7 +616,7 @@ All **proposed**, for k._muz to decide. None is in the game.
 | 9 | Oil slick on Crash Site, 20–60 m from the start, plus a tongue on the first third of bend-1 | position reasoned | The hook in the first 5 s, and the grip lesson before the Ring | D4, D5 |
 | 10 | Launchers stand **11 m** from the centre line, both sides alternately | geometry | Outside the 5 m road and 4 m run-off: never driven through | D6 |
 | 11 | Launcher angle **30°** off the road | 20°, 30°, 45° | Bend 4–9°, over the 5° slide threshold, so skid marks show; drift on rock ≤ 0.6 m | D6 |
-| 12 | Head-on bag **12 m/s** | 10 and 15 m/s | At 30° it slows the rover as much as today's 10 m/s straight hit (starting build 16 → 11.76, today 11.42) | D6 |
+| 12 | Head-on bag **12 m/s** | 10 and 15 m/s | At 30° it slows the rover as much as today's 10 m/s straight hit (starting build 16 → 11.76, today 11.82; the audit first wrote 11.42, a slip found in R11) | D6 |
 | 13 | Kicker bag **30 m/s** (unchanged) | 20 and 30 m/s | At 20 m/s and 45° a kicker *slows* the rover; at 30 m/s and 30°, +1.6 m/s | D6 |
 | 14 | Launchers fire so the bag would meet the rover at the crossing point if it kept its speed | reasoned | Hits are reliable, yet dodgeable by braking or the booster | D6 |
 | 15 | No launcher fires across ice; hits at least 2 s apart | drift on ice 3–8.5 m | A shove on ice is uncontrollable; one pop-up at a time | D6 |

@@ -3,7 +3,7 @@
 // two checkpoints, nothing else. Tests patch in what they need (barriers, hills, water, pylons ...).
 // Not a game level: the real levels are the files in `src/content/levels/` (B4).
 
-export const SURFACE_IDS = ['asphalt', 'sand', 'ice', 'mud'];
+export const SURFACE_IDS = ['asphalt', 'sand', 'ice', 'mud', 'oil'];
 
 export function testLevelRaw(): Record<string, unknown> {
   return JSON.parse(

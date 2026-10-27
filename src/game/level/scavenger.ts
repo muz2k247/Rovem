@@ -8,8 +8,10 @@ import type { LevelDef } from './types.ts';
 
 // The Scavenger (SHOWCASE_PLAN §8, P5): a ghost replay of an honest run. At level load the autopilot drives the level headless
 // with the Scavenger's own build and route, on the same physics and the same session as the student, and every step is kept. The
-// scene then plays the trace back. It never collides with the rover and nothing about it is faked: its pace is what its build
-// and its route give, and the one tuning knob is the visible start delay.
+// scene then plays the trace back. It never collides with the rover and nothing about it is faked: its pace is what its build, its
+// worn motor and its route give. Polish round (DECISIONS 2026-10-26): the same parts on every level, a worn motor tuned per level
+// (`topSpeedFactor`), no start delay, and it fires its booster when it is ready, on the ground, in forward gear and at least 0.5 m/s
+// below its top speed; the ghost's replay includes its burns.
 
 export interface ScavengerPose {
   frontXM: number;
@@ -19,13 +21,18 @@ export interface ScavengerPose {
   speedMps: number;
   /** Its own clock has not reached 0 yet (a positive start delay): it waits at the start. */
   waiting: boolean;
+  /** Its booster is burning in this step (R11). */
+  boosting: boolean;
   /** It has driven the whole way and stands at the part. */
   finished: boolean;
 }
 
 export interface ScavengerRun {
   readonly build: BuildSelection;
+  /** Its rover as it drove: the build, with the motor's top speed worn down by the level's `topSpeedFactor`. */
   readonly rover: RoverSpec;
+  /** Times its booster started a burn, on its own clock. */
+  readonly burnStartsS: readonly number[];
   /** `scavengerStartDelayS`: it starts this long after the student (negative: before). */
   readonly delayS: number;
   /** Its own drive time, start to part. */
@@ -47,18 +54,22 @@ interface Trace {
   heading: Float64Array;
   travel: Float64Array;
   speed: Float64Array;
+  /** 1 where its booster is burning. */
+  burn: Uint8Array;
 }
 
 /** Further apart than this between two steps is a respawn, not driving: the picture jumps instead of sliding across the level. */
 const JUMP_M = 4;
 
-function build(def: LevelDef, content: Content, trace: Trace, finishS: number, stretches: { enteredAtS: number | null; timeS: number }[]): ScavengerRun {
+function build(def: LevelDef, content: Content, trace: Trace, finishS: number, stretches: { enteredAtS: number | null; timeS: number }[], burnStartsS: number[]): ScavengerRun {
   const sd = def.scavenger!;
-  const rover = roverFromParts(content, sd.build);
+  const fresh = roverFromParts(content, sd.build);
+  const rover = { ...fresh, topSpeedMps: fresh.topSpeedMps * (sd.topSpeedFactor ?? 1) };
   const last = trace.x.length - 1;
   return {
     build: sd.build,
     rover,
+    burnStartsS,
     delayS: sd.startDelayS,
     finishS,
     finishAtS: sd.startDelayS + finishS,
@@ -76,7 +87,7 @@ function build(def: LevelDef, content: Content, trace: Trace, finishS: number, s
       const lerpAngle = (a: Float64Array) => a[i]! + wrapAngle(a[j]! - a[i]!) * at;
       return {
         frontXM: lerp(trace.x), frontZM: lerp(trace.z), headingRad: lerpAngle(trace.heading), travelRad: lerpAngle(trace.travel),
-        speedMps: lerp(trace.speed), waiting: tg < 0, finished: f >= last,
+        speedMps: lerp(trace.speed), waiting: tg < 0, finished: f >= last, boosting: trace.burn[i] === 1 && f < last,
       };
     },
   };
@@ -92,7 +103,7 @@ const cache = new Map<string, ScavengerRun>();
 export function createScavengerRun(content: Content, def: LevelDef): ScavengerRun | undefined {
   const sd = def.scavenger;
   if (!sd) return undefined;
-  const key = JSON.stringify([def.id, sd, def.start, def.finish, def.route, def.roads.length, def.barriers.length, def.stretches.map((s) => s.id)]);
+  const key = JSON.stringify([def.id, sd, def.start, def.finish, def.route, def.roads.length, def.barriers.length, def.cannons, def.boosts, def.stretches.map((s) => s.id)]);
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -104,12 +115,15 @@ export function createScavengerRun(content: Content, def: LevelDef): ScavengerRu
   const heading: number[] = [];
   const travel: number[] = [];
   const speed: number[] = [];
+  const burn: number[] = [];
   const r = runPilot({
     content,
     def: ghostDef,
     build: sd.build,
     plan: { roads: sd.roads, ...(sd.via ? { via: sd.via } : {}), ...(sd.bendMargin !== undefined ? { bendMargin: sd.bendMargin } : {}), ...(sd.poles ? { poles: sd.poles } : {}) },
     maxS,
+    booster: true,
+    ...(sd.topSpeedFactor !== undefined ? { topSpeedFactor: sd.topSpeedFactor } : {}),
     onStep: (s) => {
       const p = s.pose;
       x.push(p.frontXM);
@@ -117,14 +131,16 @@ export function createScavengerRun(content: Content, def: LevelDef): ScavengerRu
       heading.push(p.headingRad);
       travel.push(p.travelRad);
       speed.push(s.state.speedMps);
+      burn.push(s.hud.booster?.state === 'firing' ? 1 : 0);
     },
   });
   if (!r.finished) throw new Error(`Level "${def.id}": the Scavenger (${sd.build.chassisId}, ${sd.build.wheelsId}, ${sd.build.motorId}) does not finish within ${maxS} s`);
   const run = build(
     def, content,
-    { dtS: physicsConstants(content).timeStepS, x: Float64Array.from(x), z: Float64Array.from(z), heading: Float64Array.from(heading), travel: Float64Array.from(travel), speed: Float64Array.from(speed) },
+    { dtS: physicsConstants(content).timeStepS, x: Float64Array.from(x), z: Float64Array.from(z), heading: Float64Array.from(heading), travel: Float64Array.from(travel), speed: Float64Array.from(speed), burn: Uint8Array.from(burn) },
     r.timeS,
     r.session.stretches,
+    r.session.events.filter((e) => e.kind === 'booster').map((e) => e.timeS),
   );
   cache.set(key, run);
   return run;

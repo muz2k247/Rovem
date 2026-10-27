@@ -9,7 +9,7 @@ export const LEVEL_KEYS = {
   /** Back to the last checkpoint. */
   respawn: KEY_BINDINGS.restart,
   pause: ['Escape'],
-  /** Fire the booster, once per level attempt (SHOWCASE_PLAN §3a). */
+  /** Fire the booster; it recharges 15 s after each burn (SHOWCASE_PLAN §3a; DECISIONS 2026-10-26 (1)). */
   booster: ['ShiftLeft', 'ShiftRight'],
 } as const;
 

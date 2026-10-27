@@ -145,26 +145,26 @@ describe('reverse in the run', () => {
     expect(boost.impulseNs).toBeCloseTo(1200, 9);
   });
 
-  it('a head-on bag hits a reversing rover in world directions: u = −5, bag −10 → u′ = (209u + 40·(−10))/249, faster in reverse', () => {
-    const w = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 0 }] }); // world x 158
-    const s = make(() => NONE, { speedMps: 5, direction: 'reverse', positionXM: 100 }, w);
+  it('a head-on bag hits a reversing rover in world directions: u = −5, bag −10.39 along the road → v′ = (209u + 40·(−10.39))/249 along the road, faster in reverse', () => {
+    const w = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 15 }] }); // world x 158, at the wall
+    const s = make(() => NONE, { speedMps: 5, direction: 'reverse', positionXM: 150 }, w);
     run(s, 120 * 20);
     const hit = eventsOf(s, 'headOnHit')[0]!;
     expect(hit).toBeDefined();
     expect(hit.roverVelocityMps).toBeLessThan(0);
-    expect(hit.otherVelocityMps).toBe(-10);
-    close(hit.resultVelocityMps!, (209 * hit.roverVelocityMps! + 40 * -10) / 249);
+    expect(hit.otherVelocityMps!).toBeCloseTo(-12 * Math.cos((30 * Math.PI) / 180), 9);
+    close(hit.resultVelocityMps!, (209 * hit.roverVelocityMps! + 40 * hit.otherVelocityMps!) / 249);
     expect(hit.speedAfterMps!).toBeGreaterThan(hit.speedBeforeMps!);
     expect(s.state.direction).toBe('reverse');
   });
 
-  it('a kicker bag from behind hits a reversing rover: u′ = (209u + 40·30)/249 can push it forward', () => {
-    const w = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] }); // world x 65
-    const s = make(() => NONE, { speedMps: 5, direction: 'reverse', positionXM: 75 }, w);
-    run(s, 120 * 3);
+  it('a kicker bag hits a reversing rover: u′ = (209u + 40·30 cos 30°)/249 can push it forward', () => {
+    const w = worldOf({ cannons: [{ kind: 'kicker', xM: 0, zM: -15 }] }); // world x 60, at the wall
+    const s = make(() => NONE, { speedMps: 4, direction: 'reverse', positionXM: 120 }, w);
+    run(s, 120 * 12);
     const hit = eventsOf(s, 'kickerHit')[0]!;
     expect(hit).toBeDefined();
-    close(hit.resultVelocityMps!, (209 * hit.roverVelocityMps! + 40 * 30) / 249);
+    close(hit.resultVelocityMps!, (209 * hit.roverVelocityMps! + 40 * hit.otherVelocityMps!) / 249);
     expect(hit.resultVelocityMps!).toBeGreaterThan(0);
   });
 

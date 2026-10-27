@@ -284,9 +284,11 @@ const scavenger = (raw: unknown, path: string): ScavengerDef => {
     const q = obj(p, `${path}.poles[${i}]`);
     return { roadId: str(q, 'roadId', `${path}.poles[${i}]`), fromM: num(q, 'fromM', `${path}.poles[${i}]`), pole: oneOf(q, 'pole', `${path}.poles[${i}]`, ['N', 'S'] as const) };
   });
+  const topSpeedFactor = optPos(o, 'topSpeedFactor', path);
+  if (topSpeedFactor !== undefined && topSpeedFactor > 1) fail(`${path}.topSpeedFactor`, 'a worn motor is at most as fast as a new one (1 or less)');
   return {
     build: { chassisId: str(b, 'chassisId', `${path}.build`), wheelsId: str(b, 'wheelsId', `${path}.build`), motorId: str(b, 'motorId', `${path}.build`) },
-    roads, ...(via ? { via } : {}), ...(bendMargin !== undefined ? { bendMargin } : {}), ...(poles ? { poles } : {}), startDelayS: num(o, 'startDelayS', path),
+    roads, ...(via ? { via } : {}), ...(bendMargin !== undefined ? { bendMargin } : {}), ...(poles ? { poles } : {}), ...(topSpeedFactor !== undefined ? { topSpeedFactor } : {}), startDelayS: num(o, 'startDelayS', path),
   };
 };
 

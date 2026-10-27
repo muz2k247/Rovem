@@ -157,14 +157,24 @@ export interface SandbagParams {
   radiusM: number;
   headOnSpeedMps: number;
   kickerSpeedMps: number;
-  fireIntervalS: number;
   /** A head-on cannon wakes when the front is this far before it. */
   headOnTriggerDistanceM: number;
-  kickerShots: number;
   /** A kicker wakes when the rover's rear edge is this far past the cannon (OI-15). */
   kickerWakeRearOffsetM: number;
   /** A bag is removed once it has travelled this far. */
   rangeM: number;
+  /** Roadside launchers (R11, DECISIONS 2026-10-26 (5)): a bag flies this many degrees off the road. */
+  angleDeg: number;
+  /** A launcher stands this far from the road's centre line. */
+  roadsideOffsetM: number;
+  /** Two hits are at least this far apart in time: a bag that arrives sooner after a hit does nothing. */
+  minHitGapS: number;
+  /** A kicker warns (a sound and an edge marker) once the rover is this close to it, before it fires. */
+  kickerWarnM: number;
+  /** A launcher stands on a square base this wide and is solid: the rover cannot drive through it (R11). */
+  baseSizeM: number;
+  /** A launcher does not aim at a rover slower than this: it is not going anywhere a bag could meet it. */
+  minAimSpeedMps: number;
 }
 
 /** In `run.json`. All provisional (DECISIONS 2026-10-14). */

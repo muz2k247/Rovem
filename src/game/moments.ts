@@ -26,6 +26,7 @@ export const MOMENTS: Readonly<Record<PopupElement, Moment>> = {
   sand: { sound: 'hiss', particles: 'sandSpray' },
   mud: { sound: 'squelch', particles: 'mudSplash' },
   ice: { sound: 'skid', particles: 'iceShards' },
+  oil: { sound: 'skid', particles: 'skidMarks' },
   bend: { sound: 'squeal', particles: 'skidMarks' },
   vent: { sound: 'whoosh', particles: 'steam', camera: 'wide', hud: ['speedLines'] },
   launcher: { sound: 'thump', camera: 'kick', hud: ['flash', 'speedFlash'] },

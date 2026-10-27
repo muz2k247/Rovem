@@ -7,13 +7,32 @@ import { controlsList, formatClock } from '../../game/controlsText.ts';
  * the F = ma line. Bottom left: the controls hint (first 10 s). The force arrows are drawn in the 3D scene.
  * Shared by the Endless run and by Track B's level screen.
  */
+/** A ring that fills as `fraction` goes from 0 to 1 (the booster's recharge, the stuck return). */
+function Ring({ fraction, className }: { fraction: number; className: string }) {
+  const r = 10;
+  const circumference = 2 * Math.PI * r;
+  return (
+    <svg className={`ring ${className}`} viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <circle className="ring-track" cx="12" cy="12" r={r} fill="none" strokeWidth="3" />
+      <circle
+        className="ring-fill" cx="12" cy="12" r={r} fill="none" strokeWidth="3" strokeLinecap="round"
+        strokeDasharray={`${(Math.max(0, Math.min(1, fraction)) * circumference).toFixed(2)} ${circumference.toFixed(2)}`}
+        transform="rotate(-90 12 12)"
+      />
+    </svg>
+  );
+}
+
 export function Hud({
   model,
   showControlsHint,
   levelControls = false,
+  scavengerLabel,
   onPause,
 }: {
   model: HudModel;
+  /** A small label while the Scavenger fires its booster (AUDIT_R9 G3): never in the pop-up channel. */
+  scavengerLabel?: string | null;
   showControlsHint: boolean;
   /** Include the level keys (R, Space) in the controls hint. */
   levelControls?: boolean;
@@ -36,8 +55,12 @@ export function Hud({
             )}
             {badges.slip && <span className="badge slip">WHEELS SLIP</span>}
             {model.booster && (
-              <span className={`badge booster booster-${model.booster.state}`} aria-label={`Booster ${model.booster.state}`}>
-                {model.booster.state === 'ready' ? 'BOOST ●' : model.booster.state === 'firing' ? 'BOOST ▶' : 'BOOST ○'}
+              <span
+                className={`badge booster booster-${model.booster.state}`}
+                aria-label={model.booster.state === 'recharging' ? `Booster recharging, ${Math.ceil(model.booster.rechargeLeftS)} seconds` : `Booster ${model.booster.state}`}
+              >
+                <Ring fraction={model.booster.state === 'firing' ? model.booster.leftS / 1.5 : model.booster.rechargeFraction} className="booster-ring" />
+                {model.booster.state === 'ready' ? 'BOOST' : model.booster.state === 'firing' ? 'BOOST ▶' : `${Math.ceil(model.booster.rechargeLeftS)} s`}
               </span>
             )}
             {badges.pole && (
@@ -69,6 +92,27 @@ export function Hud({
           </button>
         </div>
       </div>
+
+      {model.stuck && (
+        <div className={`hud2-stuck stuck-${model.stuck.cause}`} role="status" aria-live="polite">
+          <Ring fraction={model.stuck.progress} className="stuck-ring" />
+          <span>
+            {model.stuck.atWall ? 'Going back unless you reverse: press S' : model.stuck.boosterReady ? 'Going back… press Shift for the booster' : 'Going back…'}
+          </span>
+        </div>
+      )}
+
+      {model.launcherWarning && (
+        <div className={`hud2-launcher-warning ${model.launcherWarning}`} role="status" aria-label={`Launcher on your ${model.launcherWarning}, about to fire from behind`}>
+          <span aria-hidden="true">{model.launcherWarning === 'left' ? '◀' : '▶'}</span>
+        </div>
+      )}
+
+      {scavengerLabel && (
+        <div className="hud2-scavenger-label" aria-live="polite">
+          {scavengerLabel}
+        </div>
+      )}
 
       {model.split && (
         <div className={`hud2-split ${model.split.behind ? 'behind' : 'ahead'}`} aria-live="polite">

@@ -8,27 +8,30 @@ import { fill, levelText, validateLevelText } from './text.ts';
 describe('caption queue', () => {
   const queue = () => createCaptionQueue({ minShowS: 2.5, showS: 5 });
 
-  it('shows one caption at a time, each at least 2.5 s, then the next', () => {
+  it('shows one caption at a time, each for its reading time (1.0 s + 0.3 s per word, 1.5 to 4.0 s), then the next', () => {
     const q = queue();
-    q.push({ title: 'A', line: 'a' }, 0);
+    q.push({ title: 'A', line: 'a' }, 0); // 2 words: 1.6 s
     q.push({ title: 'B', line: 'b' }, 0.1);
     expect(q.update(0.2)?.title).toBe('A');
-    expect(q.update(2.4)?.title).toBe('A'); // B waits: A has not had 2.5 s
-    expect(q.update(2.5)?.title).toBe('B');
+    expect(q.update(1.5)?.title).toBe('A'); // B waits: A has not had its 1.6 s
+    expect(q.update(1.6)?.title).toBe('B');
   });
 
-  it('a lone caption stays until it has been up 5 s, then goes', () => {
+  it('a long caption stays up to 4 s, a lone one goes when its time is up', () => {
     const q = queue();
-    q.push({ title: 'A', line: 'a' }, 0);
-    expect(q.update(4.9)?.title).toBe('A');
-    expect(q.update(5)).toBeNull();
+    q.push({ title: 'Sand', line: 'Rolling friction is 249 N here, 3 times what rock gives a rover of your mass' }, 0);
+    expect(q.update(3.9)?.title).toBe('Sand');
+    expect(q.update(4)).toBeNull();
+    q.push({ title: 'A', line: 'a' }, 10);
+    expect(q.update(11.5)?.title).toBe('A');
+    expect(q.update(11.7)).toBeNull();
   });
 
   it('keeps at most two waiting: a third pushes the oldest waiting one out', () => {
     const q = queue();
     q.push({ title: 'A', line: '' }, 0);
     for (const t of ['B', 'C', 'D']) q.push({ title: t, line: '' }, 0.1);
-    expect(q.update(2.5)?.title).toBe('C'); // B was dropped
+    expect(q.update(1.6)?.title).toBe('C'); // B was dropped
   });
 
   it('an urgent caption goes next in the queue', () => {
@@ -36,7 +39,7 @@ describe('caption queue', () => {
     q.push({ title: 'A', line: '' }, 0);
     q.push({ title: 'B', line: '' }, 0.1);
     q.push({ title: 'Crash', line: '', urgent: true }, 0.2);
-    expect(q.update(2.5)?.title).toBe('Crash');
+    expect(q.update(1.5)?.title).toBe('Crash');
   });
 
   it('a hint stays until it is done, but not before 2.5 s and not after 5 s', () => {

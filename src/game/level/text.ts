@@ -34,9 +34,13 @@ export interface ScavengerText {
   cardTitle: string;
   cardLine: string;
   star: string;
-  delayZero: string;
-  delayLater: string;
-  delayHeadStart: string;
+  /** "It starts beside you and fires its booster whenever it is ready" (R11: no head starts, a booster it fires when ready). */
+  startLine: string;
+  /** Its motor's worn top speed against the new one; `newLine` where the motor is not worn (Iron Ridge). */
+  wornLine: string;
+  newLine: string;
+  /** The label over the ghost for 1.5 s when it fires its booster (AUDIT_R9 G3); never the pop-up channel. */
+  boosterLabel: string;
   marker: string;
   resultLine: string;
   beaten: string;
@@ -142,7 +146,7 @@ export function validateLevelText(raw: unknown): LevelText {
   const sp = strings(root.split, 'levelText.split');
   if (sp.behind === undefined || sp.ahead === undefined) fail('levelText.split', 'expected behind and ahead');
   const sc = obj(root.scavenger, 'levelText.scavenger');
-  const scavenger = Object.fromEntries(['cardTitle', 'cardLine', 'star', 'delayZero', 'delayLater', 'delayHeadStart', 'marker', 'resultLine', 'beaten', 'lost'].map((k) => [k, str(sc, k, 'levelText.scavenger')])) as unknown as ScavengerText;
+  const scavenger = Object.fromEntries(['cardTitle', 'cardLine', 'star', 'startLine', 'wornLine', 'newLine', 'boosterLabel', 'marker', 'resultLine', 'beaten', 'lost'].map((k) => [k, str(sc, k, 'levelText.scavenger')])) as unknown as ScavengerText;
   const sh = obj(root.ship, 'levelText.ship');
   const partsRaw = sh.parts;
   if (!Array.isArray(partsRaw) || partsRaw.length === 0) fail('levelText.ship.parts', 'expected a non-empty list');
@@ -209,3 +213,17 @@ export function fill(template: string, values: TokenValues): string {
 export const newtons = (n: number): string => String(Math.round(n));
 /** Speeds, accelerations, times and distances to 2 decimals. */
 export const twoDecimals = (n: number): string => n.toFixed(2);
+
+/** The speed as the Scavenger's card prints it: 2 decimals, as every speed is (15.12, 16.00). */
+const cardSpeed = (mps: number) => mps.toFixed(2);
+
+/** The lines of the Scavenger's card after its parts: its start, and its motor's worn top speed (or its new one where it is not worn). */
+export function scavengerCardLines(info: { topSpeedMps: number; newTopSpeedMps: number; worn: boolean }): string[] {
+  const t = levelText.scavenger;
+  return [
+    info.worn
+      ? fill(t.wornLine, { topSpeedMps: cardSpeed(info.topSpeedMps), newTopSpeedMps: cardSpeed(info.newTopSpeedMps) })
+      : fill(t.newLine, { topSpeedMps: cardSpeed(info.topSpeedMps) }),
+    t.startLine,
+  ];
+}

@@ -15,9 +15,8 @@ import { devKeyAction, devModeFromSearch, jumpTarget, zoomedHeightM } from '../g
 import { levelKeyAction } from '../game/level/keys.ts';
 import type { LastRun } from '../game/level/lastRun.ts';
 import { createScavengerRun } from '../game/level/scavenger.ts';
-import { loadLevelDef } from '../game/level/levels.ts';
-import { fill, levelText } from '../game/level/text.ts';
-import { delayLine } from './LevelIntroScreen.tsx';
+import { levelScavengerInfo, loadLevelDef } from '../game/level/levels.ts';
+import { fill, levelText, scavengerCardLines } from '../game/level/text.ts';
 import { createLevelSession, type LevelInput, type LevelSession } from '../game/level/session.ts';
 import type { LevelDef } from '../game/level/types.ts';
 import type { SpeedUnit } from '../game/run/feedback.ts';
@@ -115,6 +114,7 @@ export function LevelScreen(props: LevelScreenProps) {
   const [startLine, setStartLine] = useState<string | null>(null);
   const markerRef = useRef<HTMLDivElement>(null);
   const [markerText, setMarkerText] = useState<string | null>(null);
+  const [scavengerLabel, setScavengerLabel] = useState<string | null>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
   const showSettingsRef = useRef(false);
@@ -166,7 +166,8 @@ export function LevelScreen(props: LevelScreenProps) {
     }
     if (scavenger) {
       const names = [scavenger.build.chassisId, scavenger.build.wheelsId, scavenger.build.motorId].map((id) => content.parts.find((p) => p.id === id)?.name ?? id);
-      setStartLine(`${fill(levelText.scavenger.cardLine, { build: names.join(', ') })} ${delayLine(scavenger.delayS)}`);
+      const info = levelScavengerInfo(levelId);
+      setStartLine([fill(levelText.scavenger.cardLine, { build: names.join(', ') }), ...(info ? scavengerCardLines(info) : [])].join(' '));
     }
     const session: LevelSession = createLevelSession({
       content, def: levelDef, rover, constants: physicsConstants(content), elementCaptions: false, ...(scavenger ? { scavenger } : {}),
@@ -230,6 +231,12 @@ export function LevelScreen(props: LevelScreenProps) {
     let reported = false;
     let lastStartLine = scavenger !== undefined;
     let lastMarkerText = '';
+    // The Scavenger's booster label (AUDIT_R9 G3): 1.5 s over the ghost when it starts a burn, only while it is within about 60 m.
+    const SCAVENGER_LABEL_S = 1.5;
+    const SCAVENGER_LABEL_RANGE_M = 60;
+    let scavengerWasBoosting = false;
+    let scavengerLabelUntilS = 0;
+    let scavengerLabelOn = false;
     let eventsHandled = 0;
     let frame = 0;
     let lastMs = performance.now();
@@ -316,6 +323,8 @@ export function LevelScreen(props: LevelScreenProps) {
         const popup = popupForLevelEvent(e, { massKg: rover.massKg, motorForceN: rover.driveForceMaxN, rockRollingMu, unit: propsRef.current.speedUnit ?? 'mps' });
         // A launcher's card tells a bag from the front from one from behind.
         if (popup) feedback.onPopup(popup, e.kind === 'hit' ? (e.hitKind === 'kicker' ? 'kickerHit' : 'headOnHit') : e.kind, e.timeS);
+        if (e.kind === 'warning') effects.play('warn'); // a kicker is about to fire from behind
+        if (e.kind === 'stuckRelease' || e.kind === 'respawn') feedback.queue.release(e.timeS);
         if (e.kind === 'respawn' && e.cause === 'crash') {
           effects.play('thud');
           crashStartedS = session.clockS;
@@ -393,6 +402,17 @@ export function LevelScreen(props: LevelScreenProps) {
       }
       const markerEl = markerRef.current;
       const marker = reported ? undefined : view.scavengerMarker();
+      if (marker) {
+        if (marker.boosting && !scavengerWasBoosting && marker.distanceM <= SCAVENGER_LABEL_RANGE_M) {
+          scavengerLabelUntilS = session.clockS + SCAVENGER_LABEL_S;
+        }
+        scavengerWasBoosting = marker.boosting;
+      }
+      const labelNow = !reported && session.clockS < scavengerLabelUntilS;
+      if (labelNow !== scavengerLabelOn) {
+        scavengerLabelOn = labelNow;
+        setScavengerLabel(labelNow ? levelText.scavenger.boosterLabel : null);
+      }
       if (markerEl) {
         if (!marker) markerEl.style.opacity = '0';
         else {
@@ -492,7 +512,7 @@ export function LevelScreen(props: LevelScreenProps) {
   return (
     <main className="drive run">
       <div className="drive-canvas" ref={hostRef} />
-      {hud && <Hud model={hud} showControlsHint={controlsHintVisible(hud.timeS)} levelControls onPause={() => controls.current.pause()} />}
+      {hud && <Hud model={hud} showControlsHint={controlsHintVisible(hud.timeS)} levelControls scavengerLabel={scavengerLabel} onPause={() => controls.current.pause()} />}
       <FeedbackLayer shown={shown} popupRef={popupRef} />
       {opening && (
         <div ref={openingRef} className="opening-line" role="note" onClick={() => setOpening(null)}>

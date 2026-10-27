@@ -43,13 +43,20 @@ export interface LevelsConfig {
   par: { factor: number; roundUpToS: number };
   /** The stretch report (Showcase R3, SHOWCASE_PLAN §9): the smallest gap to a clean drive that is called a loss or a gain, and the shortest time a cause must last to be named. */
   report: { minGapS: number; minCauseS: number };
-  /** The booster (Showcase R4, SHOWCASE_PLAN §3a): a push of `forceN` along the gear for up to `maxDurationS`, once per level attempt; it stops at top speed. */
-  booster: { forceN: number; maxDurationS: number };
+  /** The booster (Showcase R4, SHOWCASE_PLAN §3a): a push of `forceN` along the gear for up to `maxDurationS`, it stops at top speed. Polish R11 (DECISIONS 2026-10-26): it recharges `rechargeS` after each burn ends (before: once per level attempt). */
+  booster: { forceN: number; maxDurationS: number; rechargeS: number };
   /**
    * The Scavenger (R4, SHOWCASE_PLAN §8): it fades to `fadeOpacity` within `fadeWithinM` of the rover; a split shows for `splitShowS`;
    * its run is simulated for at most `maxRunS` (a Scavenger that has not finished by then is a level-file error).
    */
-  scavenger: { fadeWithinM: number; fadeOpacity: number; splitShowS: number; maxRunS: number };
+  scavenger: { fadeWithinM: number; fadeOpacity: number; splitShowS: number; maxRunS: number; boosterMarginMps: number };
+  /**
+   * The stuck rule (R11, DECISIONS 2026-10-26 (7)): a rover at rest with full throttle (or a floater below the float-stop speed) goes back to its
+   * checkpoint after `holdS`. A rover that scraped a wall within `wallPressSteps` steps and is almost still counts as pressed against it.
+   */
+  stuck: { holdS: number; wallPressSteps: number };
+  /** How long a pop-up or caption is on screen (R11, DECISIONS 2026-10-26 (10)): `baseS + perWordS × words`, kept between `minS` and `maxS`. */
+  readTime: { baseS: number; perWordS: number; minS: number; maxS: number };
   /** Engine rules added by Levels B2 (all positive; see the DECISIONS row of 2026-10-18). */
   rules: {
     crashMomentS: number;
@@ -194,7 +201,7 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
   if (report.minGapS <= 0 || report.minCauseS <= 0) fail('levels.report', 'expected numbers above 0');
 
   const bo = sec('booster');
-  const booster = { forceN: num(bo, 'forceN', p('booster')), maxDurationS: num(bo, 'maxDurationS', p('booster')) };
+  const booster = { forceN: num(bo, 'forceN', p('booster')), maxDurationS: num(bo, 'maxDurationS', p('booster')), rechargeS: num(bo, 'rechargeS', p('booster')) };
 
   const sc = sec('scavenger');
   const scavenger = {
@@ -202,8 +209,21 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     fadeOpacity: num(sc, 'fadeOpacity', p('scavenger')),
     splitShowS: num(sc, 'splitShowS', p('scavenger')),
     maxRunS: num(sc, 'maxRunS', p('scavenger')),
+    boosterMarginMps: num(sc, 'boosterMarginMps', p('scavenger')),
   };
   if (scavenger.fadeOpacity >= 1) fail('levels.scavenger.fadeOpacity', 'must be below 1');
+
+  const st = sec('stuck');
+  const stuck = { holdS: num(st, 'holdS', p('stuck')), wallPressSteps: num(st, 'wallPressSteps', p('stuck')) };
+
+  const rt = sec('readTime');
+  const readTime = {
+    baseS: num(rt, 'baseS', p('readTime')),
+    perWordS: num(rt, 'perWordS', p('readTime')),
+    minS: num(rt, 'minS', p('readTime')),
+    maxS: num(rt, 'maxS', p('readTime')),
+  };
+  if (readTime.maxS < readTime.minS) fail('levels.readTime.maxS', 'must not be below minS');
 
   const ru = sec('rules');
   const rules = {
@@ -262,6 +282,8 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     report,
     booster,
     scavenger,
+    stuck,
+    readTime,
     rules,
     captions,
     forceLine,

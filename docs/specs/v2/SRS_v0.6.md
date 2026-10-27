@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| FR-52 and FR-54 follow the Polish round (the recharging booster; the Scavenger's parts, worn motor and booster); the surface list gains oil (2026-10-27, R11) | The Polish round | DECISIONS 2026-10-26 |
 | FR-45 changed (2026-10-22, R6b): every built level and the endless mode open from the first visit; in-order unlocking stays behind a switch in `levels.json` (off) | The advisor must see the whole game in one sitting | SHOWCASE_PLAN §12a, DECISIONS 2026-10-22 (R6b) |
 | FR-48 and FR-57 marked Built (2026-10-21, R2): the Endless places, pop-ups, cards, moments and colours | Session R2 | SHOWCASE_PLAN §10–§12, DECISIONS 2026-10-21 (R2) |
 | FR-51 (collisions) marked Built; the stops of the Game v4 level files marked removed (2026-10-21, R1) | Session R1 | E46, SHOWCASE_PLAN §4–§5 |
@@ -132,7 +133,7 @@ Primary users are Grade 9 students. Secondary users are teachers and evaluators 
 | FR-29 | The physics uses g = 9.8 m/s², a fixed time step that does not depend on the frame rate, and no random values (the Endless course uses a seeded generator). |
 | FR-50 | The physics also covers slopes, rolling back, water (upthrust and drag), magnets, momentum events and gravity zones, as in the Physics Model Specification. (E37) |
 | FR-51 | **Collisions.** Walls and edges are solid: driving into one removes the part of the velocity into the wall, and the rover scrapes along it. Obstacles (boulders, barriers, launcher bases, pylons) are solid: hitting one is a crash, which returns the rover to the last checkpoint in a level and ends the Endless run. There is no damage. (E46, replacing E16's FR-48; *Built*, R1, 2026-10-21) |
-| FR-52 | **Booster.** Once per level attempt the student may fire a booster: 2500 N along the direction of travel for at most 1.5 s, stopping at top speed. It works on the ground and in water, not in the air. (E47; *Planned*, R4; provisional) |
+| FR-52 | **Booster.** The student may fire a booster, again 15 s after each burn ends: 2500 N along the direction of travel for at most 1.5 s, stopping at top speed. It works on the ground and in water, not in the air. (E47; *Built*, R4; the recharge *Built*, R11, DECISIONS 2026-10-26 (1); provisional) |
 | FR-53 | **Jumps.** The rover leaves the ground only at ramps designed into a level, and falls under gravity (the g of the zone it is in) with no drive, brake or steering until it lands. (E45; *Planned*, R6) |
 
 At every moment the rover is in one driving state. The state decides which forces act and therefore the acceleration:
@@ -165,7 +166,7 @@ Until a level is rebuilt, its Game v4 file (`first-tracks` and the other six; DE
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-54 | **The Scavenger.** Each level has a rival: a ghost replay of an honest scripted run on the same physics, with its own build and route, 4–8% slower than the starting rover's clean best, never colliding with the student. Beating it is the third star. Its tuning knob is a visible start delay. | Confirmed; *Planned*, R4 |
+| FR-54 | **The Scavenger.** Each level has a rival: a ghost replay of an honest scripted run on the same physics, with its own build and route, 4–8% slower than the starting rover's clean best, never colliding with the student. Beating it is the third star. Polish rules (R11, DECISIONS 2026-10-26 (1), (3)): one build on every level (Heavy + Smooth + Medium) with a motor worn to a per-level fraction of its top speed, no start delay, and it fires its booster when ready. Its old tuning knob was a visible start delay. | Confirmed; *Planned*, R4 |
 | FR-55 | **The report after a level** shows time per stretch against the Scavenger, names the biggest loss and one cause the session actually recorded (never a guess), gives one "try" line, and after a retry compares with the previous run and names what changed. Only recorded causes are named; a crash is never blamed on the parts. | Confirmed; *Planned*, R3–R4 |
 | FR-56 | **The story.** A crashed ship, one part recovered per level, a one-line opening, a ship silhouette on level select that lights up recovered parts, and a launch ending after the last level. Fiction is presented with confidence, never with disclaimers. | Confirmed; built in R3 and R8 |
 | FR-57 | **Endless as places.** The Endless Canyon is made of named sections at least 150 m long: Rock Plain, Dune Sea, Frozen Flats, Clay Gully, Vent Run, Launcher Alley, Gravity Caves, picked by a seeded generator, with difficulty growing with distance. A crash ends the run. Each section has an entry post with its name, mud patches of at most 12 m with a bypass, and a line through it that avoids every obstacle and never bends tighter than the bend rule allows (62 m on rock, 100 m on sand). | Confirmed; *Built*, R2, 2026-10-21 (DECISIONS 2026-10-21 R2) |
@@ -268,7 +269,7 @@ Neither the developer nor the supervisors read UML, so this section uses tables.
 |---|---|
 | Rover | The vehicle the student builds and drives. |
 | Part | One chassis, wheels or motor: mass, friction and grip factors, driving force or top speed. |
-| Surface | One type of ground (asphalt, sand, ice, mud) with its rolling friction and grip. |
+| Surface | One type of ground (asphalt, sand, ice, mud, oil) with its rolling friction and grip. |
 | Level | One natural place: its roads and edges, surfaces, hazards, samples, checkpoints, ramps, stretches and the goal. |
 | Scavenger | The rival rover and its recorded run. (Planned) |
 | Session | One attempt at a level: the clock, the rover's state, the samples, the events. |

@@ -38,6 +38,7 @@ export const SURFACE_COLOURS: Record<string, readonly [number, number, number]> 
   sand: rgb(0xcfae7f),
   ice: rgb(0xbfe3f2),
   mud: rgb(0x4a3222),
+  oil: rgb(0x1c1a26), // a dark slick with a violet sheen
 };
 export const GROUND_COLOUR = rgb(0x9c4a2c);
 const FALLBACK_COLOUR = rgb(0xff00ff); // an unknown surface id shows up loudly

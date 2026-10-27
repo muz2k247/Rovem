@@ -59,8 +59,15 @@ export interface HudModel {
   /** The F = ma line, or null while the speed is not changing (A4). */
   forceLine: string | null;
   forces: ForceArrow[];
-  /** The booster's pip (R4, SHOWCASE_PLAN §3a): ready, firing (with the time left) or used. Absent where there is no booster. */
-  booster?: { state: 'ready' | 'firing' | 'used'; leftS: number };
+  /** The booster's pip (R4, SHOWCASE_PLAN §3a): ready, firing (with the time left) or recharging (with the time left and how full the ring is). Absent where there is no booster. */
+  booster?: { state: 'ready' | 'firing' | 'recharging'; leftS: number; rechargeLeftS: number; rechargeFraction: number };
+  /**
+   * The stuck rule (R11, DECISIONS 2026-10-26 (7)): the rover is held at rest on full throttle (or floats almost still) and will go back to its
+   * checkpoint. `progress` runs from 0 to 1 over the hold; the wheels spin and a ring shows it; the HUD points at Shift when `boosterReady`.
+   */
+  stuck?: { cause: 'stuck' | 'floated'; progress: number; boosterReady: boolean; atWall: boolean };
+  /** A kicker launcher is about to fire from behind, or its bag is in flight: the side of the screen its edge marker shows on (R11). */
+  launcherWarning?: 'left' | 'right';
   /** The gap to the Scavenger, shown for a few seconds after a split gate (R4). */
   split?: { text: string; behind: boolean };
 }

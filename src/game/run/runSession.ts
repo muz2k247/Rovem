@@ -2,12 +2,13 @@ import type { Content, GravityKind, EventKind } from '../../content/index.ts';
 import { buildQuantities } from '../../physics/build.ts';
 import { createFixedStepLoop } from '../../physics/loop.ts';
 import { movingIntoEdge, scrapeAlongEdge, type EdgeContact } from '../../physics/collision.ts';
-import { applyImpulse, shareMomentum } from '../../physics/momentum.ts';
+import { applyImpulse, shareMomentumVectors } from '../../physics/momentum.ts';
 import { createState, step, type PhysicsState } from '../../physics/step.ts';
 import type { PhysicsConstants, RoverSpec, SurfaceSpec } from '../../physics/types.ts';
 import { surfaceSpec } from '../buildFromParts.ts';
 import { footprintCorners, footprintOverlapsCircle } from '../geometry.ts';
 import { SLIDE_MARK_RAD, slideAngleRad, travelTurnLimitRadPerS, turnTravelDirection, wrapAngle } from './drift.ts';
+import { bagVelocity, crossingTimes, launcherDirectionRad, launcherShouldFire } from '../launchers.ts';
 import { createRunCourse, type CourseChunk, type RunCourse, type WorldCannon } from './course.ts';
 import { simulateOtherLane, type LaneResult } from './tunnelCompare.ts';
 
@@ -123,6 +124,9 @@ export interface Bag {
   firedAtS: number;
   xM: number;
   zM: number;
+  /** The way the bag flies, and how fast (R11: across the corridor at an angle). */
+  dirRad: number;
+  speedMps: number;
 }
 
 export interface Shot {
@@ -147,10 +151,11 @@ export interface RunSessionOptions {
   course?: RunCourse;
 }
 
+/** A launcher wakes when the rover comes near (its lamp charges) and then fires once, aimed (launchers.ts). */
 interface CannonState {
   cannon: WorldCannon;
   activatedAtS: number;
-  shotsFired: number;
+  firedAtS: number | undefined;
 }
 
 /** How far ahead the course is always generated (A3). */
@@ -176,6 +181,10 @@ export function createRunSession(options: RunSessionOptions) {
   let score = 0;
   let progressM = state.positionXM;
   let bags: Bag[] = [];
+  /** When the last launcher hit landed: a bag that arrives within `minHitGapS` of it does nothing. */
+  let lastHitS = -Infinity;
+  /** The side of the screen a kicker's warning shows on while one is about to fire or its bag flies (R11); null when none is. */
+  let launcherWarning: 'left' | 'right' | null = null;
   let events: RunEvent[] = [];
   let shots: Shot[] = [];
   let usedPads = new Set<string>();
@@ -224,8 +233,6 @@ export function createRunSession(options: RunSessionOptions) {
   const gravityAt = (zone: GravityKind | undefined): number =>
     zone === undefined ? baseConstants.gravityMps2 : baseConstants.gravityMps2 * run.gravityMultipliers[zone];
 
-  /** u: +v forward, −v in reverse (momentum.ts). */
-  const signed = (s: PhysicsState) => (s.direction === 'forward' ? s.speedMps : -s.speedMps);
 
   const record = (event: RunEvent) => {
     events.push(event);
@@ -236,39 +243,67 @@ export function createRunSession(options: RunSessionOptions) {
   const quantities = (surfaceId: string, zone: GravityKind | undefined) =>
     buildQuantities(rover, specs.get(surfaceId)!, { gravityMps2: gravityAt(zone) });
 
+  // Roadside launchers (R11, DECISIONS 2026-10-26 (5)): they stand at the corridor edges and fire across it at angleDeg to the road (the x
+  // axis). One shot each, aimed so the bag meets the rover where their paths cross if the rover keeps its velocity (launchers.ts).
+  const bagAngleRad = (bagSpec.angleDeg * Math.PI) / 180;
+  const bagSpeedOf = (kind: 'headOn' | 'kicker') => (kind === 'headOn' ? bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps);
+  const roverVelocity = () => ({ x: state.speedMps * Math.cos(travelRad), z: state.speedMps * Math.sin(travelRad) });
+
   function activateAndFire(front: { x: number; z: number }, t: number) {
-    // Cannons near the rover that have not woken yet.
-    for (const cannon of course.cannonsInRange(front.x - 10, front.x + bagSpec.headOnTriggerDistanceM + 5)) {
+    // Launchers near the rover that have not woken yet. A kicker may be a little behind: it fires once the rover has gone by.
+    for (const cannon of course.cannonsInRange(front.x - 40, front.x + bagSpec.headOnTriggerDistanceM + 5)) {
       if (cannonStates.has(cannon.id)) continue;
       const wake = cannon.kind === 'headOn' ? cannon.xM - bagSpec.headOnTriggerDistanceM : cannon.xM + bagSpec.kickerWakeRearOffsetM + footprint.lengthM;
-      if (front.x >= wake) cannonStates.set(cannon.id, { cannon, activatedAtS: t, shotsFired: 0 });
+      if (front.x >= wake) cannonStates.set(cannon.id, { cannon, activatedAtS: t, firedAtS: undefined });
     }
-    // Fire every shot that is due: the first at the activation step's time, then every fireIntervalS.
+    const v = roverVelocity();
+
+    // A kicker warns before it fires: an edge marker on its side, and the screen plays a beep when the warning starts. It stays until its bag has gone.
+    let alert: 'left' | 'right' | null = null;
+    const sideOf = (cannon: WorldCannon) =>
+      -Math.sin(state.headingRad) * (cannon.xM - front.x) + Math.cos(state.headingRad) * (cannon.zM - front.z) > 0 ? ('left' as const) : ('right' as const);
+    for (const cannon of course.cannonsInRange(front.x - 40, front.x + bagSpec.kickerWarnM + 5)) {
+      if (cannon.kind !== 'kicker' || cannonStates.get(cannon.id)?.firedAtS !== undefined) continue;
+      if (front.x < cannon.xM && Math.hypot(cannon.xM - front.x, cannon.zM - front.z) <= bagSpec.kickerWarnM && v.x > 0) alert = sideOf(cannon);
+    }
+
     for (const cs of cannonStates.values()) {
       const { cannon } = cs;
-      for (;;) {
-        const due = cs.activatedAtS + cs.shotsFired * bagSpec.fireIntervalS;
-        if (due > t + 1e-9) break;
-        if (cannon.kind === 'headOn' ? front.x >= cannon.xM : cs.shotsFired >= bagSpec.kickerShots) break;
-        bags.push({ id: `${cannon.id}#${cs.shotsFired}`, cannonId: cannon.id, kind: cannon.kind, firedAtS: due, xM: cannon.xM, zM: cannon.zM });
-        shots.push({ cannonId: cannon.id, timeS: due });
-        cs.shotsFired += 1;
-      }
+      if (cs.firedAtS !== undefined) continue;
+      const dirRad = launcherDirectionRad(cannon.kind, 0, cannon.zM, bagAngleRad);
+      const speedMps = bagSpeedOf(cannon.kind);
+      const launcher = { position: { x: cannon.xM, z: cannon.zM }, velocity: bagVelocity(dirRad, speedMps) };
+      if (cannon.kind === 'kicker' && front.x < cannon.xM) continue; // from behind: after the rover has gone by
+      if (!launcherShouldFire(launcher, front, v, bagSpec.minAimSpeedMps)) continue;
+      const cross = crossingTimes(launcher, front, v)!;
+      if (cross.bagS * speedMps > bagSpec.rangeM) continue;
+      // Never across ice: a shove there cannot be steered out of.
+      if (course.surfaceIdAt(cannon.xM + launcher.velocity.x * cross.bagS, cannon.zM + launcher.velocity.z * cross.bagS) === 'ice') continue;
+      cs.firedAtS = t;
+      bags.push({ id: `${cannon.id}#0`, cannonId: cannon.id, kind: cannon.kind, firedAtS: t, xM: cannon.xM, zM: cannon.zM, dirRad, speedMps });
+      shots.push({ cannonId: cannon.id, timeS: t });
     }
+    // Its bag in flight: the marker stays until the bag has gone by the rover's front.
+    for (const bag of bags) {
+      if (bag.kind === 'kicker' && bag.xM < front.x + footprint.lengthM) alert = sideOf(cannonStates.get(bag.cannonId)!.cannon);
+    }
+    launcherWarning = alert;
   }
 
   function moveBags(t: number) {
     const kept: Bag[] = [];
     for (const bag of bags) {
       const cannon = cannonStates.get(bag.cannonId)!.cannon;
-      const travelled = (bag.kind === 'headOn' ? bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps) * (t - bag.firedAtS);
+      const travelled = bag.speedMps * (t - bag.firedAtS);
       if (travelled >= bagSpec.rangeM) continue;
-      bag.xM = bag.kind === 'headOn' ? cannon.xM - travelled : cannon.xM + travelled;
+      bag.xM = cannon.xM + travelled * Math.cos(bag.dirRad);
+      bag.zM = cannon.zM + travelled * Math.sin(bag.dirRad);
       kept.push(bag);
     }
     bags = kept;
   }
 
+  /** (m₁ + m₂) v′ = m₁ v₁ + m₂ v₂ with arrows (momentum.ts); the numbers on screen are the ones along the heading. */
   function hitBags(t: number) {
     const remaining: Bag[] = [];
     for (const bag of bags) {
@@ -279,16 +314,23 @@ export function createRunSession(options: RunSessionOptions) {
         remaining.push(bag);
         continue;
       }
-      // The bag and the rover move off together: m₁u₁ + m₂u₂ = (m₁ + m₂)u′, along the heading.
-      const bagSpeed = bag.kind === 'headOn' ? -bagSpec.headOnSpeedMps : bagSpec.kickerSpeedMps;
+      if (t - lastHitS < bagSpec.minHitGapS) continue; // hits at least minHitGapS apart: this bag is spent
+      lastHitS = t;
+      const hx = Math.cos(state.headingRad);
+      const hz = Math.sin(state.headingRad);
+      const along = (w: { x: number; z: number }) => w.x * hx + w.z * hz;
       const before = state.speedMps;
-      const roverBefore = state;
-      const bagAlongHeading = bagSpeed * Math.cos(state.headingRad);
-      state = shareMomentum(state, rover.massKg, bagSpec.massKg, bagAlongHeading);
+      const v1 = roverVelocity();
+      const v2 = bagVelocity(bag.dirRad, bag.speedMps);
+      const v3 = shareMomentumVectors(rover.massKg, v1, bagSpec.massKg, v2);
+      const u3 = along(v3);
+      const speedAfter = Math.hypot(v3.x, v3.z);
+      state = { ...state, speedMps: speedAfter, direction: u3 > 0 ? 'forward' : u3 < 0 ? 'reverse' : state.direction };
+      if (speedAfter > 0) travelRad = Math.atan2(v3.z, v3.x);
       const after = state.speedMps;
       record({
         kind: bag.kind === 'headOn' ? 'headOnHit' : 'kickerHit', timeS: t, xM: state.positionXM, speedBeforeMps: before, speedAfterMps: after,
-        massKg: rover.massKg, otherMassKg: bagSpec.massKg, roverVelocityMps: signed(roverBefore), otherVelocityMps: bagAlongHeading, resultVelocityMps: signed(state),
+        massKg: rover.massKg, otherMassKg: bagSpec.massKg, roverVelocityMps: along(v1), otherVelocityMps: along(v2), resultVelocityMps: u3,
       });
       if (bag.kind === 'headOn') {
         stats.headOnHits += 1;
@@ -594,6 +636,10 @@ export function createRunSession(options: RunSessionOptions) {
       course.ensureAhead(state.positionXM + GENERATE_AHEAD_M);
       return course.sectionAt(state.positionXM) ?? course.chunks[course.chunks.length - 1]!;
     },
+    /** A kicker is about to fire from behind, or its bag flies: the side its edge marker shows on (R11). */
+    get launcherWarning(): 'left' | 'right' | null {
+      return launcherWarning;
+    },
     /** Has this cannon woken (its trigger was reached)? An awake cannon charges: the scene shows it. */
     cannonAwake: (id: string): boolean => cannonStates.has(id),
     /** Developer tool (`?dev=1`): put the rover at x (on the middle line unless `zM` says otherwise), moving at a speed, as if it had driven there. */
@@ -618,6 +664,8 @@ export function createRunSession(options: RunSessionOptions) {
       score = 0;
       progressM = state.positionXM;
       bags = [];
+      lastHitS = -Infinity;
+      launcherWarning = null;
       events = [];
       shots = [];
       usedPads = new Set();

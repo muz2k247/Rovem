@@ -32,3 +32,29 @@ export function shareMomentum(
 export function applyImpulse(state: PhysicsState, roverMassKg: number, impulseAlongHeadingNs: number): PhysicsState {
   return withVelocity(state, signedVelocity(state) + impulseAlongHeadingNs / roverMassKg);
 }
+
+/** A velocity on the ground plane, in m/s: x east, z north (the physics axes: the left of a rover heading east is +z). */
+export interface GroundVelocity {
+  x: number;
+  z: number;
+}
+
+/**
+ * The same collision with the velocities as arrows (vectors), for a bag that flies at an angle to the rover's path:
+ *   (m₁ + m₂) v′ = m₁ v₁ + m₂ v₂.
+ * Each component is the one-line rule `shareMomentum` uses, so a bag along the rover's path (0° from behind, 180° head-on) gives
+ * exactly that rule's result. The rover is body 1 and keeps v′; the bag drops off. Returns the new velocity; the caller turns it into a
+ * speed |v′| and a travel direction (the heading does not change: the tyres bend the path back, see drift.ts).
+ */
+export function shareMomentumVectors(
+  roverMassKg: number,
+  roverVelocity: GroundVelocity,
+  otherMassKg: number,
+  otherVelocity: GroundVelocity,
+): GroundVelocity {
+  const total = roverMassKg + otherMassKg;
+  return {
+    x: (roverMassKg * roverVelocity.x + otherMassKg * otherVelocity.x) / total,
+    z: (roverMassKg * roverVelocity.z + otherMassKg * otherVelocity.z) / total,
+  };
+}

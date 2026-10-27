@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| R11 (2026-10-27): built `game/launchers.ts` (the aimed roadside launchers), `game/readTime.ts` (how long a pop-up or caption stays), `shareMomentumVectors` in `physics/momentum.ts`, the stuck rule and the booster recharge in `game/level/session.ts`, and the Scavenger's `topSpeedFactor` and booster in `autopilot.ts` and `scavenger.ts`; `levels.json` gains `booster.rechargeS`, `stuck` and `readTime` | The Polish round | DECISIONS 2026-10-26 |
 | Rewritten around the folders of `src/` as they are, with a Mermaid diagram and an ASCII copy, each with a "How to read it" | The PDF drew the missions-and-Knowledge design | E39, S0 |
 | Screens, game flow, physics, content and local-copy blocks renamed for levels, the Scavenger and the report | Game v4 and the Showcase | E39, DECISIONS 2026-10-17, 2026-10-21 |
 | Account and sync, the cloud database and the sign-in service drawn dashed as Future | Accounts are later | E39, E43 |

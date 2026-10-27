@@ -56,6 +56,12 @@ describe('demo run content (D2)', () => {
     expect(content.run.fieldChunksBetweenTunnels).toBe(2);
   });
 
+  it('every Endless launcher stands at the corridor edge, |z| ≥ 15 m, with the same rule as the levels (R11, DECISIONS 2026-10-26 (5))', () => {
+    const all = [...content.runChunks.fieldChunks, content.runChunks.tunnel].flatMap((c) => c.cannons);
+    expect(all.length).toBeGreaterThan(0);
+    for (const cannon of all) expect(Math.abs(cannon.zM)).toBeGreaterThanOrEqual(content.run.corridorHalfWidthM);
+  });
+
   it('the tunnel has a low and a high gravity zone and an 8 m mud patch in each lane', () => {
     const t = content.runChunks.tunnel;
     expect(t.gravityZones.map((z) => z.kind).sort()).toEqual(['high', 'low']);

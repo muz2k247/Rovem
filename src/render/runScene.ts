@@ -136,7 +136,7 @@ function mat(color: number, extra: THREE.MeshStandardMaterialParameters = {}): T
   return new THREE.MeshStandardMaterial({ color, flatShading: true, ...extra });
 }
 
-const SURFACE_DUST: Record<string, number> = { sand: 0xcfae7f, ice: 0xbfe3f2, mud: 0x4a3222 };
+const SURFACE_DUST: Record<string, number> = { sand: 0xcfae7f, ice: 0xbfe3f2, mud: 0x4a3222, oil: 0x1c1a26 };
 const ROCK_DUST = 0xb9a58c;
 
 const postGeometry = new THREE.ConeGeometry(0.14, 1, 5);
@@ -529,7 +529,7 @@ export function createRunScene(session: RunSession, content: Content, look: Rove
 
     if (frameS > 0) {
       const surfaceId = course.surfaceIdAt(x, z);
-      const perMps = surfaceId === 'sand' ? 7 : surfaceId === 'ice' ? 2.5 : surfaceId === 'mud' ? 6 : 3;
+      const perMps = surfaceId === 'sand' ? 7 : surfaceId === 'ice' ? 2.5 : surfaceId === 'mud' ? 6 : surfaceId === 'oil' ? 1.5 : 3;
       dustColour.setHex(SURFACE_DUST[surfaceId] ?? ROCK_DUST);
       const rearX = x - fx * model.rearAxleBackM;
       const rearZ = z - fz * model.rearAxleBackM;

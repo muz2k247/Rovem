@@ -12,9 +12,9 @@
   },
   "scavenger": {
     "build": {
-      "chassisId": "chassis-light",
+      "chassisId": "chassis-heavy",
       "wheelsId": "wheels-smooth",
-      "motorId": "motor-large"
+      "motorId": "motor-medium"
     },
     "roads": [
       "start",
@@ -22,10 +22,11 @@
       "lead",
       "ford",
       "run-in",
-      "f1-bridge",
+      "f1-deep",
       "bank",
       "slope"
     ],
+    "topSpeedFactor": 0.945,
     "startDelayS": 0
   },
   "defaultSurfaceId": "asphalt",

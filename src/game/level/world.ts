@@ -268,6 +268,10 @@ export function createLevelWorld(def: LevelDef, content: Content) {
   const track = levelsConfig.track;
   const footprint = { lengthM: content.constants.roverLengthM, widthM: content.constants.roverWidthM };
   const defaults = { widthM: track.widthM, runoffM: track.runoffWidthM, surfaceId: def.defaultSurfaceId };
+  /** The launchers' bases as boxes: solid, like a barrier (R11). */
+  const launcherBases: BarrierDef[] = def.cannons.map((c) => ({
+    id: c.id, xM: c.xM, zM: c.zM, headingDeg: 0, lengthM: content.run.sandbag.baseSizeM, widthM: content.run.sandbag.baseSizeM,
+  }));
 
   // Roads start from their own pose or where the road they follow ends. Resolved in order of need.
   const byId = new Map<string, RoadGeometry>();
@@ -414,6 +418,10 @@ export function createLevelWorld(def: LevelDef, content: Content) {
      */
     hit(frontXM: number, frontZM: number, headingRad: number): WallHit | undefined {
       for (const b of def.barriers) {
+        if (footprintOverlapsBarrier(b, frontXM, frontZM, headingRad, footprint.lengthM, footprint.widthM)) return { kind: 'barrier', barrierId: b.id };
+      }
+      // A launcher is solid too (R11): its base is an obstacle like a barrier.
+      for (const b of launcherBases) {
         if (footprintOverlapsBarrier(b, frontXM, frontZM, headingRad, footprint.lengthM, footprint.widthM)) return { kind: 'barrier', barrierId: b.id };
       }
       let worst: EdgeContact | undefined;

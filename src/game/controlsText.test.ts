@@ -23,7 +23,7 @@ describe('key labels and the controls list (A3: shown on Home, the intro and the
     const list = controlsList({ levels: true, extra: ['Space: flip your magnet'] });
     expect(list.map((c) => c.keys)).toContain('R');
     expect(list.find((c) => c.keys === 'R')!.does).toBe('Back to the last checkpoint');
-    expect(list.find((c) => c.keys === 'Shift')!.does).toBe('Booster: a big push, once per try');
+    expect(list.find((c) => c.keys === 'Shift')!.does).toBe('Booster: a big push, then it recharges');
     expect(list[list.length - 1]).toEqual({ keys: 'Space', does: 'flip your magnet' });
   });
 });

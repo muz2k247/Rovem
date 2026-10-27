@@ -112,9 +112,10 @@ describe('run scene', () => {
     session.course.ensureAhead(8000); // launcher sections come after the first 500 m, and not in every seed soon
     const cannon = session.course.chunks.flatMap((c) => c.cannons)[0];
     expect(cannon).toBeDefined();
-    const s = createRunSession({ content, rover: rover(), constants, seed: 7, input: () => 0, initialState: { positionXM: cannon!.xM - 60 }, course: session.course });
+    const s = createRunSession({ content, rover: rover(), constants, seed: 7, input: () => 0, initialState: { positionXM: cannon!.xM - 100, speedMps: 16, throttleLevel: 1 }, course: session.course });
     const v = createRunScene(s, content, 'all-terrain');
-    for (let i = 0; i < 400 && s.bags.length === 0 && !s.ended; i++) s.stepOnce();
+    // A launcher fires one aimed shot when the bag would meet the rover (R11): at 16 m/s that is a few seconds on.
+    for (let i = 0; i < 1500 && s.bags.length === 0 && !s.ended; i++) s.stepOnce();
     v.update(s);
     expect(s.bags.length).toBeGreaterThan(0);
     expect(count(v.scene, 'bag')).toBe(s.bags.length);

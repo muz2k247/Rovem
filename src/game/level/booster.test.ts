@@ -9,8 +9,9 @@ import { validateLevelDef } from './schema.ts';
 import { SURFACE_IDS, testLevelRaw } from './testLevel.ts';
 import { popupForLevelEvent } from '../popups.ts';
 
-// The booster (SHOWCASE_PLAN §3a, P9, E47): 2500 N along the gear for up to 1.5 s, once per level attempt, through `step()`'s
-// outside-force input; it stops at top speed, so it can never make the rover faster than its motor allows.
+// The booster (SHOWCASE_PLAN §3a, P9, E47): 2500 N along the gear for up to 1.5 s through `step()`'s outside-force input; it stops at
+// top speed, so it can never make the rover faster than its motor allows. Polish R11 (DECISIONS 2026-10-26 (1)): it recharges 15 s after
+// the end of each burn; a restart refills it, a return to a checkpoint does not.
 
 const DT = 1 / 120;
 const GAS: LevelInput = { throttleHeld: true, brakeHeld: false, steer: 0 };
@@ -34,25 +35,99 @@ const mudPatch = (lengthM: number) => ({
 describe('the booster', () => {
   const cfg = levelsConfig.booster;
 
-  it('is 2500 N for up to 1.5 s (SHOWCASE_PLAN §3a)', () => {
+  it('is 2500 N for up to 1.5 s, recharging 15 s after a burn (SHOWCASE_PLAN §3a; DECISIONS 2026-10-26 (1))', () => {
     expect(cfg.forceN).toBe(2500);
     expect(cfg.maxDurationS).toBe(1.5);
+    expect(cfg.rechargeS).toBe(15);
   });
 
-  it('can be fired once per attempt; a restart refills it, a return to a checkpoint does not', () => {
-    const s = make(STARTING_BUILD);
+  /** Steps until the burn is over (the state is no longer 'firing'); returns the clock then. */
+  const untilBurnEnds = (s: ReturnType<typeof make>) => {
+    for (let i = 0; i < 400 && s.hud.booster?.state === 'firing'; i++) s.stepOnce();
+    return s.clockS;
+  };
+
+  // The slowest build to speed up (Heavy, Spiked, Large motor) is still below top speed after 1.5 s, so its burn runs the full 1.5 s.
+  const SLOW = { chassisId: 'chassis-heavy', wheelsId: 'wheels-spiked', motorId: 'motor-large' };
+
+  it('recharges for 15 s from the end of a burn, and is then ready again', () => {
+    const s = make(SLOW, {}, () => NONE);
     expect(s.hud.booster?.state).toBe('ready');
     expect(s.fireBooster()).toBe(true);
-    expect(s.fireBooster()).toBe(false);
     expect(s.events.filter((e) => e.kind === 'booster')).toHaveLength(1);
-    for (let i = 0; i < 240; i++) s.stepOnce(); // the 1.5 s run out
+    const endS = untilBurnEnds(s);
+    expect(endS).toBeCloseTo(1.5, 1);
+    expect(s.hud.booster?.state).toBe('recharging');
+    while (s.hud.booster?.state === 'recharging') s.stepOnce();
+    expect(s.clockS - endS).toBeCloseTo(15, 1);
+    expect(Math.abs(s.clockS - endS - 15)).toBeLessThanOrEqual(DT + 1e-9);
+    expect(s.hud.booster?.state).toBe('ready');
+    expect(s.fireBooster()).toBe(true); // again and again
+    expect(s.events.filter((e) => e.kind === 'booster')).toHaveLength(2);
+  });
+
+  it('refuses while it burns and while it recharges', () => {
+    const s = make(STARTING_BUILD, {}, () => NONE);
+    expect(s.fireBooster()).toBe(true);
+    expect(s.fireBooster()).toBe(false); // burning
+    untilBurnEnds(s);
+    expect(s.fireBooster()).toBe(false); // recharging
+    for (let i = 0; i < 14 * 120; i++) s.stepOnce();
+    expect(s.fireBooster()).toBe(false); // 14 s of 15
+    expect(s.events.filter((e) => e.kind === 'booster')).toHaveLength(1);
+  });
+
+  it('a ring fills as it recharges: the fraction runs from 0 to 1 over 15 s', () => {
+    const s = make(STARTING_BUILD, {}, () => NONE);
+    expect(s.hud.booster?.rechargeFraction).toBe(1); // ready: full
+    s.fireBooster();
+    untilBurnEnds(s);
+    expect(s.hud.booster?.rechargeFraction).toBeCloseTo(0, 2);
+    for (let i = 0; i < 7.5 * 120; i++) s.stepOnce();
+    expect(s.hud.booster?.rechargeFraction).toBeCloseTo(0.5, 2);
+    expect(s.hud.booster?.rechargeLeftS).toBeCloseTo(7.5, 1);
+  });
+
+  it('a restart refills it; a return to a checkpoint does not, and the recharge keeps running through it', () => {
+    const s = make(STARTING_BUILD, {}, () => NONE);
+    s.fireBooster();
+    const endS = untilBurnEnds(s);
+    for (let i = 0; i < 2 * 120; i++) s.stepOnce();
     s.requestRespawn();
     s.stepOnce();
+    expect(s.events.some((e) => e.kind === 'respawn' && e.cause === 'manual')).toBe(true);
     expect(s.fireBooster()).toBe(false); // the checkpoint did not refill it
-    expect(s.hud.booster?.state).toBe('used');
-    s.reset();
-    expect(s.hud.booster?.state).toBe('ready');
-    expect(s.fireBooster()).toBe(true);
+    expect(s.hud.booster?.state).toBe('recharging');
+    while (s.hud.booster?.state === 'recharging') s.stepOnce();
+    expect(Math.abs(s.clockS - endS - 15)).toBeLessThanOrEqual(2 * DT); // the recharge kept counting through the return
+    const t = make(STARTING_BUILD, {}, () => NONE);
+    t.fireBooster();
+    untilBurnEnds(t);
+    t.reset();
+    expect(t.hud.booster?.state).toBe('ready'); // a restart refills it
+    expect(t.fireBooster()).toBe(true);
+  });
+
+  it('a crash ends a burn that is under way and the recharge starts then', () => {
+    const s = make(STARTING_BUILD, { barriers: [{ id: 'rock', xM: 8, zM: 0, headingDeg: 0, lengthM: 3, widthM: 3 }] }, () => GAS);
+    s.fireBooster();
+    for (let i = 0; i < 400 && s.phase === 'driving'; i++) s.stepOnce();
+    expect(s.phase).toBe('respawning');
+    for (let i = 0; i < 120 && s.phase !== 'driving'; i++) s.stepOnce();
+    expect(s.phase).toBe('driving');
+    expect(s.hud.booster?.state).toBe('recharging');
+    expect(s.hud.booster?.leftS).toBe(0);
+    expect(s.state.speedMps).toBe(0);
+  });
+
+  it('a burn that ends at top speed starts the recharge at that moment', () => {
+    const light = { chassisId: 'chassis-light', wheelsId: 'wheels-smooth', motorId: 'motor-large' };
+    const s = make(light);
+    s.fireBooster();
+    const endS = untilBurnEnds(s);
+    expect(endS).toBeLessThan(cfg.maxDurationS);
+    expect(s.hud.booster?.state).toBe('recharging');
+    expect(s.hud.booster?.rechargeLeftS).toBeCloseTo(15, 1);
   });
 
   it('pushes for the full 1.5 s when the motor cannot reach top speed in that time', () => {
@@ -66,7 +141,7 @@ describe('the booster', () => {
       if (s.hud.booster?.state === 'firing') pushing++;
     }
     expect(pushing).toBe(Math.round(cfg.maxDurationS / DT) - 1); // fired between steps: 180 steps, the first counted before its step
-    expect(s.hud.booster?.state).toBe('used');
+    expect(s.hud.booster?.state).toBe('recharging');
     // The impulse it gave: F × t = 2500 × 1.5 = 3750 N·s, minus what rolling friction took, over the build's mass.
     expect(s.state.speedMps).toBeGreaterThan(0);
   });
@@ -81,7 +156,7 @@ describe('the booster', () => {
       for (let i = 0; i < 3 * 120; i++) {
         s.stepOnce();
         fastest = Math.max(fastest, s.state.speedMps);
-        if (endedAt === undefined && s.hud.booster?.state === 'used') endedAt = s.clockS;
+        if (endedAt === undefined && s.hud.booster?.state === 'recharging') endedAt = s.clockS;
       }
       expect(fastest, `${build.chassisId} ${build.wheelsId} ${build.motorId}`).toBeLessThanOrEqual(rover.topSpeedMps + 1e-9);
       expect(endedAt, 'the booster ended').toBeLessThanOrEqual(cfg.maxDurationS + DT * 2);
@@ -95,7 +170,7 @@ describe('the booster', () => {
     let ended: number | undefined;
     for (let i = 0; i < 300 && ended === undefined; i++) {
       s.stepOnce();
-      if (s.hud.booster?.state === 'used') ended = s.clockS;
+      if (s.hud.booster?.state === 'recharging') ended = s.clockS;
     }
     expect(ended).toBeDefined();
     expect(ended!).toBeLessThan(cfg.maxDurationS);
@@ -112,7 +187,7 @@ describe('the booster', () => {
     expect(s.state.positionXM).toBeLessThan(xBefore); // it went backwards
     // The reverse top speed is the fraction of the motor's the run data gives (the demo's 1.0), and the booster ended there or earlier.
     expect(s.state.speedMps).toBeLessThanOrEqual(roverFromParts(content, STARTING_BUILD).topSpeedMps * content.run.reverseTopSpeedFactor + 1e-9);
-    expect(s.hud.booster?.state).toBe('used');
+    expect(s.hud.booster?.state).toBe('recharging');
   });
 
   it('is not available in a what-if drive', () => {

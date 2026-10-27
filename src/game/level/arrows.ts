@@ -13,7 +13,7 @@ export const NEW_ELEMENT_FORCES: Record<LevelId, readonly ForceKind[]> = {
   'crash-site': ['friction', 'turning'],
   'geyser-canyon': ['impulse'],
   'crater-field': ['slope', 'weight'],
-  'the-crossing': ['upthrust', 'drag'],
+  'the-crossing': ['upthrust', 'weight', 'drag'],
   'iron-ridge': ['magnet'],
 };
 

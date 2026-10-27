@@ -24,7 +24,7 @@
       "ice",
       "gate",
       "lead-1",
-      "f1-switch",
+      "f1-line",
       "lead-2",
       "climb",
       "end"
@@ -61,6 +61,16 @@
         "pole": "S"
       },
       {
+        "roadId": "f1-line",
+        "fromM": 71,
+        "pole": "N"
+      },
+      {
+        "roadId": "f1-line",
+        "fromM": 150,
+        "pole": "S"
+      },
+      {
         "roadId": "lead-2",
         "fromM": 0,
         "pole": "S"
@@ -81,6 +91,7 @@
         "pole": "N"
       }
     ],
+    "topSpeedFactor": 1,
     "startDelayS": 0
   },
   "defaultSurfaceId": "asphalt",
@@ -441,9 +452,9 @@
     {
       "id": "k1",
       "kind": "kicker",
-      "xM": 1545.6,
-      "zM": -696.05,
-      "directionDeg": -35
+      "xM": 1539.29,
+      "zM": -705.06,
+      "directionDeg": -5
     }
   ],
   "barriers": [

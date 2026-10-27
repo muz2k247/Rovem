@@ -12,8 +12,8 @@
   "scavenger": {
     "build": {
       "chassisId": "chassis-heavy",
-      "wheelsId": "wheels-spiked",
-      "motorId": "motor-small"
+      "wheelsId": "wheels-smooth",
+      "motorId": "motor-medium"
     },
     "roads": [
       "start",
@@ -22,11 +22,12 @@
       "m1",
       "c2-through",
       "m2",
-      "cave-float",
+      "cave-heavy",
       "m3",
       "end"
     ],
-    "startDelayS": 10
+    "topSpeedFactor": 0.945,
+    "startDelayS": 0
   },
   "defaultSurfaceId": "asphalt",
   "roads": [

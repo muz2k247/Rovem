@@ -1,7 +1,9 @@
 import type { HudCaption } from '../contracts.ts';
+import { readTimeS } from '../readTime.ts';
 
-// One caption at a time, queued (LEVELS_BUILD_PLAN A4). Each is shown at least `minShowS`, at most `showS`. A hint
-// stays until its `until` condition says it is done (or `showS` passes). Game layer: no rendering.
+// One caption at a time, queued (LEVELS_BUILD_PLAN A4). A caption is on screen for its reading time (R11, DECISIONS
+// 2026-10-26 (10): 1.0 s + 0.3 s per word, 1.5 to 4.0 s; readTime.ts), the same rule as the pop-ups. A hint stays until its
+// `isDone` says it is done: at least `minShowS`, at most `showS`. Game layer: no rendering.
 
 export interface CaptionItem {
   title: string;
@@ -44,9 +46,10 @@ export function createCaptionQueue(options: CaptionQueueOptions) {
     update(nowS: number): HudCaption | null {
       if (current) {
         const shownS = nowS - current.sinceS;
-        const expired = shownS >= showS;
-        const leave = expired || (current.item.isDone ? current.item.isDone() : waiting.length > 0);
-        if (shownS >= minShowS && leave) promote(nowS);
+        const hint = current.item.isDone;
+        if (hint) {
+          if (shownS >= minShowS && (shownS >= showS || hint())) promote(nowS);
+        } else if (shownS >= readTimeS(`${current.item.title} ${current.item.line}`)) promote(nowS);
       }
       return current ? { title: current.item.title, line: current.item.line } : null;
     },

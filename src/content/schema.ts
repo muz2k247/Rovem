@@ -326,11 +326,15 @@ function run(raw: unknown): RunParams {
       radiusM: num(s, 'radiusM', sp, { positive: true }),
       headOnSpeedMps: num(s, 'headOnSpeedMps', sp, { positive: true }),
       kickerSpeedMps: num(s, 'kickerSpeedMps', sp, { positive: true }),
-      fireIntervalS: num(s, 'fireIntervalS', sp, { positive: true }),
       headOnTriggerDistanceM: num(s, 'headOnTriggerDistanceM', sp, { positive: true }),
-      kickerShots: num(s, 'kickerShots', sp, { positive: true }),
       kickerWakeRearOffsetM: num(s, 'kickerWakeRearOffsetM', sp, { positive: true }),
       rangeM: num(s, 'rangeM', sp, { positive: true }),
+      angleDeg: num(s, 'angleDeg', sp, { positive: true, max: 90 }),
+      roadsideOffsetM: num(s, 'roadsideOffsetM', sp, { positive: true }),
+      minHitGapS: num(s, 'minHitGapS', sp, { positive: true }),
+      kickerWarnM: num(s, 'kickerWarnM', sp, { positive: true }),
+      baseSizeM: num(s, 'baseSizeM', sp, { positive: true }),
+      minAimSpeedMps: num(s, 'minAimSpeedMps', sp, { positive: true }),
     },
   };
 }

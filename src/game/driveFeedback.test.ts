@@ -3,7 +3,7 @@ import { createDriveFeedback, type MomentSinks } from './driveFeedback.ts';
 import type { FeedbackCard } from './feedbackQueue.ts';
 import type { Popup } from './popups.ts';
 
-const popup = (element: Popup['element'], tone: Popup['tone'] = 'info'): Popup => ({ element, tone, text: `${element} text` });
+const popup = (element: Popup['element'], tone: Popup['tone'] = 'info'): Popup => ({ element, tone, text: element });
 const card = (element: string): FeedbackCard => ({ element: element as FeedbackCard['element'], title: element, line: `about ${element}` });
 const calm = { atGripLimit: false, inAir: false };
 

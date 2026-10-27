@@ -257,8 +257,13 @@ export interface ScavengerDef {
   /** The pole it carries from each point of a road on, where the level has magnets (R7: Iron Ridge). It rides the pylons the way a good student does. */
   poles?: { roadId: string; fromM: number; pole: 'N' | 'S' }[];
   /**
-   * `scavengerStartDelayS` (SHOWCASE_PLAN §8): the one tuning knob, shown to the student. 0 starts it beside you; positive: it starts
-   * that many seconds after you; negative: a head start. Its driving is never slowed in secret.
+   * How worn its motor is (R11, DECISIONS 2026-10-26 (3)): the motor's top speed is multiplied by this (0.945 gives 15.12 m/s from a 16 m/s Medium
+   * motor). Per level, tuned by script; its card shows the worn number. Default 1 (not worn).
+   */
+  topSpeedFactor?: number;
+  /**
+   * `scavengerStartDelayS` (SHOWCASE_PLAN §8): it starts this many seconds after the student. The Polish round has no head starts and no
+   * delays (DECISIONS 2026-10-26 (1)): every level file says 0; the field stays so a test can still make one.
    */
   startDelayS: number;
 }

@@ -73,6 +73,7 @@ export function createRunCourse(content: Content, seed: number) {
   const run = content.run;
   const { fieldChunks, tunnel } = content.runChunks;
   const halfWidthM = run.corridorHalfWidthM;
+  const standBehindWall = (zM: number) => (Math.abs(zM) >= halfWidthM ? Math.sign(zM) * (Math.abs(zM) + run.sandbag.baseSizeM / 2) : zM);
   const rng = mulberry32(seed);
   const chunks: CourseChunk[] = [];
   let previousFieldPlace: string | undefined;
@@ -104,7 +105,8 @@ export function createRunCourse(content: Content, seed: number) {
         id: `${index}:cannon${i}`,
         kind: c.kind,
         xM: startXM + c.xM,
-        zM: mirrored && c.zM !== 0 ? -c.zM : c.zM,
+        // A launcher at the corridor's edge stands behind the wall: its base is just outside it (R11).
+        zM: standBehindWall(mirrored && c.zM !== 0 ? -c.zM : c.zM),
       })),
       gravityZones: t.gravityZones.map((z) => ({ ...shape(z), kind: z.kind })),
     };

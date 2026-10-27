@@ -23,8 +23,10 @@
   "pacing": { "levelLengthMinS": 90, "levelLengthMaxS": 150, "checkpointSpacingS": 30 },
   "par": { "factor": 1.15, "roundUpToS": 5 },
   "report": { "minGapS": 0.5, "minCauseS": 0.3 },
-  "booster": { "forceN": 2500, "maxDurationS": 1.5 },
-  "scavenger": { "fadeWithinM": 8, "fadeOpacity": 0.3, "splitShowS": 3, "maxRunS": 400 },
+  "booster": { "forceN": 2500, "maxDurationS": 1.5, "rechargeS": 15 },
+  "scavenger": { "fadeWithinM": 8, "fadeOpacity": 0.3, "splitShowS": 3, "maxRunS": 400, "boosterMarginMps": 0.5 },
+  "stuck": { "holdS": 2, "wallPressSteps": 3 },
+  "readTime": { "baseS": 1.0, "perWordS": 0.3, "minS": 1.5, "maxS": 4.0 },
   "rules": {
     "crashMomentS": 0.5,
     "floatStopMps": 0.2,

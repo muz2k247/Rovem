@@ -256,8 +256,8 @@ describe('a real run feeds the report', () => {
     expect(firstWorked(mudRun, 'mud')).toBe('Friction = 0.6 × 1 × 209 × 9.8 = 1229 N');
     const gravityRun = drive(worldWith({ gravityZones: [{ kind: 'high', xM: [20, 60], zM: [-15, 15] }] }), (s) => s.stats.firstEvents.gravity !== undefined, { speedMps: 16, throttleLevel: 1 });
     expect(firstWorked(gravityRun, 'gravity')).toBe('Weight = 209 × 19.6 = 4096 N');
-    const hitRun = drive(worldWith({ cannons: [{ kind: 'headOn', xM: 98, zM: 0 }] }), (s) => s.stats.headOnHits > 0, { speedMps: 16, throttleLevel: 1 });
-    expect(firstWorked(hitRun, 'headOnHit')).toBe('209 × 16.00 − 40 × 10 = 249 × v  →  v = 11.82 m/s');
+    const hitRun = drive(worldWith({ cannons: [{ kind: 'headOn', xM: 98, zM: 15 }] }), (s) => s.stats.headOnHits > 0, { speedMps: 16, throttleLevel: 1 });
+    expect(firstWorked(hitRun, 'headOnHit')).toBe('209 × 16.00 − 40 × 10.39 = 249 × v  →  v = 11.76 m/s');
   });
 
   it('a run that ends stuck in mud counts the patch it died in', () => {

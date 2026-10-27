@@ -285,6 +285,46 @@ describe('water', () => {
     expect(stop.xM).toBeLessThan(10.5);
   });
 
+  // R11 (AUDIT_R9 D3, D5 item 5): the entry pop-up used to read the depth before the move, so it said "Upthrust 0 N".
+  const bank = (depthM: number, fromXM = 20) => ({ id: 'r', depthM, polygon: [{ xM: fromXM, zM: -8 }, { xM: 300, zM: -8 }, { xM: 300, zM: 8 }, { xM: fromXM, zM: 8 }] });
+
+  it('the entry event reads the depth after the move: 0.5 m gives 1000 × 9.8 × 0.2 × 0.5 = 980 N, not 0 N', () => {
+    const s = make({ id: 'the-crossing', water: [bank(0.5)] }, { initialState: { speedMps: 10 } });
+    until(s, () => s.events.some((e) => e.kind === 'water'), 20);
+    const e = s.events.find((x) => x.kind === 'water')!;
+    expect(e.depthM).toBe(0.5);
+    expect(e.upN).toBeCloseTo(980, 6);
+    expect(e.volM3).toBeCloseTo(0.1, 12);
+    expect(e.weightN).toBeCloseTo(209 * 9.8, 6);
+  });
+
+  it('the pop-up on entry says "Upthrust 980 N vs weight 2048 N"', async () => {
+    const { popupForLevelEvent } = await import('../popups.ts');
+    const s = make({ id: 'the-crossing', water: [bank(0.5)] }, { initialState: { speedMps: 10 } });
+    until(s, () => s.events.some((e) => e.kind === 'water'), 20);
+    const popup = popupForLevelEvent(s.events.find((x) => x.kind === 'water')!, { massKg: 209, motorForceN: 1000, rockRollingMu: 0.02, unit: 'mps' });
+    expect(popup?.text).toBe('Upthrust 980 N vs weight 2048 N');
+  });
+
+  it('the weight arrow shows in water, beside the upthrust arrow (The Crossing)', () => {
+    const s = make({ id: 'the-crossing', water: [bank(0.5, -20)] }, { initialState: { speedMps: 8, throttleLevel: 1 } });
+    s.stepOnce();
+    s.stepOnce();
+    const kinds = s.hud.forces.map((f) => f.kind);
+    expect(kinds).toContain('upthrust');
+    expect(kinds).toContain('weight');
+    const weight = s.hud.forces.find((f) => f.kind === 'weight')!;
+    expect(weight.forceN).toBeCloseTo(209 * 9.8, 6);
+    expect(weight.directionWorld).toEqual({ x: 0, y: -1, z: 0 });
+    expect(s.hud.forces.find((f) => f.kind === 'upthrust')!.directionWorld.y).toBe(1);
+  });
+
+  it('no weight arrow out of the water on a level with no gravity zone there', () => {
+    const s = make({ id: 'the-crossing' }, { initialState: { speedMps: 8, throttleLevel: 1 } });
+    s.stepOnce();
+    expect(s.hud.forces.map((f) => f.kind)).not.toContain('weight');
+  });
+
   it('a Heavy build does not float in the same water and keeps driving', () => {
     const heavy = roverOf({ ...STARTING_BUILD, chassisId: 'chassis-heavy' });
     const s = make({ water: [river(1.0)] }, { rover: heavy, initialState: { speedMps: 4, throttleLevel: 1 } });
@@ -380,16 +420,7 @@ describe('boosts and cannons', () => {
     expect(s.events.filter((x) => x.kind === 'boost')).toHaveLength(1);
   });
 
-  it('a head-on sandbag shares momentum: 209 × 10 + 40 × (−10) = 249 × u′', () => {
-    const s = make(
-      { cannons: [{ id: 'c', kind: 'headOn', xM: 120, zM: 0, directionDeg: 180 }] },
-      { drive: () => NONE, initialState: { speedMps: 10 } },
-    );
-    until(s, () => s.events.some((e) => e.kind === 'hit'), 30);
-    const hit = s.events.find((e) => e.kind === 'hit')!;
-    // The rover coasts a little before the hit, so check the rule with the speed recorded just before it.
-    expect(hit.speedAfterMps).toBeCloseTo((209 * hit.speedBeforeMps! - 40 * 10) / 249, 2);
-  });
+  // The launchers are tested in launchers.session.test.ts (R11: roadside, angled, aimed).
 });
 
 describe('forks (no stops)', () => {

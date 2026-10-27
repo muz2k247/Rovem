@@ -10,9 +10,10 @@
     "headingDeg": 0
   },
   "scavenger": {
-    "build": { "chassisId": "chassis-standard", "wheelsId": "wheels-smooth", "motorId": "motor-medium" },
+    "build": { "chassisId": "chassis-heavy", "wheelsId": "wheels-smooth", "motorId": "motor-medium" },
     "roads": ["start", "bend-1", "lead", "f1-dunes", "m1", "b2", "ring", "exit", "climb"],
-    "startDelayS": 4
+    "topSpeedFactor": 0.945,
+    "startDelayS": 0
   },
   "wreck": {
     "xM": 17,

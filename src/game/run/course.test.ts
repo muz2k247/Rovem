@@ -153,7 +153,10 @@ describe('mirroring swaps z', () => {
           expect(w.xM).toEqual([c.startXM + b.xM[0], c.startXM + b.xM[1]]);
         });
         tpl.cannons.forEach((cn, i) => {
-          expect(c.cannons[i]!.zM).toBe(sign * cn.zM === 0 ? 0 : sign * cn.zM);
+          // A launcher at the corridor edge stands behind the wall: its base is just outside it (R11).
+          const z = sign * cn.zM;
+          const outside = Math.abs(z) >= content.run.corridorHalfWidthM ? Math.sign(z) * content.run.sandbag.baseSizeM / 2 : 0;
+          expect(c.cannons[i]!.zM).toBeCloseTo(z === 0 ? 0 : z + outside, 12);
           expect(c.cannons[i]!.xM).toBe(c.startXM + cn.xM);
         });
       }

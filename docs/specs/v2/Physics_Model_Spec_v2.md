@@ -27,6 +27,8 @@
 | 17 | New section "Open questions": the landing step, the held-brake hold force, code that still carries the tow input | Found while writing | S0 |
 | 19 | 11.4 and T20: the booster is Built (R4, 2026-10-22). The check distances are recomputed for a burn of exactly 180 steps (1.5 s): S0 had run 181 steps, so its distances were 0.04 to 0.25 m too long. The counts (24 primed, 22 cold) are unchanged | Session R4 | E47, `src/game/level/session.ts`, `booster.test.ts` |
 | 20 | 11.3 and T18: jumps are Built (R6, 2026-10-22). The landing step is split at the exact landing time, so the check values hold to 5 decimals. Added what the game layer does: ramps and chasms in the level data, the landing speed on a slope, the "fell" respawn, cave roofs | Session R6 | E45, `src/physics/air.ts` |
+| 21 | 9, 11.5 and T21: a bag that flies at an angle to the rover's path is a collision with velocities as vectors, (m₁ + m₂)v′ = m₁v₁ + m₂v₂. For a bag along the path (0° from behind, 180° head-on) it gives exactly the one-line rule of T13. Used by launchers beside the road that fire at 30° | R11 (Polish round, 2026-10-27): angled roadside launchers | DECISIONS 2026-10-26 (5), `shareMomentumVectors` in `src/physics/momentum.ts` |
+| 22 | 11.4: the booster recharges 15 s after each burn ends (before: once per level attempt). 11.6 (new): the stuck rule, a 2 s hold before the rover goes back to its checkpoint (before: at once). Oil (μ_g 0.15, μ_r 0.02) is a new surface in the Component Values | R11 | DECISIONS 2026-10-26 (1), (4), (7) |
 | 18 | 11.2: the edge rule is Built (R1, 2026-10-21): walls scrape in levels and Endless, barriers crash or end the run. Added what happens when no place against the wall is found. T19 is Built | Session R1 | E46, `src/physics/collision.ts` |
 
 ## 1 Constants and units
@@ -132,6 +134,7 @@ Momentum events are applied by the game layer after `step()`, never inside it. T
 
 - **Collision where the two bodies move off together:** m₁u₁ + m₂u₂ = (m₁ + m₂)u′. The rover is body 1; the other body (a sandbag) then leaves with no sideways or along-track force, so the rover keeps u′.
 - **Impulse:** J = m(u′ − u), so u′ = u + J ÷ m (boost pads and vents).
+- **Collision with a bag that flies at an angle (R11, 2026-10-27; *Built*; `shareMomentumVectors`, `src/physics/momentum.ts`):** (m₁ + m₂) **v′** = m₁ **v₁** + m₂ **v₂**, with the velocities as vectors on the ground (x, z). Each component is the one-line rule above, so for a bag along the rover's path (0° or 180°) the result is exactly `shareMomentum`'s. The new speed is |v′|; the rover's travel direction turns to the direction of v′; the heading does not change, so the rover slides at the angle between the two and the tyres bring the path back at the turning limit (section 8). The numbers shown to students are the ones along the road (the rover's heading): u₁, u₂ (the bag's part along the road), u′. The sideways part is seen, not calculated (Grade 9 teaches momentum along a line). In a level the gear is kept and a velocity against it is "rolling back" (`rollingBack`); in the Endless run the gear follows the sign of u′, as in the rule above. Used by 11.5.
 
 ## 10 Gravity zones (E29; Built)
 
@@ -174,7 +177,20 @@ The footprint is 2 m long by 1.7 m wide, its front edge centred on the physics p
 
 ### 11.4 Booster (E47; Built, session R4, 2026-10-22)
 
-Once per level attempt the student may fire a booster (key Shift). While it burns, an outside force F_boost = 2500 N acts along the gear, passed to `step()` as part of `externalForceN` together with any magnet force, for at most 1.5 s. It is not limited by grip, because it does not act through the tyres. It stops at the end of the step in which the speed reaches the top speed in the current direction (built: the step that would pass the top speed is cut back to it, and the booster ends), so it cannot make a rover faster than its motor allows. The burn is counted in whole steps: 1.5 s is 180 steps at 1/120 s. It works on the ground and in water, not in the air. Restarting the level refills it; returning to a checkpoint does not. The impulse delivered is F_boost × burn time, at most 3750 N·s. Endless has no booster. (E47 called the force F_b; it is renamed here because F_b is the brake force.)
+The student may fire a booster (key Shift). **Recharge (R11, 2026-10-27; DECISIONS 2026-10-26 (1)): it can be fired again 15 s after the end of each burn** (a burn ends when its 1.5 s run out, when the rover reaches top speed, when it crashes or when it takes off; the recharge is counted in whole steps, 1800 at 1/120 s). It is not available while it burns, while it recharges or in the air. Once per level attempt was the rule until R11 (SHOWCASE_PLAN 3a, kept there with its reasons). While it burns, an outside force F_boost = 2500 N acts along the gear, passed to `step()` as part of `externalForceN` together with any magnet force, for at most 1.5 s. It is not limited by grip, because it does not act through the tyres. It stops at the end of the step in which the speed reaches the top speed in the current direction (built: the step that would pass the top speed is cut back to it, and the booster ends), so it cannot make a rover faster than its motor allows. The burn is counted in whole steps: 1.5 s is 180 steps at 1/120 s. It works on the ground and in water, not in the air. Restarting the level refills it; returning to a checkpoint does not, and the recharge keeps counting through it. The impulse delivered is F_boost × burn time, at most 3750 N·s. Endless has no booster. (E47 called the force F_b; it is renamed here because F_b is the brake force.) **The Scavenger** (the rival's ghost run) fires its booster on the same rules and when it is ready, on the ground, in forward gear and at least 0.5 m/s below its top speed (DECISIONS 2026-10-26 (3)).
+
+### 11.5 Launchers beside the road (R11, 2026-10-27; *Built*; `src/game/launchers.ts`, `session.ts`, `runSession.ts`)
+
+1. A launcher stands 11 m from the road's centre line (in Endless, at the corridor edge, |z| ≥ 15 m, on a base behind the wall), on both sides alternately, and fires one bag across the road at 30° to it: back along the road toward the oncoming rover (head-on, 12 m/s) or forward after the rover has gone by (kicker, 30 m/s). The bag has mass 40 kg and flies in a straight line at a constant speed.
+2. **Aim.** Each step the launcher asks where the rover would be if it kept its current velocity (its speed and its direction of travel; a rover under 1 m/s is not aimed at, `sandbag.minAimSpeedMps`): the two straight paths cross at one point, the bag needs a time t_b to reach it and the rover a time t_r. The launcher fires on the first step in which t_r ≤ t_b, so the bag arrives with the rover. A rover that brakes, speeds up a lot or swerves after the shot is no longer where the bag arrives.
+3. **Hit.** The bag hits when its circle (radius 0.5 m) overlaps the footprint. The collision is the vector rule of section 9. Hits are at least 2 s apart: a bag that arrives within 2 s of a hit does nothing.
+4. **Never across ice:** a shot whose crossing point is on ice is not fired. A hit on ice could move the rover 3 to 8.5 m sideways.
+5. **Solid.** A launcher's base (1.3 m square) is an obstacle like a barrier (11.2): the rover crashes into it.
+6. A kicker comes from behind, out of the chase camera's view, so it warns first: a beep and an edge marker on its side of the screen once the rover is within 40 m of it, until its bag has gone by.
+
+### 11.6 The stuck rule (R11, 2026-10-27; *Built*; DECISIONS 2026-10-26 (7))
+
+A rover that is held at rest on full throttle (throttle level 1, no brake, speed 0 and the state Stopped, or almost still against a wall: under 0.2 m/s within 3 steps of a scrape, `stuck.wallPressSteps`), or a floater slowed below 0.2 m/s, goes back to its last checkpoint after **2 s**, not at once. The 2 s do not run during a booster burn; they start again from 0 if the rover moves, if W is let go, or after the return. R still returns at once. During the hold the wheels spin, a ring shows the return coming, and a pop-up says what holds the rover (the friction against the motor, the wall, or the upthrust against the weight). A burn adds 2500 N and is not limited by grip, so in mud a rover with a free burn can move on; against a wall the burn pushes into it and cannot help (S reverses out).
 
 ## 12 Measurement for the sheet regression only
 
@@ -190,7 +206,7 @@ The balance counts are 20 of 27, 9 of 27 and 23 of 27 passing, and 17 of 27 fast
 
 ## 13 Automated tests
 
-Tests T1–T9 and T11–T20 compare the code with hand calculations at a relative error below 10⁻⁹ (NFR-4). T1–T6 use the starting build: Standard chassis, All-terrain wheels, Medium motor (m = 160 + 24 + 25 = 209 kg). Arithmetic for every value is shown below and was recomputed on 2026-10-21 by formula and through the real `step()`.
+Tests T1–T9 and T11–T21 compare the code with hand calculations at a relative error below 10⁻⁹ (NFR-4). T1–T6 use the starting build: Standard chassis, All-terrain wheels, Medium motor (m = 160 + 24 + 25 = 209 kg). Arithmetic for every value is shown below and was recomputed on 2026-10-21 by formula and through the real `step()`.
 
 | Test | Setup | Expected | Status |
 |---|---|---|---|
@@ -214,6 +230,7 @@ Tests T1–T9 and T11–T20 compare the code with hand calculations at a relativ
 | T18 Jump | v = 16 m/s, φ = 15°, landing at take-off height | g = 9.8: 0.84512 s, 0.87494 m, 13.061 m; g = 4.9: 1.69025 s, 1.74987 m, 26.122 m (E45) | Built (`src/physics/air.test.ts`, R6) |
 | T19 Edge | 12 m/s into an edge | α = 30° → 10.392 m/s; 60° → 6.000; 90° → 0 (E46) | Built (`src/physics/collision.test.ts`, R1) |
 | T20 Booster | Starting build at rest in mud, primed, booster on | a = 10.8664 m/s². Heavy + All-terrain + Small (259 kg) leaves a 12 m patch; Heavy + Spiked + Small (267 kg) does not; 24 of 27 builds leave it when primed, 22 when cold (E47) | Built (R4) |
+| T21 Angled bag | 209 kg at 16 m/s; a 40 kg bag at 12 m/s, 30° off the road, head-on; and at 30 m/s, 30° off, from behind | Along the road 11.7603 m/s (|v′| = 11.7997 m/s, path bent 4.685°); and 17.6033 m/s (|v′| = 17.7675 m/s, bent 7.795°). At 0° and 180° the result is T13's one-line rule | Built (`src/physics/momentum.test.ts`, R11) |
 
 ### Hand arithmetic (recomputed 2026-10-21)
 
@@ -232,6 +249,7 @@ T5: v = 4.588688995 × 1 s; x = ½ × 4.588688995 × 1² = 2.294344498. T6: a = 
 **T17.** 1600 × (5 ÷ 8)² = 1600 × 0.390625 = 625. Safe speed √(0.8 × 1 × 9.8 × r): r = 12 → √94.08 = 9.70; 25 → √196 = 14.00; 30 → √235.2 = 15.34; 40 → √313.6 = 17.71.
 **T18.** sin 15° = 0.2588190, cos 15° = 0.9659258. v_y = 16 × 0.2588190 = 4.141105; v_h = 16 × 0.9659258 = 15.454813. g = 9.8: T = 2 × 4.141105 ÷ 9.8 = 0.845123; h = 4.141105² ÷ (2 × 9.8) = 17.148 ÷ 19.6 = 0.874936; length = 15.454813 × 0.845123 = 13.0612 (also v² sin 2φ ÷ g = 256 × 0.5 ÷ 9.8 = 13.0612). g = 4.9: T = 1.690247; h = 1.749872; length = 26.1224.
 **T19.** 12 cos 30° = 12 × 0.8660254 = 10.3923; 12 cos 60° = 6.0000; 12 cos 90° = 0.
+**T21.** Head-on bag: v₂ = 12 × (−cos 30°, −sin 30°) = (−10.3923, −6.0000). x: (209 × 16 + 40 × (−10.3923)) ÷ 249 = (3344 − 415.692) ÷ 249 = 11.7603; z: 40 × (−6) ÷ 249 = −0.96386. |v′| = √(11.7603² + 0.96386²) = 11.7997; the bend is atan(0.96386 ÷ 11.7603) = 4.685°. Kicker: v₂ = 30 × (cos 30°, −sin 30°) = (25.9808, −15). x: (3344 + 40 × 25.9808) ÷ 249 = 4383.2 ÷ 249 = 17.6033; z: −600 ÷ 249 = −2.40964. |v′| = 17.7675; the bend is 7.795°.
 **T20.** Mud F_r = 0.6 × 2048.2 = 1228.92; F_lim = 0.5 × 2048.2 = 1024.1, above 1000. a = (2500 + 1000 − 1228.92) ÷ 209 = 2271.08 ÷ 209 = 10.8664. Heavy + All-terrain + Small: m = 220 + 24 + 15 = 259, F_r = 0.6 × 2538.2 = 1522.92, booster plus drive 3200 N, it travels 22.13 m before stopping if the mud never ended. Heavy + Spiked + Small: m = 267, F_r = 0.6 × 1.6 × 2616.6 = 2511.94, booster plus drive 3200 N, it stops at 4.00 m. The 24-of-27 and 22-of-27 counts come from running the real `step()` over all 27 builds (primed: throttle level 1 when fired; cold: 0). The plan's figures (24 of 27, about 22 m) are the primed case.
 
 ## 14 Open questions

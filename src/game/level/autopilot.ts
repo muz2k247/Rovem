@@ -1,4 +1,5 @@
 import type { Content, PointM } from '../../content/index.ts';
+import { levelsConfig } from '../../content/levelsConfig.ts';
 import { roverFromParts, physicsConstants, STARTING_BUILD, type BuildSelection } from '../buildFromParts.ts';
 import { wrapAngle } from '../run/drift.ts';
 import type { ScavengerRun } from './scavenger.ts';
@@ -181,12 +182,20 @@ export interface PilotOptions {
   onStep?: (s: LevelSession) => void;
   /** The rival the session races, if any (the third star). */
   scavenger?: ScavengerRun;
+  /** A worn motor (R11): its top speed is multiplied by this. Default 1. */
+  topSpeedFactor?: number;
+  /**
+   * Fire the booster whenever it is ready, the rover is on the ground in forward gear and at least `scavenger.boosterMarginMps` below its top
+   * speed (R11, DECISIONS 2026-10-26 (3)): the Scavenger's rule, and the one the audit used for the starting rover's clean best. Default off.
+   */
+  booster?: boolean;
 }
 
 /** Drives a level with a plan and reports how it went. */
 export function runPilot(o: PilotOptions): PilotResult {
   const { content, def, plan } = o;
-  const rover = roverFromParts(content, o.build ?? STARTING_BUILD);
+  const fresh = roverFromParts(content, o.build ?? STARTING_BUILD);
+  const rover = o.topSpeedFactor !== undefined ? { ...fresh, topSpeedMps: fresh.topSpeedMps * o.topSpeedFactor } : fresh;
   const constants = physicsConstants(content);
   let input: LevelInput = { throttleHeld: false, brakeHeld: false, steer: 0 };
   const session = createLevelSession({ content, def, rover, constants, drive: () => input, ...(o.scavenger ? { scavenger: o.scavenger } : {}) });
@@ -246,6 +255,10 @@ export function runPilot(o: PilotOptions): PilotResult {
       }
     } else {
       input = { throttleHeld: false, brakeHeld: false, steer: 0 };
+    }
+    if (o.booster && session.phase === 'driving' && !session.airborne && session.boosterReady) {
+      const st = session.state;
+      if (st.direction === 'forward' && !st.rollingBack && st.speedMps <= rover.topSpeedMps - levelsConfig.scavenger.boosterMarginMps) session.fireBooster();
     }
     o.record?.inputs.push(input);
     session.stepOnce();

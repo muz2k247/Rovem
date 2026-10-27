@@ -25,7 +25,7 @@ After the advisor saw the demo (an endless canyon run), the game became short le
 - All five levels and Endless are open from the first visit (R6b, 2026-10-22; the in-order rule is switched off in `levels.json`). Levels last 90–150 s, with forks, checkpoints and up to three stars each (reach the part, collect 3 samples, beat the Scavenger; v4 had "reach the beacon … beat par"). After the fifth part is recovered, the Levels screen offers the launch ending. Endless gets every element.
 - All parts (chassis, wheels, motor; three each) are open; the garage shows what each change does.
 - On screen, only what teaches something: force arrows for the level's forces, one short caption with the student's number, and the F = ma line while the speed changes. The report shows a speed–time graph and the moments that mattered, with the worked maths on request.
-- Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole, R returns to the last checkpoint and Shift fires the booster (once per attempt).
+- Controls: W/↑ throttle, S/↓ brake (hold at rest to reverse), A/D or ←/→ steer, Esc pause; in levels, Space flips the magnet pole, R returns to the last checkpoint and Shift fires the booster (2500 N for up to 1.5 s; it recharges 15 s after each burn).
 - Played as a guest; progress stays on the device. Questions, Knowledge and accounts are future work.
 
 ## Earlier design (game design v2, superseded 2026-10-17)
@@ -108,7 +108,7 @@ scripts/     balance report, maps, rival
 | Document | Purpose |
 |---|---|
 | `docs/specs/v2/SRS_v0.6.md` | Requirements: the primary source of truth (editable Markdown, 2026-10-21) |
-| `docs/specs/v2/Physics_Model_Spec_v2.md` | Formulas, time step, controls, game-layer rules, tests T1–T20 |
+| `docs/specs/v2/Physics_Model_Spec_v2.md` | Formulas, time step, controls, game-layer rules, tests T1–T21 |
 | `docs/specs/v2/Data_Model_v2.md` | What is saved now; the future cloud model |
 | `docs/specs/v2/component_values/` | Part, surface, level and Showcase values (CSV); simulation results |
 | `docs/specs/v2/Tech_Stack_v2.md` | Stack and hosting |

@@ -560,7 +560,7 @@
       ],
       "boostPads": [],
       "cannons": [
-        { "kind": "headOn", "xM": 142, "zM": -3 }
+        { "kind": "headOn", "xM": 142, "zM": -15 }
       ],
       "gravityZones": []
     },
@@ -586,9 +586,9 @@
       ],
       "boostPads": [],
       "cannons": [
-        { "kind": "headOn", "xM": 144, "zM": -7 },
-        { "kind": "headOn", "xM": 144, "zM": 7 },
-        { "kind": "kicker", "xM": 6, "zM": 8 }
+        { "kind": "headOn", "xM": 112, "zM": 15 },
+        { "kind": "headOn", "xM": 144, "zM": -15 },
+        { "kind": "kicker", "xM": 6, "zM": 15 }
       ],
       "gravityZones": []
     }

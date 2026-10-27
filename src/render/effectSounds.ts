@@ -3,7 +3,7 @@
 
 import type { MomentSound } from '../game/moments.ts';
 
-export type EffectKind = 'boost' | 'sandbagHit' | 'kickerHit' | 'thud' | 'hiss' | 'squelch' | 'skid' | 'crunch' | 'scrape' | 'rumble' | 'hum' | 'splash';
+export type EffectKind = 'boost' | 'sandbagHit' | 'kickerHit' | 'thud' | 'hiss' | 'squelch' | 'skid' | 'crunch' | 'scrape' | 'rumble' | 'hum' | 'splash' | 'warn';
 
 export interface EffectTone {
   type: OscillatorType;
@@ -89,6 +89,13 @@ const RECIPES: Record<EffectKind, EffectRecipe> = {
     tones: [{ type: 'sine', fromHz: 420, toHz: 190, startS: 0, durationS: 0.16, gain: 0.06 }],
     noise: { startS: 0, durationS: 0.36, gain: 0.2, filterHz: 2200 },
   },
+  // A kicker's warning (R11): two quick, high beeps. A bag is coming from behind, out of the chase camera's view.
+  warn: {
+    tones: [
+      { type: 'square', fromHz: 880, toHz: 880, startS: 0, durationS: 0.1, gain: 0.07 },
+      { type: 'square', fromHz: 1100, toHz: 1100, startS: 0.16, durationS: 0.1, gain: 0.07 },
+    ],
+  },
   // The crash: a deep boom and a crunch.
   thud: {
     tones: [
@@ -132,6 +139,7 @@ const ROLL: Readonly<Record<string, { frequencyHz: number; q: number; maxGain: n
   sand: { frequencyHz: 3200, q: 0.7, maxGain: 0.026 },
   mud: { frequencyHz: 420, q: 0.9, maxGain: 0.03 },
   ice: { frequencyHz: 5200, q: 0.7, maxGain: 0.004 },
+  oil: { frequencyHz: 900, q: 0.6, maxGain: 0.006 }, // a slick, quiet hiss
 };
 export function rollTone(surfaceId: string, speedShare: number): { frequencyHz: number; gain: number; q: number } {
   const t = ROLL[surfaceId] ?? ROLL.asphalt!;

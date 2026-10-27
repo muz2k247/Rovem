@@ -1,11 +1,12 @@
 import type { Popup, PopupElement } from './popups.ts';
+import { readTimeS } from './readTime.ts';
 
 // What the student reads while driving (SHOWCASE_PLAN §10): pop-ups beside the rover are the main channel; a caption card
 // shows only the first time an element appears in a run, and waits while the rover is at the grip limit or in the air.
 // At most one of these is on screen at a time. Time is the physics clock, so nothing expires while the game is paused.
 
-/** A pop-up stays this long (SHOWCASE_PLAN §16). */
-export const POPUP_S = 1.5;
+/** A pop-up stays `readTimeS(text)` (R11, DECISIONS 2026-10-26 (10): 1.0 s + 0.3 s per word, 1.5 to 4.0 s); it was a flat 1.5 s (SHOWCASE_PLAN §16). */
+const popupS = (p: Popup) => readTimeS(p.text);
 /** A caption card stays this long (SHOWCASE_PLAN §16). */
 export const CARD_S = 4;
 /** More pop-ups than this waiting means the news is stale: the oldest goes. */
@@ -51,10 +52,10 @@ export function createFeedbackQueue() {
       if (popupShowing.leftS <= EPSILON_S) popupShowing = null;
     }
     // A waiting pop-up older than its own life would describe something long past: it goes.
-    waitingPopups = waitingPopups.filter((w) => nowS - w.queuedS <= POPUP_S + EPSILON_S);
+    waitingPopups = waitingPopups.filter((w) => nowS - w.queuedS <= popupS(w.popup) + EPSILON_S);
     if (!popupShowing && waitingPopups.length > 0) {
       const next = waitingPopups.shift()!;
-      popupShowing = { popup: next.popup, leftS: POPUP_S };
+      popupShowing = { popup: next.popup, leftS: popupS(next.popup) };
     }
     if (cardShowing && !popupShowing) {
       cardShowing.leftS -= rest;
@@ -63,11 +64,24 @@ export function createFeedbackQueue() {
   }
 
   return {
-    /** An element acted on the rover: show its pop-up now, or after the one on screen. The same element again renews it. */
+    /**
+     * An element acted on the rover: show its pop-up now, or after the one on screen. The same element again renews it. A sticky pop-up (the
+     * stuck hold, R11) takes the screen at once and stays until `release`.
+     */
     popup(p: Popup, nowS: number): void {
       advance(nowS);
+      if (p.sticky) {
+        popupShowing = { popup: p, leftS: Infinity };
+        return;
+      }
+      if (popupShowing && popupShowing.leftS === Infinity) {
+        // A sticky pop-up is up: the others wait for it to go, and are only worth showing for their own life after that.
+        waitingPopups.push({ popup: p, queuedS: nowS });
+        if (waitingPopups.length > MAX_WAITING_POPUPS) waitingPopups.shift();
+        return;
+      }
       if (popupShowing && popupShowing.popup.element === p.element) {
-        popupShowing = { popup: p, leftS: POPUP_S };
+        popupShowing = { popup: p, leftS: popupS(p) };
         return;
       }
       const same = waitingPopups.findIndex((w) => w.popup.element === p.element);
@@ -76,11 +90,16 @@ export function createFeedbackQueue() {
         return;
       }
       if (!popupShowing) {
-        popupShowing = { popup: p, leftS: POPUP_S };
+        popupShowing = { popup: p, leftS: popupS(p) };
         return;
       }
       waitingPopups.push({ popup: p, queuedS: nowS });
       if (waitingPopups.length > MAX_WAITING_POPUPS) waitingPopups.shift();
+    },
+    /** The stuck hold is over (the rover moved, a key was let go, or it went back): a sticky pop-up comes down. */
+    release(nowS: number): void {
+      advance(nowS);
+      if (popupShowing && popupShowing.leftS === Infinity) popupShowing = null;
     },
     /** A caption card is due (the first time of its element); it starts when nothing else is on screen and the rover is calm. */
     card(c: FeedbackCard, nowS: number): void {

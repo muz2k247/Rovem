@@ -46,8 +46,25 @@ function centrelineSamples(world: LevelWorld, roadId: string, everyM = 2) {
   return out;
 }
 
-export function checkLevelFile(id: LevelId): void {
+export interface CheckOptions {
+  /**
+   * The scripted driver's star run (all 3 samples, no booster) finishes before the Scavenger. Default true. Crater Field sets it false: after
+   * R11 the Scavenger is +5.9% over the starting rover's clean best, and the sample line costs Crater Field 10%, so the scripted run with its
+   * samples is 5.9 s behind the ghost. R13 rebuilds the level and retunes the Scavenger (DECISIONS 2026-10-26 (3)).
+   */
+  starRunBeatsScavenger?: boolean;
+  /**
+   * Holding W along the middle of the road misses at least one star. Default true. Geyser Canyon sets it false: after R11 each launcher fires
+   * one aimed shot, so holding W takes the vent lane in 81 s, collects the three samples on the centre line and beats the Scavenger. R13
+   * rebuilds the level (DECISIONS 2026-10-26 (8): about 150 s).
+   */
+  holdWMissesAStar?: boolean;
+}
+
+export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
   const { def, world, plans } = loadLevel(id);
+  const starRunBeatsScavenger = options.starRunBeatsScavenger ?? true;
+  const holdWMissesAStar = options.holdWMissesAStar ?? true;
 
   describe(`level file ${id}`, () => {
     it('is marked placeholder and has a par time', () => {
@@ -112,7 +129,7 @@ export function checkLevelFile(id: LevelId): void {
       expect(r.samples.sort()).toEqual(def.samples.map((s) => s.id).sort());
       expect(r.timeS).toBeGreaterThan(60); // was 75 s before the stops were removed (R1); the Showcase levels are 90–150 s (SHOWCASE_PLAN §5) and are rebuilt later
       expect(r.timeS).toBeLessThan(150);
-      expect(r.starFlags).toEqual([true, true, true]);
+      expect(r.starFlags).toEqual([true, true, starRunBeatsScavenger]);
       // The par time follows the A10 rule for this scripted drive: × 1.15, up to the next 5 s (provisional until I1 plays the levels).
       const { factor, roundUpToS } = levelsConfig.par;
       expect(def.parS).toBeGreaterThanOrEqual(r.timeS * factor);
@@ -120,8 +137,11 @@ export function checkLevelFile(id: LevelId): void {
     });
 
     it('holding W along the middle of the road misses at least one star', () => {
-      const r = runPilot({ content, def, plan: naivePlan(def), maxS: 300 });
-      expect(r.stars).toBeLessThan(3);
+      // The third star is beating the Scavenger (a level with none keeps the par time), so the simple drive races it.
+      const rival = createScavengerRun(content, def);
+      const r = runPilot({ content, def, plan: naivePlan(def), maxS: 300, ...(rival ? { scavenger: rival } : {}) });
+      if (holdWMissesAStar) expect(r.stars).toBeLessThan(3);
+      else expect(r.stars).toBe(3);
     });
 
     it('no build is trapped: all 27 finish the safe route', () => {

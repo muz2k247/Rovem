@@ -3,7 +3,7 @@ import { SLIDE_MARK_DEG, SLIDE_SOUND_DEG } from '../game/run/drift.ts';
 import { MOMENT_SOUNDS } from '../game/moments.ts';
 import { effectForSound, effectRecipe, rollTone, squealTone, type EffectKind } from './effectSounds.ts';
 
-const KINDS: EffectKind[] = ['boost', 'sandbagHit', 'kickerHit', 'thud', 'hiss', 'squelch', 'skid', 'crunch', 'scrape', 'rumble', 'hum', 'splash'];
+const KINDS: EffectKind[] = ['boost', 'sandbagHit', 'kickerHit', 'thud', 'hiss', 'squelch', 'skid', 'crunch', 'scrape', 'rumble', 'hum', 'splash', 'warn'];
 
 describe('effect recipes', () => {
   it('every effect makes some sound: a tone or a burst of noise, with positive frequencies and short, audible lengths', () => {

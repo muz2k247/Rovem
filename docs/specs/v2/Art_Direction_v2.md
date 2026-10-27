@@ -8,6 +8,7 @@
 
 | What changed | Why | Source |
 |---|---|---|
+| R11 (2026-10-27, *Built*, provisional): the booster pip is a ring that fills while it recharges; a ring and a line while the rover is held (the stuck return); an orange flame on the Scavenger while it burns and the label "The Scavenger fired its booster"; a red edge marker on the side of a kicker about to fire; a flat pad and a dark base under each launcher; oil is a dark slick (#1c1a26) with a hushed hiss | The Polish round | DECISIONS 2026-10-26 |
 | The terrain theme: an unnamed red planet where the student's ship crashed, replacing "a Mars-analog proving ground on Earth with a paved test track" | The story and the physics: a crash on Mars with g = 9.8 would be wrong physics (Mars is 3.7 m/s²) | E44, DECISIONS 2026-10-21 (D6) |
 | Natural terrain: surfaces sit where nature puts them, with blended edges | The friends' critique: perfect rectangles break immersion | DECISIONS 2026-10-21 (D10) |
 | The ending is built: render/launchScene.ts, camera only, 10 s, the ship climbs by the net-force rule | Showcase R8 | DECISIONS 2026-10-23 |

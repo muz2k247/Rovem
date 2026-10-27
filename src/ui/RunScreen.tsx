@@ -237,6 +237,7 @@ export function RunScreen({
     let lastSectionIndex = -1;
     const popupPoint = new THREE.Vector3();
     let eventsHandled = 0;
+    let warningWas = false;
     let frame = 0;
     let lastMs = performance.now();
 
@@ -308,6 +309,10 @@ export function RunScreen({
       effects.setSqueal(phase === 'running' && !driver.paused && squealing && state.speedMps > 0, state.speedMps / rover.topSpeedMps);
       engine.update(state.speedMps / rover.topSpeedMps, phase === 'running' ? state.throttleLevel : 0);
 
+      // A kicker's warning starts with a beep (R11); the edge marker is in the HUD.
+      const warning = session.launcherWarning;
+      if (warning && !warningWas) effects.play('warn');
+      warningWas = warning !== null;
       for (; eventsHandled < session.events.length; eventsHandled++) {
         const event = session.events[eventsHandled]!;
         const popup = popupForRunEvent(event, { massKg: rover.massKg, motorForceN: rover.driveForceMaxN, rockRollingMu, unit: unitRef.current });
@@ -364,6 +369,7 @@ export function RunScreen({
               caption: null,
               forceLine: s.showMaths && phase === 'running' ? line : null,
               forces: arrows,
+              launcherWarning: session.launcherWarning,
             }),
           );
         }

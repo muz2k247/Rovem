@@ -4,7 +4,7 @@
   "placeholder": true,
   "atmosphere": "orange-haze",
   "edgeStyle": "rock",
-  "parS": 115,
+  "parS": 105,
   "start": {
     "xM": 0,
     "zM": 0,
@@ -12,9 +12,9 @@
   },
   "scavenger": {
     "build": {
-      "chassisId": "chassis-standard",
+      "chassisId": "chassis-heavy",
       "wheelsId": "wheels-smooth",
-      "motorId": "motor-large"
+      "motorId": "motor-medium"
     },
     "roads": [
       "start",
@@ -27,14 +27,20 @@
       "outpost",
       "gate"
     ],
-    "startDelayS": 4
+    "topSpeedFactor": 0.945,
+    "startDelayS": 0
   },
   "defaultSurfaceId": "asphalt",
   "roads": [
     {
       "id": "start",
       "name": "Canyon mouth",
-      "edges": [{ "side": "both", "style": "hill" }],
+      "edges": [
+        {
+          "side": "both",
+          "style": "hill"
+        }
+      ],
       "start": {
         "xM": 0,
         "zM": 0,
@@ -85,7 +91,14 @@
       "surfaceId": "sand",
       "runoffSurfaceId": "sand",
       "after": "lead",
-      "edges": [{ "side": "left", "fromM": 20, "toM": 370, "style": "cliff" }],
+      "edges": [
+        {
+          "side": "left",
+          "fromM": 20,
+          "toM": 370,
+          "style": "cliff"
+        }
+      ],
       "segments": [
         {
           "kind": "arc",
@@ -263,54 +276,53 @@
   ],
   "cannons": [
     {
-      "id": "k1",
-      "kind": "kicker",
-      "xM": 689.04,
-      "zM": 247.6,
-      "directionDeg": 30
-    },
-    {
       "id": "h1",
       "kind": "headOn",
-      "xM": 520.17,
-      "zM": 150.1,
-      "directionDeg": 210
+      "xM": 552.77,
+      "zM": 181.62,
+      "directionDeg": -120
+    },
+    {
+      "id": "k1",
+      "kind": "kicker",
+      "xM": 591.48,
+      "zM": 178.57,
+      "directionDeg": 60
     },
     {
       "id": "h1b",
       "kind": "headOn",
-      "xM": 606.77,
-      "zM": 200.1,
-      "directionDeg": 210
+      "xM": 648.03,
+      "zM": 236.62,
+      "directionDeg": -120
     },
     {
       "id": "h1c",
       "kind": "headOn",
-      "xM": 693.37,
-      "zM": 250.1,
-      "directionDeg": 210
+      "xM": 723.99,
+      "zM": 255.07,
+      "directionDeg": -180
     },
     {
       "id": "k2",
       "kind": "kicker",
-      "xM": 1057.13,
-      "zM": 238.17,
-      "directionDeg": -50
+      "xM": 1065.56,
+      "zM": 245.24,
+      "directionDeg": -80
     },
     {
       "id": "h2",
       "kind": "headOn",
-      "xM": 1185.69,
-      "zM": 84.96,
-      "directionDeg": 130,
-      "triggerM": 60
+      "xM": 1177.26,
+      "zM": 77.89,
+      "directionDeg": 100
     },
     {
       "id": "k3",
       "kind": "kicker",
-      "xM": 1240.33,
-      "zM": 19.85,
-      "directionDeg": -50
+      "xM": 1248.75,
+      "zM": 26.92,
+      "directionDeg": -80
     }
   ],
   "checkpoints": [
@@ -406,25 +418,25 @@
       "id": "floor",
       "name": "The Canyon Floor",
       "startsAfterRoad": "lead",
-      "cleanS": 33.37
+      "cleanS": 20.94
     },
     {
       "id": "alcove",
       "name": "The Alcove",
       "startsAfterRoad": "m1",
-      "cleanS": 2.94
+      "cleanS": 2.96
     },
     {
       "id": "outpost",
       "name": "The Outpost",
       "startsAfterRoad": "b2",
-      "cleanS": 25.98
+      "cleanS": 26.56
     },
     {
       "id": "gate",
       "name": "The Gate",
       "startsAfterRoad": "outpost",
-      "cleanS": 6.97
+      "cleanS": 7.37
     }
   ]
 }

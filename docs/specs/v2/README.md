@@ -7,7 +7,7 @@
 | Priority | File | What it is | Replaces |
 |---|---|---|---|
 | 1 | `SRS_v0.6.md` | Scope, behaviour, FR and NFR ids | `Rovem_SRS_Draft_0.5.pdf` |
-| 2 | `Physics_Model_Spec_v2.md` | Formulas, time step, controls, game-layer rules, tests T1–T20 | `Rovem_Physics_Model_Spec.pdf` |
+| 2 | `Physics_Model_Spec_v2.md` | Formulas, time step, controls, game-layer rules, tests T1–T21 | `Rovem_Physics_Model_Spec.pdf` |
 | 3 | `Data_Model_v2.md` | What is saved now (local storage) and the future cloud model | `Rovem_Data_Model.pdf` |
 | 4 | `component_values/` | Part, surface, level and Showcase numbers; the 135 regression values | `Rovem_Component_Values.xlsx` (one CSV per sheet, plus `levels.csv` and `showcase.csv`) |
 | 5 | `Tech_Stack_v2.md` | Libraries, build, hosting; the Mission 1 plan is history | `Rovem_Tech_Stack_and_Mission_1_Plan.pdf` |

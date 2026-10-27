@@ -3,9 +3,9 @@ import { content } from '../../content/index.ts';
 import { STARTING_BUILD } from '../buildFromParts.ts';
 import { checkLevelFile, loadLevel, startingAt } from './levelChecks.ts';
 import { createScavengerRun } from './scavenger.ts';
-import { allBuilds, roadPoint, runPilot } from './testPilot.ts';
+import { allBuilds, allRoutes, roadPoint, runPilot } from './testPilot.ts';
 
-checkLevelFile('crater-field');
+checkLevelFile('crater-field', { starRunBeatsScavenger: false });
 
 // Crater Field (SHOWCASE_PLAN §3 Level 3, §6): a rim and a small safe jump, two bowls you can jump or roll through (one with an icy floor),
 // the Floating Cave with a chasm to jump and the Heavy Cave with a mine shaft, and the biggest jump to the lift engine.
@@ -24,13 +24,19 @@ describe('crater-field', () => {
     expect(r.samples.sort()).toEqual(['s-bowl', 's-float', 's-landing']);
   });
 
-  it('has the Scavenger on the route that skips the ramps, and the starting build beats it with all three samples', () => {
+  it('has the Scavenger on the Heavy Cave route (R11: Heavy + Smooth + Medium, worn motor); the scripted star run with its samples is behind it until R13', () => {
     const scavenger = createScavengerRun(content, def)!;
     expect(scavenger).toBeDefined();
+    expect(def.scavenger!.roads).toContain('cave-heavy');
     const r = runPilot({ content, def, plan: plans.stars, scavenger });
-    expect(r.starFlags).toEqual([true, true, true]);
-    // The Scavenger's target is 4% to 8% over the starting rover's clean best (SHOWCASE_PLAN §8); the delay is the knob that makes the star reachable.
-    expect(scavenger.finishAtS).toBeGreaterThan(r.timeS);
+    // The Scavenger is +5.9% over the starting rover's clean best without samples (90.65 s with the booster); the sample line costs this level
+    // 10%, so the scripted run that collects all three is about 5 s behind. R13 rebuilds the level and retunes the Scavenger (DECISIONS 2026-10-26 (3)).
+    expect(r.starFlags).toEqual([true, true, false]);
+    // A run that skips the samples and uses the booster beats it: the third star is within reach of a better driver.
+    const clean = Math.min(...allRoutes(def).map((route) => runPilot({ content, def, plan: { roads: route.roads }, booster: true }).timeS));
+    expect(scavenger.finishAtS).toBeGreaterThan(clean);
+    expect(scavenger.finishAtS / clean).toBeGreaterThanOrEqual(1.04);
+    expect(scavenger.finishAtS / clean).toBeLessThanOrEqual(1.08);
   });
 
   describe('the jumps (E45)', () => {

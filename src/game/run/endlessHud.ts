@@ -21,6 +21,8 @@ export interface EndlessHudInput {
   caption: HudCaption | null;
   forceLine: string | null;
   forces: ForceArrow[];
+  /** A kicker is about to fire from behind: the side of the screen its edge marker shows on (R11). */
+  launcherWarning?: 'left' | 'right' | null;
 }
 
 const MPS_TO_KMH = 3.6;
@@ -40,5 +42,6 @@ export function buildEndlessHud(i: EndlessHudInput): HudModel {
     ...(i.speedTone ? { speedTone: i.speedTone } : {}),
     forceLine: i.forceLine,
     forces: i.forces,
+    ...(i.launcherWarning ? { launcherWarning: i.launcherWarning } : {}),
   };
 }

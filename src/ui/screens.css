@@ -586,9 +586,99 @@ kbd {
   color: #1a1008;
 }
 
-.badge.booster-used {
+.badge.booster-recharging {
   background: transparent;
   color: #cfd6e4;
+}
+
+.badge.booster {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* A ring that fills: the booster's recharge and the stuck return (R11). */
+.ring .ring-track {
+  stroke: rgba(207, 214, 228, 0.28);
+}
+
+.ring .ring-fill {
+  stroke: currentColor;
+}
+
+.booster-ready .ring .ring-fill {
+  stroke: #08141a;
+}
+
+.hud2-stuck {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(10, 14, 24, 0.78);
+  border: 1px solid var(--amber);
+  color: #fff;
+  pointer-events: none;
+}
+
+.hud2-stuck .ring {
+  width: 34px;
+  height: 34px;
+  color: var(--amber);
+}
+
+/* A kicker is about to fire from behind: a glow on the edge of the screen on its side. */
+.hud2-launcher-warning {
+  position: absolute;
+  top: 30%;
+  bottom: 12%;
+  width: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.6rem;
+  pointer-events: none;
+  animation: launcher-warning-blink 0.5s steps(2, jump-none) infinite;
+}
+
+.hud2-launcher-warning.left {
+  left: 0;
+  background: linear-gradient(to right, rgba(229, 72, 77, 0.55), transparent);
+  justify-content: flex-start;
+  padding-left: 0.6rem;
+}
+
+.hud2-launcher-warning.right {
+  right: 0;
+  background: linear-gradient(to left, rgba(229, 72, 77, 0.55), transparent);
+  justify-content: flex-end;
+  padding-right: 0.6rem;
+}
+
+@keyframes launcher-warning-blink {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.hud2-scavenger-label {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(10, 14, 24, 0.7);
+  border: 1px solid #b9906a;
+  color: #f1dcc4;
+  font-size: 1rem;
+  pointer-events: none;
 }
 
 .badge.pole-N {

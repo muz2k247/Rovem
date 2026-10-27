@@ -106,7 +106,9 @@ An old robot rover, **the Scavenger**, left behind by an earlier mission, also w
 
 ## 3a. The booster (k._muz's addition, 2026-10-21)
 
-**What it is:** a small rocket salvaged from the wreck. **One use per level attempt**, fired with **Shift**. Restarting the level refills it; returning to a checkpoint doesn't.
+> **Superseded in part, 2026-10-26 (DECISIONS "Polish round: direction after k._muz's playtest" (2) and "values after the R9 audit" (1), (3), built in R11, 2026-10-27):** the booster **recharges**, 15 s after the end of each burn (a restart refills it; a return to a checkpoint does not, and the recharge keeps counting), and **the Scavenger has one too**, fired when it is ready, on the ground, in forward gear and at least 0.5 m/s below its top speed. "One use per level attempt" and "The Scavenger has no booster" below are the old rules; their reasons are kept. Everything else here stands.
+
+**What it is:** a small rocket salvaged from the wreck. ~~**One use per level attempt**~~ (now: recharges 15 s after each burn), fired with **Shift**. Restarting the level refills it; returning to a checkpoint doesn't.
 
 **What it does:**
 - It pushes the rover forward with **2500 N for up to 1.5 s**.
@@ -124,7 +126,7 @@ An old robot rover, **the Scavenger**, left behind by an earlier mission, also w
 3. **The 3 builds it can't rescue** are heavy chassis with spiked wheels. Their rolling friction in mud (up to about 2750 N) is too large for any sensible booster. That is a true lesson, and the report says so: "Heavy chassis + spiked wheels: too much rolling friction for mud." The usual "stuck" rule returns them to the checkpoint.
 4. **It's a rocket, not the tyres,** so grip doesn't limit it. It enters the physics through `step()`'s existing outside-force input, the same way magnets do, so **`step()` doesn't change**.
 
-**The Scavenger has no booster.** Its target time is tuned by hand anyway (§8). **Endless has no booster:** its mud has a bypass, and getting stuck is part of its game over.
+**~~The Scavenger has no booster.~~ (Superseded 2026-10-26: it has one.)** Its target time is tuned by hand anyway (§8). **Endless has no booster:** its mud has a bypass, and getting stuck is part of its game over.
 
 ## 4. Crashes: what happens when you hit things
 
@@ -227,6 +229,8 @@ Git keeps the old versions. Until a level is rebuilt, its old file stays playabl
 
 ## 8. The Scavenger
 
+> **Superseded in part, 2026-10-26 (DECISIONS "Polish round: direction after k._muz's playtest" (1) and "values after the R9 audit" (3), built in R11, 2026-10-27):** **no start delays.** The rival has **one fixed set of parts on every level** (Heavy chassis + Smooth wheels + Medium motor) with a **worn motor, tuned per level** (top speed × 0.945, or × 1.00 on Iron Ridge, `topSpeedFactor` in the level file), and it **fires its booster** when ready (§3a). Its card shows the worn part. "The only tuning knob is a visible start delay" below is the old rule; its reason (part values come in steps, so no build lands 4–8% slower) is kept in ROADMAP OI-33. The target (4–8% over the starting rover's clean best, both using the booster) and the rest of this section stand.
+
 **What it is:**
 - A ghost replay of an honest run: the same physics, its own build, its own route.
 - It is simulated in full when the level loads (14,400 steps for 120 s, a few milliseconds).
@@ -235,7 +239,7 @@ Git keeps the old versions. Until a level is rebuilt, its old file stays playabl
 - **Target:** 4–8% slower than the starting rover's clean best drive.
 - `npm run rival` runs all 27 builds over every route and lists the builds near the target. Claude picks one whose weakness the level exposes.
 - **Final tuning is by hand:** k._muz plays each level about 5 times.
-- The only tuning knob is a **visible start delay**, `scavengerStartDelayS` (0 by default; negative means a head start), shown in the countdown.
+- ~~The only tuning knob is a **visible start delay**, `scavengerStartDelayS` (0 by default; negative means a head start), shown in the countdown.~~ (Superseded 2026-10-26: the knob is the worn motor's top speed, `topSpeedFactor`; the delay is 0 on every level.)
 - Its driving is never slowed in secret.
 
 **How it looks and behaves:**
@@ -537,7 +541,7 @@ The rover-parts work runs separately (k._muz's other account) and only touches `
 | Crash Site length | about 90 s | Keeps the demo rematch short |
 | Crash cost target | 3–6 s (by checkpoint placement) | A mistake matters, but doesn't end the level |
 
-Kept unchanged: surfaces, gravity × 0.5 and × 2, boost 1200 N·s, sandbag 40 kg at 10 and 30 m/s, water, magnets, crash moment 0.5 s.
+Kept unchanged: surfaces, gravity × 0.5 and × 2, boost 1200 N·s, sandbag 40 kg at 10 (12 from R11) and 30 m/s, water, magnets, crash moment 0.5 s.
 
 ## 17. Decisions, reviews and what was dropped
 

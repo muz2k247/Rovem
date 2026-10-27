@@ -168,85 +168,137 @@ describe('stuck', () => {
 });
 
 describe('cannons', () => {
-  const headOn = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 0 }] }); // world x 158
-  it('wakes at the end of the first step with the front at x ≥ 158 − 90, and fires at that step\'s time', () => {
+  // Roadside launchers (R11, DECISIONS 2026-10-26 (5)): at the corridor edge (|z| = 15 m), one aimed shot each, 30° to the road.
+  const ANGLE = (30 * Math.PI) / 180;
+  const headOn = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 15 }] }); // world x 158
+  const BASE_M = content.run.sandbag.baseSizeM;
+  const standsAt = 15 + BASE_M / 2; // the base sits behind the wall
+
+  it('stands behind the corridor wall, its base just outside it', () => {
     const s = session(headOn);
-    let previousX = s.state.positionXM;
-    runUntil(s, () => s.shots.length > 0);
-    expect(s.shots).toHaveLength(1);
+    s.course.ensureAhead(300);
+    const cannon = s.course.chunks[1]!.cannons[0]!;
+    expect(cannon.zM).toBeCloseTo(standsAt, 12);
+    expect(cannon.xM).toBe(158);
+  });
+
+  it('wakes at the end of the first step with the front at x ≥ 158 − 90 (its lamp charges)', () => {
+    const s = session(headOn);
+    s.course.ensureAhead(300);
+    const id = s.course.chunks[1]!.cannons[0]!.id;
+    runUntil(s, () => s.cannonAwake(id));
     expect(s.state.positionXM).toBeGreaterThanOrEqual(68);
-    expect(previousX).toBeLessThan(68);
-    expect(s.shots[0]!.timeS).toBe(s.state.timeS);
-    previousX = 0;
+    expect(s.state.positionXM).toBeLessThan(68 + 1);
   });
 
-  it('fires every 1.2 s after that, for as long as the front is before the cannon', () => {
+  it('fires one shot, when the rover is as far from the crossing point as the bag is: 31.3 m of flight at 12 m/s', () => {
     const s = session(headOn);
-    runUntil(s, () => s.shots.length >= 3);
-    const [a, b, c] = s.shots.map((x) => x.timeS);
-    expect(b! - a!).toBeCloseTo(1.2, 9);
-    expect(c! - b!).toBeCloseTo(1.2, 9);
+    runUntil(s, () => s.shots.length > 0);
+    // Crossing point: x = 158 − 15.65 ÷ tan 30° = 130.9. The bag needs 31.3 ÷ 12 = 2.61 s, in which a rover at 16 m/s drives 41.7 m.
+    expect(s.shots).toHaveLength(1);
+    expect(s.state.speedMps).toBe(16);
+    expect(Math.abs(s.state.positionXM - (130.9 - 41.7))).toBeLessThan(0.5);
+    expect(s.shots[0]!.timeS).toBe(s.state.timeS);
+    const bag = s.bags[0]!;
+    expect(bag.speedMps).toBe(12);
+    expect(Math.cos(bag.dirRad)).toBeCloseTo(-Math.cos(ANGLE), 12); // back along the road...
+    expect(Math.sin(bag.dirRad)).toBeCloseTo(-Math.sin(ANGLE), 12); // ...and across it, toward the centre line
+    runUntil(s, () => s.state.positionXM > 300 || s.ended !== undefined, 30000);
+    expect(s.shots.filter((x) => x.cannonId.startsWith('1:'))).toHaveLength(1);
   });
 
-  it('a head-on bag (40 kg at 10 m/s) hits a rover at 16 m/s: 16 → 11.823293 m/s', () => {
+  it('a head-on bag (40 kg at 12 m/s, 30° to the road) hits a rover at 16 m/s: 16 → 11.7997 m/s, 11.7603 m/s along the road', () => {
     const s = session(headOn);
     runUntil(s, () => eventsOf(s, 'headOnHit').length > 0);
     const hit = eventsOf(s, 'headOnHit')[0]!;
     expect(hit.speedBeforeMps).toBe(16);
-    close(hit.speedAfterMps!, (209 * 16 - 40 * 10) / 249);
-    expect(Math.abs(hit.speedAfterMps! - 11.823293)).toBeLessThan(1e-6);
+    // (209 + 40) v′ = 209 × (16, 0) + 40 × 12 × (−cos 30°, −sin 30°): along the road 11.7603, across it 0.9639.
+    expect(hit.resultVelocityMps!).toBeCloseTo((209 * 16 - 40 * 12 * Math.cos(ANGLE)) / 249, 9);
+    expect(hit.otherVelocityMps!).toBeCloseTo(-12 * Math.cos(ANGLE), 9);
+    expect(hit.roverVelocityMps!).toBeCloseTo(16, 9);
+    expect(hit.speedAfterMps!).toBeCloseTo(11.7997, 4);
     expect(s.stats.headOnHits).toBe(1);
     expect(s.bags.every((b) => b.id !== `${s.shots[0]!.cannonId}#0`)).toBe(true); // the bag that hit is gone
+    // The path bends toward the centre line (the launcher is on the +z side): the travel direction is 4.7° off the heading.
+    expect(s.travelRad).toBeCloseTo(-4.685 * (Math.PI / 180), 3);
   });
 
-  it('a kicker (40 kg at 30 m/s) catches a rover at 16 m/s: 16 → 18.248996 m/s', () => {
-    const s = session(worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] }));
+  it('is dodged by braking after the shot: the bag arrives where the rover would have been', () => {
+    const world = headOn;
+    let sessionRef: ReturnType<typeof createRunSession>;
+    const braking = () => (sessionRef.shots.length > 0 ? { throttleHeld: false, brakeHeld: true } : { throttleHeld: true, brakeHeld: false });
+    sessionRef = session(world, { drive: braking });
+    for (let i = 0; i < 120 * 9; i++) sessionRef.stepOnce();
+    expect(eventsOf(sessionRef, 'headOnHit')).toHaveLength(0);
+  });
+
+  it('a kicker (40 kg at 30 m/s, 30° to the road) catches a rover at 16 m/s: 16 → 17.7675 m/s, 17.6033 m/s along the road', () => {
+    const s = session(worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: -15 }] }));
     runUntil(s, () => eventsOf(s, 'kickerHit').length > 0);
     const hit = eventsOf(s, 'kickerHit')[0]!;
     expect(hit.speedBeforeMps).toBe(16);
-    close(hit.speedAfterMps!, (209 * 16 + 40 * 30) / 249);
-    expect(Math.abs(hit.speedAfterMps! - 18.248996)).toBeLessThan(1e-6);
+    expect(hit.resultVelocityMps!).toBeCloseTo((209 * 16 + 40 * 30 * Math.cos(ANGLE)) / 249, 9);
+    expect(hit.speedAfterMps!).toBeCloseTo(17.7675, 4);
+    expect(s.travelRad).toBeGreaterThan(0); // from the right: pushed toward +z
   });
 
-  it('a kicker wakes only when the rover\'s rear edge is 3 m past the cannon (OI-15)', () => {
-    const s = session(worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] }));
+  it('a kicker fires only once the rover has gone by it', () => {
+    const s = session(worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 15 }] }));
     s.course.ensureAhead(300);
     const cannonXM = s.course.chunks[1]!.startXM + 5;
-    const wakeFrontXM = cannonXM + 3 + content.constants.roverLengthM;
     runUntil(s, () => s.shots.length > 0);
     expect(s.shots[0]!.cannonId.startsWith('1:')).toBe(true);
-    expect(s.state.positionXM).toBeGreaterThanOrEqual(wakeFrontXM);
-    expect(s.state.positionXM - s.state.speedMps * constants.timeStepS).toBeLessThan(wakeFrontXM);
+    expect(s.state.positionXM).toBeGreaterThan(cannonXM);
   });
 
-  it('the first kicker bag does not hit a rover that is faster than the bags', () => {
-    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] });
-    const probe = session(world);
-    probe.course.ensureAhead(300);
-    const cannonXM = probe.course.chunks[1]!.startXM + 5;
-    const s = session(world, { initialState: { positionXM: cannonXM + 3 + content.constants.roverLengthM - 0.5, speedMps: 40, throttleLevel: 1 } });
-    for (let i = 0; i < 120 * 3; i++) s.stepOnce();
-    expect(s.shots.filter((x) => x.cannonId.startsWith('1:'))).toHaveLength(3);
-    expect(eventsOf(s, 'kickerHit').filter((e) => e.xM < cannonXM + 60)).toHaveLength(0);
-  });
-
-  it('a kicker misses a rover that is faster than its bags, and fires exactly 3 shots', () => {
-    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] });
-    const s = session(world, { initialState: { positionXM: 70, speedMps: 40, throttleLevel: 1 } });
-    for (let i = 0; i < 120 * 5; i++) s.stepOnce();
-    // The test world repeats the chunk, so count only the first cannon (chunk 1).
-    expect(s.shots.filter((x) => x.cannonId.startsWith('1:'))).toHaveLength(3);
-    // The later cannons of this repeated world do hit a rover that passes them while in their lane (OI-15), so look at the first cannon only.
+  it('a kicker misses a rover that is far faster than its bag along the road', () => {
+    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 15 }] });
+    const s = session(world, { initialState: { positionXM: 70, speedMps: 60, throttleLevel: 1 } });
+    for (let i = 0; i < 120 * 4; i++) s.stepOnce();
     expect(eventsOf(s, 'kickerHit').filter((e) => e.xM < 150)).toHaveLength(0);
     expect(s.ended).toBeUndefined();
   });
 
+  it('a kicker warns before it fires, on its own side of the screen, and the warning goes when its bag has gone (R11)', () => {
+    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 40, zM: 15 }] }); // a kicker at world x 100, 200 ... behind the left wall (the rover's left)
+    const s = session(world, { initialState: { positionXM: 60, speedMps: 16, throttleLevel: 1 } });
+    expect(s.launcherWarning).toBeNull();
+    let sawLeft = false;
+    let warnedBeforeFiring = false;
+    for (let i = 0; i < 120 * 5 && !s.ended; i++) {
+      s.stepOnce();
+      if (s.launcherWarning === 'left') sawLeft = true;
+      if (s.launcherWarning && s.shots.length === 0) warnedBeforeFiring = true;
+      if (s.bags.some((b) => b.kind === 'kicker' && b.xM < s.state.positionXM + content.constants.roverLengthM)) expect(s.launcherWarning).toBe('left'); // still up while the bag flies
+    }
+    expect(sawLeft).toBe(true);
+    expect(warnedBeforeFiring).toBe(true);
+    // Between this kicker and the next (100 m on), nothing is about to fire and no bag flies: no warning. The rover is at about x = 140 now.
+    expect(s.state.positionXM).toBeGreaterThan(130);
+    expect(s.state.positionXM).toBeLessThan(150);
+    expect(s.launcherWarning).toBeNull();
+  });
+
+  it('never fires across ice: ice where the bag would meet the rover stops the shot', () => {
+    const world = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 15 }], tiles: [{ surfaceId: 'ice', xM: [60, 80], zM: [-15, 15] }] });
+    const s = session(world);
+    for (let i = 0; i < 120 * 6; i++) s.stepOnce();
+    expect(s.shots.filter((x) => x.cannonId.startsWith('1:'))).toHaveLength(0);
+  });
+
+  it('two hits are at least 2 s apart: a bag that arrives sooner after a hit does nothing', () => {
+    const world = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 15 }, { kind: 'headOn', xM: 99, zM: -15 }] });
+    const s = session(world);
+    runUntil(s, () => s.state.positionXM > 140 || s.ended !== undefined);
+    expect(eventsOf(s, 'headOnHit').filter((e) => e.xM < 160)).toHaveLength(1);
+  });
+
   it('bags are removed once they have travelled the range', () => {
-    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 0 }] });
-    const s = session(world, { initialState: { positionXM: 70, speedMps: 40, throttleLevel: 1 } });
+    const world = worldOf({ cannons: [{ kind: 'kicker', xM: 5, zM: 15 }] });
+    const s = session(world, { initialState: { positionXM: 70, speedMps: 60, throttleLevel: 1 } });
     for (let i = 0; i < 120 * 12; i++) s.stepOnce();
     expect(s.ended).toBeUndefined();
-    expect(s.bags.filter((b) => b.cannonId.startsWith('1:'))).toHaveLength(0); // 150 m at 30 m/s takes 5 s; the last shot left at 2.4 s
+    expect(s.bags.filter((b) => b.cannonId.startsWith('1:'))).toHaveLength(0);
   });
 });
 
@@ -576,7 +628,7 @@ describe('places (R2)', () => {
 
 describe('cannons wake and charge', () => {
   it('a head-on cannon is awake once the rover is within its trigger distance, not before', () => {
-    const world = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 0 }] });
+    const world = worldOf({ cannons: [{ kind: 'headOn', xM: 98, zM: 15 }] });
     const probe = session(world);
     probe.course.ensureAhead(300);
     const id = probe.course.chunks[1]!.cannons[0]!.id;

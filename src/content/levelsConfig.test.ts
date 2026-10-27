@@ -49,6 +49,11 @@ describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
     expect(c.pacing).toEqual({ levelLengthMinS: 90, levelLengthMaxS: 150, checkpointSpacingS: 30 });
     expect(c.par).toEqual({ factor: 1.15, roundUpToS: 5 });
     expect(c.captions).toEqual({ minShowS: 2.5, maxLines: 2 });
+    // Polish R11 (DECISIONS 2026-10-26): the recharging booster, the 2 s stuck rule, the reading time of a pop-up.
+    expect(c.booster).toEqual({ forceN: 2500, maxDurationS: 1.5, rechargeS: 15 });
+    expect(c.stuck).toEqual({ holdS: 2, wallPressSteps: 3 });
+    expect(c.readTime).toEqual({ baseS: 1.0, perWordS: 0.3, minS: 1.5, maxS: 4.0 });
+    expect(c.scavenger.boosterMarginMps).toBe(0.5);
     expect(c.forceLine).toEqual({ minAccelMps2: 0.1, minDurationS: 0.3, balancedShowS: 2 });
     expect(c.arrows.baseLengthM).toBe(0.5);
     expect(c.arrows.perForceM).toBe(2.5);

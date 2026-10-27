@@ -31,7 +31,7 @@ describe('content data', () => {
     expect(content.constants.stepsPerSecond).toBe(120);
     expect(content.constants.maxBrakeForceN).toBe(1500);
     expect(content.constants.turnRateDegPerS).toBe(60);
-    expect(content.surfaces.map((s) => s.id)).toEqual(['asphalt', 'sand', 'ice', 'mud']);
+    expect(content.surfaces.map((s) => s.id)).toEqual(['asphalt', 'sand', 'ice', 'mud', 'oil']);
     expect(content.parts).toHaveLength(9);
     expect(content.powerUps).toHaveLength(6);
     expect(content.missions.mission3.brakeLineBeforeZoneEndM).toBe(23);

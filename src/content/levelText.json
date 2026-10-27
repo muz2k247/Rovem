@@ -68,6 +68,7 @@
   "captions": {
     "surface-mud": { "title": "Mud", "line": "Friction here: {frictionN} N. On asphalt: {asphaltN} N." },
     "surface-sand": { "title": "Sand", "line": "Friction here: {frictionN} N. On asphalt: {asphaltN} N." },
+    "surface-oil": { "title": "Oil", "line": "The tyres can pass on only {gripN} N here. Your motor can push {motorN} N." },
     "surface-ice": { "title": "Ice", "line": "Friction here is only {frictionN} N, but the tyres can pass on at most {gripN} N." },
     "slip": { "title": "Wheels slip", "line": "The tyres can pass on only {gripN} N here. Your motor asks for {askN} N." },
     "booster": { "title": "Booster", "line": "{forceN} N × {durationS} s = {impulseNs} N·s of impulse." },
@@ -132,6 +133,7 @@
     "stuck": { "title": "Stuck", "sentence": "You got stuck {n} time(s): the ground held you with more force than the motor could give.", "maths": ["Stuck when the motor force is no more than friction plus the slope pull"] }
   },
   "elementCards": {
+    "oil": { "title": "Oil", "line": "Oil has hardly any grip. However strong the motor, the tyres can pass on only a little force, so the wheels spin when you push and slide when you turn." },
     "slope": { "title": "Slope", "line": "A slope pulls a rover back with a force that grows with the steepness and with the weight. Your motor has to push harder than the pull to climb." },
     "water": { "title": "Water", "line": "Water pushes up on anything in it. When that upthrust is bigger than the weight, the rover floats, and its wheels can no longer grip." },
     "magnet": { "title": "Magnet", "line": "A magnet pulls or pushes without touching. Unlike poles attract and like poles repel." },
@@ -188,9 +190,10 @@
     "cardTitle": "The Scavenger",
     "cardLine": "An old robot rover races you over the same ground. It drives: {build}.",
     "star": "Beat the Scavenger",
-    "delayZero": "It starts beside you.",
-    "delayLater": "It starts {delayS} s after you.",
-    "delayHeadStart": "It has a {delayS} s head start.",
+    "startLine": "It starts beside you and fires its booster whenever it is ready.",
+    "wornLine": "Worn motor: top speed {topSpeedMps} m/s (new: {newTopSpeedMps} m/s).",
+    "newLine": "Motor: top speed {topSpeedMps} m/s.",
+    "boosterLabel": "The Scavenger fired its booster",
     "marker": "Scavenger {distM} m",
     "resultLine": "Scavenger {timeS} s",
     "beaten": "You beat the Scavenger by {gapS} s.",

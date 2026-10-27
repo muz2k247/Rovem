@@ -1,12 +1,16 @@
 import type { EdgeStyle } from '../game/level/types.ts';
 import type { LevelWorld, RoadGeometry } from '../game/level/world.ts';
-import { EDGE, edgeSample, type EdgeSample, type EdgeSpan } from './edges.ts';
+import { EDGE, edgeSample, smoothstep, type EdgeSample, type EdgeSpan } from './edges.ts';
 import { pointAt } from './roadLine.ts';
 
 // The edges of a level (SHOWCASE_PLAN §12a, R6b). The edge the rover scrapes along is `world.hit`: the contour at a road's
 // reach (half its width plus its run-off) from the nearest road. What stands beyond it is drawn here: the ground rises (or
 // falls) with the distance past that contour, measured to the nearest road, so a fork or a junction opens up the way it
 // always did, and the ground meets the run-off exactly. The physics never reads any of this.
+
+/** A launcher stands on a flat pad cut into the edge (R11): the ground is level this far from it, and rises to the edge's own height over the next BLEND metres. */
+export const LAUNCHER_PAD_M = 2.2;
+export const LAUNCHER_PAD_BLEND_M = 2.5;
 
 const reachOf = (road: RoadGeometry): number => road.widthM / 2 + road.runoffM;
 
@@ -103,7 +107,17 @@ function createField(world: LevelWorld): LevelEdgeField {
     return s === 'cliff' && !cliffClear(road, side, alongM) ? 'hill' : s;
   };
 
-  const sample = (xM: number, zM: number): EdgeSample => {
+  /** 0 on a launcher's pad, 1 beyond it: what the edge's rise is multiplied by. */
+  const padShare = (xM: number, zM: number): number => {
+    let share = 1;
+    for (const c of world.def.cannons) {
+      const d = Math.hypot(xM - c.xM, zM - c.zM);
+      if (d < LAUNCHER_PAD_M + LAUNCHER_PAD_BLEND_M) share = Math.min(share, smoothstep(LAUNCHER_PAD_M, LAUNCHER_PAD_M + LAUNCHER_PAD_BLEND_M, d));
+    }
+    return share;
+  };
+
+  const sampleEdge = (xM: number, zM: number): EdgeSample => {
     const past = pastEdge(xM, zM);
     if (!past || past.depthM <= 0 || past.depthM > EDGE.outM) return { riseM: 0, tint: 1 };
     const styles = BLEND_OFFSETS_M.map((o) => styleAt(past.road, past.side, past.alongM + o));
@@ -116,6 +130,12 @@ function createField(world: LevelWorld): LevelEdgeField {
       tint += e.tint / styles.length;
     }
     return { riseM, tint };
+  };
+
+  const sample = (xM: number, zM: number): EdgeSample => {
+    const e = sampleEdge(xM, zM);
+    if (world.def.cannons.length === 0 || e.riseM === 0) return e;
+    return { riseM: e.riseM * padShare(xM, zM), tint: e.tint };
   };
 
   const coveredByOther = (road: RoadGeometry, xM: number, zM: number): boolean =>

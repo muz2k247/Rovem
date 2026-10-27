@@ -49,7 +49,7 @@ export function workedLine(event: RunEvent, unit: SpeedUnit = 'mps'): string | u
       const u1 = e.roverVelocityMps < 0 ? `(${two(e.roverVelocityMps)})` : two(e.roverVelocityMps);
       const sign = e.otherVelocityMps < 0 ? '−' : '+';
       const total = e.massKg + e.otherMassKg;
-      return `${whole(e.massKg)} × ${u1} ${sign} ${whole(e.otherMassKg)} × ${plain(Math.abs(e.otherVelocityMps))} = ${whole(total)} × v  →  v = ${two(e.resultVelocityMps)} m/s${note}`;
+      return `${whole(e.massKg)} × ${u1} ${sign} ${whole(e.otherMassKg)} × ${plain(Number(Math.abs(e.otherVelocityMps).toFixed(2)))} = ${whole(total)} × v  →  v = ${two(e.resultVelocityMps)} m/s${note}`;
     }
     case 'gravity':
       if (e.massKg === undefined || e.gravityMps2 === undefined || e.weightN === undefined) return undefined;

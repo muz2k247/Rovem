@@ -20,6 +20,7 @@ export const SURFACE_RGB: Readonly<Record<string, Rgb>> = {
   sand: rgb(0xcfae7f),
   ice: rgb(0xbfe3f2),
   mud: rgb(0x4a3222),
+  oil: rgb(0x1c1a26),
 };
 
 /** A deterministic 0–1 value for a point, so the colour varies a little without a random generator. */

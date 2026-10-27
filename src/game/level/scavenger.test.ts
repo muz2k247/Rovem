@@ -15,34 +15,36 @@ import { SURFACE_IDS, testLevelRaw } from './testLevel.ts';
 describe('the Scavenger of Crash Site', () => {
   const { def, plans } = loadLevel('crash-site');
   const ghost = createScavengerRun(content, def)!;
-  // The starting rover's clean best drive (no crash, no respawn) over every route.
+  // The starting rover's clean best drive (no crash, no respawn, no samples) over every route, using its booster as the Scavenger does (AUDIT_R9 G2).
   const cleanBest = Math.min(
-    ...['f1-dunes', 'f1-ridge'].map((fork) => runPilot({ content, def, plan: { roads: ['start', 'bend-1', 'lead', fork, 'm1', 'b2', 'ring', 'exit', 'climb'] } }).timeS),
+    ...['f1-dunes', 'f1-ridge'].map((fork) => runPilot({ content, def, booster: true, plan: { roads: ['start', 'bend-1', 'lead', fork, 'm1', 'b2', 'ring', 'exit', 'climb'] } }).timeS),
   );
 
-  it('is built from the level file: a build, a route and a visible start delay', () => {
+  it('is built from the level file: Heavy + Smooth + Medium with a worn motor, a route, and no start delay (DECISIONS 2026-10-26 (1), (3))', () => {
     expect(def.scavenger).toBeDefined();
     expect(ghost.build).toEqual(def.scavenger!.build);
-    expect(ghost.delayS).toBe(def.scavenger!.startDelayS);
-    expect(ghost.finishAtS).toBe(ghost.delayS + ghost.finishS);
+    expect(def.scavenger!.build).toEqual({ chassisId: 'chassis-heavy', wheelsId: 'wheels-smooth', motorId: 'motor-medium' });
+    expect(def.scavenger!.topSpeedFactor).toBe(0.945);
+    expect(ghost.delayS).toBe(0);
+    expect(ghost.finishAtS).toBe(ghost.finishS);
   });
 
-  it('finishes 4 to 8% slower than the starting rover’s clean best, counting its visible start delay (SHOWCASE_PLAN §8)', () => {
+  it('finishes 4 to 8% slower than the starting rover’s clean best, both using the booster (SHOWCASE_PLAN §8; AUDIT_R9 G2: +5.9%)', () => {
     expect(ghost.finishAtS).toBeGreaterThanOrEqual(cleanBest * 1.04);
     expect(ghost.finishAtS).toBeLessThanOrEqual(cleanBest * 1.08);
   });
 
   it('is an honest drive: the same run as the autopilot gives with that build, with no respawn', () => {
-    const r = runPilot({ content, def, build: def.scavenger!.build, plan: { roads: def.scavenger!.roads } });
+    const r = runPilot({ content, def, build: def.scavenger!.build, topSpeedFactor: def.scavenger!.topSpeedFactor!, booster: true, plan: { roads: def.scavenger!.roads } });
     expect(r.finished).toBe(true);
     expect(r.respawns).toEqual({ crash: 0, stuck: 0, floated: 0, fell: 0, manual: 0 });
     expect(ghost.finishS).toBe(r.timeS);
     expect(ghost.stretchTimesS).toEqual(r.session.stretches.map((s) => s.timeS));
   });
 
-  it('plays its run back: waiting at the start for its delay, then driving, then standing at the part', () => {
+  it('plays its run back: starting beside the student at 0, then driving, then standing at the part', () => {
     const start = ghost.poseAt(0);
-    expect(start.waiting).toBe(true);
+    expect(start.waiting).toBe(false);
     expect(start.frontXM).toBeCloseTo(def.start.xM, 6);
     expect(start.frontZM).toBeCloseTo(def.start.zM, 6);
     const mid = ghost.poseAt(ghost.delayS + ghost.finishS / 2);

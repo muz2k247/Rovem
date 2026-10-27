@@ -35,13 +35,15 @@ export function loadLevelDef(id: string, files: Partial<Record<LevelId, unknown>
   return def;
 }
 
-/** What the level card says about the Scavenger: the names of its three parts and its start delay; null if the level has none (R4). */
-export function levelScavengerInfo(id: string, files: Partial<Record<LevelId, unknown>> = LEVEL_FILES): { buildNames: string[]; delayS: number } | null {
+/** What the level card says about the Scavenger: the names of its three parts and its motor's worn top speed against the new one; null if the level has none (R4, R11). */
+export function levelScavengerInfo(id: string, files: Partial<Record<LevelId, unknown>> = LEVEL_FILES): { buildNames: string[]; topSpeedMps: number; newTopSpeedMps: number; worn: boolean } | null {
   try {
     const sd = loadLevelDef(id, files).scavenger;
     if (!sd) return null;
     const nameOf = (partId: string) => content.parts.find((p) => p.id === partId)?.name ?? partId;
-    return { buildNames: [nameOf(sd.build.chassisId), nameOf(sd.build.wheelsId), nameOf(sd.build.motorId)], delayS: sd.startDelayS };
+    const newTopSpeedMps = content.parts.find((p) => p.id === sd.build.motorId)?.topSpeedMps ?? 0;
+    const factor = sd.topSpeedFactor ?? 1;
+    return { buildNames: [nameOf(sd.build.chassisId), nameOf(sd.build.wheelsId), nameOf(sd.build.motorId)], topSpeedMps: newTopSpeedMps * factor, newTopSpeedMps, worn: factor < 1 };
   } catch {
     return null;
   }

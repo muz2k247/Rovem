@@ -7,7 +7,7 @@ import type { RunEvent } from './run/runSession.ts';
 
 /** The elements of §10. A pop-up and a caption card are about one of these. */
 export type PopupElement =
-  | 'sand' | 'mud' | 'ice' | 'bend' | 'vent' | 'launcher' | 'cave' | 'slope' | 'water' | 'magnet' | 'scrape' | 'crash' | 'slip' | 'topSpeed' | 'booster';
+  | 'sand' | 'mud' | 'ice' | 'oil' | 'bend' | 'vent' | 'launcher' | 'cave' | 'slope' | 'water' | 'magnet' | 'scrape' | 'crash' | 'slip' | 'topSpeed' | 'booster';
 
 export type PopupTone = 'info' | 'good' | 'warn' | 'bad';
 
@@ -15,6 +15,8 @@ export interface Popup {
   element: PopupElement;
   text: string;
   tone: PopupTone;
+  /** It stays on screen until the screen takes it down (the stuck hold: until the rover goes back or moves), not for its reading time. */
+  sticky?: boolean;
 }
 
 /** What the pop-ups need to know about the student's build beyond the event itself. */
@@ -60,6 +62,8 @@ function mudPopup(frictionN: number, motorN: number): Popup {
 }
 
 const icePopup = (gripN: number): Popup => ({ element: 'ice', tone: 'warn', text: `Ice: your grip is only ${whole(gripN)} N` });
+// Oil (R11): grip, not the motor, sets how hard the rover can push, so the pop-up puts the two side by side.
+const oilPopup = (gripN: number, motorN: number): Popup => ({ element: 'oil', tone: 'warn', text: `Oil: your grip is only ${whole(gripN)} N; your motor pushes ${whole(motorN)} N` });
 const bendPopup = (needN: number, gripN: number): Popup => ({ element: 'bend', tone: 'warn', text: `This turn needs ${whole(needN)} N of grip; you have ${whole(gripN)} N` });
 // Δv = J ÷ m. The formula only holds in m/s, so a vent always shows m/s.
 const ventPopup = (impulseNs: number, massKg: number): Popup => ({ element: 'vent', tone: 'good', text: `+${whole(impulseNs)} N·s ÷ ${whole(massKg)} kg = +${two(impulseNs / massKg)} m/s` });
@@ -117,6 +121,15 @@ export function popupForRunEvent(e: RunEvent, ctx: PopupContext): Popup | undefi
   }
 }
 
+/** What a stuck rover is told while the hold runs (R11): the numbers that keep it there, and what to do. Placeholder wording for k._muz's review. */
+function stuckPopup(e: LevelEvent): Popup | undefined {
+  if (e.cause === 'floated') {
+    return known(e.upN, e.weightN) ? { element: 'water', tone: 'warn', sticky: true, text: `Upthrust ${whole(e.upN!)} N beats weight ${whole(e.weightN!)} N: you float. A booster burn carries you across` } : undefined;
+  }
+  if (e.obstacle === 'wall') return { element: 'scrape', tone: 'warn', sticky: true, text: 'Against the wall: the booster pushes into it too. Press S to reverse out' };
+  return known(e.frictionN, e.forceN) ? { element: 'mud', tone: 'warn', sticky: true, text: `Stuck: friction ${whole(e.frictionN!)} N beats your motor’s ${whole(e.forceN!)} N` } : undefined;
+}
+
 /** The pop-up for a level event. Samples, checkpoints, the pole, forks and the finish are not elements of the ground: no pop-up. */
 export function popupForLevelEvent(e: LevelEvent, ctx: PopupContext): Popup | undefined {
   switch (e.kind) {
@@ -124,6 +137,7 @@ export function popupForLevelEvent(e: LevelEvent, ctx: PopupContext): Popup | un
       if (e.surfaceId === 'sand') return known(e.frictionN, e.asphaltN) ? sandPopup(e.frictionN!, e.asphaltN!, ctx.massKg) : undefined;
       if (e.surfaceId === 'mud') return known(e.frictionN) ? mudPopup(e.frictionN!, ctx.motorForceN) : undefined;
       if (e.surfaceId === 'ice') return known(e.gripN) ? icePopup(e.gripN!) : undefined;
+      if (e.surfaceId === 'oil') return known(e.gripN) ? oilPopup(e.gripN!, ctx.motorForceN) : undefined;
       return undefined;
     case 'slide':
       return known(e.needN, e.gripN) ? bendPopup(e.needN!, e.gripN!) : undefined;
@@ -147,6 +161,8 @@ export function popupForLevelEvent(e: LevelEvent, ctx: PopupContext): Popup | un
       return known(e.gMps2, e.weightN, e.massKg) ? cavePopup(e.gMps2!, e.weightN!, e.massKg!) : undefined;
     case 'scrape':
       return known(e.speedBeforeMps, e.speedAfterMps) ? scrapePopup(e.speedBeforeMps!, e.speedAfterMps!, ctx.unit) : undefined;
+    case 'stuckHold':
+      return stuckPopup(e);
     case 'respawn':
       return e.cause === 'crash' ? { element: 'crash', tone: 'bad', text: 'Crash: back to the checkpoint' } : undefined;
     case 'slip':

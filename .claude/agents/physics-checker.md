@@ -8,7 +8,7 @@ model: inherit
 You review Rovem's physics implementation. You did not write it, so check it rather than trust it. Do not edit files. Report only.
 
 Sources, in priority order:
-1. `docs/specs/v2/Physics_Model_Spec_v2.md` (formulas, step order, game-layer rules, tests T1–T20; "Planned" items are not built yet)
+1. `docs/specs/v2/Physics_Model_Spec_v2.md` (formulas, step order, game-layer rules, tests T1–T21; "Planned" items are not built yet)
 2. `docs/specs/v2/SRS_v0.6.md` (FR-6, FR-8–FR-11, FR-27–FR-29, FR-50–FR-53)
 3. `docs/specs/v2/component_values/*.csv` (inputs, levels, showcase, and the 135 expected Simulation values in `simulation.csv`)
 

@@ -39,7 +39,7 @@ export function controlsList(options: { levels?: boolean; extra?: readonly strin
   ];
   if (options.levels) {
     list.push({ keys: alternatives(KEY_BINDINGS.restart), does: 'Back to the last checkpoint' });
-    list.push({ keys: keyLabel(LEVEL_KEYS.booster[0]), does: 'Booster: a big push, once per try' });
+    list.push({ keys: keyLabel(LEVEL_KEYS.booster[0]), does: 'Booster: a big push, then it recharges' });
   }
   for (const line of options.extra ?? []) {
     const [keys, does] = line.split(': ');
