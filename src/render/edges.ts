@@ -17,6 +17,12 @@ export const EDGE = {
   stepMaxM: 1.2,
   /** How far the step's flat top reaches back from the edge. */
   stepTopM: 0.7,
+  /**
+   * Low, wide foothills for open places (R15, DECISIONS 2026-10-27 (3)): the ground rises 4 to 6 m over about 80 m, with saddles
+   * where it only reaches about 2 m, so the mountain ring shows above and through it. The terrain is built EDGE.outM (40 m) out,
+   * so the first half of the 80 m profile is what is drawn; beyond it the fog hides the rest. Canyons keep the tall styles.
+   */
+  low: { riseMinM: 4, riseMaxM: 6, overM: 80, saddleShare: 0.4, saddleSpanM: 85, stepOutM: 1.5, rollM: 0.5 },
   hill: { angleMinDeg: 25, angleMaxDeg: 40, riseMinM: 8, riseMaxM: 15, stepOutM: 1 },
   rock: { angleMinDeg: 55, angleMaxDeg: 75, riseMinM: 10, riseMaxM: 25 },
   cliff: {
@@ -67,7 +73,8 @@ export function noise2(x: number, z: number): number {
 }
 
 /** How tall the rock step is at a point: 0.6 to 1.2 m. */
-export const stepHeightM = (xM: number, zM: number): number => lerp(EDGE.stepMinM, EDGE.stepMaxM, noise2(xM * 0.31 + 5.3, zM * 0.31 - 2.9));
+// The wavelength is about 14 m (R15: at 3 m it read as a sawtooth along the edge).
+export const stepHeightM = (xM: number, zM: number): number => lerp(EDGE.stepMinM, EDGE.stepMaxM, noise2(xM * 0.07 + 5.3, zM * 0.07 - 2.9));
 
 /** How the ground beyond an edge is shaped at a point: how far it rises above (or falls below) the ground height, and a colour factor. */
 export interface EdgeSample {
@@ -83,6 +90,16 @@ export function edgeSample(style: EdgeStyle, depthM: number, xM: number, zM: num
   if (depthM <= 0) return NONE;
   const slow1 = noise2(xM * 0.021 + 3.1, zM * 0.021 - 1.7);
   const slow2 = noise2(xM * 0.017 - 9.2, zM * 0.017 + 4.4);
+  if (style === 'low') {
+    const l = EDGE.low;
+    const topM = lerp(l.riseMinM, l.riseMaxM, slow2);
+    // A saddle: where the slow noise is low the hills only reach saddleShare of their height (about 2 m of 5).
+    const saddle = lerp(l.saddleShare, 1, smoothstep(0.3, 0.7, noise2(xM / l.saddleSpanM + 11.3, zM / l.saddleSpanM - 6.1)));
+    const step = stepHeightM(xM, zM) * smoothstep(0, l.stepOutM, depthM);
+    const body = topM * saddle * smoothstep(l.stepOutM, l.overM, depthM);
+    const roll = l.rollM * smoothstep(6, 30, depthM) * (2 * noise2(xM * 0.045, zM * 0.045) - 1);
+    return { riseM: step + body + roll, tint: 1 };
+  }
   if (style === 'hill') {
     const h = EDGE.hill;
     const tan = Math.tan(lerp(h.angleMinDeg, h.angleMaxDeg, slow1) * DEG);
@@ -235,9 +252,10 @@ export function createRockGeometry(): THREE.BufferGeometry {
     const z = p.getZ(i);
     // The same push for the same corner, so the faces that share it stay joined.
     const j = (salt: number) => hash2(Math.round(x * 100) * 0.37 + salt, Math.round(y * 100) * 0.53 + Math.round(z * 100) * 0.29 - salt) - 0.5;
-    let nx = x + 0.16 * j(1);
-    let ny = y + 0.2 * j(2);
-    const nz = z + 0.16 * j(3);
+    // A small push, so the stone stays round (R15; it was 0.16 to 0.2 and read as a lump of facets).
+    let nx = x + 0.08 * j(1);
+    let ny = y + 0.1 * j(2);
+    const nz = z + 0.08 * j(3);
     if (ny < 0.12) ny = 0; // a flat bottom
     if (nx < -0.3) nx = -0.5; // a flat, upright face toward the road
     p.setXYZ(i, Math.max(nx, -0.5), ny, nz);
@@ -256,6 +274,9 @@ export interface EdgeMeshes {
 }
 
 const tmp = new THREE.Color();
+
+/** The face of a rock step leans back this far from its foot (on the scrape line) to its top lip, so it reads as a worn bank, not a wall (R15). */
+const STEP_LEAN_M = 0.4;
 
 /** How big a cell of the level is, in metres: the unit the camera shows or hides. */
 export const EDGE_CELL_M = 96;
@@ -290,8 +311,8 @@ export function buildEdgeMeshes(plan: EdgePlan, colours: { kerb: number; rock: n
       const top = (x: number, z: number, y: number, h: number, out: number) => [x + k.nx * out, y + h, -(z + k.nz * out)] as const;
       const verts = [
         [k.ax, k.ya - 0.3, -k.az], [k.bx, k.yb - 0.3, -k.bz],
-        top(k.ax, k.az, k.ya, k.heightA, 0), top(k.bx, k.bz, k.yb, k.heightB, 0),
-        top(k.ax, k.az, k.ya, k.heightA * 0.92, EDGE.stepTopM), top(k.bx, k.bz, k.yb, k.heightB * 0.92, EDGE.stepTopM),
+        top(k.ax, k.az, k.ya, k.heightA, STEP_LEAN_M), top(k.bx, k.bz, k.yb, k.heightB, STEP_LEAN_M),
+        top(k.ax, k.az, k.ya, k.heightA * 0.92, EDGE.stepTopM + STEP_LEAN_M), top(k.bx, k.bz, k.yb, k.heightB * 0.92, EDGE.stepTopM + STEP_LEAN_M),
       ] as const;
       verts.forEach((v, j) => {
         positions.set(v, (i * 6 + j) * 3);

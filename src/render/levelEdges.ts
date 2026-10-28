@@ -52,7 +52,9 @@ export interface LevelEdgeField {
 function createField(world: LevelWorld): LevelEdgeField {
   const roads = world.roads;
   const index = new Map(roads.map((r, i) => [r, i]));
-  const levelStyle: EdgeStyle = world.def.edgeStyle ?? 'hill';
+  const levelStyle: EdgeStyle = world.def.edgeStyle ?? 'low';
+  // A cliff that does not fit becomes a low hill on an open level and a tall hill elsewhere (R15: an open place keeps its low skyline).
+  const cliffFallback: EdgeStyle = levelStyle === 'low' ? 'low' : 'hill';
 
   const pastEdge = (xM: number, zM: number): PastEdge | undefined => {
     let best: PastEdge | undefined;
@@ -104,7 +106,7 @@ function createField(world: LevelWorld): LevelEdgeField {
 
   const styleAt = (road: RoadGeometry, side: 1 | -1, alongM: number): EdgeStyle => {
     const s = ruleStyle(road, side, alongM);
-    return s === 'cliff' && !cliffClear(road, side, alongM) ? 'hill' : s;
+    return s === 'cliff' && !cliffClear(road, side, alongM) ? cliffFallback : s;
   };
 
   /** 0 on a launcher's pad, 1 beyond it: what the edge's rise is multiplied by. */
@@ -188,7 +190,7 @@ function createField(world: LevelWorld): LevelEdgeField {
         const base = Math.atan2(dz, dx);
         const segs = Math.max(4, Math.ceil((Math.PI * reach) / stepM));
         const style = ruleStyle(road, 1, end === 'start' ? 0 : line.lengthM);
-        const capStyle: EdgeStyle = style === 'cliff' ? 'hill' : style;
+        const capStyle: EdgeStyle = style === 'cliff' ? cliffFallback : style;
         let prev: { x: number; z: number } | undefined;
         for (let k = 0; k <= segs; k++) {
           const ang = base - Math.PI / 2 + (Math.PI * k) / segs;

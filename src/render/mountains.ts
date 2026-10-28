@@ -21,6 +21,16 @@ export const MOUNTAINS = {
   rockShare: 0.35,
 } as const;
 
+/** The height of a layer's peak in column `k` (of `MOUNTAINS.segments`), in degrees above the horizon. */
+export function peakDeg(seed: number, k: number): number {
+  const n = MOUNTAINS.segments;
+  const theta = (k / n) * Math.PI * 2;
+  // The ridge line: slow swells with sharp peaks, higher on every other column.
+  const swell = 0.55 * noise2(Math.cos(theta) * 2 + seed, Math.sin(theta) * 2) + 0.45 * noise2(Math.cos(theta) * 7 + seed * 3, Math.sin(theta) * 7);
+  const jag = k % 2 === 0 ? 1 : 0.55 + 0.2 * noise2(k * 0.9 + seed, 3);
+  return MOUNTAINS.peakMinDeg + (MOUNTAINS.peakMaxDeg - MOUNTAINS.peakMinDeg) * swell * jag;
+}
+
 export interface MountainRing {
   group: THREE.Group;
   layerCount: number;
@@ -52,10 +62,7 @@ export function createMountainRing(options: { quality: 'high' | 'low'; fogColour
     for (let i = 0; i <= n; i++) {
       const k = i % n; // the last column repeats the first, so the ring closes
       const theta = (k / n) * Math.PI * 2;
-      // The ridge line: slow swells with sharp peaks, higher on every other column.
-      const swell = 0.55 * noise2(Math.cos(theta) * 2 + layer.seed, Math.sin(theta) * 2) + 0.45 * noise2(Math.cos(theta) * 7 + layer.seed * 3, Math.sin(theta) * 7);
-      const jag = k % 2 === 0 ? 1 : 0.55 + 0.2 * noise2(k * 0.9 + layer.seed, 3);
-      const deg = MOUNTAINS.peakMinDeg + (MOUNTAINS.peakMaxDeg - MOUNTAINS.peakMinDeg) * swell * jag;
+      const deg = peakDeg(layer.seed, k);
       const heightM = layer.radiusM * Math.tan((Math.max(MOUNTAINS.peakMinDeg * 0.5, deg) * Math.PI) / 180);
       highest = Math.max(highest, deg);
       const x = Math.cos(theta) * layer.radiusM;

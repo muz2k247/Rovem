@@ -99,9 +99,10 @@ src/
   save/      progress and settings storage on the device
 tests/       shared test fixtures and helpers, and the sheet regression test (T10)
 scripts/     balance report, maps, rival
+ship-preview.html   developer page: the ship alone, the wreck, the launch at a time (open /ship-preview.html under `npm run dev`; not in the build)
 ```
 
-`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The demo added the garage, run screen and run scene (D5–D6) and the demo save (D4). Game v4 adds `src/game/level/`, `src/ui/hud/` and `src/ui/report/` (LEVELS_BUILD_PLAN B3). Other folders are created as the work needs them.
+`src/ui/` and `src/render/` exist (M1; Build screen M3; driving scene and HUD M4); `src/physics/`, `src/content/` and `src/game/` (M2; key mapping, drive session and HUD data M4; level files in `src/content/levels/`, rocks and steering assist M5a). The demo added the garage, run screen and run scene (D5–D6) and the demo save (D4). Game v4 adds `src/game/level/`, `src/ui/hud/` and `src/ui/report/` (LEVELS_BUILD_PLAN B3). R15 adds `src/dev/` (developer pages). Other folders are created as the work needs them.
 
 ## Documentation
 

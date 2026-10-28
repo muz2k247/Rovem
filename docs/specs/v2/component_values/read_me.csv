@@ -41,3 +41,4 @@ Notes
 "Spread counts the faster Mission 1 route from the Simulation sheet (17 of 27 builds), as the SRS states. Builds column U uses the closed-form times, which ignore throttle build-up, and shows 18."
 "The old Mission 3 was on asphalt with the rover towed at 15 m/s and released at the first brake input after the brake line (superseded 2026-10-13 by a drive-in speed trap, itself superseded 2026-10-17). In the regression, stopping distance is measured from 15 m/s with the brake building up from 0 (E21)."
 "Old Mission 2 coasting distance is measured from the rover's position at the end of the step that reaches the power-cut line."
+"showcase.csv: R15 rows (the ship model, where it is used, the launch looks and caption times, low hills, the mountain-ring probe, the rock step and rocks, frame time)","R15 built the ship, the ending and the open-place hills","DECISIONS 2026-10-27, 2026-10-28"

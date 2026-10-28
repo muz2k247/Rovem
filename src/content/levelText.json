@@ -207,9 +207,9 @@
       "durationS": 10,
       "ignitionS": 3.5,
       "lines": [
-        { "atS": 0.5, "text": "Five parts. One ship." },
-        { "atS": 3.5, "text": "The engine pushes the gas down. The gas pushes the ship up." },
-        { "atS": 6.5, "text": "Thrust is now bigger than weight. It lifts." }
+        { "atS": 0.3, "text": "Five parts. One ship." },
+        { "atS": 3.0, "text": "The engine pushes the gas down. The gas pushes the ship up." },
+        { "atS": 7.0, "text": "Thrust is now bigger than weight. It lifts." }
       ],
       "homeLabel": "Home",
       "skipLabel": "Skip"

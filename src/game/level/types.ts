@@ -19,7 +19,7 @@ export interface Pose {
  * What stands beyond the edge the rover scrapes along (SHOWCASE_PLAN §12a, R6b): a hillside behind a broken rock step (the default),
  * a faceted rock face (canyons and caves), or a cliff drop behind a rim of rocks. Presentation only: the scrape line does not move.
  */
-export const EDGE_STYLES: readonly EdgeStyle[] = ['hill', 'rock', 'cliff'];
+export const EDGE_STYLES: readonly EdgeStyle[] = ['low', 'hill', 'rock', 'cliff'];
 export type { EdgeStyle };
 
 /** The edge style along a stretch of one side of a road. Later rules win. A side is the left (+z of the heading) or the right of the road. */

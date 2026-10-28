@@ -1,10 +1,14 @@
 import * as THREE from 'three';
+import { createShipModel } from './shipModel.ts';
 
-// The smoking wreck beside Crash Site's start (SHOWCASE_PLAN §3 Level 1, §12): a broken hull on its side, a snapped fin,
+// The smoking wreck beside Crash Site's start (SHOWCASE_PLAN §3 Level 1, §12): the ship model on its side without its five parts,
 // a scorch mark, a few pieces of debris and a column of smoke. Original low-poly shapes from three.js geometry; no outside
 // asset. Presentation only: the numbers here are looks.
 
 const PUFFS = 9;
+/** The lying ship: scaled down a little, turned about its middle (a height on the standing model). */
+const SHIP_LYING_SCALE = 0.8;
+const SHIP_LYING_PIVOT_M = 6.5;
 const SMOKE_RISE_M = 9;
 const SMOKE_PERIOD_S = 7;
 
@@ -36,28 +40,22 @@ export function createWreck(at: { xM: number; zM: number; headingDeg: number }, 
   scorch.position.y = 0.06;
   group.add(scorch);
 
-  // The hull: a tilted cylinder with a crumpled nose and a torn rear.
-  const hull = new THREE.Mesh(own(new THREE.CylinderGeometry(1.7, 2, 7.5, 9)), metal);
-  hull.rotation.set(0, 0, Math.PI / 2 - 0.22);
-  hull.position.set(0, 1.5, 0);
-  group.add(hull);
-  const nose = new THREE.Mesh(own(new THREE.ConeGeometry(1.7, 2.8, 9)), metal);
-  nose.rotation.set(0, 0, -Math.PI / 2 - 0.22);
-  nose.position.set(4.9, 2.2, 0);
-  group.add(nose);
-  const tornEnd = new THREE.Mesh(own(new THREE.CylinderGeometry(1.9, 1.5, 1.2, 7)), burnt);
-  tornEnd.rotation.set(0.35, 0, Math.PI / 2 - 0.22);
-  tornEnd.position.set(-3.9, 0.95, 0.2);
-  group.add(tornEnd);
+  // The ship itself (R15): the designed model lying on its side, nose a little up, with all five parts gone (they are scattered
+  // over the level; each level's crate brings one home).
+  const ship = createShipModel({ brakes: 'missing', thruster: 'missing', liftEngine: 'missing', floats: 'missing', clamps: 'missing' });
+  owned.push(ship);
+  ship.group.position.y = -SHIP_LYING_PIVOT_M;
+  const lying = new THREE.Group();
+  lying.scale.setScalar(SHIP_LYING_SCALE);
+  lying.rotation.z = -(Math.PI / 2 - 0.22);
+  lying.position.set(0.3, 1.5, 0);
+  lying.add(ship.group);
+  group.add(lying);
   const glow = new THREE.Mesh(own(new THREE.SphereGeometry(0.7, 6, 5)), warm);
   glow.position.set(-4.3, 1, 0.3);
   group.add(glow);
 
-  // A snapped fin leaning on the hull, and debris on the ground.
-  const fin = new THREE.Mesh(own(new THREE.BoxGeometry(0.2, 3.2, 1.8)), metal);
-  fin.position.set(-1.5, 1.6, -2.5);
-  fin.rotation.set(0.4, 0.2, 0.5);
-  group.add(fin);
+  // Debris on the ground.
   const pieces: [number, number, number, number][] = [[-6.5, 0.2, 3, 0.6], [2, 0.25, 4.6, 1.1], [7, 0.15, -3, 0.5], [-3, 0.2, -4.5, 0.9], [5, 0.2, 3.5, 0.4]];
   const pieceGeometry = own(new THREE.BoxGeometry(1, 0.4, 0.7));
   for (const [x, y, z, size] of pieces) {

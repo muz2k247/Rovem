@@ -6,6 +6,17 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (R15: the ship, the launch ending and the open-place hills; 2026-10-28)
+- **The ship** (`src/render/shipModel.ts`, DECISIONS 2026-10-27 (1)): one designed low-poly model: a slim 12-sided plated hull, four swept fins carrying telescoping legs, an engine bell, a canopy, a docking port, and the five parts fitted as steel hardware with lit cyan trim; each part can be recovered, open, locked or missing. Screenshots in `docs/captures/r15/`; k._muz asked for a less cartoonish look once and approved the revision. It is used in the wreck (on its side, no parts), the Levels screen (`shipPortrait.ts`: one frame, then the graphics context is given back; the flat outline stays as the fallback and for the ship-part moment) and the launch.
+- **The launch ending reworked** (`launchScene.ts`): a camera push-in then a tilt-up that keeps the climb in frame, a two-cone flame that flickers and follows thrust, ground dust and a smoke trail placed by formula (no random numbers), a pad scorch, a point light, stars. The lift-off rule `a = g (thrust ÷ weight − 1)`, the 10 s length, Skip and Home are unchanged. Captions use the pop-up reading rule (`launchCaption.ts`); the lines moved to 0.3, 3.0 and 7.0 s.
+- **Low hills for open places** (edge style `low`: 4–6 m over 80 m, saddles to about 2 m): Crash Site, Crater Field, The Crossing and the open Endless places. A probe test (`skyline.test.ts`) checks that the hill crests stay below the mountain ring's peaks from the chase camera in every direction (smallest margin 1.07°). `peakDeg` is exported from `mountains.ts` for it.
+- A developer page `ship-preview.html` (`?angle=front|quarter|back|low|top&parts=rrrrr`, `?t=<s>` the launch at a time, `?wreck=1`); it is not in the production build.
+
+### Changed (R15)
+- The rock step's height varies over 14 m, not 3 m, and its face leans back 0.4 m from the scrape line, so it no longer reads as a sawtooth; rocks are rounder (pushed 0.08–0.1, was 0.16–0.2). Looks only.
+- A cliff that does not fit becomes a low hill on an open level (a tall hill elsewhere, as before). Iron Ridge keeps its tall hills.
+- The ship outline (Levels fallback and the ship-part moment) is a front view of the standing ship, not a side view.
+
 ### Added (R14: pickup moments, the 3-2-1 countdown, wording and tidy-ups; 2026-10-28)
 - **Sample pickup** (AUDIT_R9 F2, DECISIONS 2026-10-26 (10)): a 0.3 s two-note chime (Web Audio, `chime` in `effectSounds.ts`), a 0.5 s gold sparkle (`goldSparkle` in the `bursts.ts` pool, 3 bursts of 7), the canister shrinks and flies to the HUD in 0.4 s (`landmarks.ts`), a three-pip counter for 2 s, and "Sample n of 3" through the pop-up channel (`pickup.sample` in `levelText.json`). The old "Sample n of 3 — Collected." caption is off in the game (`sample` is in `ELEMENT_CAPTION_IDS`), so the line is not said twice.
 - **Ship-part moment**: after the finish the result is saved at once, then 1.5 s (`RECOVERY_S`) before the report: the crate lifts and spins up, its cyan bands flash, a low "lock" thump plays (`lock`), the camera eases to a 30° orbit round the crate, and the ship's outline shows with this part pulsing (`ShipOutline`). The beacon pulse from AUDIT_R9 F2 is not built.

@@ -3,7 +3,7 @@
   "name": "The Crossing",
   "placeholder": true,
   "atmosphere": "blue-mist",
-  "edgeStyle": "hill",
+  "edgeStyle": "low",
   "parS": 170,
   "start": {
     "xM": 0,

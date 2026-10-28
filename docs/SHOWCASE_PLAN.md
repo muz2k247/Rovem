@@ -359,7 +359,8 @@ Difficulty still grows with distance.
 
 **What k._muz chose (2026-10-22):**
 1. **Edges change look only.** The edge the rover scrapes along (`world.hit`, the scrape rule v′ = v cos α) stays exactly where it is. What is drawn there changes:
-   - **Hillside or rock face** (the default): beyond the edge the ground climbs away at a natural angle. A hillside starts with a broken rock step and boulders at its foot, because a rover could plausibly drive up a bare 25° slope, and scraping along one would look wrong.
+   - *(Superseded for open places 2026-10-28, R15, DECISIONS 2026-10-27 (3): the default hillside is now the low hill, 4–6 m over about 80 m with saddles, because the tall hill hid the mountain ring. The reason for the tall hill below stays; it still holds for Iron Ridge and where the canyon's walls are the point.)*
+   - **Hillside or rock face** (the default before R15; see the note above): beyond the edge the ground climbs away at a natural angle. A hillside starts with a broken rock step and boulders at its foot, because a rover could plausibly drive up a bare 25° slope, and scraping along one would look wrong.
    - **Cliff drop** (on ledges, where nature would put one): beyond a low rim of rocks, the ground falls away. The rim explains why the rover cannot go over. The rover never falls; there is no new respawn cause.
    - Applies to the levels and the Endless Canyon.
 2. **Sky drawn in code, not an HDR photo.** The levels already have a gradient sky dome, a sun, stars and aurora per level (`src/render/atmosphere.ts`, sky radius 400 m, following the camera), lit by a hemisphere light in the sky's colours. R6b adds a ring of distant low-poly mountains inside that dome and a far ground under it, and gives the Endless Canyon the same sky (it has only a background colour today). k._muz asked for whichever is better; Claude chose code, for these reasons:
@@ -380,6 +381,7 @@ Difficulty still grows with distance.
 |---|---|
 | Hillside foot | a broken rock step 0.6–1.2 m tall with boulders, right at the edge |
 | Hillside rise | then 25°–40°, varied by smooth noise, up to 8–15 m above the edge, then rolling ground |
+| Low hill (open places, R15) | rock step 0.6–1.2 m, then 4–6 m over about 80 m, saddles to about 2 m, roll 0.5 m; drawn to the built 40 m |
 | Rock face (canyons, caves) | 55°–75°, broken into facets, 10–25 m tall |
 | Cliff rim | rocks 0.6–1.2 m tall along the edge, gaps no wider than 1.5 m |
 | Cliff drop | ground falls 10–20 m within 6 m beyond the rim, then a valley floor |

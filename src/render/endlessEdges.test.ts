@@ -20,15 +20,15 @@ describe('the Endless edge field', () => {
   it('is zero inside the corridor and on its edge, and rises with the distance past the corridor wall', () => {
     const { field } = make();
     for (const z of [0, 3, -half, half]) expect(field.sample(80, z).riseM).toBe(0);
-    expect(Math.abs(field.sample(80, half + 10).riseM)).toBeGreaterThan(1);
-    expect(Math.abs(field.sample(80, -half - 10).riseM)).toBeGreaterThan(1);
+    expect(Math.abs(field.sample(80, half + 10).riseM)).toBeGreaterThan(0.5);
+    expect(Math.abs(field.sample(80, -half - 10).riseM)).toBeGreaterThan(0.5);
   });
 
   it('every place chooses its own style in its template; Gravity Caves are rock', () => {
     const { session } = make();
     const styles = new Map(session.course.chunks.map((c) => [c.place, c.edge]));
     expect(styles.get('gravity-caves')).toBe('rock');
-    expect(styles.get('rock-plain')).toBe('hill');
+    expect(styles.get('rock-plain')).toBe('low'); // open places have low hills (R15)
     expect(new Set(styles.values()).size).toBeGreaterThanOrEqual(2);
   });
 

@@ -142,3 +142,19 @@
     filter: drop-shadow(0 0 10px var(--cyan)) brightness(1.4);
   }
 }
+
+/* The 3D portrait (R15): a canvas that fills this box; the outline fallback uses the same size. */
+.ship-portrait {
+  width: min(14rem, 38%);
+  aspect-ratio: 3 / 4;
+}
+
+.ship-portrait canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ship-outline {
+  height: 11rem;
+}

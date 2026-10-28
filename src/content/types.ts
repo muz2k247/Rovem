@@ -241,7 +241,7 @@ export interface ChunkGravityZone extends ChunkZoneShape {
  * Several templates can share a place ("Dune Sea") at different difficulties.
  */
 /** What stands beyond an edge the rover scrapes along (SHOWCASE_PLAN §12a, R6b): a hillside, a faceted rock face, or a cliff drop behind a rim of rocks. */
-export type EdgeStyle = 'hill' | 'rock' | 'cliff';
+export type EdgeStyle = 'low' | 'hill' | 'rock' | 'cliff';
 
 export interface RunChunk {
   id: string;

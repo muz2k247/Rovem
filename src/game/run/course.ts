@@ -92,7 +92,7 @@ export function createRunCourse(content: Content, seed: number) {
       id: t.id,
       place: t.place,
       name: t.name,
-      edge: t.edge ?? 'hill',
+      edge: t.edge ?? 'low',
       entryPostXM: startXM + t.entryPostXM,
       line: t.line.map(pt),
       startXM,
@@ -120,7 +120,7 @@ export function createRunCourse(content: Content, seed: number) {
     const startXM = last ? last.endXM : 0;
     if (index === 0) {
       chunks.push({
-        index, kind: 'warmUp', id: 'warm-up', place: 'start', name: 'Start', edge: 'hill', line: [], startXM, endXM: run.warmUpLengthM, mirrored: false,
+        index, kind: 'warmUp', id: 'warm-up', place: 'start', name: 'Start', edge: 'low', line: [], startXM, endXM: run.warmUpLengthM, mirrored: false,
         tiles: [], barriers: [], boostPads: [], cannons: [], gravityZones: [],
       });
       return;

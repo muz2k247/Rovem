@@ -86,7 +86,7 @@ describe('the ground beyond the edge', () => {
   it('a cliff falls below the physics ground; a hillside rises above it', () => {
     const hillWorld = worldOf();
     const cliffWorld = worldOf({ roads: [{ id: 'main', edges: [{ side: 'both', style: 'cliff' }], start: { xM: 0, zM: 0, headingDeg: 0 }, segments: [{ kind: 'straight', lengthM: 300 }] }], route: ['main'] });
-    expect(edgeFieldOf(hillWorld).sample(150, 25).riseM).toBeGreaterThan(3);
+    expect(edgeFieldOf(hillWorld).sample(150, 25).riseM).toBeGreaterThan(1); // an open level's low hills (R15)
     expect(edgeFieldOf(cliffWorld).sample(150, 25).riseM).toBeLessThan(-8);
   });
 });
@@ -159,7 +159,7 @@ describe('the edge styles of the built levels', () => {
     const geyser = planLevelEdges(createLevelWorld(loadLevelDef('geyser-canyon'), content), 'high').spans;
     const crash = planLevelEdges(createLevelWorld(loadLevelDef('crash-site'), content), 'high').spans;
     expect(geyser.some((s) => s.style === 'rock')).toBe(true);
-    expect(crash.some((s) => s.style === 'hill')).toBe(true);
+    expect(crash.some((s) => s.style === 'low')).toBe(true);
   });
 
   it('no cliff breaks the placement rule: no other road within 30 m beyond its edge', () => {
@@ -182,7 +182,7 @@ describe('the edge styles of the built levels', () => {
     }
   });
 
-  it('a cliff asked for where another road lies close beyond the edge is drawn as a hillside', () => {
+  it('a cliff asked for where another road lies close beyond the edge is drawn as a hillside (a low one on an open level)', () => {
     const world = worldOf({
       roads: [
         { id: 'main', edges: [{ side: 'both', style: 'cliff' }], start: { xM: 0, zM: 0, headingDeg: 0 }, segments: [{ kind: 'straight', lengthM: 300 }] },
@@ -193,7 +193,7 @@ describe('the edge styles of the built levels', () => {
     const field = edgeFieldOf(world);
     const main = world.roads[0]!;
     expect(field.styleAt(main, -1, 150)).toBe('cliff'); // clear on the far side
-    expect(field.styleAt(main, 1, 150)).toBe('hill'); // the parallel road is 21 m beyond this edge
+    expect(field.styleAt(main, 1, 150)).toBe('low'); // the parallel road is 21 m beyond this edge
   });
 
   it('everything a level places stands where the ground has not risen, so no sign, sample, gate or vent is buried', () => {

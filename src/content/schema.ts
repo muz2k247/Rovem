@@ -440,7 +440,7 @@ function chunk(raw: unknown, path: string, run: RunParams, surfaceIds: readonly 
 }
 
 const CANNON_KINDS: readonly CannonKind[] = ['headOn', 'kicker'];
-const EDGE_STYLE_IDS: readonly EdgeStyle[] = ['hill', 'rock', 'cliff'];
+const EDGE_STYLE_IDS: readonly EdgeStyle[] = ['low', 'hill', 'rock', 'cliff'];
 const GRAVITY_KINDS: readonly GravityKind[] = ['low', 'high'];
 
 function runChunks(raw: unknown, runParams: RunParams, surfaceIds: readonly string[]): RunChunks {

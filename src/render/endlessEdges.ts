@@ -28,7 +28,7 @@ export interface EndlessEdgeField {
 }
 
 export function createEndlessEdgeField(course: RunCourse, halfWidthM: number, startWallXM: number): EndlessEdgeField {
-  const styleAtX = (xM: number): EdgeStyle => course.sectionAt(Math.max(0, xM))?.edge ?? 'hill';
+  const styleAtX = (xM: number): EdgeStyle => course.sectionAt(Math.max(0, xM))?.edge ?? 'low';
   return {
     halfWidthM,
     startWallXM,
@@ -199,7 +199,7 @@ export function startWallSpans(field: EndlessEdgeField, stepM: number): EdgeSpan
     const az = -field.halfWidthM + ((2 * field.halfWidthM) * i) / steps;
     const bz = -field.halfWidthM + ((2 * field.halfWidthM) * (i + 1)) / steps;
     // The start wall is never a cliff: nothing to drive off behind the start.
-    const style = field.styleAtX(0) === 'cliff' ? 'hill' : field.styleAtX(0);
+    const style = field.styleAtX(0) === 'cliff' ? 'low' : field.styleAtX(0);
     spans.push({ ax: field.startWallXM, az, bx: field.startWallXM, bz, nx: -1, nz: 0, style });
   }
   return spans;

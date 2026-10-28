@@ -105,3 +105,31 @@ describe('planning the edge features', () => {
     expect(low).toBeLessThan(high);
   });
 });
+
+describe('low hills of the open places (R15)', () => {
+  const points: [number, number][] = [];
+  for (let i = 0; i < 60; i++) points.push([i * 37.3, i * 11.9 - 200]);
+
+  it('rise 4 to 6 m over about 80 m, never above 6.5 m (step and roll included) and about 2 m in a saddle', () => {
+    const rises80 = points.map(([x, z]) => edgeSample('low', 80, x, z).riseM);
+    expect(Math.max(...rises80)).toBeLessThanOrEqual(EDGE.low.riseMaxM + EDGE.stepMaxM + EDGE.low.rollM + 1e-9);
+    expect(Math.min(...rises80)).toBeLessThan(3); // a saddle somewhere
+    expect(Math.max(...rises80)).toBeGreaterThan(4); // and a crest somewhere
+  });
+
+  it('are lower than the tall hills at the built distance (40 m) everywhere', () => {
+    for (const [x, z] of points) expect(edgeSample('low', EDGE.outM, x, z).riseM).toBeLessThan(edgeSample('hill', EDGE.outM, x, z).riseM);
+  });
+
+  it('start at the rock step and are continuous', () => {
+    for (const [x, z] of points) {
+      expect(edgeSample('low', 0, x, z).riseM).toBe(0);
+      let last = 0;
+      for (let d = 0.25; d <= EDGE.outM; d += 0.25) {
+        const r = edgeSample('low', d, x, z).riseM;
+        expect(Math.abs(r - last)).toBeLessThan(0.6); // no jump along the profile
+        last = r;
+      }
+    }
+  });
+});

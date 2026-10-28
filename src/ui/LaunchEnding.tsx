@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { createLaunchScene } from '../render/launchScene.ts';
 import { releaseRenderer } from '../render/release.ts';
+import { captionAt } from '../game/launchCaption.ts';
 import { levelText } from '../game/level/text.ts';
 import './launch.css';
 
@@ -61,7 +62,7 @@ export function LaunchEnding({ onHome }: { onHome: () => void }) {
   }, []);
 
   const done = timeS >= ending.durationS;
-  const line = [...ending.lines].reverse().find((l) => timeS >= l.atS);
+  const line = captionAt(ending.lines, timeS, ending.durationS);
   const fade = Math.min(1, Math.max(0, (timeS - (ending.durationS - FADE_S)) / FADE_S));
 
   return (
