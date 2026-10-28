@@ -12,10 +12,10 @@ import type { LevelId } from './types.ts';
 // road's time, how the other road ended].
 const BEFORE: Record<string, [string, string, number, number, string][]> = {
   'crash-site': [["f2-gully","f2-bypass",13.325000000000003,13.875,"merged"],["f1-dunes","f1-ridge",15.766666666666666,16.45,"merged"]], // R12: re-captured after the level was rebuilt (the equivalence was shown on the old files)
-  'geyser-canyon': [["f1-vents","f1-rim",13.075000000000003,23.5,"merged"]], // R11: re-captured when the launchers moved to the roadside and fire one aimed shot each
-  'crater-field': [["c1-through","c1-around",12.475000000000001,16.25,"merged"],["c2-through","c2-around",13.424999999999997,16.791666666666668,"merged"],["cave-float","cave-heavy",16.02499999999999,16.05,"merged"]],
+  'geyser-canyon': [["f1-vents","f1-rim",23.474999999999994,22.366666666666667,"merged"]], // R13: re-captured after the level was rebuilt
+  'crater-field': [["c1-through","c1-around",12.475000000000001,16.25,"merged"],["c2-through","c2-around",13.575000000000003,16.95,"merged"],["cave-float","cave-heavy",14.858333333333334,15.475,"merged"]], // R13: re-captured after the level was rebuilt
   'the-crossing': [["f1-deep","f1-bridge",21.233333333333334,20.275,"merged"]], // R12: re-captured after the level was rebuilt
-  'iron-ridge': [["f1-line","f1-switch",14.041666666666671,16.391666666666666,"merged"]],
+  'iron-ridge': [["f1-switch","f1-line",28.59166666666667,32.233333333333334,"merged"]], // R13: re-captured after the level was rebuilt
 };
 
 describe('the other road of a fork (R10)', () => {

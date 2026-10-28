@@ -144,7 +144,8 @@ function buildPath(world: LevelWorld, plan: PilotPlan, gripFactor: number, gravi
   // The pole wanted at each point: the last entry of the plan the path has reached.
   const poleAt: ('N' | 'S')[] = [];
   let wanted: 'N' | 'S' = 'S';
-  const pending = [...(plan.poles ?? [])];
+  // A pole entry for a road the plan does not drive is skipped: waiting for it would hold back every pole after it (R13: the Scavenger on Iron Ridge takes the switchback road).
+  const pending = (plan.poles ?? []).filter((p) => plan.roads.includes(p.roadId));
   for (const p of withVia) {
     while (pending.length > 0 && pending[0]!.roadId === p.roadId && p.alongRoadM >= pending[0]!.fromM) wanted = pending.shift()!.pole;
     poleAt.push(wanted);

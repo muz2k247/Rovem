@@ -100,8 +100,8 @@ describe.each(LEVEL_IDS)('%s: launchers', (id) => {
 });
 
 describe('Geyser Canyon and Iron Ridge', () => {
-  it('keep their launchers: seven in the canyon (four on the vent lane), one on Iron Ridge', () => {
-    expect(loadLevelDef('geyser-canyon').cannons).toHaveLength(7);
+  it('keep their launchers: eight in the canyon (four on the vent lane), one on Iron Ridge', () => {
+    expect(loadLevelDef('geyser-canyon').cannons).toHaveLength(8);
     expect(loadLevelDef('iron-ridge').cannons).toHaveLength(1);
   });
 });

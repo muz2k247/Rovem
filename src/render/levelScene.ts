@@ -14,7 +14,9 @@ import { createForceArrows } from './forceArrows.ts';
 import { createLandmarks } from './landmarks.ts';
 import { HORIZON_EASE_PER_S, LANDING_EASE_CAMERA_S, LANDING_EASE_PITCH_S, levelCameraPose } from './levelCamera.ts';
 import { createLevelEdges } from './levelEdgeScene.ts';
+import { createCaveFx } from './caves.ts';
 import { createPylons } from './pylons.ts';
+import { createRampMeshes } from './ramps.ts';
 import { disposeTree } from './release.ts';
 import { createRoverModel, wheelTurnRad, type RoverLook } from './roverModel.ts';
 import { createTerrain, groundOffsetOf, SURFACE_COLOURS } from './terrain.ts';
@@ -118,6 +120,11 @@ export function createLevelScene(session: LevelSession, content: Content, option
     shipPart: levelText.ship.parts.some((p) => p.levelId === def.id && p.built),
   });
   scene.add(landmarks.group);
+  // Solid ramps, and the roofs, glowing crystals and dust of the caves and bowls (R13).
+  const ramps = createRampMeshes(world);
+  if (ramps) scene.add(ramps.group);
+  const caveFx = createCaveFx(world, quality);
+  if (caveFx) scene.add(caveFx.group);
   // The wreck beside the start (Crash Site): a level file with `wreck` has one.
   const wreck: Wreck | undefined = def.wreck ? createWreck(def.wreck, world.heightM(def.wreck.xM, def.wreck.zM)) : undefined;
   if (wreck) scene.add(wreck.group);
@@ -233,6 +240,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
       bags: s.bags,
     });
     water?.update(clockS);
+    caveFx?.update(clockS, pose.centreXM, pose.centreZM);
     wreck?.update(clockS);
     ghost?.update({ clockS: s.clockS, frameS, playerFrontXM: pose.frontXM, playerFrontZM: pose.frontZM, beaten: s.result?.scavenger?.beaten === true });
     const inWater = pose.waterDepthM > 0;
@@ -399,9 +407,11 @@ export function createLevelScene(session: LevelSession, content: Content, option
       wake?.dispose();
       waterLine?.dispose();
       pylons?.dispose();
+      ramps?.dispose();
+      caveFx?.dispose();
       arrows.dispose();
       atmosphere.dispose();
-      for (const o of [water?.group, pylons?.group, depthPosts?.group, waterLine?.group]) if (o) scene.remove(o);
+      for (const o of [water?.group, pylons?.group, depthPosts?.group, waterLine?.group, ramps?.group, caveFx?.group]) if (o) scene.remove(o);
     },
   };
 }

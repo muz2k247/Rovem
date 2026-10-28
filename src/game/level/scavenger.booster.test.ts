@@ -8,8 +8,9 @@ import { validateLevelDef } from './schema.ts';
 import { LEVEL_IDS } from './types.ts';
 import { SURFACE_IDS, testLevelRaw } from './testLevel.ts';
 
-// The Scavenger after R11 (DECISIONS 2026-10-26 (1), (3), (10)): Heavy + Smooth + Medium on every level, a worn motor per level (top speed × 0.945,
-// × 1.00 on Iron Ridge), no start delay, and a booster it fires when ready, on the ground, in forward gear and at least 0.5 m/s below its top speed.
+// The Scavenger after R11 (DECISIONS 2026-10-26 (1), (3), (10)): Heavy + Smooth + Medium on every level, a worn motor tuned per level, no start delay, and a booster
+// it fires when ready, on the ground, in forward gear and at least 0.5 m/s below its top speed. R13 retuned the worn values by `npm run rival -- --tune` (DECISIONS 2026-10-28).
+const WORN: Record<string, number> = { 'crash-site': 0.945, 'geyser-canyon': 0.95, 'crater-field': 0.905, 'the-crossing': 0.94, 'iron-ridge': 0.98 };
 
 const MARGIN = levelsConfig.scavenger.boosterMarginMps;
 
@@ -19,14 +20,14 @@ describe('the Scavenger in the five level files', () => {
       const sd = loadLevelDef(id).scavenger!;
       expect(sd.build, id).toEqual({ chassisId: 'chassis-heavy', wheelsId: 'wheels-smooth', motorId: 'motor-medium' });
       expect(sd.startDelayS, id).toBe(0);
-      expect(sd.topSpeedFactor, id).toBe(id === 'iron-ridge' ? 1 : 0.945);
+      expect(sd.topSpeedFactor, id).toBe(WORN[id]);
     }
   });
 
-  it('wears the Medium motor’s 16 m/s down to 15.12 m/s where the factor is 0.945', () => {
-    const ghost = createScavengerRun(content, loadLevelDef('crash-site'))!;
-    expect(ghost.rover.topSpeedMps).toBeCloseTo(15.12, 12);
-    expect(createScavengerRun(content, loadLevelDef('iron-ridge'))!.rover.topSpeedMps).toBe(16);
+  it('wears the Medium motor’s 16 m/s down by each level’s factor (15.12 m/s on Crash Site, 14.48 m/s on Crater Field)', () => {
+    expect(createScavengerRun(content, loadLevelDef('crash-site'))!.rover.topSpeedMps).toBeCloseTo(15.12, 12);
+    expect(createScavengerRun(content, loadLevelDef('crater-field'))!.rover.topSpeedMps).toBeCloseTo(14.48, 12);
+    expect(createScavengerRun(content, loadLevelDef('iron-ridge'))!.rover.topSpeedMps).toBeCloseTo(15.68, 12);
   });
 
   it('shows the worn part on its card: the build’s names and the motor’s worn top speed against the new one', () => {
@@ -36,8 +37,8 @@ describe('the Scavenger in the five level files', () => {
     expect(info.newTopSpeedMps).toBe(16);
     expect(info.worn).toBe(true);
     const iron = levelScavengerInfo('iron-ridge')!;
-    expect(iron.topSpeedMps).toBe(16);
-    expect(iron.worn).toBe(false);
+    expect(iron.topSpeedMps).toBeCloseTo(15.68, 12);
+    expect(iron.worn).toBe(true);
   });
 });
 

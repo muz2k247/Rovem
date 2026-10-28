@@ -8,11 +8,11 @@ import { SURFACE_IDS, testLevelRaw } from './testLevel.ts';
 
 // The Scavengers of The Crossing and Iron Ridge (R7; SHOWCASE_PLAN §8): each finishes 4 to 8% after the starting rover's clean best,
 // and the one on Iron Ridge flips its magnet pole the way a good student does (`scavenger.poles`). R11 (DECISIONS 2026-10-26 (3)): the same
-// Heavy + Smooth + Medium on every level, both rovers use the booster, The Crossing's Scavenger takes the deep ford and Iron Ridge's the magnet line.
+// Heavy + Smooth + Medium on every level, both rovers use the booster, The Crossing's Scavenger takes the deep ford; R13: Iron Ridge's takes the switchback road (the heavy build gains least from the magnet line).
 
 describe.each([
   ['the-crossing', 'f1-deep'],
-  ['iron-ridge', 'f1-line'],
+  ['iron-ridge', 'f1-switch'],
 ] as const)('the Scavenger of %s', (id, road) => {
   const { def, plans } = loadLevel(id);
   const ghost = createScavengerRun(content, def)!;
@@ -23,7 +23,7 @@ describe.each([
     expect(ghost.finishAtS).toBeLessThanOrEqual(cleanBest * 1.08);
   });
 
-  it('takes the road the audit found best for it, and is an honest drive with no respawn', () => {
+  it('takes the road that is best for it (R13: the switchback road on Iron Ridge), and is an honest drive with no respawn', () => {
     expect(def.scavenger!.roads).toContain(road);
     const r = runPilot({
       content, def, build: def.scavenger!.build, topSpeedFactor: def.scavenger!.topSpeedFactor!, booster: true,

@@ -77,7 +77,7 @@ npm run typecheck  # type check
 npm run build      # type check, then production build into dist/
 npm run balance    # simulate all 27 builds against the mission limits (needs Node 24)
 npm run maps       # write a top-down SVG of every built level to docs/captures/maps/ (needs Node 24)
-npm run rival      # all 27 builds over every route: the builds near the Scavenger's target pace, with a proposal (needs Node 24; --level=<id>, --all)
+npm run rival      # all 27 builds over every route, with the booster and the magnet poles: the builds near the Scavenger's target pace, with a proposal (needs Node 24; --level=<id>, --all, --tune)
 npm run preview    # serve the built dist/ (run npm run build first)
 ```
 

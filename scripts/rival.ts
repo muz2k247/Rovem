@@ -7,12 +7,17 @@
 //
 // "Clean" means no respawn: no crash, no sticking, no floating. The autopilot is the same driver the level tests use. It follows the
 // road centreline and holds a safe speed in bends, so a build's time here is an honest drive, not the best a human could do.
+//
+// Since R13 every drive here uses the booster (its recharging rule, as in the game) and carries the level's magnet poles
+// (`scavenger.poles`, only those on the route's roads), so the numbers match what the game's Scavenger and a student see (OI-50).
+// `--tune` also scans the Scavenger's worn top speed (`scavenger.topSpeedFactor`) for each level and reports the gap it gives.
 
 import { content } from '../src/content/index.ts';
 import { builtLevelIds, loadLevelDef } from '../src/game/level/levels.ts';
-import { allBuilds, allRoutes, runPilot } from '../src/game/level/autopilot.ts';
+import { allBuilds, allRoutes, runPilot, type PilotPlan } from '../src/game/level/autopilot.ts';
 import { STARTING_BUILD, type BuildSelection } from '../src/game/buildFromParts.ts';
 import type { StretchRecord } from '../src/game/level/stretches.ts';
+import type { LevelDef } from '../src/game/level/types.ts';
 
 const LOW = 1.04;
 const HIGH = 1.08;
@@ -31,6 +36,12 @@ interface Run {
   stretches: StretchRecord[];
 }
 
+/** The drive of a route: the roads, and the level's magnet poles that lie on them (the pilot waits for each pole in order, so a pole on a road the route skips would stall the rest). */
+const planFor = (def: LevelDef, roads: string[]): PilotPlan => {
+  const poles = def.scavenger?.poles?.filter((p) => roads.includes(p.roadId));
+  return { roads, ...(poles && poles.length > 0 ? { poles } : {}) };
+};
+
 const only = process.argv.find((a: string) => a.startsWith('--level='))?.slice(8);
 for (const id of builtLevelIds().filter((l) => !only || l === only)) {
   const def = loadLevelDef(id);
@@ -41,7 +52,7 @@ for (const id of builtLevelIds().filter((l) => !only || l === only)) {
   const clean: Run[] = [];
   for (const build of allBuilds(content)) {
     routes.forEach((route, routeIndex) => {
-      const r = runPilot({ content, def, build, plan: { roads: route.roads }, maxS: 400 });
+      const r = runPilot({ content, def, build, plan: planFor(def, route.roads), maxS: 400, booster: true });
       const respawned = Object.values(r.respawns).some((n) => n > 0);
       if (r.finished && !respawned) clean.push({ build, routeIndex, timeS: r.timeS, stretches: r.session.stretches });
     });
@@ -54,6 +65,29 @@ for (const id of builtLevelIds().filter((l) => !only || l === only)) {
   }
   const best = start.reduce((a, b) => (b.timeS < a.timeS ? b : a));
   console.log(`  Starting rover, clean best: ${num(best.timeS)} s on route ${best.routeIndex + 1}. Target window: ${num(best.timeS * LOW)} to ${num(best.timeS * HIGH)} s (+4% to +8%).`);
+
+  if (process.argv.includes('--tune') && def.scavenger) {
+    // The Scavenger as the level file has it (its build, route and poles), its worn top speed scanned from 0.90 to 1.00.
+    const sd = def.scavenger;
+    const { scavenger: _own, ...ghostDef } = def;
+    void _own;
+    const rows: { f: number; ratio: number }[] = [];
+    for (let k = 0; k <= 20; k++) {
+      const f = Math.round((0.9 + k * 0.005) * 1000) / 1000;
+      const r = runPilot({
+        content, def: ghostDef, build: sd.build, topSpeedFactor: f, booster: true, maxS: 400,
+        plan: { ...planFor(def, sd.roads), ...(sd.via ? { via: sd.via } : {}), ...(sd.bendMargin !== undefined ? { bendMargin: sd.bendMargin } : {}) },
+      });
+      if (r.finished) rows.push({ f, ratio: r.timeS / best.timeS });
+    }
+    console.log('  Scavenger scan (factor: gap):', rows.map((x) => `${x.f.toFixed(3)}: ${((x.ratio - 1) * 100).toFixed(1)}%`).join('  '));
+    // The pick: nearest +6% among the factors whose neighbours also sit inside +4% to +8% (a value that does not sit on a knife edge).
+    const ok = (i: number) => rows[i] !== undefined && rows[i]!.ratio >= LOW && rows[i]!.ratio <= HIGH;
+    const solid = rows.map((_, i) => i).filter((i) => ok(i) && ok(i - 1) && ok(i + 1));
+    const pool = solid.length > 0 ? solid : rows.map((_, i) => i).filter(ok);
+    const pick = pool.sort((a, b) => Math.abs(rows[a]!.ratio - 1.06) - Math.abs(rows[b]!.ratio - 1.06))[0];
+    console.log(pick === undefined ? '  TUNE: no factor from 0.90 to 1.00 puts the Scavenger inside +4% to +8%.' : `  TUNE: topSpeedFactor ${rows[pick]!.f} gives ${((rows[pick]!.ratio - 1) * 100).toFixed(1)}%${solid.length > 0 ? '' : ' (a knife edge: a neighbour falls outside the window)'}.`);
+  }
 
   // Each candidate's best clean time over the routes, and where it loses against the starting rover on that same route.
   const byBuild = new Map<string, Run>();

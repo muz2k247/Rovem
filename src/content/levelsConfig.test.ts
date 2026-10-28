@@ -46,7 +46,7 @@ describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
       startPole: 'S',
     });
     expect(c.track).toEqual({ widthM: 10, runoffWidthM: 4 });
-    expect(c.pacing).toEqual({ levelLengthMinS: 90, levelLengthMaxS: 150, checkpointSpacingS: 30 });
+    expect(c.pacing).toEqual({ levelLengthMinS: 150, levelLengthMaxS: 180, checkpointSpacingS: 30 });
     expect(c.par).toEqual({ factor: 1.15, roundUpToS: 5 });
     expect(c.captions).toEqual({ minShowS: 2.5, maxLines: 2 });
     // Polish R11 (DECISIONS 2026-10-26): the recharging booster, the 2 s stuck rule, the reading time of a pop-up.

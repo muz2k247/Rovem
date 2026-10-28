@@ -28,7 +28,7 @@
       "bank",
       "slope"
     ],
-    "topSpeedFactor": 0.945,
+    "topSpeedFactor": 0.94,
     "startDelayS": 0
   },
   "defaultSurfaceId": "asphalt",

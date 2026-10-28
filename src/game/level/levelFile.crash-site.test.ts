@@ -5,7 +5,7 @@ import { checkLevelFile, loadLevel, startingAt } from './levelChecks.ts';
 import { createLevelSession } from './session.ts';
 import { allBuilds, representativeBuilds, roadPoint, runPilot } from './testPilot.ts';
 
-checkLevelFile('crash-site', { starRunWindowS: [135, 160], checkpointGapS: 40 });
+checkLevelFile('crash-site');
 
 // Crash Site (SHOWCASE_PLAN §3 Level 1, §6; rebuilt in R12, DECISIONS 2026-10-26 (4) and 2026-10-27 (8)): the oil from the wreck, a tongue of it on bend 1,
 // the mud gully and its bypass, the dune fork, ice in the crater's shade, the Ring round the crater with boulders, and the climb out to the landing brakes.

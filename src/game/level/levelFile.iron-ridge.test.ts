@@ -30,9 +30,9 @@ describe('iron-ridge', () => {
     expect(session.hud.badges.pole).toBe('S');
   });
 
-  it('has the pylons in order: a pull beside the road, the bend, the pass, the mud side, the gate, a slingshot, the ridge', () => {
+  it('has the pylons in order: a pull beside the road, a chain of three, a magnetic brake, the bend, the pass, the mud side, the gate, a slingshot, the ridge', () => {
     expect(def.pylons.map((p) => p.id)).toEqual([
-      'pyl-feel', 'pyl-bend', 'pyl-pass-a', 'pyl-pass-b', 'pyl-mud', 'pyl-gate-a', 'pyl-gate-b', 'pyl-sling-1', 'pyl-up', 'pyl-top',
+      'pyl-feel', 'pyl-chain-1', 'pyl-chain-2', 'pyl-brake', 'pyl-bend', 'pyl-pass-a', 'pyl-pass-b', 'pyl-mud', 'pyl-gate-a', 'pyl-gate-b', 'pyl-sling-1', 'pyl-up', 'pyl-top',
     ]);
     expect(def.forks.map((f) => f.roadIds)).toEqual([['f1-line', 'f1-switch']]);
   });
@@ -56,6 +56,35 @@ describe('iron-ridge', () => {
     // The cave: the gate and the road after it have rock faces on both sides.
     for (const id of ['gate', 'lead-1']) expect(def.roads.find((r) => r.id === id)!.edges?.some((e) => e.style === 'rock' && e.side === 'both')).toBe(true);
     expect(def.cannons.map((c) => c.kind)).toEqual(['kicker']);
+  });
+
+  it('has a chain of three pylons on the foothills, on alternating sides: unlike to be pulled to each, like to be pushed on past it is faster than driving through as S (R13)', () => {
+    const chain = ['pyl-feel', 'pyl-chain-1', 'pyl-chain-2'].map((id) => def.pylons.find((p) => p.id === id)!);
+    const sides = chain.map((p) => Math.sign(world.roadById('start').line.nearest(p.xM, p.zM)!.offsetM));
+    expect(sides).toEqual([sides[0], -sides[0]!, sides[0]]);
+    expect(chain.every((p) => p.pole === 'N')).toBe(true);
+    const upTo = (poles: PilotPlan['poles']) => runPilot({ content, def, plan: { roads: ['start', 'p1'], ...(poles ? { poles } : {}) }, maxS: 120, until: (x) => x.world.roadAt(x.state.positionXM, x.state.positionZM)?.road.def.id === 'p1' && alongOf('p1', x.state.positionXM, x.state.positionZM) > 200 }).timeS;
+    expect(upTo(undefined) - upTo(def.scavenger!.poles!.filter((p) => p.roadId === 'start'))).toBeGreaterThan(2);
+  });
+
+  it('has a repelling pylon before the bend, 6 m beside the road: flipping to unlike once past it cancels its push (the brake is mild at top speed: the motor refills it)', () => {
+    const brake = def.pylons.find((p) => p.id === 'pyl-brake')!;
+    expect(brake.pole).toBe('S');
+    expect(Math.abs(world.roadById('p1').line.nearest(brake.xM, brake.zM)!.offsetM)).toBeCloseTo(6, 0);
+    expect(alongOf('p1', brake.xM, brake.zM)).toBeGreaterThan(200);
+    const speedAt = (poles: PilotPlan['poles']) => {
+      let v = 0;
+      runPilot({
+        content, def: startingAt(def, 'cp-2'), plan: { roads: ['p1', 'bend-1'], throttleOnly: true, ...(poles ? { poles } : {}) }, maxS: 40,
+        until: (x) => {
+          const on = x.world.roadAt(x.state.positionXM, x.state.positionZM);
+          if (on?.road.def.id === 'p1' && v === 0 && alongOf('p1', x.state.positionXM, x.state.positionZM) >= 260) v = x.state.speedMps;
+          return v > 0;
+        },
+      });
+      return v;
+    };
+    expect(speedAt(undefined)).toBeGreaterThan(speedAt([{ roadId: 'p1', fromM: 243, pole: 'N' }, { roadId: 'bend-1', fromM: 6, pole: 'S' }]) + 0.5);
   });
 
   it('the bend: the pylon on its inside pulls the rover round, and every one of the 27 builds still takes it', () => {
@@ -108,7 +137,7 @@ describe('iron-ridge', () => {
 
   it('a slingshot: approach on attract, flip to repel as you pass, and leave about 3.5 m/s faster', () => {
     const exitSpeed = (flip: boolean) => {
-      const p0 = roadPoint(world, 'f1-line', 30, 0);
+      const p0 = roadPoint(world, 'f1-line', 90, 0);
       const session = createLevelSession({
         content, rover: roverFromParts(content, STARTING_BUILD), constants: physicsConstants(content),
         def: { ...def, start: { xM: p0.xM, zM: p0.zM, headingDeg: (p0.headingRad * 180) / Math.PI }, checkpoints: [], forks: [], hints: [] },
@@ -118,11 +147,11 @@ describe('iron-ridge', () => {
       for (let i = 0; i < 120 * 6; i++) {
         session.stepOnce();
         const along = alongOf('f1-line', session.pose.centreXM, session.pose.centreZM);
-        if (flip && !flipped && along > 71) {
+        if (flip && !flipped && along > 131) {
           session.flipPole();
           flipped = true;
         }
-        if (along > 110) break;
+        if (along > 170) break;
       }
       return session.state.speedMps;
     };
@@ -133,26 +162,33 @@ describe('iron-ridge', () => {
   it('the ridge: its icy side defeats the tyres, so some builds roll back without the pylons, and with them every one of the 27 climbs', () => {
     const climbs = (pylons: typeof def.pylons) =>
       allBuilds(content).filter((build) => {
-        const r = runPilot({ content, def: { ...startingAt(def, 'cp-6'), pylons }, build, plan: { roads: ['lead-2', 'climb', 'end'], poles: climbPoles }, maxS: 80 });
+        const r = runPilot({ content, def: { ...startingAt(def, 'cp-7'), pylons }, build, plan: { roads: ['lead-2', 'climb', 'end'], poles: climbPoles }, maxS: 80 });
         return r.finished && Object.values(r.respawns).every((n) => n === 0);
       }).length;
     expect(climbs(def.pylons)).toBe(27);
     expect(climbs(def.pylons.filter((p) => p.id !== 'pyl-up' && p.id !== 'pyl-top'))).toBeLessThan(20);
   });
 
-  it('the fork is a real choice: riding the magnets beats the switchback road, but without flipping the pole it does not', () => {
-    const time = (road: string, withPoles: boolean) => {
-      const plan = road === 'f1-line' ? plans.stars : plans.safe;
-      const poles = withPoles ? plan.poles : undefined;
-      return runPilot({ content, def, plan: { ...plan, ...(poles ? { poles } : { poles: undefined }), via: undefined } as PilotPlan }).timeS;
+  it('the fork is a real choice: the magnet line is faster for some builds (the light ones gain most from a 1600 N pull) and the switchback road for others, and without flipping the pole the line is slow', () => {
+    const time = (road: string, build = STARTING_BUILD, withPoles = true) => {
+      const roads = ['start', 'p1', 'bend-1', 'pass', 'ice', 'gate', 'lead-1', road, 'lead-2', 'climb', 'end'];
+      const poles = withPoles ? def.scavenger!.poles!.filter((p) => roads.includes(p.roadId)) : undefined;
+      return runPilot({ content, def, build, plan: { roads, ...(poles ? { poles } : {}) }, booster: true }).timeS;
     };
-    expect(time('f1-line', true)).toBeLessThan(time('f1-switch', true) - 1);
-    expect(time('f1-line', false)).toBeGreaterThan(time('f1-line', true) + 5);
+    const lineWins = allBuilds(content).filter((b) => time('f1-line', b) < time('f1-switch', b)).length;
+    expect(lineWins).toBeGreaterThanOrEqual(8);
+    expect(lineWins).toBeLessThanOrEqual(20);
+    const lead = (chassisId: string) => {
+      const build = { chassisId, wheelsId: 'wheels-all-terrain', motorId: 'motor-medium' };
+      return time('f1-switch', build) - time('f1-line', build);
+    };
+    expect(lead('chassis-light')).toBeGreaterThan(lead('chassis-heavy'));
+    expect(time('f1-line', STARTING_BUILD, false)).toBeGreaterThan(time('f1-line') + 3);
   });
 
   it('the launcher at the end kicks the rover from behind: it speeds up', () => {
     const r = runPilot({
-      content, def: startingAt(def, 'cp-6'), plan: { roads: ['lead-2', 'climb', 'end'], poles: climbPoles },
+      content, def: startingAt(def, 'cp-7'), plan: { roads: ['lead-2', 'climb', 'end'], poles: climbPoles },
       until: (s) => s.events.some((e) => e.kind === 'hit' && e.hitKind === 'kicker'),
     });
     const hit = r.session.events.find((e) => e.kind === 'hit' && e.hitKind === 'kicker')!;

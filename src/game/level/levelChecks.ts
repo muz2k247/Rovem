@@ -48,32 +48,18 @@ function centrelineSamples(world: LevelWorld, roadId: string, everyM = 2) {
 
 export interface CheckOptions {
   /**
-   * The scripted driver's star run (all 3 samples, no booster) finishes before the Scavenger. Default true. Crater Field sets it false: after
-   * R11 the Scavenger is +5.9% over the starting rover's clean best, and the sample line costs Crater Field 10%, so the scripted run with its
-   * samples is 5.9 s behind the ghost. R13 rebuilds the level and retunes the Scavenger (DECISIONS 2026-10-26 (3)).
-   */
-  starRunBeatsScavenger?: boolean;
-  /**
-   * Holding W along the middle of the road misses at least one star. Default true. Geyser Canyon sets it false: after R11 each launcher fires
-   * one aimed shot, so holding W takes the vent lane in 81 s, collects the three samples on the centre line and beats the Scavenger. R13
-   * rebuilds the level (DECISIONS 2026-10-26 (8): about 150 s).
-   */
-  holdWMissesAStar?: boolean;
-  /**
-   * The window for the starting build's clean star run, in seconds (exclusive). Default 60 to 150, the v4 and Showcase rule. The levels rebuilt in the Polish round
-   * (R12 onward) say 135 to 160: about 150 s (DECISIONS 2026-10-27 (8)).
+   * The window for the starting build's clean star run, in seconds (exclusive). Default 135 to 160: about 150 s (DECISIONS 2026-10-27 (8)); every level
+   * was rebuilt to it in R12 and R13 (before: 60 to 150, the v4 and Showcase rule).
    */
   starRunWindowS?: [number, number];
-  /** The longest gap between checkpoints on a good drive, in seconds (exclusive). Default 55. The rebuilt levels say 40: a return costs little. */
+  /** The longest gap between checkpoints on a good drive, in seconds (exclusive). Default 40: a return costs little (before R12: 55). */
   checkpointGapS?: number;
 }
 
 export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
   const { def, world, plans } = loadLevel(id);
-  const starRunBeatsScavenger = options.starRunBeatsScavenger ?? true;
-  const holdWMissesAStar = options.holdWMissesAStar ?? true;
-  const [starRunMinS, starRunMaxS] = options.starRunWindowS ?? [60, 150];
-  const checkpointGapS = options.checkpointGapS ?? 55;
+  const [starRunMinS, starRunMaxS] = options.starRunWindowS ?? [135, 160];
+  const checkpointGapS = options.checkpointGapS ?? 40;
 
   describe(`level file ${id}`, () => {
     it('is marked placeholder and has a par time', () => {
@@ -136,9 +122,9 @@ export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
       const r = runPilot({ content, def, plan: plans.stars, ...(scavenger ? { scavenger } : {}) });
       expect(r.finished).toBe(true);
       expect(r.samples.sort()).toEqual(def.samples.map((s) => s.id).sort());
-      expect(r.timeS).toBeGreaterThan(starRunMinS); // 60 s was 75 s before the stops were removed (R1); the Showcase levels were 90–150 s (SHOWCASE_PLAN §5)
+      expect(r.timeS).toBeGreaterThan(starRunMinS);
       expect(r.timeS).toBeLessThan(starRunMaxS);
-      expect(r.starFlags).toEqual([true, true, starRunBeatsScavenger]);
+      expect(r.starFlags).toEqual([true, true, true]);
       // The par time follows the A10 rule for this scripted drive: × 1.15, up to the next 5 s (provisional until I1 plays the levels).
       const { factor, roundUpToS } = levelsConfig.par;
       expect(def.parS).toBeGreaterThanOrEqual(r.timeS * factor);
@@ -149,8 +135,7 @@ export function checkLevelFile(id: LevelId, options: CheckOptions = {}): void {
       // The third star is beating the Scavenger (a level with none keeps the par time), so the simple drive races it.
       const rival = createScavengerRun(content, def);
       const r = runPilot({ content, def, plan: naivePlan(def), maxS: 300, ...(rival ? { scavenger: rival } : {}) });
-      if (holdWMissesAStar) expect(r.stars).toBeLessThan(3);
-      else expect(r.stars).toBe(3);
+      expect(r.stars).toBeLessThan(3);
     });
 
     it('no build is trapped: all 27 finish the safe route', () => {

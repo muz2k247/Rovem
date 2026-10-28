@@ -6,7 +6,7 @@ import { checkLevelFile, loadLevel, startingAt } from './levelChecks.ts';
 import { createLevelSession } from './session.ts';
 import { allBuilds, roadPoint, runPilot } from './testPilot.ts';
 
-checkLevelFile('the-crossing', { starRunWindowS: [135, 160], checkpointGapS: 40 });
+checkLevelFile('the-crossing');
 
 // The Crossing (SHOWCASE_PLAN §3 Level 4; rebuilt in R12, DECISIONS 2026-10-26 (6) and 2026-10-27 (8)): the lakebed with a hill, a shallow ford and mud, a 60 m wading
 // reach at 0.5 m with a sample in it, the fork between a 20 m deep crossing at 1.0 m and a long dry bridge, a mud bank and a vent on the far side, and the slope out.

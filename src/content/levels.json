@@ -20,7 +20,7 @@
     "startPole": "S"
   },
   "track": { "widthM": 10, "runoffWidthM": 4 },
-  "pacing": { "levelLengthMinS": 90, "levelLengthMaxS": 150, "checkpointSpacingS": 30 },
+  "pacing": { "levelLengthMinS": 150, "levelLengthMaxS": 180, "checkpointSpacingS": 30 },
   "par": { "factor": 1.15, "roundUpToS": 5 },
   "report": { "minGapS": 0.5, "minCauseS": 0.3 },
   "booster": { "forceN": 2500, "maxDurationS": 1.5, "rechargeS": 15 },
