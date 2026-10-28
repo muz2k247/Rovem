@@ -1,7 +1,9 @@
-import type { StarCount } from '../game/contracts.ts';
 
 // Level progress (LEVELS_BUILD_PLAN A2): only the best stars and the best time per level are saved. Every read and
 // write is wrapped in try/catch; if storage fails, the game works with an empty record.
+
+/** The stars of a level, 0 to 3. */
+export type StarCount = 0 | 1 | 2 | 3;
 
 export const LEVEL_PROGRESS_STORAGE_KEY = 'rovem.levels.v1';
 

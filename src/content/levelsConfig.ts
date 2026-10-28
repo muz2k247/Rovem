@@ -20,7 +20,7 @@ export type ForceKind = (typeof FORCE_KINDS)[number];
 export interface LevelsConfig {
   crater: { depthM: number; wallAngleDeg: number; rampAngleDeg: number };
   hills: { maxHeightM: number; minLengthM: number; minCrestRadiusM: number };
-  ringRoad: { radiiM: number[]; widthM: number; ringRadiusM: number; ringArcDeg: number; laps: number };
+  ringRoad: { radiiM: number[]; widthM: number; ringRadiusM: number; ringArcDeg: number };
   water: {
     densityKgPerM3: number;
     roverVolumeM3: number;
@@ -154,7 +154,6 @@ export function validateLevelsConfig(raw: unknown): LevelsConfig {
     widthM: num(rr, 'widthM', p('ringRoad')),
     ringRadiusM: num(rr, 'ringRadiusM', p('ringRoad')),
     ringArcDeg: num(rr, 'ringArcDeg', p('ringRoad')),
-    laps: num(rr, 'laps', p('ringRoad')),
   };
   if (!ringRoad.radiiM.includes(ringRoad.ringRadiusM)) fail('levels.ringRoad.ringRadiusM', 'must be one of radiiM');
   if (ringRoad.ringArcDeg > 360) fail('levels.ringRoad.ringArcDeg', 'must be at most 360');

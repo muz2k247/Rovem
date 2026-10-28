@@ -3,7 +3,7 @@
 
 import type { MomentSound } from '../game/moments.ts';
 
-export type EffectKind = 'boost' | 'sandbagHit' | 'kickerHit' | 'thud' | 'hiss' | 'squelch' | 'skid' | 'crunch' | 'scrape' | 'rumble' | 'hum' | 'splash' | 'warn';
+export type EffectKind = 'boost' | 'sandbagHit' | 'kickerHit' | 'thud' | 'hiss' | 'squelch' | 'skid' | 'crunch' | 'scrape' | 'rumble' | 'hum' | 'splash' | 'warn' | 'chime' | 'lock';
 
 export interface EffectTone {
   type: OscillatorType;
@@ -95,6 +95,22 @@ const RECIPES: Record<EffectKind, EffectRecipe> = {
       { type: 'square', fromHz: 880, toHz: 880, startS: 0, durationS: 0.1, gain: 0.07 },
       { type: 'square', fromHz: 1100, toHz: 1100, startS: 0.16, durationS: 0.1, gain: 0.07 },
     ],
+  },
+  // A sample (R14, AUDIT_R9 F2): a short rising two-note chime, 0.3 s in all.
+  chime: {
+    tones: [
+      { type: 'sine', fromHz: 784, toHz: 784, startS: 0, durationS: 0.14, gain: 0.09 },
+      { type: 'sine', fromHz: 1175, toHz: 1175, startS: 0.12, durationS: 0.18, gain: 0.09 },
+    ],
+  },
+  // A ship part (R14): a low "lock" thump with the same chime an octave lower.
+  lock: {
+    tones: [
+      { type: 'sine', fromHz: 95, toHz: 42, startS: 0, durationS: 0.4, gain: 0.4 },
+      { type: 'sine', fromHz: 392, toHz: 392, startS: 0.1, durationS: 0.14, gain: 0.09 },
+      { type: 'sine', fromHz: 588, toHz: 588, startS: 0.22, durationS: 0.18, gain: 0.09 },
+    ],
+    noise: { startS: 0, durationS: 0.15, gain: 0.2, filterHz: 500 },
   },
   // The crash: a deep boom and a crunch.
   thud: {

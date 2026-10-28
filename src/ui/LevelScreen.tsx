@@ -22,10 +22,13 @@ import type { LevelDef } from '../game/level/types.ts';
 import type { SpeedUnit } from '../game/run/feedback.ts';
 import { SLIDE_MARK_RAD, SLIDE_SOUND_RAD } from '../game/run/drift.ts';
 import { createPausableRun, MAX_FRAME_S } from '../game/run/pausableRun.ts';
+import { shipParts, type ShipPartView } from '../game/ship.ts';
+import { loadLevelProgress } from '../save/levelProgress.ts';
 import { createEffectSounds, effectForSound } from '../render/effectSounds.ts';
 import { warmShaders } from '../render/warmup.ts';
 import { createEngineSound } from '../render/engineSound.ts';
 import { createLevelScene, type LevelScene } from '../render/levelScene.ts';
+import { RECOVERY_S } from '../render/landmarks.ts';
 import { roverLookFor } from '../render/roverModel.ts';
 import { releaseRenderer } from '../render/release.ts';
 import { effectiveVolume, type Settings } from '../save/settings.ts';
@@ -35,6 +38,7 @@ import { crashShakeM, shouldRefreshHud } from './levelScreenLogic.ts';
 import { PauseMenu } from './PauseMenu.tsx';
 import { ReportScreen } from './report/ReportScreen.tsx';
 import { SettingsPanel } from './SettingsPanel.tsx';
+import { ShipOutline } from './ShipSilhouette.tsx';
 
 declare global {
   interface Window {
@@ -88,6 +92,11 @@ const SPEED_TONE_S = 0.8;
 const OPENING_LINE_S = 8;
 /** The Scavenger's start line (its build and delay) stays on screen this long, in physics seconds. Presentation value. */
 const START_LINE_S = 5;
+/** The 3-2-1 countdown (R14, DECISIONS 2026-10-26 (10)): one second a number, then "Go" stays this long. The clock and the Scavenger start at "Go". */
+const COUNTDOWN_S = 3;
+const GO_SHOWN_S = 0.7;
+/** The sample counter stays on screen this long after a sample (R14, AUDIT_R9 F2), in physics seconds. */
+const PIPS_S = 2;
 /** The pop-up stands this far to the right of the rover and above its roof, in pixels. */
 const POPUP_OFFSET_PX = { x: 36, y: -28 };
 
@@ -115,6 +124,9 @@ export function LevelScreen(props: LevelScreenProps) {
   const markerRef = useRef<HTMLDivElement>(null);
   const [markerText, setMarkerText] = useState<string | null>(null);
   const [scavengerLabel, setScavengerLabel] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<string | null>(null);
+  const [pips, setPips] = useState<{ n: number; total: number } | null>(null);
+  const [recovery, setRecovery] = useState<{ parts: ShipPartView[]; name: string } | null>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
   const showSettingsRef = useRef(false);
@@ -151,6 +163,9 @@ export function LevelScreen(props: LevelScreenProps) {
     setOpening(openingOn ? levelText.ship.openingLine : null);
     setStartLine(null);
     setMarkerText(null);
+    setCountdown(null);
+    setPips(null);
+    setRecovery(null);
 
     const rover = roverFromParts(content, build);
     const keys = createKeyTracker();
@@ -229,6 +244,15 @@ export function LevelScreen(props: LevelScreenProps) {
     const popupPoint = new THREE.Vector3();
 
     let reported = false;
+    // The 3-2-1 countdown (R14): nothing is simulated and every key is ignored until "Go"; a checkpoint return has none.
+    let countdownLeftS = COUNTDOWN_S;
+    let goLeftS = 0;
+    let countdownShown = '';
+    // The pickup moments (R14): the sample counter's last second on the session clock, and the ship-part moment's clock in real frames.
+    let pipsUntilS = 0;
+    let finishHandled = false;
+    let recoveryLeftS = 0;
+    const shipPart = levelText.ship.parts.find((p) => p.levelId === levelDef.id && p.built);
     let lastStartLine = scavenger !== undefined;
     let lastMarkerText = '';
     // The Scavenger's booster label (AUDIT_R9 G3): 1.5 s over the ghost when it starts a burn, only while it is within about 60 m.
@@ -245,7 +269,7 @@ export function LevelScreen(props: LevelScreenProps) {
 
     // Pause (Esc, the pause button, or the window losing focus): no steps run, and the clock stops with them.
     const pause = () => {
-      if (reported || driver.paused) return;
+      if (reported || recoveryLeftS > 0 || driver.paused) return;
       driver.pause();
       keys.clear();
       setPaused(true);
@@ -272,14 +296,14 @@ export function LevelScreen(props: LevelScreenProps) {
       effects.start();
       const action = levelKeyAction(e.code);
       if (action === 'pause') {
-        if (reported) return;
+        if (reported || recoveryLeftS > 0) return;
         if (driver.paused) {
           if (showSettingsRef.current) setShowSettings(false); // Esc in Settings goes back to the pause menu
           else resume();
         } else pause();
         return;
       }
-      if (driver.paused || reported) return; // the pause menu is driven by its buttons
+      if (driver.paused || reported || finishHandled || countdownLeftS > 0) return; // the pause menu is driven by its buttons; the countdown takes no keys
       const devAction = dev ? devKeyAction(e.code) : undefined;
       if (devAction) {
         e.preventDefault();
@@ -316,7 +340,19 @@ export function LevelScreen(props: LevelScreenProps) {
       const s = propsRef.current.settings;
       const frameS = Math.min((nowMs - lastMs) / 1000, MAX_FRAME_S);
       lastMs = nowMs;
-      if (!reported) driver.advance(frameS);
+      if (countdownLeftS > 0) {
+        if (!driver.paused) countdownLeftS = Math.max(0, countdownLeftS - frameS);
+        keys.clear();
+        if (countdownLeftS === 0) goLeftS = GO_SHOWN_S;
+      } else if (!reported) {
+        driver.advance(frameS);
+        if (goLeftS > 0 && !driver.paused) goLeftS = Math.max(0, goLeftS - frameS);
+      }
+      const countdownText = countdownLeftS > 0 ? String(Math.ceil(countdownLeftS)) : goLeftS > 0 ? 'Go' : '';
+      if (countdownText !== countdownShown) {
+        countdownShown = countdownText;
+        setCountdown(countdownText || null);
+      }
 
       for (; eventsHandled < session.events.length; eventsHandled++) {
         const e = session.events[eventsHandled]!;
@@ -324,6 +360,14 @@ export function LevelScreen(props: LevelScreenProps) {
         // A launcher's card tells a bag from the front from one from behind.
         if (popup) feedback.onPopup(popup, e.kind === 'hit' ? (e.hitKind === 'kicker' ? 'kickerHit' : 'headOnHit') : e.kind, e.timeS);
         if (e.kind === 'warning') effects.play('warn'); // a kicker is about to fire from behind
+        if (e.kind === 'sample') {
+          // The pickup set (R14, AUDIT_R9 F2): a chime, a gold sparkle, the canister flying to the counter (in the scene), three pips for 2 s and "Sample n of 3".
+          effects.play('chime');
+          view.sampleCollected(e.sampleId!);
+          pipsUntilS = session.clockS + PIPS_S;
+          setPips({ n: e.n!, total: levelDef.samples.length });
+          feedback.queue.popup({ element: 'sample', tone: 'good', text: fill(levelText.pickup.sample, { n: e.n!, total: levelDef.samples.length }) }, e.timeS);
+        }
         if (e.kind === 'stuckRelease' || e.kind === 'respawn') feedback.queue.release(e.timeS);
         if (e.kind === 'respawn' && e.cause === 'crash') {
           effects.play('thud');
@@ -341,10 +385,15 @@ export function LevelScreen(props: LevelScreenProps) {
         }
       }
 
-      const justFinished = !reported && session.phase === 'finished';
+      if (pipsUntilS > 0 && session.clockS >= pipsUntilS) {
+        pipsUntilS = 0;
+        setPips(null);
+      }
+      // The rover reached the part (R14): the time is fixed, so the result is saved now; the ship-part moment plays, then the report comes.
+      const justFinished = !reported && !finishHandled && session.phase === 'finished';
       const hudModel = session.hud;
       // A pop-up or a card comes first: the level's own caption (a hint, a sample, a checkpoint) waits until it has gone.
-      const now = reported ? null : feedback.queue.update(session.clockS, { atGripLimit: session.state.slipping || session.pose.slideRad >= SLIDE_MARK_RAD, inAir: false });
+      const now = reported || finishHandled ? null : feedback.queue.update(session.clockS, { atGripLimit: session.state.slipping || session.pose.slideRad >= SLIDE_MARK_RAD, inAir: false });
       const model = {
         ...hudModel,
         ...(speedTone && session.clockS < speedToneUntilS ? { speedTone } : {}),
@@ -357,7 +406,7 @@ export function LevelScreen(props: LevelScreenProps) {
       const state = session.state;
       engine.setVolume(effectiveVolume(s, 'engine'));
       effects.setVolume(effectiveVolume(s, 'effects'));
-      engine.setMuted(s.muted || driver.paused || reported || session.phase === 'respawning');
+      engine.setMuted(s.muted || driver.paused || reported || finishHandled || session.phase === 'respawning');
       effects.setMuted(s.muted);
       effects.setSqueal(!driver.paused && !reported && (state.slipping || session.pose.slideRad >= SLIDE_SOUND_RAD) && state.speedMps > 0, state.speedMps / rover.topSpeedMps);
       engine.update(state.speedMps / rover.topSpeedMps, session.phase === 'driving' ? state.throttleLevel : 0);
@@ -442,18 +491,35 @@ export function LevelScreen(props: LevelScreenProps) {
       }
 
       if (justFinished) {
-        reported = true;
+        finishHandled = true;
         keys.clear();
         const result = session.result!;
-        const last = propsRef.current.lastRun;
         propsRef.current.onFinished({ levelId: levelDef.id, timeS: result.timeS, stars: result.stars, starFlags: result.starFlags });
-        setReport(session.report({ build, ...(last ? { last } : {}) }));
         const record = session.lastRunRecord(build);
         if (record) propsRef.current.onRunRecorded?.(levelDef.id, record);
         setStartLine(null);
         setMarkerText(null);
+        setPips(null);
+        setHud(null);
+        if (shipPart) {
+          // The ship-part moment (R14): the crate lifts and spins, a low thump, the camera eases to a 30° orbit, the ship's outline with this part lit.
+          recoveryLeftS = RECOVERY_S;
+          view.startRecovery();
+          effects.play('lock');
+          const parts = shipParts(levelText.ship.parts, loadLevelProgress()).map((p) => (p.levelId === levelDef.id ? { ...p, state: 'recovered' as const } : p));
+          setRecovery({ parts, name: shipPart.name });
+        }
       }
-      if (shouldRefreshHud(frame++, justFinished)) setHud(reported ? null : model);
+      if (finishHandled && !reported) {
+        recoveryLeftS = Math.max(0, recoveryLeftS - frameS);
+        if (recoveryLeftS === 0) {
+          reported = true;
+          setRecovery(null);
+          const last = propsRef.current.lastRun;
+          setReport(session.report({ build, ...(last ? { last } : {}) }));
+        }
+      }
+      if (!finishHandled && shouldRefreshHud(frame++, false)) setHud(model);
     });
 
     return () => {
@@ -518,6 +584,24 @@ export function LevelScreen(props: LevelScreenProps) {
         <div ref={openingRef} className="opening-line" role="note" onClick={() => setOpening(null)}>
           <span>{opening}</span>
           <small>Enter to skip</small>
+        </div>
+      )}
+      {countdown && (
+        <div className={countdown === 'Go' ? 'countdown go' : 'countdown'} role="status" aria-live="assertive">
+          <span key={countdown}>{countdown}</span>
+        </div>
+      )}
+      {pips && (
+        <div className="hud2-pips" key={pips.n} role="status" aria-label={`Sample ${pips.n} of ${pips.total}`}>
+          {Array.from({ length: pips.total }, (_, i) => (
+            <span key={i} className={i < pips.n ? (i === pips.n - 1 ? 'pip full new' : 'pip full') : 'pip'} />
+          ))}
+        </div>
+      )}
+      {recovery && (
+        <div className="recovery-ship" role="status">
+          <ShipOutline parts={recovery.parts} justLevelId={levelId} />
+          <strong>{fill(levelText.ship.recoveredTitle, { name: recovery.name })}</strong>
         </div>
       )}
       {startLine && <div className="scavenger-start" role="note">{startLine}</div>}

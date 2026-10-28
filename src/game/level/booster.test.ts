@@ -217,13 +217,13 @@ describe('the booster', () => {
     expect(s.hud.forces.some((f) => f.kind === 'impulse' && f.extraLabel === 'booster' && f.forceN === 2500)).toBe(true);
   });
 
-  it('says "Booster: 2500 N × 1.5 s = 3750 N·s of impulse" when it fires', () => {
+  it('says "Booster: up to 2500 N × 1.5 s = 3750 N·s of impulse" when it fires', () => {
     const s = make(STARTING_BUILD);
     s.fireBooster();
     const event = s.events.find((e) => e.kind === 'booster')!;
     const popup = popupForLevelEvent(event, { massKg: 209, motorForceN: 1000, rockRollingMu: 0.04, unit: 'mps' });
     expect(popup?.element).toBe('booster');
-    expect(popup?.text).toBe('Booster: 2500 N × 1.5 s = 3750 N·s of impulse');
+    expect(popup?.text).toBe('Booster: up to 2500 N × 1.5 s = 3750 N·s of impulse');
   });
 
   describe('the mud rescue (SHOWCASE_PLAN §3a, point 2)', () => {

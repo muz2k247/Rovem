@@ -39,6 +39,8 @@ export const MOMENTS: Readonly<Record<PopupElement, Moment>> = {
   slip: { sound: 'squeal', hud: ['badge'] },
   topSpeed: { hud: ['badge'] },
   booster: { sound: 'whoosh', particles: 'steam', camera: 'wide', hud: ['speedLines'] },
+  // R14: the pickup has its own set (chime, gold sparkle, the canister flying to the counter), played by the level screen, not from this table.
+  sample: {},
 };
 
 export const momentFor = (element: PopupElement): Moment => MOMENTS[element];

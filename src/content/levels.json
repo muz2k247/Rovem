@@ -1,7 +1,7 @@
 {
   "crater": { "depthM": 5, "wallAngleDeg": 25, "rampAngleDeg": 12 },
   "hills": { "maxHeightM": 4, "minLengthM": 60, "minCrestRadiusM": 50 },
-  "ringRoad": { "radiiM": [12, 25, 30, 40], "widthM": 10, "ringRadiusM": 30, "ringArcDeg": 270, "laps": 2 },
+  "ringRoad": { "radiiM": [12, 25, 30, 40], "widthM": 10, "ringRadiusM": 30, "ringArcDeg": 270 },
   "water": {
     "densityKgPerM3": 1000,
     "roverVolumeM3": 0.2,

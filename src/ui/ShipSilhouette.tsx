@@ -15,6 +15,19 @@ const PART_SHAPES: readonly string[] = [
 
 const STATE_WORDS: Record<ShipPartState, string> = { recovered: 'recovered', open: 'to find', locked: 'locked' };
 
+/** Just the ship's outline with its parts (R14, the ship-part moment): the part of `justLevelId` pulses, the others show as saved. */
+export function ShipOutline({ parts, justLevelId }: { parts: readonly ShipPartView[]; justLevelId: string }) {
+  return (
+    <svg className="ship ship-outline" viewBox="0 0 330 130" role="img" aria-label={`Your ship: ${partsRecovered(parts)} of ${parts.length} parts recovered`}>
+      <path className="ship-hull" d="M42 55 Q42 30 82 30 L222 30 Q288 36 304 65 Q288 94 222 100 L82 100 Q42 100 42 75 Z" />
+      <circle className="ship-window" cx="232" cy="62" r="9" />
+      {parts.map((p, i) => (
+        <path key={p.levelId} className={`ship-part ship-part-${p.state}${p.levelId === justLevelId ? ' ship-part-just' : ''}`} d={PART_SHAPES[i] ?? ''} />
+      ))}
+    </svg>
+  );
+}
+
 export function ShipSilhouette({ parts }: { parts: readonly ShipPartView[] }) {
   return (
     <section className="ship-panel" aria-label="Your ship">

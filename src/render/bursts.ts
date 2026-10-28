@@ -5,7 +5,7 @@ import type { MomentParticles } from '../game/moments.ts';
 // sparks, crash debris, water splash. One pool of points shared by all of them. Presentation only; a fixed-seed generator
 // keeps every burst the same from run to run.
 
-export type BurstKind = Exclude<MomentParticles, 'skidMarks'>;
+export type BurstKind = Exclude<MomentParticles, 'skidMarks'> | 'goldSparkle';
 
 export interface BurstSpec {
   count: number;
@@ -30,6 +30,8 @@ export const BURSTS: Readonly<Record<BurstKind, BurstSpec>> = {
   sparks: { count: 26, colour: 0xffb040, speed: 6, up: 2, lifeS: 0.35, gravity: 9.8, size: 0.08 },
   debris: { count: 40, colour: 0x8a6a50, speed: 5, up: 4, lifeS: 0.85, gravity: 9.8, size: 0.2 },
   waterSplash: { count: 28, colour: 0xbfe3f2, speed: 3.4, up: 3.6, lifeS: 0.65, gravity: 9.8, size: 0.18 },
+  // A sample collected (R14, AUDIT_R9 F2): about 20 gold sparks for 0.5 s (three bursts of 7, 120° apart), thrown out and up, falling slowly.
+  goldSparkle: { count: 7, colour: 0xffd060, speed: 2.6, up: 1.6, lifeS: 0.5, gravity: 3, size: 0.14 },
 };
 
 /** The most particles alive at once for each kind; past this the oldest are reused. */

@@ -29,7 +29,6 @@ describe('levels.json: shared v4 values (LEVELS_BUILD_PLAN A6, A10)', () => {
     expect(c.ringRoad.widthM).toBe(10);
     expect(c.ringRoad.ringRadiusM).toBe(30);
     expect(c.ringRoad.ringArcDeg).toBe(270);
-    expect(c.ringRoad.laps).toBe(2);
     expect(c.water.densityKgPerM3).toBe(1000);
     expect(c.water.roverVolumeM3).toBe(0.2);
     expect(c.water.submersionHeightM).toBe(1.0);

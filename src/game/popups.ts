@@ -7,7 +7,9 @@ import type { RunEvent } from './run/runSession.ts';
 
 /** The elements of §10. A pop-up and a caption card are about one of these. */
 export type PopupElement =
-  | 'sand' | 'mud' | 'ice' | 'oil' | 'bend' | 'vent' | 'launcher' | 'cave' | 'slope' | 'water' | 'magnet' | 'scrape' | 'crash' | 'slip' | 'topSpeed' | 'booster';
+  | 'sand' | 'mud' | 'ice' | 'oil' | 'bend' | 'vent' | 'launcher' | 'cave' | 'slope' | 'water' | 'magnet' | 'scrape' | 'crash' | 'slip' | 'topSpeed' | 'booster'
+  // A sample was collected (R14): "Sample 2 of 3". Not an element of the ground, so no moment and no card; the level screen queues it.
+  | 'sample';
 
 export type PopupTone = 'info' | 'good' | 'warn' | 'bad';
 
@@ -68,7 +70,7 @@ const bendPopup = (needN: number, gripN: number): Popup => ({ element: 'bend', t
 // Δv = J ÷ m. The formula only holds in m/s, so a vent always shows m/s.
 const ventPopup = (impulseNs: number, massKg: number): Popup => ({ element: 'vent', tone: 'good', text: `+${whole(impulseNs)} N·s ÷ ${whole(massKg)} kg = +${two(impulseNs / massKg)} m/s` });
 // Impulse = force × time: the same idea as the vents, but here the student chooses when.
-const boosterPopup = (forceN: number, durationS: number, impulseNs: number): Popup => ({ element: 'booster', tone: 'good', text: `Booster: ${whole(forceN)} N × ${plain(durationS)} s = ${whole(impulseNs)} N·s of impulse` });
+const boosterPopup = (forceN: number, durationS: number, impulseNs: number): Popup => ({ element: 'booster', tone: 'good', text: `Booster: up to ${whole(forceN)} N × ${plain(durationS)} s = ${whole(impulseNs)} N·s of impulse` });
 const cavePopup = (g: number, weightN: number, massKg: number): Popup => ({ element: 'cave', tone: 'info', text: `Gravity anomaly: g = ${plain(g)}. Weight ${whole(weightN)} N, mass still ${whole(massKg)} kg` });
 const scrapePopup = (before: number, after: number, unit: PopupContext['unit']): Popup => ({ element: 'scrape', tone: 'warn', text: `Scraped: kept ${speedPair(before, after, unit)}` });
 

@@ -5,8 +5,8 @@ import { BURSTS, BURST_POOL, createBursts, type BurstKind } from './bursts.ts';
 const KINDS = Object.keys(BURSTS) as BurstKind[];
 
 describe('burst recipes', () => {
-  it('cover the particles of §10 (spray, splash, shards, steam, sparks, debris, water)', () => {
-    expect(KINDS.sort()).toEqual(['debris', 'iceShards', 'mudSplash', 'sandSpray', 'sparks', 'steam', 'waterSplash']);
+  it('cover the particles of §10 (spray, splash, shards, steam, sparks, debris, water) and the gold sparkle of a sample (R14)', () => {
+    expect(KINDS.sort()).toEqual(['debris', 'goldSparkle', 'iceShards', 'mudSplash', 'sandSpray', 'sparks', 'steam', 'waterSplash']);
   });
 
   it('are small, short and sensible: a few dozen particles living a second or less, steam the longest', () => {

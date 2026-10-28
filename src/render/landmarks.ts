@@ -28,11 +28,20 @@ export interface LandmarkState {
   roverXM: number;
   roverZM: number;
   bags: readonly { id: string; cannonId: string; xM: number; zM: number }[];
+  /** Where a collected canister flies to (R14): a point in the scene, in front of the camera at the HUD's sample counter. Left out: it just shrinks away. */
+  sampleTarget?: THREE.Vector3;
+  /** Seconds since the ship-part moment began (R14); undefined until the rover reaches the part. */
+  recoveryS?: number;
 }
+
+/** The ship-part moment (R14, AUDIT_R9 F2): the crate lifts this high and spins up over this long. Presentation values. */
+export const RECOVERY_LIFT_M = 1.6;
+export const RECOVERY_S = 1.5;
 
 const BARREL_HEIGHT_M = 2;
 const BAG_DROP_DISTANCE_M = 4;
 const SAMPLE_HOVER_M = 0.9;
+/** A collected canister flies to the HUD in this long (R14: 0.4 s). */
 const POP_S = 0.4;
 const ARCH_HEIGHT_M = 4.6;
 
@@ -229,6 +238,7 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
   const finishRoot = new THREE.Group();
   finishRoot.name = 'finish';
   let finishCrate: THREE.Group | undefined;
+  let crateBandMaterial: THREE.MeshStandardMaterial | undefined;
   {
     const f = def.finish;
     const heading = roadHeadingAt(f.xM, f.zM, 0);
@@ -253,9 +263,10 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
       // The ship part: a dented grey crate with glowing cyan bands, hovering inside the arch.
       const crate = new THREE.Group();
       const shell = new THREE.Mesh(own(new THREE.BoxGeometry(1.9, 1.1, 1.1)), own(mat(0x8a95a8, { metalness: 0.5, roughness: 0.55 })));
-      const bandMaterial = own(mat(0x63c7e6, { emissive: 0x63c7e6, emissiveIntensity: 1.1 }));
+      const cyanMaterial = own(mat(0x63c7e6, { emissive: 0x63c7e6, emissiveIntensity: 1.1 }));
+      crateBandMaterial = cyanMaterial;
       for (const x of [-0.55, 0.55]) {
-        const band = new THREE.Mesh(own(new THREE.BoxGeometry(0.16, 1.18, 1.18)), bandMaterial);
+        const band = new THREE.Mesh(own(new THREE.BoxGeometry(0.16, 1.18, 1.18)), cyanMaterial);
         band.position.x = x;
         crate.add(band);
       }
@@ -272,6 +283,8 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
   }
 
   const postMaterial = own(mat(0x59546a));
+  /** The ship part's crate at rest (R14): the camera orbits round it in the ship-part moment. */
+  const finishAnchor = new THREE.Vector3(def.finish.xM, groundY(def.finish.xM, def.finish.zM) + 1.7, -def.finish.zM);
 
   // Bend signs: a post and a yellow board that faces the traffic coming towards it.
   const signs = def.signs.map((s) => {
@@ -352,11 +365,13 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
   const bagMeshes = new Map<string, THREE.Mesh>();
   const cannonAt = new Map(def.cannons.map((c) => [c.id, c]));
 
-  const popScale = (t: number) => 1 + 1.4 * Math.min(1, t / POP_S);
   const tmp = new THREE.Vector3();
+  const from = new THREE.Vector3();
 
   return {
     group,
+    /** Where the ship part's crate stands (three.js coordinates). */
+    finishAnchor,
     signLines: (id: string): string[] => {
       const s = signs.find((x) => x.id === id);
       if (!s) throw new Error(`Unknown sign "${id}"`);
@@ -379,7 +394,16 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
         const phase = s.timeS * 2 + sample.def.xM * 0.37;
         place(sample.root, sample.def.xM, sample.def.zM, SAMPLE_HOVER_M + Math.sin(phase) * 0.12);
         sample.root.rotation.y = s.timeS * 1.6 + sample.def.xM;
-        sample.root.scale.setScalar(taken ? popScale(popAge) : 1);
+        if (taken) {
+          // R14: the canister shrinks and flies to the HUD's counter in POP_S.
+          const u = Math.min(1, popAge / POP_S);
+          const eased = u * u * (3 - 2 * u);
+          if (s.sampleTarget) {
+            from.copy(sample.root.position);
+            sample.root.position.lerpVectors(from, s.sampleTarget, eased);
+          }
+          sample.root.scale.setScalar(1 - 0.85 * eased);
+        } else sample.root.scale.setScalar(1);
       }
       for (const c of checkpoints) {
         const lit = c.index <= s.checkpointIndex;
@@ -389,8 +413,17 @@ export function createLandmarks(world: LevelWorld, options: LandmarkOptions) {
       }
       finishRoot.children[finishRoot.children.length - 1]!.scale.set(1 + 0.08 * Math.sin(s.timeS * 3), 1, 1 + 0.08 * Math.sin(s.timeS * 3));
       if (finishCrate) {
-        finishCrate.rotation.y = s.timeS * 0.8;
-        finishCrate.position.y = 1.7 + 0.15 * Math.sin(s.timeS * 2);
+        if (s.recoveryS === undefined) {
+          finishCrate.rotation.y = s.timeS * 0.8;
+          finishCrate.position.y = 1.7 + 0.15 * Math.sin(s.timeS * 2);
+          if (crateBandMaterial) crateBandMaterial.emissiveIntensity = 1.1;
+        } else {
+          // R14: the crate lifts and spins up, and its cyan bands flash.
+          const t = Math.min(1, s.recoveryS / RECOVERY_S);
+          finishCrate.position.y = 1.7 + RECOVERY_LIFT_M * (1 - (1 - t) * (1 - t));
+          finishCrate.rotation.y = s.timeS * 0.8 + 9 * Math.PI * t * t;
+          if (crateBandMaterial) crateBandMaterial.emissiveIntensity = 1.1 + 2.2 * (0.5 + 0.5 * Math.sin(s.recoveryS * 24));
+        }
       }
       beamMaterial.opacity = 0.24 + 0.06 * Math.sin(s.timeS * 2.2);
       // Sandbags: brown balls that drop from the barrel to the ground over the first few metres.

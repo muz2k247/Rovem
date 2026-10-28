@@ -543,7 +543,8 @@ describe('captions with the student’s numbers', () => {
     expect(s.events.find((x) => x.kind === 'surface')!.frictionN).toBeCloseTo(0.6 * 209 * 9.8, 3);
     expect(s.hud.caption?.title ?? '').not.toBe('Mud');
     until(s, () => s.samplesCollected.length > 0, 20);
-    expect(s.hud.caption?.title).toBe('Sample 1 of 3'); // not an element: still captioned
+    expect(s.hud.caption?.title ?? '').not.toBe('Sample 1 of 3'); // R14: the pop-up says it, not the caption
+    expect(s.events.some((e) => e.kind === 'sample' && e.n === 1)).toBe(true);
   });
 
   it('collecting a sample says "Sample 1 of 3"', () => {

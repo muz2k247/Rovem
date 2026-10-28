@@ -1213,3 +1213,86 @@ kbd {
   font: 600 1.1rem 'Space Grotesk', system-ui, sans-serif;
   pointer-events: none;
 }
+
+/* The sample counter (R14): three pips under the timer for 2 s after a sample; the new one fills gold. */
+.hud2-pips {
+  position: absolute;
+  top: 7.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(10, 14, 24, 0.7);
+  pointer-events: none;
+  animation: pips-fade 2s linear forwards;
+}
+
+.hud2-pips .pip {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+}
+
+.hud2-pips .pip.full {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+
+.hud2-pips .pip.new {
+  animation: pip-fill 0.4s ease-out;
+}
+
+@keyframes pip-fill {
+  from {
+    transform: scale(1.8);
+    background: transparent;
+  }
+}
+
+@keyframes pips-fade {
+  0%, 80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The 3-2-1 countdown (R14): one number a second over the start line, then "Go". */
+.countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.countdown span {
+  color: #fff;
+  font: 700 7rem 'Space Grotesk', system-ui, sans-serif;
+  text-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
+  animation: countdown-pop 1s ease-out;
+}
+
+.countdown.go span {
+  color: var(--cyan);
+  animation-duration: 0.7s;
+}
+
+@keyframes countdown-pop {
+  from {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.9);
+  }
+}

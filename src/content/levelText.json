@@ -71,7 +71,7 @@
     "surface-oil": { "title": "Oil", "line": "The tyres can pass on only {gripN} N here. Your motor can push {motorN} N." },
     "surface-ice": { "title": "Ice", "line": "Friction here is only {frictionN} N, but the tyres can pass on at most {gripN} N." },
     "slip": { "title": "Wheels slip", "line": "The tyres can pass on only {gripN} N here. Your motor asks for {askN} N." },
-    "booster": { "title": "Booster", "line": "{forceN} N × {durationS} s = {impulseNs} N·s of impulse." },
+    "booster": { "title": "Booster", "line": "Up to {forceN} N × {durationS} s = {impulseNs} N·s of impulse." },
     "boost": { "title": "Boost", "line": "Impulse {impulseNs} N·s ÷ {massKg} kg = +{dv} m/s." },
     "hit-headOn": { "title": "Head-on hit", "line": "{massKg} × {u1} + {bagKg} × {u2} = ({massKg} + {bagKg}) × {u3}: {before} → {after} m/s." },
     "hit-kicker": { "title": "Kicked from behind", "line": "{massKg} × {u1} + {bagKg} × {u2} = ({massKg} + {bagKg}) × {u3}: {before} → {after} m/s." },
@@ -199,6 +199,7 @@
     "beaten": "You beat the Scavenger by {gapS} s.",
     "lost": "The Scavenger beat you by {gapS} s."
   },
+  "pickup": { "sample": "Sample {n} of {total}" },
   "ship": {
     "openingLine": "Your ship came down hard. Five parts lie scattered across this red planet. Find them all.",
     "recoveredTitle": "Part recovered: {name}",

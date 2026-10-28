@@ -4,9 +4,9 @@ import type { PopupElement } from './popups.ts';
 
 // "Every event has its moment" (SHOWCASE_PLAN §10, R2): a sound, and at least one more thing the student sees or feels.
 
-const ELEMENTS: PopupElement[] = ['sand', 'mud', 'ice', 'oil', 'bend', 'vent', 'launcher', 'cave', 'slope', 'water', 'magnet', 'scrape', 'crash', 'slip', 'topSpeed', 'booster'];
+const ELEMENTS: PopupElement[] = ['sand', 'mud', 'ice', 'oil', 'bend', 'vent', 'launcher', 'cave', 'slope', 'water', 'magnet', 'scrape', 'crash', 'slip', 'topSpeed', 'booster', 'sample'];
 /** The rows of the §10 table that name a sound. Slope is "slowing; rolling back" and has none. */
-const WITH_SOUND = ELEMENTS.filter((e) => !['slope', 'topSpeed'].includes(e));
+const WITH_SOUND = ELEMENTS.filter((e) => !['slope', 'topSpeed', 'sample'].includes(e));
 
 const channels = (e: PopupElement) => {
   const m = MOMENTS[e];
@@ -23,7 +23,7 @@ describe('moments', () => {
       expect(MOMENTS[e].sound, e).toBeDefined();
       expect(channels(e), e).toBeGreaterThanOrEqual(2);
     }
-    for (const e of ELEMENTS) expect(channels(e), e).toBeGreaterThanOrEqual(1);
+    for (const e of ELEMENTS.filter((x) => x !== 'sample')) expect(channels(e), e).toBeGreaterThanOrEqual(1); // the sample's set is played by the level screen (R14)
   });
 
   it('uses only sounds the sound module can make', () => {

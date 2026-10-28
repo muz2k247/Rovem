@@ -78,7 +78,7 @@ export interface LevelSessionOptions {
 }
 
 /** The captions an element's pop-up and card replace on screen (R2). The others (descent, rolling back, pressure, bend signs ...) stay. */
-const ELEMENT_CAPTION_IDS = /^(boost|booster|surface-.+|gravity-.+|slip|slope-up|slide|water-in|float|magnet-attract|magnet-repel|hit-.+)$/;
+const ELEMENT_CAPTION_IDS = /^(sample|boost|booster|surface-.+|gravity-.+|slip|slope-up|slide|water-in|float|magnet-attract|magnet-repel|hit-.+)$/;
 
 export type LevelPhase = 'driving' | 'respawning' | 'finished' | 'ended';
 export type RespawnCause = 'crash' | 'stuck' | 'floated' | 'fell' | 'manual';

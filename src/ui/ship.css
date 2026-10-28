@@ -102,3 +102,43 @@
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+/* The ship-part moment (R14): the outline over the scene while the crate lifts, this part pulsing. */
+.recovery-ship {
+  position: absolute;
+  top: 1.2rem;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(10, 14, 24, 0.72);
+  pointer-events: none;
+}
+
+.recovery-ship .ship-outline {
+  width: 13rem;
+}
+
+.recovery-ship strong {
+  color: var(--cyan);
+  font: 700 1.05rem 'Space Grotesk', system-ui, sans-serif;
+}
+
+.ship-part-just {
+  animation: ship-part-pulse 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes ship-part-pulse {
+  from {
+    filter: drop-shadow(0 0 2px var(--cyan));
+  }
+  to {
+    filter: drop-shadow(0 0 10px var(--cyan)) brightness(1.4);
+  }
+}

@@ -6,6 +6,15 @@ Sections used under each version: **Added**, **Changed**, **Fixed**, **Removed**
 
 ## [Unreleased]
 
+### Added (R14: pickup moments, the 3-2-1 countdown, wording and tidy-ups; 2026-10-28)
+- **Sample pickup** (AUDIT_R9 F2, DECISIONS 2026-10-26 (10)): a 0.3 s two-note chime (Web Audio, `chime` in `effectSounds.ts`), a 0.5 s gold sparkle (`goldSparkle` in the `bursts.ts` pool, 3 bursts of 7), the canister shrinks and flies to the HUD in 0.4 s (`landmarks.ts`), a three-pip counter for 2 s, and "Sample n of 3" through the pop-up channel (`pickup.sample` in `levelText.json`). The old "Sample n of 3 — Collected." caption is off in the game (`sample` is in `ELEMENT_CAPTION_IDS`), so the line is not said twice.
+- **Ship-part moment**: after the finish the result is saved at once, then 1.5 s (`RECOVERY_S`) before the report: the crate lifts and spins up, its cyan bands flash, a low "lock" thump plays (`lock`), the camera eases to a 30° orbit round the crate, and the ship's outline shows with this part pulsing (`ShipOutline`). The beacon pulse from AUDIT_R9 F2 is not built.
+- **3-2-1 countdown**: 3 s at the start of each attempt and Retry (none after a checkpoint return); nothing is simulated and keys are ignored, so the clock and the Scavenger start at "Go". Pause works during it.
+
+### Changed (R14)
+- The booster pop-up says "Booster: up to 2500 N × 1.5 s = 3750 N·s of impulse" (ROADMAP OI-37).
+- OI-18 tidy-ups: `ringRoad.laps` removed from `levels.json` and its loader; `StarCount` is defined in `save/levelProgress.ts` and re-exported by `game/contracts.ts`, so `save/` no longer imports `game/`. **Not done:** `step()`'s unused `towed` input and "Cruising" state: removing it is a `src/physics/` change (T-tests, spec text, `physics-checker`), outside this session's "no physics changes".
+
 ### Added (R13: Geyser Canyon, Crater Field and Iron Ridge rebuilt; the Scavenger retuned; 2026-10-28)
 - **Geyser Canyon** (DECISIONS 2026-10-28 (1)): the starting build's clean star run is 150.2 s (was 87.1 s). Eight roadside launchers (one in the narrows, four head-on on the vent lane, two at the outpost, one at the gate), the vent lane with two vents against a quiet asphalt rim road (13 of 27 builds are faster on the lane, the light ones fewer), and a mud bank (one 12 m pool, a vent 25 m before it). New stretches: The Narrows and The Mud Bank.
 - **Crater Field** (DECISIONS 2026-10-28 (2), (3)): 148.3 s (was 101.9 s). A vent in each cave (Δv = 1200 ÷ 209 = 5.74 m/s in both), an ice strip in the Floating Cave (grip 102 N, half of what the ice gives at g = 9.8), a 12 m mud bank and a short jump (15° ramp, 4.5 m gap) in the Heavy Cave, two ridges on the long roads, longer roads. The Heavy Cave's mud bank takes the speed its shaft gives, so both caves cost the same and the route with all three samples beats the Scavenger.

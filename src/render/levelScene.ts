@@ -11,7 +11,7 @@ import { fogRangeM, ROCK_RANGE_M } from './cull.ts';
 import { createDevOverlay, type DevOverlay } from './devOverlay.ts';
 import { createDust } from './driveScene.ts';
 import { createForceArrows } from './forceArrows.ts';
-import { createLandmarks } from './landmarks.ts';
+import { createLandmarks, RECOVERY_S } from './landmarks.ts';
 import { HORIZON_EASE_PER_S, LANDING_EASE_CAMERA_S, LANDING_EASE_PITCH_S, levelCameraPose } from './levelCamera.ts';
 import { createLevelEdges } from './levelEdgeScene.ts';
 import { createCaveFx } from './caves.ts';
@@ -53,6 +53,12 @@ const CAMERA_KICK_S = 0.2;
 const CAMERA_KICK_M = 0.14;
 const FOV_WIDEN_DEG = 9;
 const FOV_WIDEN_DECAY_PER_S = 16;
+/** The ship-part moment's camera (R14, AUDIT_R9 F2): a 30° orbit round the crate, this far away, swinging this far while it eases in. Presentation values. */
+const RECOVERY_ORBIT_ELEVATION_RAD = Math.PI / 6;
+const RECOVERY_ORBIT_RADIUS_M = 9;
+const RECOVERY_ORBIT_SWING_RAD = 0.7;
+/** The HUD's sample counter, in normalised screen coordinates: a collected canister flies to this point, 6 m or so in front of the camera. */
+const SAMPLE_TARGET_NDC = { x: 0, y: 0.68, z: 0.97 };
 
 export interface LevelSceneOptions {
   /** The whole build's look: chassis, wheels and motor (roverLookFor). */
@@ -83,6 +89,10 @@ export interface LevelScene {
   scavengerMarker(): { position: THREE.Vector3; distanceM: number; boosting: boolean } | undefined;
   /** Opacity of the Scavenger right now (1 when there is none). */
   readonly scavengerOpacity: number;
+  /** A sample was collected (R14): a gold sparkle at the canister. */
+  sampleCollected(sampleId: string): void;
+  /** The rover reached the ship part (R14): the crate lifts and spins and the camera eases to a 30° orbit round it (RECOVERY_S long). */
+  startRecovery(): void;
   /** Developer tool (`?dev=1`): a camera straight above the rover, x to the right and z up the picture, `heightM` above the ground. */
   setTopDown(on: boolean, heightM?: number): void;
   /** Developer tool (`?dev=1`): outlines of the zones the physics uses. */
@@ -186,6 +196,11 @@ export function createLevelScene(session: LevelSession, content: Content, option
   let horizonY: number | undefined;
   let lastCamTarget: { x: number; z: number } | undefined;
   let shakeM = 0;
+  let recoveryS: number | undefined;
+  let recoveryFromAngle = 0;
+  const sampleTarget = new THREE.Vector3();
+  const orbitPos = new THREE.Vector3();
+  const orbitLook = new THREE.Vector3();
   let topDown = false;
   let topDownHeightM = 80;
   let devOverlay: DevOverlay | undefined;
@@ -193,6 +208,7 @@ export function createLevelScene(session: LevelSession, content: Content, option
 
   const update = (s: LevelSession, frameS = 0, hudIn?: HudModel) => {
     clockS += frameS;
+    if (recoveryS !== undefined) recoveryS += frameS;
     const state = s.state;
     const pose = s.pose;
     lastPose = pose;
@@ -238,6 +254,8 @@ export function createLevelScene(session: LevelSession, content: Content, option
       roverXM: pose.frontXM,
       roverZM: pose.frontZM,
       bags: s.bags,
+      sampleTarget,
+      ...(recoveryS !== undefined ? { recoveryS } : {}),
     });
     water?.update(clockS);
     caveFx?.update(clockS, pose.centreXM, pose.centreZM);
@@ -301,11 +319,26 @@ export function createLevelScene(session: LevelSession, content: Content, option
     const kickY = -CAMERA_KICK_M * (kickLeftS / CAMERA_KICK_S);
     camera.position.set(cam.position.xM + shakeX, camY + shakeY + kickY, -(cam.position.zM + shakeZ));
     camera.lookAt(cam.look.xM, cam.look.yM, -cam.look.zM);
+    if (recoveryS !== undefined && !topDown) {
+      // The ship-part moment: ease from the chase view to a 30° orbit round the crate, swinging a little as it goes.
+      const t = Math.min(1, recoveryS / RECOVERY_S);
+      const e = t * t * (3 - 2 * t);
+      const anchor = landmarks.finishAnchor;
+      const lifted = anchor.y + 1.6 * (1 - (1 - t) * (1 - t));
+      const angle = recoveryFromAngle + RECOVERY_ORBIT_SWING_RAD * e;
+      orbitPos.set(anchor.x + Math.cos(angle) * RECOVERY_ORBIT_RADIUS_M * Math.cos(RECOVERY_ORBIT_ELEVATION_RAD), lifted + Math.sin(RECOVERY_ORBIT_ELEVATION_RAD) * RECOVERY_ORBIT_RADIUS_M, anchor.z + Math.sin(angle) * RECOVERY_ORBIT_RADIUS_M * Math.cos(RECOVERY_ORBIT_ELEVATION_RAD));
+      orbitLook.set(anchor.x, lifted, anchor.z);
+      camera.position.lerp(orbitPos, e);
+      camera.lookAt(new THREE.Vector3(cam.look.xM, cam.look.yM, -cam.look.zM).lerp(orbitLook, e));
+    }
     if (topDown) {
       camera.up.set(0, 0, -1); // screen-up is physics +z, which is three −z
       camera.position.set(target.x, world.heightM(target.x, target.z) + topDownHeightM, -target.z);
       camera.lookAt(target.x, world.heightM(target.x, target.z), -target.z);
     } else camera.up.set(0, 1, 0);
+
+    camera.updateMatrixWorld();
+    sampleTarget.set(SAMPLE_TARGET_NDC.x, SAMPLE_TARGET_NDC.y, SAMPLE_TARGET_NDC.z).unproject(camera);
 
     // The horizon follows the ground under the rover, smoothed: a pit's edge or a chasm must not step it. The far ground never rises above the real ground.
     const groundAtRover = world.heightM(target.x, target.z);
@@ -351,6 +384,18 @@ export function createLevelScene(session: LevelSession, content: Content, option
       }
       if (moment.camera === 'kick') kickLeftS = CAMERA_KICK_S;
       if (moment.camera === 'wide') fovWiden = FOV_WIDEN_DEG;
+    },
+    sampleCollected(sampleId) {
+      const sample = def.samples.find((x) => x.id === sampleId);
+      if (!sample) return;
+      const y = world.heightM(sample.xM, sample.zM) + 0.9;
+      for (const [dx, dz] of [[1, 0], [-0.5, 0.866], [-0.5, -0.866]] as const) bursts.emit('goldSparkle', sample.xM, y, -sample.zM, dx, dz);
+    },
+    startRecovery() {
+      if (recoveryS !== undefined) return;
+      recoveryS = 0;
+      // The orbit starts where the chase camera already is: the angle of the camera round the crate, so it swings from there and does not jump.
+      recoveryFromAngle = Math.atan2(camera.position.z - landmarks.finishAnchor.z, camera.position.x - landmarks.finishAnchor.x);
     },
     stats: {
       terrainVertices: terrain.vertexCount,

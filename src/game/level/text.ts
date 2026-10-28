@@ -83,6 +83,8 @@ export interface LevelText {
   split: { behind: string; ahead: string };
   scavenger: ScavengerText;
   ship: ShipText;
+  /** The pickup pop-up (R14): "Sample {n} of {total}". */
+  pickup: { sample: string };
 }
 
 type Obj = Record<string, unknown>;
@@ -147,6 +149,7 @@ export function validateLevelText(raw: unknown): LevelText {
   if (sp.behind === undefined || sp.ahead === undefined) fail('levelText.split', 'expected behind and ahead');
   const sc = obj(root.scavenger, 'levelText.scavenger');
   const scavenger = Object.fromEntries(['cardTitle', 'cardLine', 'star', 'startLine', 'wornLine', 'newLine', 'boosterLabel', 'marker', 'resultLine', 'beaten', 'lost'].map((k) => [k, str(sc, k, 'levelText.scavenger')])) as unknown as ScavengerText;
+  const pk = obj(root.pickup, 'levelText.pickup');
   const sh = obj(root.ship, 'levelText.ship');
   const partsRaw = sh.parts;
   if (!Array.isArray(partsRaw) || partsRaw.length === 0) fail('levelText.ship.parts', 'expected a non-empty list');
@@ -172,6 +175,7 @@ export function validateLevelText(raw: unknown): LevelText {
     split: { behind: sp.behind, ahead: sp.ahead },
     scavenger,
     ship,
+    pickup: { sample: str(pk, 'sample', 'levelText.pickup') },
   };
 }
 

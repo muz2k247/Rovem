@@ -1,4 +1,5 @@
 import type { ForceKind } from '../content/levelsConfig.ts';
+import type { StarCount } from '../save/levelProgress.ts';
 
 // The types both Game v4 tracks build against (LEVELS_BUILD_PLAN B4). Frozen after P0: a track may add an
 // optional field, never rename or remove one, and lists any addition in its report.
@@ -77,7 +78,8 @@ export interface HudModel {
   split?: { text: string; behind: boolean };
 }
 
-export type StarCount = 0 | 1 | 2 | 3;
+// Defined in save/ (the lower layer) so that save/ does not import game/ (OI-18, R14); re-exported for the screens.
+export type { StarCount };
 
 export type ReportResult =
   | {
